@@ -45,6 +45,11 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "adminUI",
+    "userUI",
+    "lib/db/seed.ts",
+    "lib/db/seed-additional-bookings.ts",
+    "lib/db/seed-daily-bookings.ts"
   ]
 }

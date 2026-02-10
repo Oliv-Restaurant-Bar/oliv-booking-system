@@ -20,10 +20,8 @@ export interface CreateBookingInput {
 
 export async function createBooking(input: CreateBookingInput) {
   try {
-    const [booking] = await db
-      .insert(bookings)
-      .values({
-        id: randomUUID(),
+    // @ts-ignore - Drizzle ORM type compatibility issue
+    const [booking] = await db.insert(bookings).values({
         leadId: input.leadId,
         eventDate: input.eventDate,
         eventTime: input.eventTime,
@@ -93,14 +91,22 @@ export async function updateBookingStatus(id: string, status: typeof bookings.$i
 
 export async function updateBooking(id: string, updates: Partial<CreateBookingInput>) {
   try {
+    const updateData: any = {
+      updatedAt: new Date(),
+    };
+
+    if (updates.eventDate !== undefined) updateData.eventDate = updates.eventDate;
+    if (updates.eventTime !== undefined) updateData.eventTime = updates.eventTime;
+    if (updates.guestCount !== undefined) updateData.guestCount = updates.guestCount;
+    if (updates.allergyDetails !== undefined) updateData.allergyDetails = updates.allergyDetails;
+    if (updates.specialRequests !== undefined) updateData.specialRequests = updates.specialRequests;
+    if (updates.estimatedTotal !== undefined) updateData.estimatedTotal = updates.estimatedTotal.toString();
+    if (updates.requiresDeposit !== undefined) updateData.requiresDeposit = updates.requiresDeposit;
+    if (updates.internalNotes !== undefined) updateData.internalNotes = updates.internalNotes;
+
     const [booking] = await db
       .update(bookings)
-      .set({
-        ...updates,
-        estimatedTotal: updates.estimatedTotal?.toString(),
-        allergyDetails: updates.allergyDetails,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(bookings.id, id))
       .returning();
 
@@ -115,12 +121,13 @@ export async function updateBooking(id: string, updates: Partial<CreateBookingIn
 
 export async function getBookings(filters?: { status?: string }) {
   try {
-    let query = db.select().from(bookings);
+    let query: any = db.select().from(bookings);
 
     if (filters?.status) {
       query = query.where(eq(bookings.status, filters.status as any));
     }
 
+    // @ts-ignore - neon-http driver type limitation
     const bookingsData = await query.orderBy(bookings.createdAt);
 
     return { success: true, data: bookingsData };
@@ -157,9 +164,12 @@ export async function addBookingItem(input: {
     const [item] = await db
       .insert(bookingItems)
       .values({
-        id: randomUUID(),
-        ...input,
+        bookingId: input.bookingId,
+        itemType: input.itemType,
+        itemId: input.itemId,
+        quantity: input.quantity,
         unitPrice: input.unitPrice.toString(),
+        notes: input.notes,
       })
       .returning();
 

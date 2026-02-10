@@ -3,9 +3,8 @@ import { getSession } from "@/lib/auth/server";
 import { DashboardSidebar } from "@/components/admin/DashboardSidebar";
 import { DashboardHeader } from "@/components/admin/DashboardHeader";
 import { KPICard } from "@/components/admin/KPICard";
-import { BookingsChart, RevenueChart, StatusDistributionChart, ChartCard } from "@/components/admin/DashboardCharts";
-import { getDashboardStats, getMonthlyBookingsData, getBookingStatusDistribution } from "@/lib/actions/stats";
-import { Calendar, DollarSign, Package } from "lucide-react";
+import { DashboardCharts } from "@/components/admin/DashboardCharts";
+import { getDashboardStats, getDailyBookingsData, getDailyRevenueData, getBookingStatusDistribution } from "@/lib/actions/stats";
 
 export default async function AdminDashboardPage() {
   const session = await getSession();
@@ -15,9 +14,10 @@ export default async function AdminDashboardPage() {
   }
 
   // Fetch real data from database
-  const [stats, bookingsData, statusData] = await Promise.all([
+  const [stats, bookingsData, revenueData, statusData] = await Promise.all([
     getDashboardStats(),
-    getMonthlyBookingsData(),
+    getDailyBookingsData(),
+    getDailyRevenueData(),
     getBookingStatusDistribution(),
   ]);
 
@@ -38,7 +38,7 @@ export default async function AdminDashboardPage() {
 
           {/* Main Content */}
           <main className="flex-1 px-8 pt-3 pb-8 space-y-6">
-            {/* KPI Cards */}
+            {/* KPI Cards - Compact Version */}
             <div className="grid grid-cols-3 gap-4">
               <KPICard
                 title="No. of Bookings"
@@ -60,25 +60,8 @@ export default async function AdminDashboardPage() {
               />
             </div>
 
-            {/* Charts Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Bookings Chart */}
-              <ChartCard title="Monthly Bookings">
-                <BookingsChart data={bookingsData} />
-              </ChartCard>
-
-              {/* Revenue Chart */}
-              <ChartCard title="Monthly Revenue">
-                <RevenueChart data={bookingsData} />
-              </ChartCard>
-            </div>
-
-            {/* Status Distribution Chart */}
-            <div className="grid grid-cols-1">
-              <ChartCard title="Booking Status Distribution">
-                <StatusDistributionChart data={statusData} />
-              </ChartCard>
-            </div>
+            {/* Main Content Grid */}
+            <DashboardCharts bookingsData={bookingsData} revenueData={revenueData} statusData={statusData} />
 
             {/* Copyright Footer */}
             <div className="text-center pt-4 pb-1">

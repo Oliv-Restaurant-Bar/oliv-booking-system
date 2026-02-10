@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Calendar, Users, Mail, Phone, User, Check, ChevronLeft, ChevronRight, Send, Eye, Edit2, ClipboardList, Building2, MapPin, Clock, Sparkles, ShoppingCart, X, Plus, Minus, AlertTriangle } from 'lucide-react';
 import { Button } from './Button';
-import { menuItems, categories, MenuItem, MenuItemVariant } from './menuItemsData';
+import { MenuItem, MenuItemVariant } from './menuItemsData';
 import { DietaryIcon } from './DietaryIcon';
 import { ThankYouScreen } from './ThankYouScreen';
 import { WizardHeader } from './WizardHeader';
@@ -60,6 +60,63 @@ export function CustomMenuWizard() {
   const [inquiryNumber, setInquiryNumber] = useState('');
   const [step2Error, setStep2Error] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [loadingMenu, setLoadingMenu] = useState(true);
+
+  // Fetch menu data from database
+  useEffect(() => {
+    const fetchMenuData = async () => {
+      try {
+        const response = await fetch('/api/menu');
+        if (response.ok) {
+          const data = await response.json();
+
+          // Filter to only include ACTIVE categories
+          const activeCategories = data.categories.filter((cat: any) => cat.isActive);
+
+          // Transform database data to MenuItem format - only include items from active categories
+          const items: MenuItem[] = data.items
+            .filter((item: any) => item.isActive)
+            .filter((item: any) => {
+              // Only include items whose category is active
+              const category = activeCategories.find((cat: any) => cat.id === item.categoryId);
+              return category !== undefined;
+            })
+            .map((item: any) => {
+              const category = activeCategories.find((cat: any) => cat.id === item.categoryId);
+              return {
+                id: item.id,
+                name: item.name,
+                description: item.description || '',
+                category: category?.name || 'Other',
+                price: Number(item.pricePerPerson) || 0,
+                image: item.imageUrl || 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=400&fit=crop',
+                dietaryType: item.isVegan ? 'vegan' : item.isVegetarian ? 'vegetarian' : 'non-vegetarian',
+              };
+            });
+
+          // Get unique category names from active categories
+          const categoryNames = activeCategories.map((cat: any) => cat.name);
+
+          setMenuItems(items);
+          setCategories(categoryNames);
+          if (categoryNames.length > 0) {
+            setSelectedCategory(categoryNames[0]);
+          }
+        } else {
+          // Fallback to error state - show empty menu
+          console.error('Failed to fetch menu data');
+        }
+      } catch (error) {
+        console.error('Error fetching menu data:', error);
+      } finally {
+        setLoadingMenu(false);
+      }
+    };
+
+    fetchMenuData();
+  }, []);
 
   const steps = [
     { 
@@ -120,7 +177,25 @@ export function CustomMenuWizard() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const isStep1Valid = () => {
+  // Memoized validation states for better reactivity
+  const isContactTabValid = useMemo(() => {
+    return (
+      eventDetails.name.trim() !== '' &&
+      eventDetails.email.trim() !== '' &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(eventDetails.email) &&
+      eventDetails.telephone.trim() !== ''
+    );
+  }, [eventDetails.name, eventDetails.email, eventDetails.telephone]);
+
+  const isEventTabValid = useMemo(() => {
+    return (
+      eventDetails.eventDate !== '' &&
+      eventDetails.guestCount !== '' &&
+      parseInt(eventDetails.guestCount) >= 1
+    );
+  }, [eventDetails.eventDate, eventDetails.guestCount]);
+
+  const isStep1Valid = useMemo(() => {
     return (
       eventDetails.name.trim() !== '' &&
       eventDetails.email.trim() !== '' &&
@@ -130,7 +205,22 @@ export function CustomMenuWizard() {
       eventDetails.guestCount !== '' &&
       parseInt(eventDetails.guestCount) >= 1
     );
-  };
+  }, [eventDetails.name, eventDetails.email, eventDetails.telephone, eventDetails.eventDate, eventDetails.guestCount]);
+
+  const isCurrentTabValid = useMemo(() => {
+    switch (activeTab) {
+      case 'contact':
+        return isContactTabValid;
+      case 'address':
+        return true; // No required fields on address tab
+      case 'event':
+        return isEventTabValid;
+      case 'requests':
+        return isStep1Valid; // Validate all required fields before proceeding to step 2
+      default:
+        return true;
+    }
+  }, [activeTab, isContactTabValid, isEventTabValid, isStep1Valid]);
 
   // Helper functions for tab navigation
   const getNextTab = () => {
@@ -143,38 +233,6 @@ export function CustomMenuWizard() {
 
   const isLastTab = () => {
     return activeTab === tabs[tabs.length - 1].id;
-  };
-
-  const isContactTabValid = () => {
-    return (
-      eventDetails.name.trim() !== '' &&
-      eventDetails.email.trim() !== '' &&
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(eventDetails.email) &&
-      eventDetails.telephone.trim() !== ''
-    );
-  };
-
-  const isEventTabValid = () => {
-    return (
-      eventDetails.eventDate !== '' &&
-      eventDetails.guestCount !== '' &&
-      parseInt(eventDetails.guestCount) >= 1
-    );
-  };
-
-  const isCurrentTabValid = () => {
-    switch (activeTab) {
-      case 'contact':
-        return isContactTabValid();
-      case 'address':
-        return true; // No required fields on address tab
-      case 'event':
-        return isEventTabValid();
-      case 'requests':
-        return isStep1Valid(); // Validate all required fields before proceeding to step 2
-      default:
-        return true;
-    }
   };
 
   const handleStep1Navigation = () => {
@@ -884,6 +942,16 @@ export function CustomMenuWizard() {
                     </p>
                   </div>
 
+                  {loadingMenu ? (
+                    <div className="text-center py-16">
+                      <p className="text-muted-foreground">Loading menu...</p>
+                    </div>
+                  ) : menuItems.length === 0 ? (
+                    <div className="text-center py-16">
+                      <p className="text-muted-foreground">No menu items available. Please contact us directly.</p>
+                    </div>
+                  ) : (
+                    <>
                   {/* Category Pills - Horizontal Scroll */}
                   <div className="mb-6">
                     <div className="flex overflow-x-auto gap-2 pb-4 -mx-2 px-2 sm:mx-0 sm:px-0 scrollbar-hide">
@@ -1167,6 +1235,8 @@ export function CustomMenuWizard() {
                         {step2Error}
                       </p>
                     </div>
+                  )}
+                  </>
                   )}
                 </div>
               )}
@@ -1570,7 +1640,7 @@ export function CustomMenuWizard() {
                       onClick={handleStep1Navigation}
                       icon={ChevronRight}
                       iconPosition="right"
-                      disabled={!isCurrentTabValid()}
+                      disabled={!isCurrentTabValid}
                       size="sm"
                     >
                       {isLastTab() ? 'Proceed to menu selection' : 'Next'}

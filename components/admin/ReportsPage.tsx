@@ -70,7 +70,7 @@ export function ReportsPage() {
             <h3 className="text-foreground mb-6" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
               Top Customers by Revenue
             </h3>
-            <div>
+            <div className="overflow-y-auto" style={{ maxHeight: '400px' }}>
               {bookingsByContacts.slice(0, 5).map((contact, index) => (
                 <div 
                   key={index} 

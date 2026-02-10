@@ -148,12 +148,14 @@ export function ItemSettingsModal({
                   </button>
                   <button
                     onClick={() => setItemSettings({ ...itemSettings, dietaryType: 'non-veg' })}
-                    className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left cursor-pointer ${\n                      itemSettings.dietaryType === 'non-veg'
+                    className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left cursor-pointer ${
+                      itemSettings.dietaryType === 'non-veg'
                         ? 'border-primary bg-primary/5'
                         : 'border-border bg-background hover:border-border hover:bg-accent'
                     }`}
                   >
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${\n                      itemSettings.dietaryType === 'non-veg'
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                      itemSettings.dietaryType === 'non-veg'
                         ? 'border-primary'
                         : 'border-border'
                     }`}>

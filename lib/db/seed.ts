@@ -9,6 +9,7 @@ import {
   addons,
   leads,
   bookings,
+  bookingItems,
   account,
 } from "@/lib/db/schema";
 import { randomUUID } from "crypto";
@@ -219,6 +220,132 @@ async function seed() {
       console.log("✅ Addons created");
     } else {
       console.log("ℹ️ Menu data already exists");
+    }
+
+    // === Create test bookings with booking items ===
+    const existingBookings = await db.query.bookings.findMany();
+    if (existingBookings.length === 0) {
+      console.log("📝 Creating test bookings...");
+
+      // Get menu items for bookings
+      const allMenuItems = await db.query.menuItems.findMany();
+      const allCategories = await db.query.menuCategories.findMany();
+
+      const currentYear = new Date().getFullYear();
+
+      // Create test bookings spread across different months
+      const testBookings = [
+        // January bookings
+        { month: 0, name: "Maria Schmidt", email: "maria.schmidt@email.com", phone: "+41 79 123 45 67", guestCount: 15, status: "completed" },
+        { month: 0, name: "Thomas Weber", email: "thomas.weber@email.com", phone: "+41 78 234 56 78", guestCount: 20, status: "completed" },
+        { month: 0, name: "Sophie Keller", email: "sophie.keller@email.com", phone: "+41 76 345 67 89", guestCount: 12, status: "confirmed" },
+
+        // February bookings
+        { month: 1, name: "Hans Weiss", email: "hans.weiss@email.com", phone: "+41 79 987 65 43", guestCount: 25, status: "completed" },
+        { month: 1, name: "Anna Brunner", email: "anna.brunner@email.com", phone: "+41 78 654 32 10", guestCount: 18, status: "completed" },
+        { month: 1, name: "Peter Meyer", email: "peter.meyer@email.com", phone: "+41 77 543 21 09", guestCount: 30, status: "confirmed" },
+        { month: 1, name: "Lisa Fischer", email: "lisa.fischer@email.com", phone: "+41 79 111 22 33", guestCount: 8, status: "pending" },
+
+        // March bookings
+        { month: 2, name: "Klaus Schneider", email: "klaus.schneider@email.com", phone: "+41 78 999 88 77", guestCount: 22, status: "confirmed" },
+        { month: 2, name: "Monica Frei", email: "monica.frei@email.com", phone: "+41 76 777 66 55", guestCount: 16, status: "pending" },
+        { month: 2, name: "Rolf Baumann", email: "rolf.baumann@email.com", phone: "+41 79 444 33 22", guestCount: 35, status: "completed" },
+        { month: 2, name: "Urs Wirth", email: "urs.wirth@email.com", phone: "+41 78 222 11 00", guestCount: 14, status: "declined" },
+
+        // April bookings
+        { month: 3, name: "Ruth Berger", email: "ruth.berger@email.com", phone: "+41 79 555 44 33", guestCount: 28, status: "confirmed" },
+        { month: 3, name: "Walter Sutter", email: "walter.sutter@email.com", phone: "+41 77 333 22 11", guestCount: 12, status: "pending" },
+        { month: 3, name: "Erika Neuhaus", email: "erika.neuhaus@email.com", phone: "+41 76 111 00 99", guestCount: 20, status: "confirmed" },
+
+        // May bookings
+        { month: 4, name: "Fritz Hofer", email: "fritz.hofer@email.com", phone: "+41 78 888 77 66", guestCount: 18, status: "completed" },
+        { month: 4, name: "Gisela Lang", email: "gisela.lang@email.com", phone: "+41 79 222 33 44", guestCount: 24, status: "completed" },
+        { month: 4, name: "Heinz Steiner", email: "heinz.steiner@email.com", phone: "+41 77 666 55 44", guestCount: 10, status: "no_show" },
+
+        // June bookings
+        { month: 5, name: "Margrit Kuhn", email: "margrit.kuhn@email.com", phone: "+41 76 444 33 22", guestCount: 32, status: "confirmed" },
+        { month: 5, name: "Ernst Hauser", email: "ernst.hauser@email.com", phone: "+41 79 111 22 33", guestCount: 16, status: "pending" },
+        { month: 5, name: "Rosa Blaser", email: "rosa.blaser@email.com", phone: "+41 78 555 66 77", guestCount: 22, status: "confirmed" },
+        { month: 5, name: "Oskar Reh", email: "oskar.reh@email.com", phone: "+41 77 888 99 00", guestCount: 14, status: "cancelled" },
+      ];
+
+      const statuses: ("confirmed" | "pending" | "completed" | "declined" | "no_show" | "cancelled")[] =
+        ["confirmed", "pending", "completed", "declined", "no_show", "cancelled"];
+
+      const eventTimes = ["18:00:00", "18:30:00", "19:00:00", "19:30:00", "20:00:00"];
+
+      for (const bookingData of testBookings) {
+        // Create event date for the specified month
+        const eventDate = new Date(currentYear, bookingData.month, Math.floor(Math.random() * 25) + 1);
+
+        // Create lead
+        // @ts-ignore - Drizzle type issue with date columns
+        const [lead] = await db.insert(leads).values({
+          id: randomUUID(),
+          contactName: bookingData.name,
+          contactEmail: bookingData.email,
+          contactPhone: bookingData.phone,
+          eventDate: eventDate,
+          eventTime: eventTimes[Math.floor(Math.random() * eventTimes.length)],
+          guestCount: bookingData.guestCount,
+          source: "manual",
+          status: "contacted",
+        }).returning();
+
+        // Randomly select 2-3 menu items for this booking
+        const shuffledMenuItems = [...allMenuItems].sort(() => Math.random() - 0.5);
+        const selectedMenuItems = shuffledMenuItems.slice(0, Math.floor(Math.random() * 2) + 2);
+        let estimatedTotal = 0;
+
+        const bookingItemsToCreate = [];
+
+        for (const menuItem of selectedMenuItems) {
+          const quantity = Math.floor(Math.random() * 2) + 1;
+          const pricePerPerson = Number(menuItem.pricePerPerson);
+          const itemTotal = pricePerPerson * quantity * bookingData.guestCount;
+          estimatedTotal += itemTotal;
+
+          bookingItemsToCreate.push({
+            itemType: "menu_item",
+            itemId: menuItem.id,
+            quantity,
+            unitPrice: menuItem.pricePerPerson,
+          });
+        }
+
+        // Create booking
+        // @ts-ignore - Drizzle type issue with date columns
+        const [booking] = await db.insert(bookings).values({
+            leadId: lead.id,
+            eventDate: eventDate,
+            eventTime: eventTimes[Math.floor(Math.random() * eventTimes.length)],
+            guestCount: bookingData.guestCount,
+            allergyDetails: [],
+            specialRequests: null,
+            estimatedTotal: estimatedTotal.toString(),
+            requiresDeposit: estimatedTotal > 2000,
+            status: bookingData.status,
+            internalNotes: `Test booking for ${bookingData.name}`,
+            termsAccepted: true,
+            termsAcceptedAt: new Date(),
+          }).returning();
+
+        // Create booking items
+        for (const item of bookingItemsToCreate) {
+          // @ts-ignore - Drizzle type issue with itemType
+          await db.insert(bookingItems).values({
+            bookingId: booking.id,
+            itemType: item.itemType as "menu_item" | "addon",
+            itemId: item.itemId,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+          });
+        }
+      }
+
+      console.log(`✅ Created ${testBookings.length} test bookings across multiple months`);
+    } else {
+      console.log(`ℹ️ ${existingBookings.length} bookings already exist`);
     }
 
     console.log("🎉 Seeding completed successfully!");

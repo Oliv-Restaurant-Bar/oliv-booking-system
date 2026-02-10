@@ -134,6 +134,9 @@ function BookingDetailModal({ booking, onClose, onUpdateStatus }: { booking: any
   );
   const [newComment, setNewComment] = useState('');
   const [localStatus, setLocalStatus] = useState(booking?.status || 'pending');
+  const [allergies, setAllergies] = useState(booking?.allergies || '');
+  const [notes, setNotes] = useState(booking?.notes || '');
+  const [isSaving, setIsSaving] = useState(false);
 
   // Update localStatus when booking changes
   useEffect(() => {
@@ -142,12 +145,14 @@ function BookingDetailModal({ booking, onClose, onUpdateStatus }: { booking: any
     }
   }, [booking?.status]);
 
-  // Reset comments when booking changes
+  // Reset editable fields when booking changes
   useEffect(() => {
     if (booking?.contactHistory) {
       setComments(booking.contactHistory);
     }
-  }, [booking?.contactHistory]);
+    setAllergies(booking?.allergies || '');
+    setNotes(booking?.notes || '');
+  }, [booking]);
 
   const statusOptions = [
     { value: 'pending', label: 'Pending' },
@@ -176,6 +181,38 @@ function BookingDetailModal({ booking, onClose, onUpdateStatus }: { booking: any
 
     setComments([...comments, newCommentObj]);
     setNewComment('');
+  };
+
+  const handleSaveChanges = async () => {
+    setIsSaving(true);
+    try {
+      // Prepare allergy details as array
+      const allergyDetails = allergies
+        ? allergies.split(',').map((a: string) => a.trim()).filter((a: string) => a.length > 0)
+        : [];
+
+      const response = await fetch(`/api/bookings/${booking.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          allergyDetails,
+          specialRequests: notes,
+        }),
+      });
+
+      if (response.ok) {
+        // Optionally refresh the booking data
+        window.location.reload();
+      } else {
+        console.error('Failed to save booking changes');
+      }
+    } catch (error) {
+      console.error('Error saving booking changes:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -381,11 +418,12 @@ function BookingDetailModal({ booking, onClose, onUpdateStatus }: { booking: any
                   Allergies
                 </label>
                 <textarea
-                  value={booking.allergies}
-                  readOnly
+                  value={allergies}
+                  onChange={(e) => setAllergies(e.target.value)}
                   rows={2}
-                  className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground resize-none"
+                  className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
                   style={{ fontSize: 'var(--text-base)' }}
+                  placeholder="Enter allergies separated by commas..."
                 />
               </div>
               <div>
@@ -393,11 +431,12 @@ function BookingDetailModal({ booking, onClose, onUpdateStatus }: { booking: any
                   Notes
                 </label>
                 <textarea
-                  value={booking.notes}
-                  readOnly
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
                   rows={2}
-                  className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground resize-none"
+                  className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
                   style={{ fontSize: 'var(--text-base)' }}
+                  placeholder="Enter special requests or notes..."
                 />
               </div>
             </div>
@@ -498,8 +537,13 @@ function BookingDetailModal({ booking, onClose, onUpdateStatus }: { booking: any
 
         {/* Fixed Save Button Footer */}
         <div className="fixed bottom-0 right-0 w-full max-w-2xl bg-background border-t border-border px-6 py-4 z-10">
-          <button className="w-full px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors cursor-pointer" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)', backgroundColor: 'var(--color-primary)' }}>
-            Save Changes
+          <button
+            onClick={handleSaveChanges}
+            disabled={isSaving}
+            className="w-full px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)', backgroundColor: 'var(--color-primary)' }}
+          >
+            {isSaving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </div>
@@ -555,13 +599,29 @@ export function BookingsPage() {
   });
 
   // Handle status update from modal
-  const handleUpdateStatus = (id: string, newStatus: string) => {
-    setBookingsData(bookingsData.map(booking =>
-      booking.id === id ? { ...booking, status: newStatus } : booking
-    ));
-    // Also update selected booking if it's the same
-    if (selectedBooking && selectedBooking.id === id) {
-      setSelectedBooking({ ...selectedBooking, status: newStatus });
+  const handleUpdateStatus = async (id: string, newStatus: string) => {
+    // Call API to update status in database
+    try {
+      const response = await fetch('/api/bookings/update-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId: id, status: newStatus }),
+      });
+
+      if (response.ok) {
+        // Update local state only after successful API call
+        setBookingsData(bookingsData.map(booking =>
+          booking.id === id ? { ...booking, status: newStatus } : booking
+        ));
+        // Also update selected booking if it's the same
+        if (selectedBooking && selectedBooking.id === id) {
+          setSelectedBooking({ ...selectedBooking, status: newStatus });
+        }
+      } else {
+        console.error('Failed to update status');
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
     }
   };
 
@@ -585,7 +645,7 @@ export function BookingsPage() {
             variant="secondary"
             icon={Download}
             iconPosition="left"
-            to="/admin/bookings/export"
+            href="/admin/bookings/export"
           >
             Export
           </Button>

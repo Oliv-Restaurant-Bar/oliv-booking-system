@@ -741,15 +741,15 @@ export function MenuConfigPage() {
                                   ingredients: item.ingredients || '',
                                   allergens: item.allergens || [],
                                   additives: item.additives || [],
-                                  nutritionalInfo: item.nutritionalInfo || {
-                                    servingSize: '',
-                                    calories: '',
-                                    protein: '',
-                                    carbs: '',
-                                    fat: '',
-                                    fiber: '',
-                                    sugar: '',
-                                    sodium: '',
+                                  nutritionalInfo: {
+                                    servingSize: item.nutritionalInfo?.servingSize || '',
+                                    calories: item.nutritionalInfo?.calories || '',
+                                    protein: item.nutritionalInfo?.protein || '',
+                                    carbs: item.nutritionalInfo?.carbs || '',
+                                    fat: item.nutritionalInfo?.fat || '',
+                                    fiber: item.nutritionalInfo?.fiber || '',
+                                    sugar: item.nutritionalInfo?.sugar || '',
+                                    sodium: item.nutritionalInfo?.sodium || '',
                                   },
                                 });
                                 setIsItemSettingsModalOpen(true);

@@ -1,4 +1,4 @@
-import { getTopCustomersByRevenue, getMonthlyReportData } from "@/lib/actions/stats";
+import { getTopCustomersByRevenue, getMonthlyReportData, getTrendingItems } from "@/lib/actions/stats";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -7,19 +7,21 @@ export async function GET(request: Request) {
     const year = searchParams.get('year');
     const selectedYear = year ? parseInt(year) : new Date().getFullYear();
 
-    const [topCustomers, monthlyReport] = await Promise.all([
+    const [topCustomers, monthlyReport, trendingItems] = await Promise.all([
       getTopCustomersByRevenue(10),
       getMonthlyReportData(selectedYear),
+      getTrendingItems(10),
     ]);
 
     return NextResponse.json({
       topCustomers,
       monthlyReport,
+      trendingItems,
     });
   } catch (error) {
     console.error("Error in reports API:", error);
     return NextResponse.json(
-      { topCustomers: [], monthlyReport: [] },
+      { topCustomers: [], monthlyReport: [], trendingItems: [] },
       { status: 500 }
     );
   }

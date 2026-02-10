@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { GripVertical, Edit2, MoreVertical, Plus, ChevronDown, ChevronRight, Trash2, Eye, EyeOff, Search, UtensilsCrossed, ListPlus, Upload, X, Copy, Settings, Check } from 'lucide-react';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
@@ -6,6 +8,14 @@ import { ConfirmationModal } from './ConfirmationModal';
 import { ItemSettingsModal } from './ItemSettingsModal';
 import { Button } from './Button';
 import { Tooltip } from './Tooltip';
+import {
+  createMenuCategory,
+  updateMenuCategory,
+  deleteMenuCategory,
+  createMenuItem,
+  updateMenuItem,
+  deleteMenuItem,
+} from '@/lib/actions/menu';
 
 interface MenuItemData {
   id: string;
@@ -284,7 +294,7 @@ export function MenuConfigPage() {
   useEffect(() => {
     const fetchMenuData = async () => {
       try {
-        const response = await fetch('/api/menu');
+        const response = await fetch('/api/admin/menu');
         if (response.ok) {
           const data = await response.json();
 
@@ -377,23 +387,93 @@ export function MenuConfigPage() {
     ));
   };
 
-  const toggleCategoryActive = (categoryId: string) => {
+  const toggleCategoryActive = async (categoryId: string) => {
+    // Update local state immediately for responsiveness
     setCategories(categories.map(cat =>
       cat.id === categoryId ? { ...cat, isActive: !cat.isActive } : cat
     ));
+
+    // Persist to database
+    const category = categories.find(cat => cat.id === categoryId);
+    if (category) {
+      console.log('Toggling category active:', categoryId, 'to', !category.isActive);
+      const result = await updateMenuCategory(categoryId, { isActive: !category.isActive });
+      console.log('Update result:', result);
+      if (!result.success) {
+        console.error('Failed to update category:', result.error);
+        // Revert on error
+        setCategories(categories.map(cat =>
+          cat.id === categoryId ? { ...cat, isActive: category.isActive } : cat
+        ));
+        alert(result.error || 'Failed to update category');
+        return;
+      }
+      // Refresh data from server
+      const response = await fetch('/api/admin/menu');
+      if (response.ok) {
+        const data = await response.json();
+        const mappedCategories: Category[] = data.categories.map((cat: any) => ({
+          id: cat.id,
+          name: cat.name,
+          description: cat.description || '',
+          image: cat.imageUrl || 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=400&fit=crop',
+          isActive: cat.isActive,
+          isExpanded: cat.isExpanded || false,
+          items: data.itemsByCategory[cat.id]?.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            description: item.description || '',
+            image: item.imageUrl || 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=400&fit=crop',
+            price: Number(item.pricePerPerson) || 0,
+            isActive: item.isActive,
+            variants: [],
+            dietaryType: item.isVegan ? 'vegan' : item.isVegetarian ? 'veg' : 'non-veg',
+            dietaryTags: [],
+          })) || [],
+          assignedAddonGroups: [],
+        }));
+        setCategories(mappedCategories);
+      }
+    }
   };
 
-  const toggleMenuItemActive = (categoryId: string, itemId: string) => {
+  const toggleMenuItemActive = async (categoryId: string, itemId: string) => {
+    // Find the item
+    const category = categories.find(cat => cat.id === categoryId);
+    const item = category?.items.find(i => i.id === itemId);
+    if (!item) return;
+
+    // Update local state immediately for responsiveness
     setCategories(categories.map(cat =>
       cat.id === categoryId
         ? {
             ...cat,
-            items: cat.items.map(item =>
-              item.id === itemId ? { ...item, isActive: !item.isActive } : item
+            items: cat.items.map(i =>
+              i.id === itemId ? { ...i, isActive: !i.isActive } : i
             ),
           }
         : cat
     ));
+
+    // Persist to database
+    console.log('Toggling item active:', itemId, 'to', !item.isActive);
+    const result = await updateMenuItem(itemId, { isActive: !item.isActive });
+    console.log('Update item result:', result);
+    if (!result.success) {
+      console.error('Failed to update item:', result.error);
+      // Revert on error
+      setCategories(categories.map(cat =>
+        cat.id === categoryId
+          ? {
+              ...cat,
+              items: cat.items.map(i =>
+                i.id === itemId ? { ...i, isActive: item.isActive } : i
+              ),
+            }
+          : cat
+      ));
+      alert(result.error || 'Failed to update item');
+    }
   };
 
   const handleSaveItemSettings = () => {
@@ -814,15 +894,15 @@ export function MenuConfigPage() {
                                   ingredients: item.ingredients || '',
                                   allergens: item.allergens || [],
                                   additives: item.additives || [],
-                                  nutritionalInfo: item.nutritionalInfo || {
-                                    servingSize: '',
-                                    calories: '',
-                                    protein: '',
-                                    carbs: '',
-                                    fat: '',
-                                    fiber: '',
-                                    sugar: '',
-                                    sodium: '',
+                                  nutritionalInfo: {
+                                    servingSize: item.nutritionalInfo?.servingSize || '',
+                                    calories: item.nutritionalInfo?.calories || '',
+                                    protein: item.nutritionalInfo?.protein || '',
+                                    carbs: item.nutritionalInfo?.carbs || '',
+                                    fat: item.nutritionalInfo?.fat || '',
+                                    fiber: item.nutritionalInfo?.fiber || '',
+                                    sugar: item.nutritionalInfo?.sugar || '',
+                                    sodium: item.nutritionalInfo?.sodium || '',
                                   },
                                 });
                                 setIsItemSettingsModalOpen(true);
@@ -1242,28 +1322,57 @@ export function MenuConfigPage() {
             <Button
               variant="primary"
               icon={editingCategoryId ? Check : Plus}
-              onClick={() => {
+              onClick={async () => {
                 if (editingCategoryId) {
-                  setCategories(categories.map(cat =>
-                    cat.id === editingCategoryId
-                      ? { ...cat, name: newCategory.name, description: newCategory.description, image: newCategory.image ? URL.createObjectURL(newCategory.image) : newCategory.imageUrl }
-                      : cat
-                  ));
-                } else {
-                  const newCat: Category = {
-                    id: `cat-${Date.now()}`,
+                  // Update existing category
+                  console.log('Updating category:', editingCategoryId);
+                  const result = await updateMenuCategory(editingCategoryId, {
                     name: newCategory.name,
+                    nameDe: newCategory.name,
                     description: newCategory.description,
-                    image: newCategory.image ? URL.createObjectURL(newCategory.image) : newCategory.imageUrl,
-                    isActive: true,
-                    isExpanded: false,
-                    items: [],
-                  };
-                  setCategories([...categories, newCat]);
+                    descriptionDe: newCategory.description,
+                  });
+                  console.log('Update category result:', result);
+                  if (result.success) {
+                    setCategories(categories.map(cat =>
+                      cat.id === editingCategoryId
+                        ? { ...cat, name: newCategory.name, description: newCategory.description, image: newCategory.image ? URL.createObjectURL(newCategory.image) : newCategory.imageUrl }
+                        : cat
+                    ));
+                    setIsAddCategoryModalOpen(false);
+                    setNewCategory({ name: '', description: '', image: null, imageUrl: '' });
+                    setEditingCategoryId(null);
+                  } else {
+                    alert(result.error || 'Failed to update category');
+                  }
+                } else {
+                  // Create new category
+                  console.log('Creating category:', newCategory.name);
+                  const result = await createMenuCategory({
+                    name: newCategory.name,
+                    nameDe: newCategory.name,
+                    description: newCategory.description,
+                    descriptionDe: newCategory.description,
+                  });
+                  console.log('Create category result:', result);
+                  if (result.success && result.data) {
+                    const newCat: Category = {
+                      id: result.data.id,
+                      name: newCategory.name,
+                      description: newCategory.description,
+                      image: newCategory.image ? URL.createObjectURL(newCategory.image) : newCategory.imageUrl,
+                      isActive: true,
+                      isExpanded: false,
+                      items: [],
+                    };
+                    setCategories([...categories, newCat]);
+                    setIsAddCategoryModalOpen(false);
+                    setNewCategory({ name: '', description: '', image: null, imageUrl: '' });
+                    setEditingCategoryId(null);
+                  } else {
+                    alert(result.error || 'Failed to create category');
+                  }
                 }
-                setIsAddCategoryModalOpen(false);
-                setNewCategory({ name: '', description: '', image: null, imageUrl: '' });
-                setEditingCategoryId(null);
               }}
               disabled={!newCategory.name}
             >
@@ -1383,62 +1492,104 @@ export function MenuConfigPage() {
             <Button
               variant="primary"
               icon={editingMenuItemId ? Check : Plus}
-              onClick={() => {
+              onClick={async () => {
                 if (!activeCategoryId || !newMenuItem.name || !newMenuItem.price) return;
 
                 if (editingMenuItemId) {
                   // Edit existing item
-                  setCategories(categories.map(cat =>
-                    cat.id === activeCategoryId
-                      ? {
-                          ...cat,
-                          items: cat.items.map(item =>
-                            item.id === editingMenuItemId
-                              ? {
-                                  ...item,
-                                  name: newMenuItem.name,
-                                  description: newMenuItem.description,
-                                  price: parseFloat(newMenuItem.price),
-                                  image: newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl,
-                                  isActive: newMenuItem.isActive,
-                                  variants: newMenuItem.variants,
-                                }
-                              : item
-                          ),
-                        }
-                      : cat
-                  ));
+                  console.log('Updating menu item:', editingMenuItemId);
+                  const result = await updateMenuItem(editingMenuItemId, {
+                    name: newMenuItem.name,
+                    nameDe: newMenuItem.name,
+                    description: newMenuItem.description,
+                    descriptionDe: newMenuItem.description,
+                    pricePerPerson: newMenuItem.price,
+                    imageUrl: newMenuItem.imageUrl || newMenuItem.image?.name || '',
+                    isActive: newMenuItem.isActive,
+                  });
+                  console.log('Update item result:', result);
+                  if (result.success) {
+                    setCategories(categories.map(cat =>
+                      cat.id === activeCategoryId
+                        ? {
+                            ...cat,
+                            items: cat.items.map(item =>
+                              item.id === editingMenuItemId
+                                ? {
+                                    ...item,
+                                    name: newMenuItem.name,
+                                    description: newMenuItem.description,
+                                    price: Number(newMenuItem.price),
+                                    image: newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl,
+                                    isActive: newMenuItem.isActive,
+                                    variants: newMenuItem.variants,
+                                  }
+                                : item
+                            ),
+                          }
+                        : cat
+                    ));
+                    setIsAddMenuItemModalOpen(false);
+                    setNewMenuItem({
+                      name: '',
+                      description: '',
+                      price: '',
+                      image: null,
+                      imageUrl: '',
+                      isActive: true,
+                      variants: [],
+                    });
+                    setActiveCategoryId(null);
+                    setEditingMenuItemId(null);
+                  } else {
+                    alert(result.error || 'Failed to update menu item');
+                  }
                 } else {
                   // Add new item
-                  const newItem: MenuItemData = {
-                    id: `item-${Date.now()}`,
+                  console.log('Creating menu item:', newMenuItem.name);
+                  const result = await createMenuItem({
+                    categoryId: activeCategoryId,
                     name: newMenuItem.name,
+                    nameDe: newMenuItem.name,
                     description: newMenuItem.description,
-                    price: parseFloat(newMenuItem.price),
-                    image: newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl,
-                    isActive: newMenuItem.isActive,
-                    variants: newMenuItem.variants,
-                  };
+                    descriptionDe: newMenuItem.description,
+                    pricePerPerson: Number(newMenuItem.price),
+                    imageUrl: newMenuItem.imageUrl || newMenuItem.image?.name || '',
+                  });
+                  console.log('Create item result:', result);
 
-                  setCategories(categories.map(cat =>
-                    cat.id === activeCategoryId
-                      ? { ...cat, items: [...cat.items, newItem] }
-                      : cat
-                  ));
+                  if (result.success && result.data) {
+                    const newItem: MenuItemData = {
+                      id: result.data.id,
+                      name: newMenuItem.name,
+                      description: newMenuItem.description,
+                      price: Number(newMenuItem.price),
+                      image: newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl,
+                      isActive: newMenuItem.isActive,
+                      variants: newMenuItem.variants,
+                    };
+
+                    setCategories(categories.map(cat =>
+                      cat.id === activeCategoryId
+                        ? { ...cat, items: [...cat.items, newItem] }
+                        : cat
+                    ));
+                    setIsAddMenuItemModalOpen(false);
+                    setNewMenuItem({
+                      name: '',
+                      description: '',
+                      price: '',
+                      image: null,
+                      imageUrl: '',
+                      isActive: true,
+                      variants: [],
+                    });
+                    setActiveCategoryId(null);
+                    setEditingMenuItemId(null);
+                  } else {
+                    alert(result.error || 'Failed to create menu item');
+                  }
                 }
-
-                setIsAddMenuItemModalOpen(false);
-                setNewMenuItem({
-                  name: '',
-                  description: '',
-                  price: '',
-                  image: null,
-                  imageUrl: '',
-                  isActive: true,
-                  variants: [],
-                });
-                setActiveCategoryId(null);
-                setEditingMenuItemId(null);
               }}
               disabled={!activeCategoryId || !newMenuItem.name || !newMenuItem.price}
             >
@@ -2050,8 +2201,18 @@ export function MenuConfigPage() {
       <ConfirmationModal
         isOpen={!!deleteCategoryId}
         onClose={() => setDeleteCategoryId(null)}
-        onConfirm={() => {
-          setCategories(categories.filter(cat => cat.id !== deleteCategoryId));
+        onConfirm={async () => {
+          // Call server action to delete from database
+          if (deleteCategoryId) {
+            console.log('Deleting category:', deleteCategoryId);
+            const result = await deleteMenuCategory(deleteCategoryId);
+            console.log('Delete category result:', result);
+            if (result.success) {
+              setCategories(categories.filter(cat => cat.id !== deleteCategoryId));
+            } else {
+              alert(result.error || 'Failed to delete category');
+            }
+          }
           setDeleteCategoryId(null);
         }}
         title="Delete Category"
@@ -2065,16 +2226,26 @@ export function MenuConfigPage() {
           setDeleteMenuItemId(null);
           setActiveCategoryId(null);
         }}
-        onConfirm={() => {
-          setCategories(categories.map(cat => {
-            if (cat.id === activeCategoryId) {
-              return {
-                ...cat,
-                items: cat.items.filter(item => item.id !== deleteMenuItemId),
-              };
+        onConfirm={async () => {
+          // Call server action to delete from database
+          if (deleteMenuItemId) {
+            console.log('Deleting menu item:', deleteMenuItemId);
+            const result = await deleteMenuItem(deleteMenuItemId);
+            console.log('Delete item result:', result);
+            if (result.success) {
+              setCategories(categories.map(cat => {
+                if (cat.id === activeCategoryId) {
+                  return {
+                    ...cat,
+                    items: cat.items.filter(item => item.id !== deleteMenuItemId),
+                  };
+                }
+                return cat;
+              }));
+            } else {
+              alert(result.error || 'Failed to delete menu item');
             }
-            return cat;
-          }));
+          }
           setDeleteMenuItemId(null);
           setActiveCategoryId(null);
         }}

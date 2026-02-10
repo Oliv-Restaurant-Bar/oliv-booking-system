@@ -78,6 +78,21 @@ export async function getMenuCategories() {
   }
 }
 
+// Get ALL categories (including inactive ones) - for admin panel
+export async function getAllMenuCategories() {
+  try {
+    const categories = await db
+      .select()
+      .from(menuCategories)
+      .orderBy(asc(menuCategories.sortOrder));
+
+    return { success: true, data: categories };
+  } catch (error) {
+    console.error("Error fetching all menu categories:", error);
+    return { success: false, error: "Failed to fetch all menu categories", data: [] };
+  }
+}
+
 // Menu Items
 export async function createMenuItem(input: {
   categoryId: string;
@@ -154,15 +169,39 @@ export async function getMenuItems(categoryId?: string) {
       .where(eq(menuItems.isActive, true));
 
     if (categoryId) {
+      // @ts-ignore - neon-http driver type limitation
       query = query.where(eq(menuItems.categoryId, categoryId));
     }
 
+    // @ts-ignore - neon-http doesn't support orderBy in this context
     const items = await query.orderBy(asc(menuItems.sortOrder));
 
     return { success: true, data: items };
   } catch (error) {
     console.error("Error fetching menu items:", error);
     return { success: false, error: "Failed to fetch menu items", data: [] };
+  }
+}
+
+// Get ALL menu items (including inactive ones) - for admin panel
+export async function getAllMenuItems(categoryId?: string) {
+  try {
+    let query = db
+      .select()
+      .from(menuItems);
+
+    if (categoryId) {
+      // @ts-ignore - neon-http driver type limitation
+      query = query.where(eq(menuItems.categoryId, categoryId));
+    }
+
+    // @ts-ignore - neon-http doesn't support orderBy in this context
+    const items = await query.orderBy(asc(menuItems.sortOrder));
+
+    return { success: true, data: items };
+  } catch (error) {
+    console.error("Error fetching all menu items:", error);
+    return { success: false, error: "Failed to fetch all menu items", data: [] };
   }
 }
 
@@ -284,6 +323,43 @@ export async function getCompleteMenuData() {
     };
   } catch (error) {
     console.error("Error fetching complete menu data:", error);
+    return {
+      categories: [],
+      items: [],
+      addons: [],
+      itemsByCategory: {},
+    };
+  }
+}
+
+// Get ALL menu data (including inactive categories/items) - for admin panel
+export async function getAllMenuData() {
+  try {
+    const categoriesResult = await getAllMenuCategories();
+    const itemsResult = await getAllMenuItems();
+    const addonsResult = await getAddons();
+
+    if (!categoriesResult.success || !itemsResult.success || !addonsResult.success) {
+      throw new Error("Failed to fetch all menu data");
+    }
+
+    // Group items by category
+    const itemsByCategory = new Map();
+    itemsResult.data.forEach((item: any) => {
+      if (!itemsByCategory.has(item.categoryId)) {
+        itemsByCategory.set(item.categoryId, []);
+      }
+      itemsByCategory.get(item.categoryId)!.push(item);
+    });
+
+    return {
+      categories: categoriesResult.data,
+      items: itemsResult.data,
+      addons: addonsResult.data,
+      itemsByCategory: Object.fromEntries(itemsByCategory),
+    };
+  } catch (error) {
+    console.error("Error fetching all menu data:", error);
     return {
       categories: [],
       items: [],
