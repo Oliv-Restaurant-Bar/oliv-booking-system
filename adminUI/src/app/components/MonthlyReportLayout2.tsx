@@ -4,7 +4,7 @@
 // Desktop: 3 columns
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Download } from 'lucide-react';
+import { ChevronDown, ChevronUp, Download, CalendarDays } from 'lucide-react';
 import { YearDropdown } from './YearDropdown';
 
 interface MonthData {
@@ -41,34 +41,41 @@ export function MonthlyReportLayout2({ data }: { data: MonthData[] }) {
   };
 
   return (
-    <div className="bg-card border border-border rounded-xl p-6">
+    <div className="bg-card border border-border rounded-xl p-4 md:p-6">
       {/* Header with Title, Year Dropdown, and Export Button */}
-      <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
-        <h3 className="text-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-          Monthly Booking Report
-        </h3>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 md:mb-6 gap-3 md:gap-4">
         <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <CalendarDays className="w-5 h-5 text-primary" />
+          </div>
+          <h3 className="text-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+            Monthly Booking Report
+          </h3>
+        </div>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
           {/* Year Dropdown - Using consistent dropdown styling */}
-          <YearDropdown
-            value={selectedYear}
-            onChange={setSelectedYear}
-            years={['2024', '2025', '2026', '2027']}
-          />
+          <div className="flex-1 sm:flex-none">
+            <YearDropdown
+              value={selectedYear}
+              onChange={setSelectedYear}
+              years={['2024', '2025', '2026', '2027']}
+            />
+          </div>
 
           {/* Export Button - Using consistent button styling */}
           <button
             onClick={handleExport}
-            className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary hover:text-white transition-colors flex items-center gap-2 cursor-pointer"
+            className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary hover:text-white transition-colors flex items-center gap-2 cursor-pointer min-h-[44px]"
             style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
           >
             <Download className="w-4 h-4" />
-            Export
+            <span className="hidden sm:inline">Export</span>
           </button>
         </div>
       </div>
 
       {/* Grid Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
         {data.map((month, index) => {
           const isExpanded = expandedMonths.has(index);
           

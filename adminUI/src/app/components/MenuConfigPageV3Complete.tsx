@@ -1,11 +1,28 @@
 import { useState } from 'react';
-import { GripVertical, Edit2, MoreVertical, Plus, ChevronDown, ChevronRight, Trash2, Eye, EyeOff, Search, UtensilsCrossed, ListPlus, Upload, X, Copy, Settings, Check } from 'lucide-react';
+import { GripVertical, Edit2, MoreVertical, Plus, ChevronDown, ChevronRight, Trash2, Eye, EyeOff, Search, UtensilsCrossed, ListPlus, Upload, X, Copy, Settings, Check, Circle } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Modal } from './Modal';
 import { ConfirmationModal } from './ConfirmationModal';
 import { ItemSettingsModal } from './ItemSettingsModal';
 import { Button } from './Button';
 import { Tooltip } from './Tooltip';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface MenuItemData {
   id: string;
@@ -15,11 +32,13 @@ interface MenuItemData {
   price: number;
   isActive: boolean;
   variants: VariantOption[];
+  pricingType?: 'per-person' | 'flat-rate';
   dietaryType?: 'veg' | 'non-veg' | 'vegan';
   dietaryTags?: string[];
   ingredients?: string;
   allergens?: string[];
   additives?: string[];
+  assignedAddonGroups?: string[];
   nutritionalInfo?: {
     servingSize?: string;
     calories?: string;
@@ -36,6 +55,7 @@ interface VariantOption {
   id: string;
   name: string;
   price: number;
+  description?: string;
 }
 
 interface Category {
@@ -85,9 +105,10 @@ const mockCategories: Category[] = [
         image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400&h=400&fit=crop',
         price: 12.50,
         isActive: true,
+        pricingType: 'per-person' as const,
         variants: [
-          { id: 'v1', name: 'Regular', price: 12.50 },
-          { id: 'v2', name: 'Large', price: 15.00 },
+          { id: 'v1', name: 'Regular', price: 12.50, description: 'Standard portion' },
+          { id: 'v2', name: 'Large', price: 15.00, description: 'Extra filling' },
         ],
       },
       {
@@ -97,6 +118,7 @@ const mockCategories: Category[] = [
         image: 'https://images.unsplash.com/photo-1624726175512-19b9baf9fbd1?w=400&h=400&fit=crop',
         price: 14.00,
         isActive: true,
+        pricingType: 'per-person' as const,
         variants: [],
       },
     ],
@@ -116,10 +138,11 @@ const mockCategories: Category[] = [
         image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=400&fit=crop',
         price: 15.00,
         isActive: true,
+        pricingType: 'flat-rate' as const,
         variants: [
-          { id: 'v3', name: 'Small', price: 12.00 },
-          { id: 'v4', name: 'Medium', price: 15.00 },
-          { id: 'v5', name: 'Large', price: 18.00 },
+          { id: 'v3', name: 'Small', price: 12.00, description: '8 inch' },
+          { id: 'v4', name: 'Medium', price: 15.00, description: '12 inch' },
+          { id: 'v5', name: 'Large', price: 18.00, description: '16 inch' },
         ],
       },
     ],
@@ -207,6 +230,152 @@ const mockAddonGroups: AddonGroup[] = [
   },
 ];
 
+// Sortable Category Wrapper Component
+function SortableCategoryWrapper({ id, children }: { id: string; children: (props: any) => React.ReactNode }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return children({ ref: setNodeRef, style, attributes, listeners });
+}
+
+// Sortable Addon Group Wrapper Component
+function SortableAddonGroupWrapper({ id, children }: { id: string; children: (props: any) => React.ReactNode }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return children({ ref: setNodeRef, style, attributes, listeners });
+}
+
+// Sortable Addon Item Wrapper Component
+function SortableAddonItemWrapper({ id, children }: { id: string; children: (props: any) => React.ReactNode }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return children({ ref: setNodeRef, style, attributes, listeners });
+}
+
+// Sortable Menu Item Wrapper Component
+function SortableMenuItemWrapper({ id, children }: { id: string; children: (props: any) => React.ReactNode }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return children({ ref: setNodeRef, style, attributes, listeners });
+}
+
+// Sortable Variant Component
+function SortableVariant({ variant, index, updateVariant, removeVariant }: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: variant.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="p-3 bg-muted rounded-lg space-y-2">
+      <div className="flex items-center gap-2">
+        <button
+          {...attributes}
+          {...listeners}
+          className="text-muted-foreground hover:text-foreground transition-colors cursor-grab active:cursor-grabbing flex-shrink-0"
+        >
+          <GripVertical className="w-4 h-4" />
+        </button>
+        <input
+          type="text"
+          value={variant.name}
+          onChange={(e) => updateVariant(index, 'name', e.target.value)}
+          placeholder="Variant name (e.g., Small, Medium)"
+          className="flex-1 px-3 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+          style={{ fontSize: 'var(--text-base)' }}
+        />
+        <div className="relative w-32">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>€</span>
+          <input
+            type="number"
+            step="0.01"
+            value={variant.price}
+            onChange={(e) => updateVariant(index, 'price', parseFloat(e.target.value) || 0)}
+            placeholder="0.00"
+            className="w-full pl-8 pr-3 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+            style={{ fontSize: 'var(--text-base)' }}
+          />
+        </div>
+        <button
+          onClick={() => removeVariant(index)}
+          className="p-2 hover:bg-accent rounded-lg transition-colors text-destructive"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+      <textarea
+        value={variant.description || ''}
+        onChange={(e) => updateVariant(index, 'description', e.target.value)}
+        placeholder="Optional description (e.g., 'Serves 1-2 people')"
+        rows={2}
+        className="w-full px-3 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+        style={{ fontSize: 'var(--text-small)' }}
+      />
+    </div>
+  );
+}
+
 export function MenuConfigPage() {
   const [categories, setCategories] = useState(mockCategories);
   const [addonGroups, setAddonGroups] = useState(mockAddonGroups);
@@ -231,6 +400,7 @@ export function MenuConfigPage() {
   const [currentGroupId, setCurrentGroupId] = useState<string | null>(null);
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [isAddChoiceModalOpen, setIsAddChoiceModalOpen] = useState(false);
+  const [choiceMenuItemId, setChoiceMenuItemId] = useState<string | null>(null);
   const [choiceCategoryId, setChoiceCategoryId] = useState<string | null>(null);
   const [selectedAddonGroups, setSelectedAddonGroups] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState({
@@ -246,6 +416,7 @@ export function MenuConfigPage() {
     image: null as File | null,
     imageUrl: '' as string,
     isActive: true,
+    pricingType: 'per-person' as 'per-person' | 'flat-rate',
     variants: [] as VariantOption[],
   });
   const [newGroup, setNewGroup] = useState({
@@ -366,6 +537,7 @@ export function MenuConfigPage() {
       id: `variant-${Date.now()}`,
       name: '',
       price: 0,
+      description: '',
     };
     setNewMenuItem({
       ...newMenuItem,
@@ -373,7 +545,7 @@ export function MenuConfigPage() {
     });
   };
 
-  const updateVariant = (index: number, field: 'name' | 'price', value: string | number) => {
+  const updateVariant = (index: number, field: 'name' | 'price' | 'description', value: string | number) => {
     const updatedVariants = [...newMenuItem.variants];
     updatedVariants[index] = {
       ...updatedVariants[index],
@@ -392,6 +564,88 @@ export function MenuConfigPage() {
     });
   };
 
+  // Drag and Drop Handlers
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleCategoryDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setCategories((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
+  const handleAddonGroupDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setAddonGroups((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
+  const handleVariantDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setNewMenuItem((prev) => {
+        const oldIndex = prev.variants.findIndex((v) => v.id === active.id);
+        const newIndex = prev.variants.findIndex((v) => v.id === over.id);
+        return {
+          ...prev,
+          variants: arrayMove(prev.variants, oldIndex, newIndex),
+        };
+      });
+    }
+  };
+
+  const handleAddonItemDragEnd = (event: DragEndEvent, groupId: string) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setAddonGroups((groups) =>
+        groups.map((group) => {
+          if (group.id === groupId) {
+            const oldIndex = group.items.findIndex((item) => item.id === active.id);
+            const newIndex = group.items.findIndex((item) => item.id === over.id);
+            return {
+              ...group,
+              items: arrayMove(group.items, oldIndex, newIndex),
+            };
+          }
+          return group;
+        })
+      );
+    }
+  };
+
+  const handleMenuItemDragEnd = (event: DragEndEvent, categoryId: string) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setCategories((categories) =>
+        categories.map((category) => {
+          if (category.id === categoryId) {
+            const oldIndex = category.items.findIndex((item) => item.id === active.id);
+            const newIndex = category.items.findIndex((item) => item.id === over.id);
+            return {
+              ...category,
+              items: arrayMove(category.items, oldIndex, newIndex),
+            };
+          }
+          return category;
+        })
+      );
+    }
+  };
+
   const filteredCategories = categories.filter(cat =>
     cat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     cat.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -402,14 +656,14 @@ export function MenuConfigPage() {
   );
 
   return (
-    <div className="px-8 pt-6 pb-1 flex flex-col min-h-full">
+    <div className="px-4 md:px-8 pt-4 md:pt-6 pb-1 flex flex-col min-h-full">
       <div className="flex-1">
       {/* Tabs */}
-      <div className="flex items-center gap-1 mb-6">
-        <div className="inline-flex items-center gap-1 p-1 bg-card border border-border rounded-lg">
+      <div className="flex items-center gap-1 mb-4 md:mb-6 overflow-x-auto">
+        <div className="inline-flex items-center gap-1 p-1 bg-card border border-border rounded-lg min-w-max">
           <button
             onClick={() => setActiveTab('items')}
-            className={`px-4 py-2 rounded-md flex items-center gap-2 transition-colors ${
+            className={`px-3 md:px-4 py-2 rounded-md flex items-center gap-2 transition-colors min-h-[44px] ${
               activeTab === 'items'
                 ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:text-foreground hover:bg-accent'
@@ -417,11 +671,12 @@ export function MenuConfigPage() {
             style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
           >
             <UtensilsCrossed className="w-4 h-4" />
-            Menu Categories
+            <span className="hidden sm:inline">Menu Categories</span>
+            <span className="sm:hidden">Menu</span>
           </button>
           <button
             onClick={() => setActiveTab('addons')}
-            className={`px-4 py-2 rounded-md flex items-center gap-2 transition-colors ${
+            className={`px-3 md:px-4 py-2 rounded-md flex items-center gap-2 transition-colors min-h-[44px] ${
               activeTab === 'addons'
                 ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:text-foreground hover:bg-accent'
@@ -429,7 +684,8 @@ export function MenuConfigPage() {
             style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
           >
             <ListPlus className="w-4 h-4" />
-            Choices & Addons
+            <span className="hidden sm:inline">Choices & Addons</span>
+            <span className="sm:hidden">Addons</span>
           </button>
         </div>
       </div>
@@ -438,17 +694,17 @@ export function MenuConfigPage() {
       {activeTab === 'items' && (
         <div className="bg-card border border-border rounded-xl overflow-hidden">
           {/* Search Bar with Add Button */}
-          <div className="p-4 border-b border-border">
-            <div className="flex items-center gap-3">
+          <div className="p-3 md:p-4 border-b border-border">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="Search menu categories by name, description..."
+                  placeholder="Search menu categories..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-                  style={{ fontSize: 'var(--text-base)' }}
+                  className="w-full pl-10 pr-4 py-2.5 md:py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                  style={{ fontSize: 'var(--text-base)', minHeight: '44px' }}
                 />
               </div>
               <Button
@@ -459,22 +715,38 @@ export function MenuConfigPage() {
                   setNewCategory({ name: '', description: '', image: null, imageUrl: '' });
                   setIsAddCategoryModalOpen(true);
                 }}
+                className="w-full sm:w-auto min-h-[44px]"
               >
-                Add New Category
+                <span className="hidden sm:inline">Add New Category</span>
+                <span className="sm:hidden">Add Category</span>
               </Button>
             </div>
           </div>
 
           {/* Categories List */}
-          <div>
-            {filteredCategories.map((category) => (
-              <div key={category.id}>
-                {/* Category Row */}
-                <div className="px-6 py-4 border-b border-border hover:bg-accent/30 transition-colors flex items-center gap-4 group">
-                  {/* Drag Handle */}
-                  <button className="text-muted-foreground hover:text-foreground transition-colors cursor-grab active:cursor-grabbing flex-shrink-0">
-                    <GripVertical className="w-5 h-5" />
-                  </button>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleCategoryDragEnd}
+          >
+            <SortableContext
+              items={filteredCategories.map(c => c.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {filteredCategories.map((category) => (
+                <SortableCategoryWrapper key={category.id} id={category.id}>
+                  {({ ref, style, attributes, listeners }) => (
+                    <div ref={ref} style={style}>
+                      {/* Category Row */}
+                      <div className="px-3 md:px-6 py-3 md:py-4 border-b border-border hover:bg-accent/30 transition-colors flex items-center gap-2 md:gap-4 group">
+                        {/* Drag Handle - Hide on mobile */}
+                        <button 
+                          {...attributes}
+                          {...listeners}
+                          className="hidden sm:block text-muted-foreground hover:text-foreground transition-colors cursor-grab active:cursor-grabbing flex-shrink-0"
+                        >
+                          <GripVertical className="w-5 h-5" />
+                        </button>
 
                   {/* Expand/Collapse Button */}
                   <button
@@ -491,7 +763,7 @@ export function MenuConfigPage() {
                   </button>
 
                   {/* Image - Larger rectangular */}
-                  <div className="w-24 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-muted relative">
+                  <div className="w-16 h-12 md:w-24 md:h-16 rounded-lg overflow-hidden flex-shrink-0 bg-muted relative">
                     <ImageWithFallback
                       src={category.image}
                       alt={category.name}
@@ -501,17 +773,17 @@ export function MenuConfigPage() {
 
                   {/* Content - Name, Description, Item Count */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <h4 className="text-foreground truncate" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
                         {category.name}
                       </h4>
                       {category.items.length > 0 && (
-                        <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full" style={{ fontSize: 'var(--text-small)' }}>
+                        <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full flex-shrink-0" style={{ fontSize: 'var(--text-small)' }}>
                           {category.items.length} {category.items.length === 1 ? 'item' : 'items'}
                         </span>
                       )}
                     </div>
-                    <p className="text-muted-foreground line-clamp-1" style={{ fontSize: 'var(--text-small)' }}>
+                    <p className="text-muted-foreground line-clamp-1 hidden sm:block" style={{ fontSize: 'var(--text-small)' }}>
                       {category.description}
                     </p>
                   </div>
@@ -548,6 +820,7 @@ export function MenuConfigPage() {
                             image: null,
                             imageUrl: '',
                             isActive: true,
+                            pricingType: 'per-person',
                             variants: [],
                           });
                           setIsAddMenuItemModalOpen(true);
@@ -555,19 +828,6 @@ export function MenuConfigPage() {
                         className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
                       >
                         <Plus className="w-4 h-4" />
-                      </button>
-                    </Tooltip>
-
-                    <Tooltip title="Add choice" position="top">
-                      <button 
-                        onClick={() => {
-                          setChoiceCategoryId(category.id);
-                          setSelectedAddonGroups(category.assignedAddonGroups || []);
-                          setIsAddChoiceModalOpen(true);
-                        }}
-                        className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
-                      >
-                        <ListPlus className="w-4 h-4" />
                       </button>
                     </Tooltip>
 
@@ -648,21 +908,37 @@ export function MenuConfigPage() {
 
                 {/* Menu Items - Nested under category */}
                 {category.isExpanded && category.items.length > 0 && (
-                  <div className="bg-muted/30">
-                    {category.items.map((item, index) => (
-                      <div
-                        key={item.id}
-                        className={`pl-20 pr-6 py-3 flex items-center gap-4 hover:bg-accent/30 transition-colors group ${
-                          index !== category.items.length - 1 ? 'border-b border-border/50' : ''
-                        }`}
-                      >
-                        {/* Drag Handle */}
-                        <button className="text-muted-foreground hover:text-foreground transition-colors cursor-grab active:cursor-grabbing flex-shrink-0">
-                          <GripVertical className="w-4 h-4" />
-                        </button>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={(event) => handleMenuItemDragEnd(event, category.id)}
+                  >
+                    <SortableContext
+                      items={category.items.map(item => item.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="bg-muted/30">
+                        {category.items.map((item, index) => (
+                          <SortableMenuItemWrapper key={item.id} id={item.id}>
+                            {({ ref, style, attributes, listeners }) => (
+                              <div
+                                ref={ref}
+                                style={style}
+                                className={`pl-8 sm:pl-20 pr-3 md:pr-6 py-3 flex items-center gap-2 md:gap-4 hover:bg-accent/30 transition-colors group ${
+                                  index !== category.items.length - 1 ? 'border-b border-border/50' : ''
+                                }`}
+                              >
+                                {/* Drag Handle - Hide on mobile */}
+                                <button 
+                                  {...attributes}
+                                  {...listeners}
+                                  className="hidden sm:block text-muted-foreground hover:text-foreground transition-colors cursor-grab active:cursor-grabbing flex-shrink-0"
+                                >
+                                  <GripVertical className="w-4 h-4" />
+                                </button>
 
                         {/* Image - Smaller for items */}
-                        <div className="w-16 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted relative">
+                        <div className="w-12 h-10 sm:w-16 sm:h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted relative">
                           <ImageWithFallback
                             src={item.image}
                             alt={item.name}
@@ -677,14 +953,34 @@ export function MenuConfigPage() {
 
                         {/* Content */}
                         <div className="flex-1 min-w-0">
-                          <h5 className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                            {item.name}
-                          </h5>
-                          <p className="text-muted-foreground line-clamp-1" style={{ fontSize: 'var(--text-small)' }}>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            {/* Dietary Icon */}
+                            <div className={`w-4 h-4 flex-shrink-0 flex items-center justify-center border-2 rounded ${
+                              item.dietaryType === 'non-veg' 
+                                ? 'border-red-600' 
+                                : item.dietaryType === 'vegan'
+                                ? 'border-green-700'
+                                : 'border-green-600'
+                            }`}>
+                              <Circle 
+                                className={`w-2 h-2 ${
+                                  item.dietaryType === 'non-veg' 
+                                    ? 'text-red-600 fill-red-600' 
+                                    : item.dietaryType === 'vegan'
+                                    ? 'text-green-700 fill-green-700'
+                                    : 'text-green-600 fill-green-600'
+                                }`}
+                              />
+                            </div>
+                            <h5 className="text-foreground truncate flex-1" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                              {item.name}
+                            </h5>
+                          </div>
+                          <p className="text-muted-foreground line-clamp-1 hidden sm:block" style={{ fontSize: 'var(--text-small)' }}>
                             {item.description}
                           </p>
-                          {item.variants.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 mt-1.5">
+                          {(item.variants.length > 0 || (item.assignedAddonGroups && item.assignedAddonGroups.length > 0)) && (
+                            <div className="hidden sm:flex flex-wrap gap-1.5 mt-1.5 items-center">
                               {item.variants.map((variant) => (
                                 <span
                                   key={variant.id}
@@ -694,6 +990,12 @@ export function MenuConfigPage() {
                                   {variant.name}: €{variant.price.toFixed(2)}
                                 </span>
                               ))}
+                              {/* Addon Count */}
+                              {item.assignedAddonGroups && item.assignedAddonGroups.length > 0 && (
+                                <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                                  • {item.assignedAddonGroups.length} {item.assignedAddonGroups.length === 1 ? 'choice' : 'choices'}
+                                </span>
+                              )}
                             </div>
                           )}
                         </div>
@@ -719,6 +1021,7 @@ export function MenuConfigPage() {
                                   image: null,
                                   imageUrl: item.image,
                                   isActive: item.isActive,
+                                  pricingType: item.pricingType || 'per-person',
                                   variants: item.variants,
                                 });
                                 setIsAddMenuItemModalOpen(true);
@@ -757,6 +1060,19 @@ export function MenuConfigPage() {
                               <Settings className="w-4 h-4" />
                             </button>
                           </Tooltip>
+                          <Tooltip title="Add choice" position="top">
+                            <button
+                              onClick={() => {
+                                setChoiceCategoryId(category.id);
+                                setChoiceMenuItemId(item.id);
+                                setSelectedAddonGroups(item.assignedAddonGroups || []);
+                                setIsAddChoiceModalOpen(true);
+                              }}
+                              className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                            >
+                              <ListPlus className="w-4 h-4" />
+                            </button>
+                          </Tooltip>
                           <Tooltip title={item.isActive ? "Hide item" : "Show item"} position="top">
                             <button
                               onClick={() => toggleMenuItemActive(category.id, item.id)}
@@ -781,14 +1097,18 @@ export function MenuConfigPage() {
                             </button>
                           </Tooltip>
                         </div>
+                              </div>
+                            )}
+                          </SortableMenuItemWrapper>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </SortableContext>
+                  </DndContext>
                 )}
 
                 {/* Empty state for expanded category with no items */}
                 {category.isExpanded && category.items.length === 0 && (
-                  <div className="bg-muted/30 pl-20 pr-6 py-8 text-center">
+                  <div className="bg-muted/30 pl-8 sm:pl-20 pr-3 md:pr-6 py-8 text-center">
                     <p className="text-muted-foreground mb-3" style={{ fontSize: 'var(--text-base)' }}>
                       No items in this category yet
                     </p>
@@ -803,11 +1123,12 @@ export function MenuConfigPage() {
                           image: null,
                           imageUrl: '',
                           isActive: true,
+                          pricingType: 'per-person',
                           variants: [],
                         });
                         setIsAddMenuItemModalOpen(true);
                       }}
-                      className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity inline-flex items-center gap-2"
+                      className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity inline-flex items-center gap-2 min-h-[44px]"
                     >
                       <Plus className="w-4 h-4" />
                       <span style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
@@ -816,9 +1137,12 @@ export function MenuConfigPage() {
                     </button>
                   </div>
                 )}
-              </div>
-            ))}
-          </div>
+                    </div>
+                  )}
+                </SortableCategoryWrapper>
+              ))}
+            </SortableContext>
+          </DndContext>
         </div>
       )}
 
@@ -826,15 +1150,15 @@ export function MenuConfigPage() {
       {activeTab === 'addons' && (
         <div className="bg-card border border-border rounded-xl overflow-hidden">
           {/* Search Bar with Add Button */}
-          <div className="p-4 border-b border-border">
-            <div className="flex items-center gap-3">
+          <div className="p-3 md:p-4 border-b border-border">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="Search choice groups by name..."
-                  className="w-full pl-10 pr-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-                  style={{ fontSize: 'var(--text-base)' }}
+                  placeholder="Search choice groups..."
+                  className="w-full pl-10 pr-4 py-2.5 md:py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                  style={{ fontSize: 'var(--text-base)', minHeight: '44px' }}
                 />
               </div>
               <Button
@@ -844,6 +1168,7 @@ export function MenuConfigPage() {
                   setNewGroup({ name: '', subtitle: '', type: 'optional', minSelect: 0, maxSelect: 1 });
                   setIsAddGroupModalOpen(true);
                 }}
+                className="w-full sm:w-auto min-h-[44px]"
               >
                 Add Group
               </Button>
@@ -851,15 +1176,29 @@ export function MenuConfigPage() {
           </div>
 
           {/* Choice Groups List */}
-          <div>
-            {addonGroups.map((group) => (
-              <div key={group.id}>
-                {/* Group Row */}
-                <div className="px-6 py-4 border-b border-border hover:bg-accent/30 transition-colors flex items-center gap-4 group">
-                  {/* Drag Handle */}
-                  <button className="text-muted-foreground hover:text-foreground transition-colors cursor-grab active:cursor-grabbing flex-shrink-0">
-                    <GripVertical className="w-5 h-5" />
-                  </button>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleAddonGroupDragEnd}
+          >
+            <SortableContext
+              items={addonGroups.map(g => g.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {addonGroups.map((group) => (
+                <SortableAddonGroupWrapper key={group.id} id={group.id}>
+                  {({ ref, style, attributes, listeners }) => (
+                    <div ref={ref} style={style}>
+                      {/* Group Row */}
+                      <div className="px-3 md:px-6 py-3 md:py-4 border-b border-border hover:bg-accent/30 transition-colors flex items-center gap-2 md:gap-4 group">
+                        {/* Drag Handle - Hide on mobile */}
+                        <button 
+                          {...attributes}
+                          {...listeners}
+                          className="hidden sm:block text-muted-foreground hover:text-foreground transition-colors cursor-grab active:cursor-grabbing flex-shrink-0"
+                        >
+                          <GripVertical className="w-5 h-5" />
+                        </button>
 
                   {/* Expand/Collapse Button */}
                   <button
@@ -875,24 +1214,27 @@ export function MenuConfigPage() {
 
                   {/* Content - Name, Description, Item Count */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <h4 className="text-foreground truncate" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
                         {group.name}
                       </h4>
                       {group.isRequired && (
-                        <span className="px-2 py-0.5 bg-destructive/10 text-destructive rounded-full" style={{ fontSize: 'var(--text-small)' }}>
+                        <span className="px-2 py-0.5 bg-destructive/10 text-destructive rounded-full flex-shrink-0" style={{ fontSize: 'var(--text-small)' }}>
                           Required
                         </span>
                       )}
                       {group.items.length > 0 && (
-                        <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full" style={{ fontSize: 'var(--text-small)' }}>
+                        <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full flex-shrink-0" style={{ fontSize: 'var(--text-small)' }}>
                           {group.items.length} {group.items.length === 1 ? 'item' : 'items'}
                         </span>
                       )}
                     </div>
-                    <p className="text-muted-foreground line-clamp-1" style={{ fontSize: 'var(--text-small)' }}>
+                    <p className="text-muted-foreground line-clamp-1 hidden sm:block" style={{ fontSize: 'var(--text-small)' }}>
                       Select {group.minSelect}-{group.maxSelect}
                       {group.subtitle && ` • ${group.subtitle}`}
+                    </p>
+                    <p className="text-muted-foreground sm:hidden" style={{ fontSize: 'var(--text-small)' }}>
+                      {group.minSelect}-{group.maxSelect}
                     </p>
                   </div>
 
@@ -1011,18 +1353,34 @@ export function MenuConfigPage() {
 
                 {/* Addon Items - Nested under group */}
                 {group.isExpanded && group.items.length > 0 && (
-                  <div className="bg-muted/30">
-                    {group.items.map((item, index) => (
-                      <div
-                        key={item.id}
-                        className={`pl-20 pr-6 py-3 flex items-center gap-4 hover:bg-accent/30 transition-colors group ${
-                          index !== group.items.length - 1 ? 'border-b border-border/50' : ''
-                        }`}
-                      >
-                        {/* Drag Handle */}
-                        <button className="text-muted-foreground hover:text-foreground transition-colors cursor-grab active:cursor-grabbing flex-shrink-0">
-                          <GripVertical className="w-4 h-4" />
-                        </button>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={(event) => handleAddonItemDragEnd(event, group.id)}
+                  >
+                    <SortableContext
+                      items={group.items.map(i => i.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="bg-muted/30">
+                        {group.items.map((item, index) => (
+                          <SortableAddonItemWrapper key={item.id} id={item.id}>
+                            {({ ref, style, attributes, listeners }) => (
+                              <div
+                                ref={ref}
+                                style={style}
+                                className={`pl-8 sm:pl-20 pr-3 md:pr-6 py-3 flex items-center gap-2 md:gap-4 hover:bg-accent/30 transition-colors group ${
+                                  index !== group.items.length - 1 ? 'border-b border-border/50' : ''
+                                }`}
+                              >
+                                {/* Drag Handle - Hide on mobile */}
+                                <button 
+                                  {...attributes}
+                                  {...listeners}
+                                  className="hidden sm:block text-muted-foreground hover:text-foreground transition-colors cursor-grab active:cursor-grabbing flex-shrink-0"
+                                >
+                                  <GripVertical className="w-4 h-4" />
+                                </button>
 
                         {/* Active Status Indicator */}
                         <div className={`w-2 h-2 rounded-full flex-shrink-0 ${item.isActive ? 'bg-emerald-500' : 'bg-gray-300'}`} />
@@ -1030,7 +1388,7 @@ export function MenuConfigPage() {
                         {/* Content */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <h5 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                            <h5 className="text-foreground truncate" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                               {item.name}
                             </h5>
                             {/* Veg/Non-Veg Indicator */}
@@ -1103,8 +1461,12 @@ export function MenuConfigPage() {
                           </button>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                              )}
+                            </SortableAddonItemWrapper>
+                          ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
                 )}
 
                 {/* Empty state for expanded group with no items */}
@@ -1132,9 +1494,12 @@ export function MenuConfigPage() {
                     </Button>
                   </div>
                 )}
-              </div>
-            ))}
-          </div>
+                    </div>
+                  )}
+                </SortableAddonGroupWrapper>
+              ))}
+            </SortableContext>
+          </DndContext>
         </div>
       )}
 
@@ -1328,6 +1693,7 @@ export function MenuConfigPage() {
                                   price: parseFloat(newMenuItem.price),
                                   image: newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl,
                                   isActive: newMenuItem.isActive,
+                                  pricingType: newMenuItem.pricingType,
                                   variants: newMenuItem.variants,
                                 }
                               : item
@@ -1344,6 +1710,7 @@ export function MenuConfigPage() {
                     price: parseFloat(newMenuItem.price),
                     image: newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl,
                     isActive: newMenuItem.isActive,
+                    pricingType: newMenuItem.pricingType,
                     variants: newMenuItem.variants,
                   };
 
@@ -1362,6 +1729,7 @@ export function MenuConfigPage() {
                   image: null,
                   imageUrl: '',
                   isActive: true,
+                  pricingType: 'per-person',
                   variants: [],
                 });
                 setActiveCategoryId(null);
@@ -1440,6 +1808,69 @@ export function MenuConfigPage() {
                   </div>
                 </div>
 
+                {/* Pricing Type */}
+                <div>
+                  <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                    Pricing Type
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setNewMenuItem({ ...newMenuItem, pricingType: 'per-person' })}
+                      className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left ${
+                        newMenuItem.pricingType === 'per-person'
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border bg-background hover:border-border hover:bg-accent'
+                      }`}
+                    >
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                        newMenuItem.pricingType === 'per-person'
+                          ? 'border-primary'
+                          : 'border-border'
+                      }`}>
+                        {newMenuItem.pricingType === 'per-person' && (
+                          <div className="w-3 h-3 rounded-full bg-primary" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                          Per Person
+                        </div>
+                        <div className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                          Price multiplies by guest count
+                        </div>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewMenuItem({ ...newMenuItem, pricingType: 'flat-rate' })}
+                      className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left ${
+                        newMenuItem.pricingType === 'flat-rate'
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border bg-background hover:border-border hover:bg-accent'
+                      }`}
+                    >
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                        newMenuItem.pricingType === 'flat-rate'
+                          ? 'border-primary'
+                          : 'border-border'
+                      }`}>
+                        {newMenuItem.pricingType === 'flat-rate' && (
+                          <div className="w-3 h-3 rounded-full bg-primary" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                          Flat Rate
+                        </div>
+                        <div className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                          Fixed price regardless of guests
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                     Item Image
@@ -1515,38 +1946,28 @@ export function MenuConfigPage() {
                   </div>
                   
                   {newMenuItem.variants.length > 0 && (
-                    <div className="space-y-2 mt-3">
-                      {newMenuItem.variants.map((variant, index) => (
-                        <div key={variant.id} className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                          <input
-                            type="text"
-                            value={variant.name}
-                            onChange={(e) => updateVariant(index, 'name', e.target.value)}
-                            placeholder="Variant name (e.g., Small, Medium)"
-                            className="flex-1 px-3 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-                            style={{ fontSize: 'var(--text-base)' }}
-                          />
-                          <div className="relative w-32">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>€</span>
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={variant.price}
-                              onChange={(e) => updateVariant(index, 'price', parseFloat(e.target.value) || 0)}
-                              placeholder="0.00"
-                              className="w-full pl-8 pr-3 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-                              style={{ fontSize: 'var(--text-base)' }}
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleVariantDragEnd}
+                    >
+                      <SortableContext
+                        items={newMenuItem.variants.map(v => v.id)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div className="space-y-3 mt-3">
+                          {newMenuItem.variants.map((variant, index) => (
+                            <SortableVariant
+                              key={variant.id}
+                              variant={variant}
+                              index={index}
+                              updateVariant={updateVariant}
+                              removeVariant={removeVariant}
                             />
-                          </div>
-                          <button
-                            onClick={() => removeVariant(index)}
-                            className="p-2 hover:bg-accent rounded-lg transition-colors text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                      </SortableContext>
+                    </DndContext>
                   )}
                 </div>
 
@@ -2070,6 +2491,7 @@ export function MenuConfigPage() {
         onClose={() => {
           setIsAddChoiceModalOpen(false);
           setChoiceCategoryId(null);
+          setChoiceMenuItemId(null);
           setSelectedAddonGroups([]);
         }}
         icon={ListPlus}
@@ -2082,6 +2504,7 @@ export function MenuConfigPage() {
               onClick={() => {
                 setIsAddChoiceModalOpen(false);
                 setChoiceCategoryId(null);
+                setChoiceMenuItemId(null);
                 setSelectedAddonGroups([]);
               }}
             >
@@ -2091,15 +2514,23 @@ export function MenuConfigPage() {
               variant="primary"
               icon={Check}
               onClick={() => {
-                if (choiceCategoryId) {
+                if (choiceCategoryId && choiceMenuItemId) {
                   setCategories(categories.map(cat =>
                     cat.id === choiceCategoryId
-                      ? { ...cat, assignedAddonGroups: selectedAddonGroups }
+                      ? {
+                          ...cat,
+                          items: cat.items.map(item =>
+                            item.id === choiceMenuItemId
+                              ? { ...item, assignedAddonGroups: selectedAddonGroups }
+                              : item
+                          )
+                        }
                       : cat
                   ));
                 }
                 setIsAddChoiceModalOpen(false);
                 setChoiceCategoryId(null);
+                setChoiceMenuItemId(null);
                 setSelectedAddonGroups([]);
               }}
             >
@@ -2118,7 +2549,7 @@ export function MenuConfigPage() {
             </p>
             
             {/* Addon Groups Grid */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {addonGroups.map((group) => {
                 const isSelected = selectedAddonGroups.includes(group.id);
                 return (

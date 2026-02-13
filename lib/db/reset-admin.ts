@@ -5,7 +5,27 @@ import { db } from "@/lib/db";
 import { adminUser, account } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
-import * as argon2 from "@node-rs/argon2";
+import { scryptAsync } from "@noble/hashes/scrypt.js";
+import { hex } from "@better-auth/utils/hex";
+
+/**
+ * Better Auth compatible password hashing using scrypt
+ * Format: {salt}:{hash} (both hex-encoded)
+ */
+async function hashPassword(password: string): Promise<string> {
+  const salt = hex.encode(crypto.getRandomValues(new Uint8Array(16)));
+  const key = await scryptAsync(
+    password.normalize("NFKC"),
+    salt,
+    {
+      N: 16384,
+      p: 1,
+      r: 16,
+      dkLen: 64,
+    }
+  );
+  return `${salt}:${hex.encode(key)}`;
+}
 
 async function resetAdmin() {
   console.log("🔄 Resetting admin user...");
@@ -19,13 +39,8 @@ async function resetAdmin() {
     await db.delete(adminUser).where(eq(adminUser.email, "admin@oliv-restaurant.ch"));
     console.log("✅ Deleted existing admin user");
 
-    // Hash the password using argon2 (same as Better Auth)
-    const hashedPassword = await argon2.hash("admin123", {
-      memoryCost: 19456,
-      timeCost: 2,
-      outputLen: 32,
-      parallelism: 1,
-    });
+    // Hash the password using scrypt (compatible with Better Auth)
+    const hashedPassword = await hashPassword("admin123");
 
     // Create admin user
     const adminId = randomUUID();

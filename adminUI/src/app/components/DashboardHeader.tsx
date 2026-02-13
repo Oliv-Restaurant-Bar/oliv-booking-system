@@ -67,40 +67,40 @@ export function DashboardHeader({ onMenuClick, userName = 'Admin User', isScroll
 
   return (
     <div 
-      className={`mx-8 mt-5 mb-5 flex items-center justify-between bg-card rounded-2xl px-[32px] py-[10px] border border-border transition-shadow duration-300 ${
+      className={`mx-4 md:mx-8 mt-3 md:mt-5 mb-3 md:mb-5 flex items-center justify-between bg-card rounded-2xl px-4 md:px-[32px] py-3 md:py-[10px] border border-border transition-shadow duration-300 ${
         isScrolled ? 'shadow-lg' : 'shadow-sm'
       }`}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
         {/* Menu Button for mobile */}
         <button 
           onClick={onMenuClick}
-          className="lg:hidden p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer"
+          className="lg:hidden p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer flex-shrink-0"
         >
           <Menu className="w-5 h-5 text-muted-foreground" />
         </button>
         
-        <div>
-          <h1 style={{ fontSize: 'var(--text-h2)', fontWeight: 'var(--font-weight-semibold)' }}>
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate" style={{ fontSize: 'var(--text-h2)', fontWeight: 'var(--font-weight-semibold)' }}>
             {currentPageInfo.title}
           </h1>
-          <p className="text-muted-foreground mt-1" style={{ fontSize: 'var(--text-base)' }}>
+          <p className="text-muted-foreground mt-1 hidden sm:block truncate" style={{ fontSize: 'var(--text-base)' }}>
             {currentPageInfo.subtitle}
           </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
         {/* User Profile with Dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button 
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-3 p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer"
+            className="flex items-center gap-2 md:gap-3 p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer"
           >
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
               <User className="w-4 h-4 text-primary-foreground" />
             </div>
-            <span style={{ fontSize: 'var(--text-base)' }}>{userName}</span>
+            <span className="hidden md:inline" style={{ fontSize: 'var(--text-base)' }}>{userName}</span>
             <ChevronDown 
               className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${
                 isDropdownOpen ? 'rotate-180' : ''

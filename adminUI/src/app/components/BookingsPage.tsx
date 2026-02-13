@@ -196,11 +196,11 @@ const allStatuses = ['All Status', 'Confirmed', 'Touchbase', 'New', 'Declined', 
 // Grid Layout
 function GridLayout({ onOpenModal, bookings }: { onOpenModal: (booking: typeof bookingsData[0]) => void; bookings: typeof bookingsData }) {
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
       {bookings.map((booking) => (
         <div
           key={booking.id}
-          className="bg-card border border-border rounded-xl p-5 hover:shadow-md transition-all"
+          className="bg-card border border-border rounded-xl p-4 md:p-5 hover:shadow-md transition-all"
         >
           {/* Header */}
           <div className="flex items-start justify-between mb-4">
@@ -283,7 +283,7 @@ function GridLayout({ onOpenModal, bookings }: { onOpenModal: (booking: typeof b
           {/* CTA Button */}
           <button 
             onClick={() => onOpenModal(booking)}
-            className="w-full px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-secondary hover:text-white transition-colors flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-secondary hover:text-white transition-colors flex items-center justify-center gap-2 cursor-pointer"
             style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
           >
             View Details
@@ -637,7 +637,7 @@ function BookingDetailModal({ booking, onClose }: { booking: typeof bookingsData
 
         {/* Fixed Save Button Footer */}
         <div className="fixed bottom-0 right-0 w-full max-w-2xl bg-background border-t border-border px-6 py-4 z-10">
-          <button className="w-full px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors cursor-pointer" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)', backgroundColor: 'var(--color-primary)' }}>
+          <button className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors cursor-pointer" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
             Save Changes
           </button>
         </div>
@@ -646,11 +646,16 @@ function BookingDetailModal({ booking, onClose }: { booking: typeof bookingsData
   );
 }
 
-export function BookingsPage() {
-  const [selectedBooking, setSelectedBooking] = useState<typeof bookingsData[0] | null>(null);
+export function BookingsPage({ onViewDetails }: { onViewDetails?: (booking: typeof bookingsData[0]) => void }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('All Status');
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const handleOpenModal = (booking: typeof bookingsData[0]) => {
+    if (onViewDetails) {
+      onViewDetails(booking);
+    }
+  };
 
   // Status options for the dropdown
   const statusOptions = [
@@ -674,18 +679,18 @@ export function BookingsPage() {
   });
 
   return (
-    <div className="min-h-full bg-background px-8 pt-6 pb-1 flex flex-col">
+    <div className="min-h-full bg-background px-4 md:px-8 pt-4 md:pt-6 pb-1 flex flex-col">
       <div className="w-full space-y-4 flex-1">
         {/* Search & Filter Bar */}
-        <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-between gap-4">
+        <div className="bg-card border border-border rounded-xl p-3 md:p-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 md:gap-4">
           {/* Search Bar - Left Side */}
-          <div className="relative flex-1 max-w-lg">
+          <div className="relative flex-1 sm:max-w-lg">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search by name, email, or phone..."
-              className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-              style={{ fontSize: 'var(--text-base)' }}
+              className="w-full pl-10 pr-4 py-2.5 md:py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+              style={{ fontSize: 'var(--text-base)', minHeight: '44px' }}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               ref={searchInputRef}
@@ -693,26 +698,25 @@ export function BookingsPage() {
           </div>
           
           {/* Status Dropdown & Export Button - Right Side */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 sm:ml-auto">
             {/* Status Dropdown */}
-            <StatusDropdown
-              options={statusOptions}
-              value={selectedStatus}
-              onChange={setSelectedStatus}
-            />
+            <div className="flex-1 sm:flex-none">
+              <StatusDropdown
+                options={statusOptions}
+                value={selectedStatus}
+                onChange={setSelectedStatus}
+              />
+            </div>
 
             {/* Export Button */}
-            <Button variant="primary" icon={Download}>
+            <Button variant="primary" icon={Download} className="min-h-[44px]">
               Export
             </Button>
           </div>
         </div>
 
         {/* Grid Layout */}
-        <GridLayout onOpenModal={(booking) => setSelectedBooking(booking)} bookings={filteredBookings} />
-
-        {/* Booking Detail Modal */}
-        {selectedBooking && <BookingDetailModal booking={selectedBooking} onClose={() => setSelectedBooking(null)} />}
+        <GridLayout onOpenModal={handleOpenModal} bookings={filteredBookings} />
 
         {/* Copyright Footer */}
         <div className="text-center pt-4 pb-1 mt-auto">

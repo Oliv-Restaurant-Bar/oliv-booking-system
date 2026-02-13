@@ -174,11 +174,11 @@ export function UserManagementPage() {
   };
 
   return (
-    <div className="min-h-full bg-background px-8 pt-6 pb-1 flex flex-col">
+    <div className="min-h-full bg-background px-4 md:px-8 pt-4 md:pt-6 pb-1 flex flex-col">
       <div className="w-full flex-1">
         {/* Search Bar */}
-        <div className="bg-card border border-border rounded-xl p-4 mb-6">
-          <div className="flex items-center gap-3">
+        <div className="bg-card border border-border rounded-xl p-3 md:p-4 mb-4 md:mb-6">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <input
@@ -186,13 +186,15 @@ export function UserManagementPage() {
                 placeholder="Search by name, email, or role..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full pl-10 pr-4 py-2.5 md:py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                style={{ fontSize: 'var(--text-base)', minHeight: '44px' }}
               />
             </div>
             <Button
               variant="primary"
               icon={Plus}
               onClick={() => setIsAddUserModalOpen(true)}
+              className="w-full sm:w-auto min-h-[44px]"
             >
               Add User
             </Button>
@@ -202,25 +204,25 @@ export function UserManagementPage() {
         {/* Users Table */}
         <div className="bg-card border border-border rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[640px]">
               <thead className="bg-muted border-b border-border">
                 <tr>
-                  <th className="text-left px-6 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
+                  <th className="text-left px-3 md:px-6 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
                     Name
                   </th>
-                  <th className="text-left px-6 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
+                  <th className="text-left px-3 md:px-6 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
                     Email
                   </th>
-                  <th className="text-left px-6 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
+                  <th className="text-left px-3 md:px-6 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
                     Role
                   </th>
-                  <th className="text-left px-6 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
+                  <th className="text-left px-3 md:px-6 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
                     Status
                   </th>
-                  <th className="text-left px-6 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
+                  <th className="text-left px-3 md:px-6 py-3 text-foreground hidden sm:table-cell" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
                     Created
                   </th>
-                  <th className="text-right px-6 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
+                  <th className="text-right px-3 md:px-6 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
                     Actions
                   </th>
                 </tr>
@@ -228,7 +230,7 @@ export function UserManagementPage() {
               <tbody>
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center">
+                    <td colSpan={6} className="px-3 md:px-6 py-12 text-center">
                       <Users className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                       <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
                         No users found
@@ -238,19 +240,19 @@ export function UserManagementPage() {
                 ) : (
                   filteredUsers.map((user) => (
                     <tr key={user.id} className="border-b border-border last:border-0 hover:bg-accent/50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
+                      <td className="px-3 md:px-6 py-4">
+                        <div className="flex items-center gap-2 md:gap-3">
                           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                             <span className="text-primary" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
                               {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                             </span>
                           </div>
-                          <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                          <span className="text-foreground whitespace-nowrap" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                             {user.name}
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 md:px-6 py-4">
                         <div className="flex items-center gap-2">
                           <Mail className="w-4 h-4 text-muted-foreground" />
                           <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
@@ -258,25 +260,25 @@ export function UserManagementPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 md:px-6 py-4">
                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${getRoleBadgeColor(user.role)}`} style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
                           <Shield className="w-3.5 h-3.5" />
                           {user.role}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 md:px-6 py-4">
                         <span className={`inline-flex px-3 py-1 rounded-full ${getStatusBadgeColor(user.status)}`} style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
                           {user.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                      <td className="px-3 md:px-6 py-4 text-muted-foreground hidden sm:table-cell" style={{ fontSize: 'var(--text-base)' }}>
                         {new Date(user.createdAt).toLocaleDateString('en-US', { 
                           year: 'numeric', 
                           month: 'short', 
                           day: 'numeric' 
                         })}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 md:px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleEditClick(user)}

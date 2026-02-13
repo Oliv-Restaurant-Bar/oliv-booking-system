@@ -42,12 +42,12 @@ export function SettingsPage() {
   ];
 
   return (
-    <div className="min-h-full bg-background px-8 pt-6 pb-1 flex flex-col">
+    <div className="min-h-full bg-background px-4 md:px-8 pt-4 md:pt-6 pb-1 flex flex-col">
       <div className="w-full flex-1">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {/* Language & Region Card */}
-          <div className="bg-card border border-border rounded-xl p-6">
-            <div className="flex items-center gap-3 mb-6">
+          <div className="bg-card border border-border rounded-xl p-4 md:p-6">
+            <div className="flex items-center gap-3 mb-4 md:mb-6">
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <Globe className="w-5 h-5 text-primary" />
               </div>
@@ -56,7 +56,7 @@ export function SettingsPage() {
               </h3>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
               {/* Language Field */}
               <div>
                 <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
@@ -102,8 +102,8 @@ export function SettingsPage() {
           </div>
 
           {/* Currency Card */}
-          <div className="bg-card border border-border rounded-xl p-6">
-            <div className="flex items-center gap-3 mb-6">
+          <div className="bg-card border border-border rounded-xl p-4 md:p-6">
+            <div className="flex items-center gap-3 mb-4 md:mb-6">
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <DollarSign className="w-5 h-5 text-primary" />
               </div>

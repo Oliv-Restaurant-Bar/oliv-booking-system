@@ -1,20 +1,50 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { User, Mail, Phone, Shield, Camera, Lock, Check, X, Eye, EyeOff } from 'lucide-react';
 import { Modal } from './Modal';
 import { Button } from './Button';
+import type { Session } from '@/lib/auth';
 
-export function ProfilePage() {
-  // Profile state
+interface SessionWithRole extends Session {
+  user: Session['user'] & {
+    role: string;
+  };
+}
+
+interface ProfilePageProps {
+  session: Session;
+}
+
+export function ProfilePage({ session }: ProfilePageProps) {
+  // Cast session to include role
+  const sessionWithRole = session as SessionWithRole;
+
+  // Split name into first and last name
+  const nameParts = sessionWithRole.user.name?.split(' ') || ['', ''];
+
+  // Profile state - initialize with session data
   const [profileData, setProfileData] = useState({
-    firstName: 'John',
-    lastName: 'Anderson',
-    email: 'john.anderson@restaurant.com',
-    phone: '+41 79 123 45 67',
-    role: 'Admin',
-    avatar: '',
+    firstName: nameParts[0] || '',
+    lastName: nameParts.slice(1).join(' ') || '',
+    email: sessionWithRole.user.email || '',
+    phone: '', // Phone field not in database schema
+    role: sessionWithRole.user.role || 'admin',
+    avatar: sessionWithRole.user.image || '',
   });
+
+  // Update profile data when session changes
+  useEffect(() => {
+    const nameParts = sessionWithRole.user.name?.split(' ') || ['', ''];
+    setProfileData({
+      firstName: nameParts[0] || '',
+      lastName: nameParts.slice(1).join(' ') || '',
+      email: sessionWithRole.user.email || '',
+      phone: profileData.phone, // Preserve phone number if set
+      role: sessionWithRole.user.role || 'admin',
+      avatar: sessionWithRole.user.image || '',
+    });
+  }, [sessionWithRole.user.name, sessionWithRole.user.email, sessionWithRole.user.role, sessionWithRole.user.image]);
 
   // File input ref
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -42,10 +72,13 @@ export function ProfilePage() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Role options for display
-  const roleOptions = [
-    { value: 'Admin', label: 'Admin', icon: Shield },
-  ];
+  // Format role for display
+  const formatRole = (role: string) => {
+    return role
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
 
   const handleEditProfile = () => {
     setEditForm({
@@ -57,7 +90,9 @@ export function ProfilePage() {
     setIsEditProfileModalOpen(true);
   };
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
+    // TODO: Call API to update profile
+    // For now, just update local state
     setProfileData({
       ...profileData,
       firstName: editForm.firstName,
@@ -68,15 +103,16 @@ export function ProfilePage() {
     setIsEditProfileModalOpen(false);
   };
 
-  const handleChangePassword = () => {
-    // Validate and change password
+  const handleChangePassword = async () => {
+    // Validate passwords match
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       alert('New passwords do not match');
       return;
     }
-    
-    // In a real app, this would call an API
-    console.log('Password changed successfully');
+
+    // TODO: Call API to change password
+    // For now, just log and clear form
+    console.log('Password change requested (API not implemented)');
     setPasswordForm({
       currentPassword: '',
       newPassword: '',
@@ -120,12 +156,12 @@ export function ProfilePage() {
   };
 
   return (
-    <div className="min-h-full bg-background px-8 pt-6 pb-1 flex flex-col">
+    <div className="min-h-full bg-background px-4 md:px-8 pt-4 md:pt-6 pb-1 flex flex-col">
       <div className="w-full flex-1">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Left Column - Profile Card */}
           <div className="lg:col-span-1">
-            <div className="bg-card border border-border rounded-xl p-6 flex flex-col items-center">
+            <div className="bg-card border border-border rounded-xl p-4 md:p-6 flex flex-col items-center">
               {/* Avatar */}
               <div className="relative mb-4">
                 <div className="w-32 h-32 rounded-full bg-primary flex items-center justify-center text-white overflow-hidden" style={{ fontSize: '48px', fontWeight: 'var(--font-weight-semibold)' }}>
@@ -161,7 +197,7 @@ export function ProfilePage() {
               <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg mb-6">
                 <Shield className="w-4 h-4 text-primary" />
                 <span className="text-primary" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                  {profileData.role}
+                  {formatRole(profileData.role)}
                 </span>
               </div>
 
@@ -209,9 +245,9 @@ export function ProfilePage() {
           </div>
 
           {/* Right Column - Settings */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 md:space-y-6">
             {/* Change Password */}
-            <div className="bg-card border border-border rounded-xl p-6">
+            <div className="bg-card border border-border rounded-xl p-4 md:p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                   <Lock className="w-5 h-5 text-primary" />

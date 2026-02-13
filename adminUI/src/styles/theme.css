@@ -17,7 +17,7 @@
   /* The primary color used for buttons, links, and other interactive elements. */
   --primary: rgba(157, 174, 145, 1.00);
   /* The default color for text or elements that appear on top of primary colored elements. */
-  --primary-foreground: rgba(255, 255, 255, 1.00);
+  --primary-foreground: rgba(38, 45, 57, 1.00);
   /* The secondary color used for secondary(but NOT-DESTRUCTIVE) buttons and interactive elements. */
   --secondary: rgba(38, 45, 57, 1.00);
   /* The default color for text or elements that appear on top of secondary colored elements. */
@@ -67,7 +67,7 @@
   /* The primary color used for buttons, links, and other interactive elements in sidebars and navigation menus. */
   --sidebar-primary: rgba(157, 174, 145, 1.00);
   /* The default color for text or elements that appear on top of primary colored elements in sidebars and navigation menus. */
-  --sidebar-primary-foreground: rgba(255, 255, 255, 1.00);
+  --sidebar-primary-foreground: rgba(38, 45, 57, 1.00);
   /* The accent color used for highlights, links, and other interactive elements in sidebars and navigation menus. */
   --sidebar-accent: rgba(243, 244, 246, 1.00);
   /* The default color for text or elements that appear on top of accent colored elements in sidebars and navigation menus. */

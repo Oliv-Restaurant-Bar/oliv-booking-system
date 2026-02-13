@@ -98,11 +98,21 @@ export async function updateBooking(id: string, updates: Partial<CreateBookingIn
     if (updates.eventDate !== undefined) updateData.eventDate = updates.eventDate;
     if (updates.eventTime !== undefined) updateData.eventTime = updates.eventTime;
     if (updates.guestCount !== undefined) updateData.guestCount = updates.guestCount;
-    if (updates.allergyDetails !== undefined) updateData.allergyDetails = updates.allergyDetails;
+    if (updates.allergyDetails !== undefined) {
+      // Convert array to string for storage (can be converted back to array when reading)
+      updateData.allergyDetails = Array.isArray(updates.allergyDetails)
+        ? updates.allergyDetails.join(', ')
+        : updates.allergyDetails;
+    }
     if (updates.specialRequests !== undefined) updateData.specialRequests = updates.specialRequests;
     if (updates.estimatedTotal !== undefined) updateData.estimatedTotal = updates.estimatedTotal.toString();
     if (updates.requiresDeposit !== undefined) updateData.requiresDeposit = updates.requiresDeposit;
     if (updates.internalNotes !== undefined) updateData.internalNotes = updates.internalNotes;
+    if (updates.menuItems !== undefined) {
+      // menuItems is an array of objects with { id, name, quantity, unitPrice }
+      // We'll store it as a JSON string to preserve the structure
+      updateData.menuItems = JSON.stringify(updates.menuItems);
+    }
 
     const [booking] = await db
       .update(bookings)

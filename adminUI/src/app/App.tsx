@@ -3,12 +3,13 @@ import { DashboardSidebar } from '@/app/components/DashboardSidebar';
 import { DashboardHeader } from '@/app/components/DashboardHeader';
 import { KPICard } from '@/app/components/KPICard';
 import { BookingsPage } from '@/app/components/BookingsPage';
+import { BookingDetailPage } from '@/app/components/BookingDetailPage';
 import { ReportsPage } from '@/app/components/ReportsPage';
-import { MenuConfigPageWithToggle } from '@/app/components/MenuConfigPageWithToggle';
+import { MenuConfigPage } from '@/app/components/MenuConfigPageV3Complete';
 import { UserManagementPage } from '@/app/components/UserManagementPage';
 import { SettingsPage } from '@/app/components/SettingsPage';
 import { ProfilePage } from '@/app/components/ProfilePage';
-import { Calendar, DollarSign, Package } from 'lucide-react';
+import { Calendar, DollarSign, Package, BarChart3, PieChart, TrendingUp } from 'lucide-react';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 
@@ -64,19 +65,22 @@ const statusData = [
 // Modern Layout - Asymmetric grid with emphasis
 function ModernLayout() {
   return (
-    <div className="px-8 pt-3 pb-8 space-y-6">
+    <div className="px-4 md:px-8 pt-3 pb-8 space-y-4 md:space-y-6">
       {/* KPI Cards - Compact Version */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
         <KPICard title="No. of Bookings" value="362" icon={Calendar} variant="compact" />
         <KPICard title="Total Revenue" value="$79,928" icon={DollarSign} variant="compact" />
         <KPICard title="Total Items" value="234" icon={Package} variant="compact" />
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-3 gap-6">
-        {/* Large Chart - Takes 2 columns */}
-        <div className="col-span-2 bg-card rounded-2xl p-6 shadow-sm border border-border flex flex-col">
-          <div className="flex items-center justify-between mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        {/* Large Chart - Takes 2 columns on desktop, full width on mobile */}
+        <div className="lg:col-span-2 bg-card rounded-2xl p-4 md:p-6 shadow-sm border border-border flex flex-col">
+          <div className="flex items-center gap-3 mb-4 md:mb-6">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <BarChart3 className="w-5 h-5 text-primary" />
+            </div>
             <h3 style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
               Bookings in Last 30 Days
             </h3>
@@ -176,9 +180,14 @@ function ModernLayout() {
 
         {/* Status Summary - 1 column */}
         <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
-          <h3 className="mb-4" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-            Status Summary
-          </h3>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <PieChart className="w-5 h-5 text-primary" />
+            </div>
+            <h3 style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+              Status Summary
+            </h3>
+          </div>
           <HighchartsReact
             highcharts={Highcharts}
             options={{
@@ -244,9 +253,14 @@ function ModernLayout() {
 
       {/* Revenue Chart - Full Width */}
       <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
-        <h3 className="mb-6" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-          Revenue Trend
-        </h3>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <TrendingUp className="w-5 h-5 text-primary" />
+          </div>
+          <h3 style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+            Revenue Trend
+          </h3>
+        </div>
         <HighchartsReact
           highcharts={Highcharts}
           options={{
@@ -358,6 +372,7 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const mainRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -371,10 +386,29 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Sticky Sidebar */}
-      <div className="sticky top-0 h-screen self-start">
+      {/* Desktop Sidebar - Hidden on mobile */}
+      <div className="hidden lg:block sticky top-0 h-screen self-start">
         <DashboardSidebar activeItem={currentPage} onNavigate={setCurrentPage} />
       </div>
+
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <>
+          <div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden" 
+            onClick={() => setSidebarOpen(false)}
+          />
+          <div className="fixed inset-y-0 left-0 z-50 lg:hidden">
+            <DashboardSidebar 
+              activeItem={currentPage} 
+              onNavigate={(page) => {
+                setCurrentPage(page);
+                setSidebarOpen(false);
+              }} 
+            />
+          </div>
+        </>
+      )}
       
       {/* Main Content Area - Centered */}
       <div className="flex-1 flex flex-col items-center overflow-x-hidden min-h-screen">
@@ -387,9 +421,25 @@ export default function App() {
           {/* Main Content */}
           <main ref={mainRef} className="flex-1 flex flex-col">
             {currentPage === 'dashboard' && <ModernLayout />}
-            {currentPage === 'bookings' && <BookingsPage />}
+            {currentPage === 'bookings' && (
+              <BookingsPage 
+                onViewDetails={(booking) => {
+                  setSelectedBooking(booking);
+                  setCurrentPage('booking-detail');
+                }}
+              />
+            )}
+            {currentPage === 'booking-detail' && selectedBooking && (
+              <BookingDetailPage 
+                booking={selectedBooking}
+                onBack={() => {
+                  setCurrentPage('bookings');
+                  setSelectedBooking(null);
+                }}
+              />
+            )}
             {currentPage === 'reports' && <ReportsPage />}
-            {currentPage === 'menu-config' && <MenuConfigPageWithToggle />}
+            {currentPage === 'menu-config' && <MenuConfigPage />}
             {currentPage === 'user-management' && <UserManagementPage />}
             {currentPage === 'settings' && <SettingsPage />}
             {currentPage === 'profile' && <ProfilePage />}

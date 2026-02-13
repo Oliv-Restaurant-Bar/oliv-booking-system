@@ -14,7 +14,8 @@
     "db:seed": "dotenv -e .env.local -- tsx lib/db/seed.ts",
     "db:reset-admin": "dotenv -e .env.local -- tsx lib/db/reset-admin.ts",
     "db:verify": "dotenv -e .env.local -- tsx lib/db/verify-admin.ts",
-    "db:create-user": "dotenv -e .env.local -- tsx lib/db/create-user.ts"
+    "db:create-user": "dotenv -e .env.local -- tsx lib/db/create-user.ts",
+    "db:recalculate-totals": "dotenv -e .env.local -- tsx lib/db/recalculate-totals.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.4",

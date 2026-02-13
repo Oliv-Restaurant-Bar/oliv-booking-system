@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, TrendingUp, TrendingDown } from 'lucide-react';
+import { ChevronDown, TrendingUp, TrendingDown, Flame } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { CategoryPill } from './CategoryPill';
 
@@ -89,10 +89,13 @@ export function TrendingItems() {
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
 
   return (
-    <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
+    <div className="bg-card rounded-2xl p-4 md:p-6 shadow-sm border border-border">
       {/* Header */}
-      <div className="flex items-start justify-between mb-6">
-        <div>
+      <div className="flex items-start justify-between mb-4 md:mb-6 gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <Flame className="w-5 h-5 text-primary" />
+          </div>
           <h3 className="text-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
             Trending Items
           </h3>
@@ -104,10 +107,11 @@ export function TrendingItems() {
           <div className="relative">
             <button
               onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
-              className="px-4 py-2 bg-background border border-border text-foreground rounded-lg flex items-center gap-2 hover:bg-accent transition-colors cursor-pointer"
+              className="px-3 md:px-4 py-2 bg-background border border-border text-foreground rounded-lg flex items-center gap-2 hover:bg-accent transition-colors cursor-pointer min-h-[44px]"
               style={{ fontSize: 'var(--text-base)' }}
             >
-              {selectedCategory}
+              <span className="hidden sm:inline">{selectedCategory}</span>
+              <span className="sm:hidden">Filter</span>
               <ChevronDown className="w-4 h-4" />
             </button>
 
@@ -139,17 +143,17 @@ export function TrendingItems() {
         {trendingData.map((item, index) => (
           <div
             key={item.rank}
-            className={`flex items-center gap-4 py-3 hover:bg-accent/50 transition-colors ${
+            className={`flex items-center gap-3 md:gap-4 py-3 hover:bg-accent/50 transition-colors ${
               index < trendingData.length - 1 ? 'border-b border-border' : ''
             }`}
           >
             {/* Rank */}
-            <div className="text-muted-foreground w-6 flex-shrink-0" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+            <div className="text-muted-foreground w-5 md:w-6 flex-shrink-0" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
               {item.rank}
             </div>
 
             {/* Item Image */}
-            <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
               <ImageWithFallback 
                 src={item.image} 
                 alt={item.name}
@@ -162,16 +166,18 @@ export function TrendingItems() {
               <h4 className="text-foreground truncate" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                 {item.name}
               </h4>
-              <div className="flex items-center gap-3 mt-1">
+              <div className="flex items-center gap-2 md:gap-3 mt-1">
                 <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
                   {item.price}
                 </span>
-                {/* Category Badge */}
-                <CategoryPill 
-                  label={item.category}
-                  color={item.categoryColor}
-                  variant="badge"
-                />
+                {/* Category Badge - Hide on small mobile */}
+                <div className="hidden sm:block">
+                  <CategoryPill 
+                    label={item.category}
+                    color={item.categoryColor}
+                    variant="badge"
+                  />
+                </div>
               </div>
             </div>
 
@@ -182,7 +188,7 @@ export function TrendingItems() {
                   {item.sales}
                 </div>
                 <div 
-                  className={`flex items-center gap-1 ${item.isPositive ? 'text-emerald-500' : 'text-red-500'}`}
+                  className={`flex items-center gap-1 justify-end ${item.isPositive ? 'text-emerald-500' : 'text-red-500'}`}
                   style={{ fontSize: 'var(--text-small)' }}
                 >
                   {item.isPositive ? (

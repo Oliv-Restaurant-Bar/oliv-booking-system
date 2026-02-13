@@ -41,25 +41,30 @@ export function ReportsPage() {
   );
 
   return (
-    <div className="min-h-full bg-background px-8 pt-6 pb-1 flex flex-col">
-      <div className="w-full space-y-6 flex-1">
+    <div className="min-h-full bg-background px-4 md:px-8 pt-4 md:pt-6 pb-1 flex flex-col">
+      <div className="w-full space-y-4 md:space-y-6 flex-1">
         {/* Top Customers and Trending Items - 2 Column Grid on Desktop */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Top Customers */}
-          <div className="bg-card border border-border rounded-xl p-6">
-            <h3 className="text-foreground mb-6" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-              Top Customers by Revenue
-            </h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+          {/* Top Customers Card */}
+          <div className="bg-card border border-border rounded-xl p-4 md:p-6">
+            <div className="flex items-center gap-3 mb-4 md:mb-6">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Users className="w-5 h-5 text-primary" />
+              </div>
+              <h3 className="text-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                Top Customers by Revenue
+              </h3>
+            </div>
             <div>
               {bookingsByContacts.slice(0, 5).map((contact, index) => (
                 <div 
                   key={index} 
-                  className={`flex items-center gap-4 py-3 hover:bg-accent/50 transition-colors ${
+                  className={`flex items-center gap-3 md:gap-4 py-3 hover:bg-accent/50 transition-colors ${
                     index < 4 ? 'border-b border-border' : ''
                   }`}
                 >
                   {/* Rank */}
-                  <div className="text-muted-foreground w-6 flex-shrink-0" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                  <div className="text-muted-foreground w-5 md:w-6 flex-shrink-0" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
                     {index + 1}
                   </div>
 
@@ -72,15 +77,15 @@ export function ReportsPage() {
 
                   {/* Customer Details */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                    <p className="text-foreground truncate" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                       {contact.name}
                     </p>
-                    <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                    <p className="text-muted-foreground hidden sm:block" style={{ fontSize: 'var(--text-small)' }}>
                       {contact.phone}
                     </p>
                   </div>
 
-                  {/* Revenue Stats */}
+                  {/* Revenue Stats - Stack on mobile */}
                   <div className="text-right flex-shrink-0">
                     <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
                       CHF {contact.totalRevenue.toLocaleString()}
@@ -90,8 +95,8 @@ export function ReportsPage() {
                     </p>
                   </div>
 
-                  {/* Additional Stats */}
-                  <div className="text-right flex-shrink-0">
+                  {/* Additional Stats - Hide on mobile */}
+                  <div className="text-right hidden lg:block flex-shrink-0">
                     <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
                       Avg: CHF {contact.avgRevenue.toLocaleString()}
                     </p>

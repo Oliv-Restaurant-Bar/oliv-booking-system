@@ -15,6 +15,13 @@
       "when": 1770635781427,
       "tag": "0001_brown_jack_power",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1770871204668,
+      "tag": "0002_noisy_onslaught",
+      "breakpoints": true
     }
   ]
 }

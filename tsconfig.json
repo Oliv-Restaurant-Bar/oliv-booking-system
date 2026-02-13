@@ -46,7 +46,7 @@
   ],
   "exclude": [
     "node_modules",
-    "adminUI",
+    "adminUIOLD",
     "userUI",
     "lib/db/seed.ts",
     "lib/db/seed-additional-bookings.ts",

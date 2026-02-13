@@ -1,18 +1,50 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { User, Mail, Phone, Shield, Camera, Lock, Check, X, Eye, EyeOff } from 'lucide-react';
 import { Modal } from './Modal';
 import { Button } from './Button';
 
-export function ProfilePage() {
-  // Profile state
+interface Session {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    image?: string | null;
+    role: string;
+  };
+}
+
+interface ProfilePageProps {
+  session?: Session;
+}
+
+export function ProfilePage({ session }: ProfilePageProps) {
+  // Split name into first and last name
+  const nameParts = session?.user.name?.split(' ') || ['John', 'Doe'];
+
+  // Profile state - initialize with session data or defaults
   const [profileData, setProfileData] = useState({
-    firstName: 'John',
-    lastName: 'Anderson',
-    email: 'john.anderson@restaurant.com',
-    phone: '+41 79 123 45 67',
-    role: 'Admin',
-    avatar: '',
+    firstName: nameParts[0] || '',
+    lastName: nameParts.slice(1).join(' ') || '',
+    email: session?.user.email || 'john.doe@example.com',
+    phone: '', // Phone field not in database schema
+    role: session?.user.role || 'admin',
+    avatar: session?.user.image || '',
   });
+
+  // Update profile data when session changes
+  useEffect(() => {
+    if (session?.user) {
+      const nameParts = session.user.name?.split(' ') || ['', ''];
+      setProfileData(prev => ({
+        firstName: nameParts[0] || '',
+        lastName: nameParts.slice(1).join(' ') || '',
+        email: session.user.email || '',
+        phone: prev.phone, // Preserve phone number if set
+        role: session.user.role || 'admin',
+        avatar: session.user.image || '',
+      }));
+    }
+  }, [session]);
 
   // File input ref
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -40,10 +72,13 @@ export function ProfilePage() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Role options for display
-  const roleOptions = [
-    { value: 'Admin', label: 'Admin', icon: Shield },
-  ];
+  // Format role for display
+  const formatRole = (role: string) => {
+    return role
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
 
   const handleEditProfile = () => {
     setEditForm({
@@ -118,12 +153,12 @@ export function ProfilePage() {
   };
 
   return (
-    <div className="min-h-full bg-background px-8 pt-6 pb-1 flex flex-col">
+    <div className="min-h-full bg-background px-4 md:px-8 pt-4 md:pt-6 pb-1 flex flex-col">
       <div className="w-full flex-1">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Left Column - Profile Card */}
           <div className="lg:col-span-1">
-            <div className="bg-card border border-border rounded-xl p-6 flex flex-col items-center">
+            <div className="bg-card border border-border rounded-xl p-4 md:p-6 flex flex-col items-center">
               {/* Avatar */}
               <div className="relative mb-4">
                 <div className="w-32 h-32 rounded-full bg-primary flex items-center justify-center text-white overflow-hidden" style={{ fontSize: '48px', fontWeight: 'var(--font-weight-semibold)' }}>
@@ -159,7 +194,7 @@ export function ProfilePage() {
               <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg mb-6">
                 <Shield className="w-4 h-4 text-primary" />
                 <span className="text-primary" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                  {profileData.role}
+                  {formatRole(profileData.role)}
                 </span>
               </div>
 
@@ -197,7 +232,7 @@ export function ProfilePage() {
               {/* Edit Profile Button */}
               <button
                 onClick={handleEditProfile}
-                className="w-full px-4 py-3 bg-primary text-white rounded-lg hover:brightness-110 transition-colors flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:brightness-110 transition-colors flex items-center justify-center gap-2"
                 style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
               >
                 <User className="w-4 h-4" />
@@ -292,7 +327,7 @@ export function ProfilePage() {
                 <div className="flex justify-end pt-2">
                   <button
                     onClick={handleChangePassword}
-                    className="px-6 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
+                    className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
                     style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
                   >
                     <Check className="w-4 h-4" />

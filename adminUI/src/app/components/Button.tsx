@@ -23,7 +23,7 @@ export function Button({
   const baseStyles = 'px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer';
   
   const variantStyles = {
-    primary: 'bg-primary text-white hover:bg-secondary hover:text-white',
+    primary: 'bg-primary text-primary-foreground hover:bg-secondary hover:text-white',
     secondary: 'bg-accent text-foreground hover:bg-accent/80',
     outline: 'border-2 border-border bg-transparent text-foreground hover:bg-accent',
   };

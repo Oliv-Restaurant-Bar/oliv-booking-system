@@ -70,6 +70,8 @@ export function ItemSettingsModal({
   setItemSettings,
   itemName,
 }: ItemSettingsModalProps) {
+  const [customAllergen, setCustomAllergen] = React.useState('');
+
   if (!isOpen) return null;
 
   const handleToggleTag = (tag: string, field: 'dietaryTags' | 'allergens' | 'additives') => {
@@ -85,6 +87,23 @@ export function ItemSettingsModal({
         [field]: [...currentArray, tag],
       });
     }
+  };
+
+  const handleAddCustomAllergen = () => {
+    if (customAllergen.trim() && !itemSettings.allergens.includes(customAllergen.trim())) {
+      setItemSettings({
+        ...itemSettings,
+        allergens: [...itemSettings.allergens, customAllergen.trim()],
+      });
+      setCustomAllergen('');
+    }
+  };
+
+  const handleRemoveCustomAllergen = (allergen: string) => {
+    setItemSettings({
+      ...itemSettings,
+      allergens: itemSettings.allergens.filter(a => a !== allergen),
+    });
   };
 
   return (
@@ -285,6 +304,61 @@ export function ItemSettingsModal({
                     </button>
                   ))}
                 </div>
+                
+                {/* Custom Allergens */}
+                <div className="mt-4">
+                  <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
+                    Add Custom Allergen
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={customAllergen}
+                      onChange={(e) => setCustomAllergen(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddCustomAllergen();
+                        }
+                      }}
+                      placeholder="Type custom allergen name"
+                      className="flex-1 px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      style={{ fontSize: 'var(--text-base)' }}
+                    />
+                    <button
+                      onClick={handleAddCustomAllergen}
+                      disabled={!customAllergen.trim()}
+                      className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+
+                {/* Custom Allergen Tags Display */}
+                {itemSettings.allergens.some(a => !allergenOptions.includes(a)) && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {itemSettings.allergens
+                      .filter(a => !allergenOptions.includes(a))
+                      .map((allergen) => (
+                        <div
+                          key={allergen}
+                          className="flex items-center gap-2 px-3 py-1.5 bg-destructive/10 border border-destructive/30 rounded-lg"
+                        >
+                          <span className="text-destructive" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
+                            {allergen}
+                          </span>
+                          <button
+                            onClick={() => handleRemoveCustomAllergen(allergen)}
+                            className="text-destructive hover:text-destructive/80 transition-colors"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                  </div>
+                )}
               </div>
 
               {/* Additives */}

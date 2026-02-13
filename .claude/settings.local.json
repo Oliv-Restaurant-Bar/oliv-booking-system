@@ -23,7 +23,11 @@
       "Bash(timeout:*)",
       "Bash(npm run build:*)",
       "Bash(npx next build:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npm run seed:*)",
+      "Bash(dir:*)",
+      "Bash(npm run db:push:*)",
+      "Bash(npm run:*)"
     ]
   }
 }

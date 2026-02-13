@@ -23,8 +23,8 @@ export default async function AdminProfilePage() {
             <DashboardHeader currentPage="profile" />
           </div>
 
-          <main className="flex-1 px-8 pt-3 pb-8">
-            <ProfilePage />
+          <main className="flex-1 px-4 md:px-8 pt-4 md:pt-6 pb-1">
+            <ProfilePage session={session} />
           </main>
         </div>
       </div>

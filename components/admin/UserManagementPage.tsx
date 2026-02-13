@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { User, Mail, Shield, Search, MoreVertical, Edit2, Trash2, Plus, X, Check, Users, Eye } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { User, Mail, Shield, Search, MoreVertical, Edit2, Trash2, Plus, X, Check, Users, Eye, RefreshCw } from 'lucide-react';
 import { Modal } from './Modal';
 import { ConfirmationModal } from './ConfirmationModal';
 import { Button } from './Button';
@@ -16,62 +16,23 @@ interface User {
   createdAt: string;
 }
 
-const mockUsers: User[] = [
-  {
-    id: '1',
-    name: 'John Anderson',
-    email: 'john.anderson@restaurant.com',
-    role: 'super_admin',
-    status: 'Active',
-    createdAt: '2024-01-15',
-  },
-  {
-    id: '2',
-    name: 'Sarah Mitchell',
-    email: 'sarah.mitchell@restaurant.com',
-    role: 'admin',
-    status: 'Active',
-    createdAt: '2024-02-20',
-  },
-  {
-    id: '3',
-    name: 'Mike Thompson',
-    email: 'mike.thompson@restaurant.com',
-    role: 'moderator',
-    status: 'Active',
-    createdAt: '2024-03-10',
-  },
-  {
-    id: '4',
-    name: 'Emily Davis',
-    email: 'emily.davis@restaurant.com',
-    role: 'read_only',
-    status: 'Inactive',
-    createdAt: '2024-01-05',
-  },
-  {
-    id: '5',
-    name: 'David Wilson',
-    email: 'david.wilson@restaurant.com',
-    role: 'moderator',
-    status: 'Active',
-    createdAt: '2024-02-28',
-  },
-];
-
 export function UserManagementPage() {
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Form states
   const [formName, setFormName] = useState('');
   const [formEmail, setFormEmail] = useState('');
   const [formRole, setFormRole] = useState<User['role']>('read_only');
   const [formStatus, setFormStatus] = useState<User['status']>('Active');
+  const [formPassword, setFormPassword] = useState('');
 
   // Role options for dropdown (matching schema roles)
   const roleOptions = [
@@ -87,6 +48,30 @@ export function UserManagementPage() {
     { value: 'Inactive', label: 'Inactive', dotColor: '#ef4444' },
   ];
 
+  // Fetch users from API
+  const fetchUsers = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/admin/users');
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+      const data = await response.json();
+      setUsers(data);
+    } catch (err) {
+      console.error('Error fetching users:', err);
+      setError('Failed to load users. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch users on component mount
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
   // Filter users based on search
   const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -100,21 +85,39 @@ export function UserManagementPage() {
     setFormEmail('');
     setFormRole('read_only');
     setFormStatus('Active');
+    setFormPassword('');
   };
 
   // Add user
-  const handleAddUser = () => {
-    const newUser: User = {
-      id: `user-${Date.now()}`,
-      name: formName,
-      email: formEmail,
-      role: formRole,
-      status: formStatus,
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-    setUsers([...users, newUser]);
-    setIsAddUserModalOpen(false);
-    resetForm();
+  const handleAddUser = async () => {
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formName,
+          email: formEmail,
+          role: formRole,
+          password: formPassword || 'defaultPassword123',
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to create user');
+      }
+
+      await fetchUsers();
+      setIsAddUserModalOpen(false);
+      resetForm();
+    } catch (err: any) {
+      console.error('Error adding user:', err);
+      setError(err.message || 'Failed to add user');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Edit user
@@ -127,16 +130,37 @@ export function UserManagementPage() {
     setIsEditUserModalOpen(true);
   };
 
-  const handleSaveEdit = () => {
-    if (selectedUser) {
-      setUsers(users.map(user =>
-        user.id === selectedUser.id
-          ? { ...user, name: formName, email: formEmail, role: formRole, status: formStatus }
-          : user
-      ));
+  const handleSaveEdit = async () => {
+    if (!selectedUser) return;
+
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formName,
+          email: formEmail,
+          role: formRole,
+          emailVerified: formStatus === 'Active',
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to update user');
+      }
+
+      await fetchUsers();
       setIsEditUserModalOpen(false);
       resetForm();
       setSelectedUser(null);
+    } catch (err: any) {
+      console.error('Error updating user:', err);
+      setError(err.message || 'Failed to update user');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -146,11 +170,29 @@ export function UserManagementPage() {
     setIsDeleteModalOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    if (selectedUser) {
-      setUsers(users.filter(user => user.id !== selectedUser.id));
+  const handleConfirmDelete = async () => {
+    if (!selectedUser) return;
+
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to delete user');
+      }
+
+      await fetchUsers();
       setIsDeleteModalOpen(false);
       setSelectedUser(null);
+    } catch (err: any) {
+      console.error('Error deleting user:', err);
+      setError(err.message || 'Failed to delete user');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -193,6 +235,31 @@ export function UserManagementPage() {
   return (
     <div className="min-h-full bg-background px-8 pt-6 pb-1 flex flex-col">
       <div className="w-full flex-1">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-foreground" style={{ fontSize: 'var(--text-h1)', fontWeight: 'var(--font-weight-semibold)' }}>
+            Users
+          </h1>
+          <button
+            onClick={fetchUsers}
+            disabled={loading}
+            className="p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer"
+            title="Refresh"
+          >
+            <RefreshCw className={`w-5 h-5 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center justify-between">
+            <span>{error}</span>
+            <button onClick={() => setError(null)} className="text-red-700 hover:text-red-900">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {/* Search Bar */}
         <div className="bg-card border border-border rounded-xl p-4 mb-6">
           <div className="flex items-center gap-3">
@@ -216,108 +283,119 @@ export function UserManagementPage() {
           </div>
         </div>
 
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center py-16">
+            <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
+              Loading users...
+            </p>
+          </div>
+        )}
+
         {/* Users Table */}
-        <div className="bg-card border border-border rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-muted border-b border-border">
-                <tr>
-                  <th className="text-left px-6 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
-                    Name
-                  </th>
-                  <th className="text-left px-6 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
-                    Email
-                  </th>
-                  <th className="text-left px-6 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
-                    Role
-                  </th>
-                  <th className="text-left px-6 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
-                    Status
-                  </th>
-                  <th className="text-left px-6 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
-                    Created
-                  </th>
-                  <th className="text-right px-6 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredUsers.length === 0 ? (
+        {!loading && (
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-muted border-b border-border">
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center">
-                      <Users className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                      <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                        No users found
-                      </p>
-                    </td>
+                    <th className="text-left px-6 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
+                      Name
+                    </th>
+                    <th className="text-left px-6 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
+                      Email
+                    </th>
+                    <th className="text-left px-6 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
+                      Role
+                    </th>
+                    <th className="text-left px-6 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
+                      Status
+                    </th>
+                    <th className="text-left px-6 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
+                      Created
+                    </th>
+                    <th className="text-right px-6 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
+                      Actions
+                    </th>
                   </tr>
-                ) : (
-                  filteredUsers.map((user) => (
-                    <tr key={user.id} className="border-b border-border last:border-0 hover:bg-accent/50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                            <span className="text-primary" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                              {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                            </span>
-                          </div>
-                          <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                            {user.name}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                            {user.email}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${getRoleBadgeColor(user.role)}`} style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
-                          <Shield className="w-3.5 h-3.5" />
-                          {getRoleLabel(user.role)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex px-3 py-1 rounded-full ${getStatusBadgeColor(user.status)}`} style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
-                          {user.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                        {new Date(user.createdAt).toLocaleDateString('en-US', { 
-                          year: 'numeric', 
-                          month: 'short', 
-                          day: 'numeric' 
-                        })}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleEditClick(user)}
-                            className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
-                            title="Edit user"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(user)}
-                            className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-muted-foreground hover:text-destructive"
-                            title="Delete user"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                </thead>
+                <tbody>
+                  {filteredUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-12 text-center">
+                        <Users className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                        <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                          No users found
+                        </p>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    filteredUsers.map((user) => (
+                      <tr key={user.id} className="border-b border-border last:border-0 hover:bg-accent/50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                              <span className="text-primary" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                              </span>
+                            </div>
+                            <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                              {user.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <Mail className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                              {user.email}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${getRoleBadgeColor(user.role)}`} style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
+                            <Shield className="w-3.5 h-3.5" />
+                            {getRoleLabel(user.role)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex px-3 py-1 rounded-full ${getStatusBadgeColor(user.status)}`} style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
+                            {user.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                          {new Date(user.createdAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleEditClick(user)}
+                              className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                              title="Edit user"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(user)}
+                              className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-muted-foreground hover:text-destructive"
+                              title="Delete user"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Copyright Footer */}
@@ -333,6 +411,7 @@ export function UserManagementPage() {
         onClose={() => {
           setIsAddUserModalOpen(false);
           resetForm();
+          setError(null);
         }}
         icon={Users}
         title="Add New User"
@@ -342,16 +421,17 @@ export function UserManagementPage() {
             <Button variant="secondary" icon={X} onClick={() => {
               setIsAddUserModalOpen(false);
               resetForm();
+              setError(null);
             }}>
               Cancel
             </Button>
-            <Button 
-              variant="primary" 
-              icon={Plus} 
+            <Button
+              variant="primary"
+              icon={Plus}
               onClick={handleAddUser}
-              disabled={!formName.trim() || !formEmail.trim()}
+              disabled={!formName.trim() || !formEmail.trim() || isSubmitting}
             >
-              Add User
+              {isSubmitting ? 'Adding...' : 'Add User'}
             </Button>
           </>
         }
@@ -379,6 +459,19 @@ export function UserManagementPage() {
               value={formEmail}
               onChange={(e) => setFormEmail(e.target.value)}
               placeholder="user@restaurant.com"
+              className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+
+          <div>
+            <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
+              Password (optional - will use default if empty)
+            </label>
+            <input
+              type="password"
+              value={formPassword}
+              onChange={(e) => setFormPassword(e.target.value)}
+              placeholder="Enter password"
               className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -418,6 +511,7 @@ export function UserManagementPage() {
           setIsEditUserModalOpen(false);
           resetForm();
           setSelectedUser(null);
+          setError(null);
         }}
         icon={Edit2}
         title="Edit User"
@@ -428,16 +522,17 @@ export function UserManagementPage() {
               setIsEditUserModalOpen(false);
               resetForm();
               setSelectedUser(null);
+              setError(null);
             }}>
               Cancel
             </Button>
-            <Button 
-              variant="primary" 
-              icon={Check} 
+            <Button
+              variant="primary"
+              icon={Check}
               onClick={handleSaveEdit}
-              disabled={!formName.trim() || !formEmail.trim()}
+              disabled={!formName.trim() || !formEmail.trim() || isSubmitting}
             >
-              Save Changes
+              {isSubmitting ? 'Saving...' : 'Save Changes'}
             </Button>
           </>
         }
@@ -507,7 +602,7 @@ export function UserManagementPage() {
         onConfirm={handleConfirmDelete}
         title="Delete User"
         message={`Are you sure you want to delete "${selectedUser?.name}"? This action cannot be undone.`}
-        confirmText="Delete User"
+        confirmText={isSubmitting ? 'Deleting...' : 'Delete User'}
         confirmIcon="delete"
       />
     </div>
