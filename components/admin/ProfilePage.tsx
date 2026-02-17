@@ -235,7 +235,7 @@ export function ProfilePage({ session }: ProfilePageProps) {
               {/* Edit Profile Button */}
               <button
                 onClick={handleEditProfile}
-                className="w-full px-4 py-3 bg-primary text-white rounded-lg hover:brightness-110 transition-colors flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:brightness-110 transition-colors flex items-center justify-center gap-2"
                 style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
               >
                 <User className="w-4 h-4" />
@@ -330,7 +330,7 @@ export function ProfilePage({ session }: ProfilePageProps) {
                 <div className="flex justify-end pt-2">
                   <button
                     onClick={handleChangePassword}
-                    className="px-6 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
+                    className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
                     style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
                   >
                     <Check className="w-4 h-4" />

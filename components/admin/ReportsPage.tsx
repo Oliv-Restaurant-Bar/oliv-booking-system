@@ -50,7 +50,7 @@ export function ReportsPage() {
     : null;
 
   return (
-    <div className="min-h-full bg-background px-8 pt-6 pb-1 flex flex-col">
+    <div className="min-h-full bg-background flex flex-col">
       <div className="w-full space-y-6 flex-1">
         {/* Loading State */}
         {loading && (

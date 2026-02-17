@@ -8,9 +8,15 @@ interface DashboardHeaderProps {
   userName?: string;
   isScrolled?: boolean;
   currentPage?: string;
+  onMenuClick?: () => void;
 }
 
-export function DashboardHeader({ userName = 'Admin User', isScrolled = false, currentPage = 'dashboard' }: DashboardHeaderProps) {
+export function DashboardHeader({ 
+  userName = 'Admin User', 
+  isScrolled = false, 
+  currentPage = 'dashboard',
+  onMenuClick
+}: DashboardHeaderProps) {
   const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -78,32 +84,40 @@ export function DashboardHeader({ userName = 'Admin User', isScrolled = false, c
 
   return (
     <div
-      className={`mx-8 mt-5 mb-5 flex items-center justify-between bg-card rounded-2xl px-[32px] py-[10px] border border-border transition-shadow duration-300 ${
+      className={`mx-4 md:mx-8 mt-3 md:mt-5 mb-4 md:mb-5 flex items-center bg-card rounded-2xl px-4 md:px-[32px] py-[10px] border border-border transition-shadow duration-300 ${
         isScrolled ? 'shadow-lg' : 'shadow-sm'
       }`}
     >
-      <div className="flex items-center gap-4">
-        <div>
-          <h1 style={{ fontSize: 'var(--text-h2)', fontWeight: 'var(--font-weight-semibold)' }}>
-            {currentPageInfo.title}
-          </h1>
-          <p className="text-muted-foreground mt-1" style={{ fontSize: 'var(--text-base)' }}>
-            {currentPageInfo.subtitle}
-          </p>
-        </div>
+      {/* Mobile menu button - visible only on small screens */}
+      {onMenuClick && (
+        <button
+          onClick={onMenuClick}
+          className="lg:hidden p-2 -ml-2 mr-2 hover:bg-accent rounded-lg transition-colors flex-shrink-0"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+      )}
+
+      <div className="flex-1">
+        <h1 style={{ fontSize: 'var(--text-h2)', fontWeight: 'var(--font-weight-semibold)' }} className="text-lg md:text-[26px]">
+          {currentPageInfo.title}
+        </h1>
+        <p className="text-muted-foreground mt-1 hidden md:block" style={{ fontSize: 'var(--text-base)' }}>
+          {currentPageInfo.subtitle}
+        </p>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4">
         {/* User Profile with Dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-3 p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer"
+            className="flex items-center gap-2 md:gap-3 p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer"
           >
             <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
               <User className="w-4 h-4 text-primary-foreground" />
             </div>
-            <span style={{ fontSize: 'var(--text-base)' }}>{userName}</span>
+            <span style={{ fontSize: 'var(--text-base)' }} className="hidden md:block">{userName}</span>
             <ChevronDown
               className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${
                 isDropdownOpen ? 'rotate-180' : ''

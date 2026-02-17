@@ -29,7 +29,7 @@ function GridLayout({ onOpenModal, bookings }: { onOpenModal: (booking: any) => 
   }
 
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {bookings.map((booking) => (
         <div
           key={booking.id}
@@ -693,45 +693,51 @@ export function BookingsPage() {
     return matchesSearch && matchesStatus;
   });
 
+  // Export to CSV
+  const handleExport = () => {
+    const headers = ['Customer Name', 'Email', 'Phone', 'Event Date', 'Time', 'Guests', 'Occasion', 'Amount', 'Status', 'Contacted By', 'Contacted When'];
+    
+    const csvData = filteredBookings.map(booking => [
+      booking.customer.name,
+      booking.customer.email,
+      booking.customer.phone,
+      booking.event.date,
+      booking.event.time,
+      booking.guests.toString(),
+      booking.event.occasion,
+      booking.amount,
+      booking.status,
+      booking.contacted?.by || '',
+      booking.contacted?.when || '',
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...csvData.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `bookings_export_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
+
   return (
     <div className="min-h-full bg-background flex flex-col">
       {/* List View */}
       {currentPage === 'list' && (
         <div className="flex-1 flex flex-col">
-          <div className="flex items-center justify-between mb-6 px-8 pt-6">
-            <h1 className="text-foreground" style={{ fontSize: 'var(--text-h1)', fontWeight: 'var(--font-weight-semibold)' }}>
-              Bookings
-            </h1>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={fetchBookings}
-                disabled={loading}
-                className="p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer"
-                title="Refresh"
-              >
-                <RefreshCw className={`w-5 h-5 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
-              </button>
-              <Button
-                variant="secondary"
-                icon={Download}
-                iconPosition="left"
-                href="/admin/bookings/export"
-              >
-                Export
-              </Button>
-            </div>
-          </div>
-
-          <div className="px-8 pb-1">
+          <div className="px-4 md:px-0 pb-1">
             {/* Search & Filter Bar */}
-            <div className="bg-card border border-border rounded-xl p-4 mb-6 flex items-center justify-between gap-4">
+            <div className="bg-card border border-border rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
               {/* Search Bar - Left Side */}
-              <div className="relative flex-1 max-w-lg">
+              <div className="relative flex-1 max-w-full sm:max-w-lg">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   type="text"
                   placeholder="Search by name, email, or phone..."
-                  className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                   style={{ fontSize: 'var(--text-base)' }}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -739,15 +745,15 @@ export function BookingsPage() {
                 />
               </div>
 
-              {/* Status Dropdown - Right Side */}
+              {/* Status Dropdown & Export - Right Side */}
               <div className="flex items-center gap-3">
                 <StatusDropdown
                   options={statusOptions}
                   value={selectedStatus}
                   onChange={setSelectedStatus}
                 />
-                {/* Export Button - Duplicate for consistency */}
-                <Button variant="primary" icon={Download}>
+                {/* Export Button */}
+                <Button variant="primary" icon={Download} onClick={handleExport}>
                   Export
                 </Button>
               </div>

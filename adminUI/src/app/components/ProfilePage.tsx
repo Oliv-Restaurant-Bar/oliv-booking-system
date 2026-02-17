@@ -1,50 +1,18 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { User, Mail, Phone, Shield, Camera, Lock, Check, X, Eye, EyeOff } from 'lucide-react';
 import { Modal } from './Modal';
 import { Button } from './Button';
 
-interface Session {
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    image?: string | null;
-    role: string;
-  };
-}
-
-interface ProfilePageProps {
-  session?: Session;
-}
-
-export function ProfilePage({ session }: ProfilePageProps) {
-  // Split name into first and last name
-  const nameParts = session?.user.name?.split(' ') || ['John', 'Doe'];
-
-  // Profile state - initialize with session data or defaults
+export function ProfilePage() {
+  // Profile state
   const [profileData, setProfileData] = useState({
-    firstName: nameParts[0] || '',
-    lastName: nameParts.slice(1).join(' ') || '',
-    email: session?.user.email || 'john.doe@example.com',
-    phone: '', // Phone field not in database schema
-    role: session?.user.role || 'admin',
-    avatar: session?.user.image || '',
+    firstName: 'John',
+    lastName: 'Anderson',
+    email: 'john.anderson@restaurant.com',
+    phone: '+41 79 123 45 67',
+    role: 'Admin',
+    avatar: '',
   });
-
-  // Update profile data when session changes
-  useEffect(() => {
-    if (session?.user) {
-      const nameParts = session.user.name?.split(' ') || ['', ''];
-      setProfileData(prev => ({
-        firstName: nameParts[0] || '',
-        lastName: nameParts.slice(1).join(' ') || '',
-        email: session.user.email || '',
-        phone: prev.phone, // Preserve phone number if set
-        role: session.user.role || 'admin',
-        avatar: session.user.image || '',
-      }));
-    }
-  }, [session]);
 
   // File input ref
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -72,13 +40,10 @@ export function ProfilePage({ session }: ProfilePageProps) {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Format role for display
-  const formatRole = (role: string) => {
-    return role
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
-  };
+  // Role options for display
+  const roleOptions = [
+    { value: 'Admin', label: 'Admin', icon: Shield },
+  ];
 
   const handleEditProfile = () => {
     setEditForm({
@@ -194,7 +159,7 @@ export function ProfilePage({ session }: ProfilePageProps) {
               <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg mb-6">
                 <Shield className="w-4 h-4 text-primary" />
                 <span className="text-primary" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                  {formatRole(profileData.role)}
+                  {profileData.role}
                 </span>
               </div>
 

@@ -2,6 +2,7 @@
 
 import * as Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
+import { BarChart3, PieChart, TrendingUp } from 'lucide-react';
 
 interface DailyData {
   date: string;
@@ -40,10 +41,13 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
   return (
     <>
       {/* Main Content Grid */}
-      <div className="grid grid-cols-3 gap-6">
-        {/* Large Chart - Takes 2 columns - Bookings in Last 30 Days */}
-        <div className="col-span-2 bg-card rounded-2xl p-6 shadow-sm border border-border flex flex-col">
-          <div className="flex items-center justify-between mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        {/* Large Chart - Takes 2 columns on desktop, full width on mobile */}
+        <div className="lg:col-span-2 bg-card rounded-2xl p-4 md:p-6 shadow-sm border border-border flex flex-col">
+          <div className="flex items-center gap-3 mb-4 md:mb-6">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <BarChart3 className="w-5 h-5 text-primary" />
+            </div>
             <h3 style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
               Bookings in Last 30 Days
             </h3>
@@ -76,6 +80,7 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
                     style: {
                       fontSize: '12px',
                       color: '#6B7280',
+                      fontFamily: 'var(--font-sans)',
                     },
                   },
                   lineWidth: 0,
@@ -89,6 +94,7 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
                     style: {
                       fontSize: '12px',
                       color: '#6B7280',
+                      fontFamily: 'var(--font-sans)',
                     },
                   },
                   gridLineColor: '#F3F4F6',
@@ -100,6 +106,7 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
                   borderRadius: 8,
                   style: {
                     fontSize: '12px',
+                    fontFamily: 'var(--font-sans)',
                   },
                   formatter: function (this: any) {
                     return '<b>' + this.x + '</b><br/>' + 'Bookings: <b>' + this.y + '</b>';
@@ -141,9 +148,14 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
 
         {/* Status Summary - 1 column */}
         <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
-          <h3 className="mb-4" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-            Status Summary
-          </h3>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <PieChart className="w-5 h-5 text-primary" />
+            </div>
+            <h3 style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+              Status Summary
+            </h3>
+          </div>
           <HighchartsReact
             highcharts={Highcharts}
             options={{
@@ -209,9 +221,14 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
 
       {/* Revenue Chart - Full Width */}
       <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
-        <h3 className="mb-6" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-          Revenue Trend
-        </h3>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <TrendingUp className="w-5 h-5 text-primary" />
+          </div>
+          <h3 style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+            Revenue Trend
+          </h3>
+        </div>
         <HighchartsReact
           highcharts={Highcharts}
           options={{
@@ -235,6 +252,7 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
                 style: {
                   fontSize: '12px',
                   color: '#6B7280',
+                  fontFamily: 'var(--font-sans)',
                 },
               },
               lineWidth: 0,
@@ -251,6 +269,7 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
                 style: {
                   fontSize: '12px',
                   color: '#6B7280',
+                  fontFamily: 'var(--font-sans)',
                 },
               },
               gridLineColor: '#F3F4F6',
@@ -262,6 +281,7 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
               borderRadius: 8,
               style: {
                 fontSize: '12px',
+                fontFamily: 'var(--font-sans)',
               },
               formatter: function (this: any) {
                 return '<b>' + this.x + '</b><br/>' + 'Revenue: <b>CHF ' + this.y.toLocaleString() + '</b>';
