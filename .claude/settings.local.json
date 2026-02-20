@@ -34,7 +34,11 @@
       "Bash(dotenv:*)",
       "Bash(set:*)",
       "Bash(. ./.env.local)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(lsof:*)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(find:*)"
     ]
   }
 }

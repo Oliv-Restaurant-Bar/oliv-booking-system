@@ -33,10 +33,10 @@ export function ReportsPage() {
   const [selectedYear] = useState('2026');
 
   // Calculate summary KPIs
-  const totalBookings = monthlyReport.reduce((sum, month) => sum + month.totalBookings, 0);
+  const totalBookings = Math.floor(monthlyReport.reduce((sum, month) => sum + month.totalBookings, 0));
   const totalRevenue = monthlyReport.reduce((sum, month) => sum + month.totalRevenue, 0);
   const avgBookingValue = totalRevenue / totalBookings;
-  const topContact = bookingsByContacts.reduce((max, contact) => 
+  const topContact = bookingsByContacts.reduce((max, contact) =>
     contact.totalRevenue > max.totalRevenue ? contact : max
   );
 
@@ -91,7 +91,7 @@ export function ReportsPage() {
                       CHF {contact.totalRevenue.toLocaleString()}
                     </p>
                     <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                      {contact.bookings} bookings
+                      {Math.floor(contact.bookings)} bookings
                     </p>
                   </div>
 

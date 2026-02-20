@@ -123,7 +123,7 @@ export function MonthlyReportLayout2({ data }: { data: MonthData[] }) {
                   <div>
                     <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Bookings</p>
                     <p className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-bold)' }}>
-                      {month.totalBookings}
+                      {Math.floor(month.totalBookings)}
                     </p>
                   </div>
                   <div className="text-right">

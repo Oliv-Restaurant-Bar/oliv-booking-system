@@ -44,7 +44,9 @@ function generateShortBookingId(bookingId: number | string): string {
  */
 export function getBookingConfirmedDepositTemplateData(
   booking: Booking & { lead?: Lead | null },
-  estimatedTotal: number
+  estimatedTotal: number,
+  bookingEditUrl?: string,
+  editLinkExpiresAt?: string
 ): TemplateData {
   const lead = booking.lead;
   const customerName = lead?.contactName || lead?.name || "Gast";
@@ -58,6 +60,8 @@ export function getBookingConfirmedDepositTemplateData(
     deposit_amount: formatCHF(estimatedTotal * 0.3),
     deposit_percentage: "30",
     booking_id: generateShortBookingId(booking.id),
+    booking_edit_url: bookingEditUrl || "https://oliv-restaurant.ch",
+    edit_link_expires_at: editLinkExpiresAt || "",
     special_requests: booking.specialRequests || "Keine",
     allergy_details: Array.isArray(booking.allergyDetails)
       ? booking.allergyDetails.join(", ") || "Keine"
@@ -71,7 +75,8 @@ export function getBookingConfirmedDepositTemplateData(
 export function getBookingConfirmedNoDepositTemplateData(
   booking: Booking & { lead?: Lead | null },
   estimatedTotal: number,
-  bookingEditUrl?: string
+  bookingEditUrl?: string,
+  editLinkExpiresAt?: string
 ): TemplateData {
   const lead = booking.lead;
   const customerName = lead?.contactName || lead?.name || "Gast";
@@ -83,6 +88,7 @@ export function getBookingConfirmedNoDepositTemplateData(
     guest_count: booking.guestCount,
     estimated_total: formatCHF(estimatedTotal),
     booking_edit_url: bookingEditUrl || "https://oliv-restaurant.ch",
+    edit_link_expires_at: editLinkExpiresAt || "",
     special_requests: booking.specialRequests || "Keine",
     allergy_details: Array.isArray(booking.allergyDetails)
       ? booking.allergyDetails.join(", ") || "Keine"
@@ -208,6 +214,7 @@ export function getTemplateData(
     estimatedTotal?: number;
     reason?: string;
     bookingEditUrl?: string;
+    editLinkExpiresAt?: string;
     feedbackUrl?: string;
     rebookingUrl?: string;
   } = {}
@@ -218,12 +225,18 @@ export function getTemplateData(
     case "confirmation":
       // Return different data based on whether deposit is required
       if (params.estimatedTotal && params.estimatedTotal >= DEPOSIT_THRESHOLD) {
-        return getBookingConfirmedDepositTemplateData(booking, params.estimatedTotal);
+        return getBookingConfirmedDepositTemplateData(
+          booking,
+          params.estimatedTotal,
+          params.bookingEditUrl,
+          params.editLinkExpiresAt
+        );
       } else {
         return getBookingConfirmedNoDepositTemplateData(
           booking,
           params.estimatedTotal || 0,
-          params.bookingEditUrl
+          params.bookingEditUrl,
+          params.editLinkExpiresAt
         );
       }
 

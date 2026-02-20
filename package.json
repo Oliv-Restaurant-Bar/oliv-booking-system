@@ -16,6 +16,7 @@
     "db:verify": "dotenv -e .env.local -- tsx lib/db/verify-admin.ts",
     "db:create-user": "dotenv -e .env.local -- tsx lib/db/create-user.ts",
     "db:recalculate-totals": "dotenv -e .env.local -- tsx lib/db/recalculate-totals.ts",
+    "db:migrate-edit-link": "dotenv -e .env.local -- tsx scripts/migrate-add-booking-edit-link.ts",
     "email:test": "dotenv -e .env.local -- tsx scripts/test-email.ts",
     "email:test-dummy": "tsx scripts/test-email-with-dummy.ts",
     "email:send-reminders": "dotenv -e .env.local -- tsx -e \"require('./lib/actions/reminders').sendRemindersForNext24Hours()\""

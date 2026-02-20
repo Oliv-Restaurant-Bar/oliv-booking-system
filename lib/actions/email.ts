@@ -182,6 +182,7 @@ export async function sendBookingConfirmation(params: {
   bookingData: Booking & { lead?: Lead | null };
   estimatedTotal?: number;
   bookingEditUrl?: string;
+  editLinkExpiresAt?: string;
 }): Promise<{ success: boolean; error?: string }> {
   return sendBookingEmail({
     bookingId: params.bookingId,

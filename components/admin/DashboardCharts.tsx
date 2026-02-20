@@ -91,6 +91,9 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
                     text: '',
                   },
                   labels: {
+                    formatter: function (this: any) {
+                      return Math.round(this.value).toString();
+                    },
                     style: {
                       fontSize: '12px',
                       color: '#6B7280',
@@ -99,6 +102,7 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
                   },
                   gridLineColor: '#F3F4F6',
                   gridLineWidth: 1,
+                  allowDecimals: false,
                 },
                 tooltip: {
                   backgroundColor: '#FFFFFF',
@@ -109,7 +113,7 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
                     fontFamily: 'var(--font-sans)',
                   },
                   formatter: function (this: any) {
-                    return '<b>' + this.x + '</b><br/>' + 'Bookings: <b>' + this.y + '</b>';
+                    return '<b>' + this.x + '</b><br/>' + 'Bookings: <b>' + Math.round(this.y) + '</b>';
                   },
                 },
                 plotOptions: {

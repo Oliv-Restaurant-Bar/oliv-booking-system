@@ -40,16 +40,16 @@ export function MonthlyReportLayout2({ data }: { data: MonthData[] }) {
     // Export monthly report to XLSX
     const excelData = data.map(month => ({
       'Month': month.month,
-      'Total Bookings': month.totalBookings,
+      'Total Bookings': Math.floor(month.totalBookings),
       'Total Revenue': month.totalRevenue,
       'Average Revenue': month.avgRevenue,
-      'New': month.new,
-      'Touchbase': month.touchbase,
-      'Confirmed': month.confirmed,
-      'Declined': month.declined,
-      'Unresponsive': month.unresponsive,
-      'Completed': month.completed,
-      'No Show': month.noShow,
+      'New': Math.floor(month.new),
+      'Touchbase': Math.floor(month.touchbase),
+      'Confirmed': Math.floor(month.confirmed),
+      'Declined': Math.floor(month.declined),
+      'Unresponsive': Math.floor(month.unresponsive),
+      'Completed': Math.floor(month.completed),
+      'No Show': Math.floor(month.noShow),
     }));
 
     // Create worksheet
@@ -128,7 +128,7 @@ export function MonthlyReportLayout2({ data }: { data: MonthData[] }) {
                   <div>
                     <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Bookings</p>
                     <p className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-bold)' }}>
-                      {month.totalBookings}
+                      {Math.floor(month.totalBookings)}
                     </p>
                   </div>
                   <div className="text-right">
@@ -150,43 +150,43 @@ export function MonthlyReportLayout2({ data }: { data: MonthData[] }) {
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>New</span>
                     <span className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      {month.new}
+                      {Math.floor(month.new)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Touchbase</span>
                     <span className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      {month.touchbase}
+                      {Math.floor(month.touchbase)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Confirmed</span>
                     <span className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      {month.confirmed}
+                      {Math.floor(month.confirmed)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Declined</span>
                     <span className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      {month.declined}
+                      {Math.floor(month.declined)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Unresponsive</span>
                     <span className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      {month.unresponsive}
+                      {Math.floor(month.unresponsive)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Completed</span>
                     <span className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      {month.completed}
+                      {Math.floor(month.completed)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>No show</span>
                     <span className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      {month.noShow}
+                      {Math.floor(month.noShow)}
                     </span>
                   </div>
                 </div>

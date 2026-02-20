@@ -25,10 +25,10 @@ export async function getDashboardStats() {
       .where(eq(menuCategories.isActive, true));
 
     return {
-      totalBookings: totalBookings[0]?.count || 0,
-      totalRevenue: totalRevenueResult[0]?.total || 0,
-      totalMenuItems: totalMenuItems[0]?.count || 0,
-      totalCategories: totalCategories[0]?.count || 0,
+      totalBookings: Math.floor(Number(totalBookings[0]?.count) || 0),
+      totalRevenue: Number(totalRevenueResult[0]?.total) || 0,
+      totalMenuItems: Math.floor(Number(totalMenuItems[0]?.count) || 0),
+      totalCategories: Math.floor(Number(totalCategories[0]?.count) || 0),
     };
   } catch (error) {
     console.error("Error fetching dashboard stats:", error);
@@ -63,7 +63,7 @@ export async function getDailyBookingsData() {
     const dataMap = new Map(
       (dailyData as any[]).map((d) => [
         d.date,
-        Number(d.bookings)
+        Math.floor(Number(d.bookings))
       ])
     );
 
@@ -160,7 +160,7 @@ export async function getMonthlyBookingsData() {
 
     return allMonths.map(month => ({
       month,
-      bookings: dataMap.get(month)?.bookings || 0,
+      bookings: Math.floor(Number(dataMap.get(month)?.bookings) || 0),
       revenue: Number(dataMap.get(month)?.revenue || 0),
     }));
   } catch (error) {
@@ -190,7 +190,7 @@ export async function getBookingStatusDistribution() {
     statusCounts.forEach(({ status, count }) => {
       const item = statusData.find(d => d.name.toLowerCase() === status);
       if (item) {
-        item.value = count;
+        item.value = Math.floor(Number(count));
       }
     });
 
@@ -457,18 +457,18 @@ export async function getMonthlyReportData(year: number = new Date().getFullYear
         Number(d.month_num),
         {
           month: (d.month_name as string).trim(),
-          totalBookings: Number(d.total_bookings) || 0,
+          totalBookings: Math.floor(Number(d.total_bookings) || 0),
           totalRevenue: Number(d.total_revenue) || 0,
           avgRevenue: Number(d.total_bookings) > 0 ? Number(d.total_revenue) / Number(d.total_bookings) : 0,
           // Map pending to "new" and split between new/touchbase
           new: Math.ceil((Number(d.pending_count) || 0) / 2),
           touchbase: Math.floor((Number(d.pending_count) || 0) / 2),
-          confirmed: Number(d.confirmed_count) || 0,
-          declined: Number(d.declined_count) || 0,
-          completed: Number(d.completed_count) || 0,
+          confirmed: Math.floor(Number(d.confirmed_count) || 0),
+          declined: Math.floor(Number(d.declined_count) || 0),
+          completed: Math.floor(Number(d.completed_count) || 0),
           // Map cancelled + noshow to "unresponsive" and "noShow"
-          unresponsive: Number(d.cancelled_count) || 0,
-          noShow: Number(d.noshow_count) || 0,
+          unresponsive: Math.floor(Number(d.cancelled_count) || 0),
+          noShow: Math.floor(Number(d.noshow_count) || 0),
           // Revenue breakdown
           newRevenue: Number(d.pending_revenue) / 2 || 0,
           touchbaseRevenue: Number(d.pending_revenue) / 2 || 0,

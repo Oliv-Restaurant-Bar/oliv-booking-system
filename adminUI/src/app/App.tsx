@@ -123,6 +123,9 @@ function ModernLayout() {
                     text: '',
                   },
                   labels: {
+                    formatter: function () {
+                      return Math.round(this.value).toString();
+                    },
                     style: {
                       fontSize: '12px',
                       color: '#6B7280',
@@ -131,6 +134,7 @@ function ModernLayout() {
                   },
                   gridLineColor: '#F3F4F6',
                   gridLineWidth: 1,
+                  allowDecimals: false,
                 },
                 tooltip: {
                   backgroundColor: '#FFFFFF',
@@ -141,7 +145,7 @@ function ModernLayout() {
                     fontFamily: 'var(--font-sans)',
                   },
                   formatter: function () {
-                    return '<b>' + this.x + '</b><br/>' + 'Bookings: <b>' + this.y + '</b>';
+                    return '<b>' + this.x + '</b><br/>' + 'Bookings: <b>' + Math.round(this.y) + '</b>';
                   },
                 },
                 plotOptions: {

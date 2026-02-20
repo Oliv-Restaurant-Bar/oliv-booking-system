@@ -40,7 +40,7 @@ export function ReportsPage() {
   }, [selectedYear]);
 
   // Calculate summary KPIs with safe defaults for empty arrays
-  const totalBookings = monthlyReport.reduce((sum, month) => sum + (month.totalBookings || 0), 0);
+  const totalBookings = Math.floor(monthlyReport.reduce((sum, month) => sum + (month.totalBookings || 0), 0));
   const totalRevenue = monthlyReport.reduce((sum, month) => sum + (month.totalRevenue || 0), 0);
   const avgBookingValue = totalBookings > 0 ? totalRevenue / totalBookings : 0;
   const topContact = bookingsByContacts.length > 0
@@ -66,20 +66,20 @@ export function ReportsPage() {
         {/* Top Customers and Trending Items - 2 Column Grid on Desktop */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Top Customers */}
-          <div className="bg-card border border-border rounded-xl p-6">
-            <h3 className="text-foreground mb-6" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+          <div className="bg-card border border-border rounded-xl p-4 md:p-6">
+            <h3 className="text-foreground mb-4 md:mb-6" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
               Top Customers by Revenue
             </h3>
             <div className="overflow-y-auto" style={{ maxHeight: '400px' }}>
               {bookingsByContacts.slice(0, 5).map((contact, index) => (
-                <div 
-                  key={index} 
-                  className={`flex items-center gap-4 py-3 hover:bg-accent/50 transition-colors ${
+                <div
+                  key={index}
+                  className={`flex items-center gap-3 md:gap-4 py-3 hover:bg-accent/50 transition-colors ${
                     index < 4 ? 'border-b border-border' : ''
                   }`}
                 >
                   {/* Rank */}
-                  <div className="text-muted-foreground w-6 flex-shrink-0" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                  <div className="text-muted-foreground w-5 md:w-6 flex-shrink-0" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
                     {index + 1}
                   </div>
 
@@ -92,10 +92,10 @@ export function ReportsPage() {
 
                   {/* Customer Details */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                    <p className="text-foreground truncate" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                       {contact.name}
                     </p>
-                    <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                    <p className="text-muted-foreground hidden sm:block" style={{ fontSize: 'var(--text-small)' }}>
                       {contact.phone}
                     </p>
                   </div>
@@ -106,12 +106,12 @@ export function ReportsPage() {
                       CHF {contact.totalRevenue.toLocaleString()}
                     </p>
                     <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                      {contact.bookings} bookings
+                      {Math.floor(contact.bookings)} bookings
                     </p>
                   </div>
 
-                  {/* Additional Stats */}
-                  <div className="text-right flex-shrink-0">
+                  {/* Additional Stats - Hide on mobile/tablet */}
+                  <div className="text-right hidden lg:block flex-shrink-0">
                     <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
                       Avg: CHF {contact.avgRevenue.toLocaleString()}
                     </p>
