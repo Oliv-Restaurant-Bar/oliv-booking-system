@@ -19,8 +19,6 @@ export interface MenuItem {
   variants?: MenuItemVariant[];
   /** 'none' is used for non-food service items (tech, furniture, etc.) from the database */
   dietaryType: 'vegetarian' | 'non-vegetarian' | 'vegan' | 'none';
-  /** Additional dietary flag from database for gluten-free items */
-  isGlutenFree?: boolean;
 }
 
 export const menuItems: MenuItem[] = [

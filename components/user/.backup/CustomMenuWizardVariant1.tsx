@@ -104,10 +104,7 @@ export function CustomMenuWizard() {
                 price: Number(item.pricePerPerson) || 0,
                 pricingType: item.pricingType || 'per_person',
                 image: item.imageUrl || 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=400&fit=crop',
-                // If no dietary flags are set, treat as 'none' (beverages, non-food items)
-                // Otherwise: vegan > vegetarian > non-vegetarian
-                dietaryType: (!item.isVegan && !item.isVegetarian && !item.isGlutenFree) ? 'none' : item.isVegan ? 'vegan' : item.isVegetarian ? 'vegetarian' : 'non-vegetarian',
-                isGlutenFree: item.isGlutenFree || false,
+                dietaryType: item.isVegan ? 'vegan' : item.isVegetarian ? 'vegetarian' : (!item.isVegetarian && !item.isVegan && !item.isGlutenFree) ? 'none' : 'non-vegetarian',
               };
             });
 
@@ -155,26 +152,8 @@ export function CustomMenuWizard() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [selectedItems.length]);
 
-  // Check if category is locked (more than 1 ahead of visited categories)
-  const isCategoryLocked = (category: string) => {
-    if (visitedCategories.includes(category)) {
-      return false; // Already visited, always accessible
-    }
-    const categoryIndex = categories.indexOf(category);
-    const maxVisitedIndex = Math.max(
-      ...visitedCategories.map((c) => categories.indexOf(c)),
-    );
-    // Lock if trying to skip ahead (more than 1 position beyond max visited)
-    return categoryIndex > maxVisitedIndex + 1;
-  };
-
   // Handle category change and track visited categories
   const handleCategoryChange = (category: string) => {
-    // Prevent jumping to locked categories
-    if (isCategoryLocked(category)) {
-      return;
-    }
-
     setSelectedCategory(category);
     if (!visitedCategories.includes(category)) {
       setVisitedCategories(prev => [...prev, category]);
@@ -328,38 +307,6 @@ export function CustomMenuWizard() {
         setCurrentStep(2);
       }
     } else if (currentStep === 2) {
-      handleStep2Navigation();
-    }
-  };
-
-  // Helper functions for category navigation
-  const getNextCategory = () => {
-    const currentIndex = categories.indexOf(selectedCategory);
-    if (currentIndex < categories.length - 1) {
-      return categories[currentIndex + 1];
-    }
-    return null;
-  };
-
-  const isLastCategory = () => {
-    return selectedCategory === categories[categories.length - 1];
-  };
-
-  const allCategoriesVisited = () => {
-    return visitedCategories.length === categories.length;
-  };
-
-  const handleStep2Navigation = () => {
-    if (!isLastCategory()) {
-      // Move to next category
-      const nextCategory = getNextCategory();
-      if (nextCategory) {
-        handleCategoryChange(nextCategory);
-        // Scroll to top of menu section
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    } else if (allCategoriesVisited()) {
-      // All categories visited, can proceed to step 3
       if (validateStep2()) {
         setCurrentStep(3);
       }
@@ -369,19 +316,6 @@ export function CustomMenuWizard() {
   const handleBack = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleStep2Back = () => {
-    // On Step 2, check if on first category
-    const currentCategoryIndex = categories.indexOf(selectedCategory);
-    if (currentCategoryIndex > 0) {
-      // Go to previous category
-      setSelectedCategory(categories[currentCategoryIndex - 1]);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      // On first category, go back to Step 1
-      handleBack();
     }
   };
 
@@ -652,31 +586,61 @@ export function CustomMenuWizard() {
       <WizardHeader />
       <div className="min-h-screen bg-background flex flex-col">
       {/* Mobile Step Indicator - Only visible on mobile */}
-      <div className="lg:hidden sticky top-20 z-40 bg-primary text-primary-foreground px-4 py-3">
+      <div className="lg:hidden bg-primary text-primary-foreground px-4 py-6">
         <div className="max-w-4xl mx-auto">
-          {/* Compact Row: Step Counter + Title */}
-          <div className="flex items-center justify-between gap-3 mb-2">
-            <p className="text-primary-foreground opacity-80 flex-shrink-0" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
-              Step {currentStep}/3
+          {/* Current Step Title */}
+          <div className="mb-4">
+            <p className="text-primary-foreground opacity-80 mb-1" style={{ fontSize: 'var(--text-small)' }}>
+              Step {currentStep} of 3
             </p>
-            <h2 className="text-primary-foreground text-right" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+            <h2 className="text-primary-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
               {steps[currentStep - 1].title}
             </h2>
           </div>
 
-          {/* Progress Bar */}
-          <div className="flex items-center gap-2">
+          {/* Horizontal Progress Bar */}
+          <div className="flex items-center gap-2 mb-3">
             {steps.map((step) => {
               const isActive = currentStep === step.number;
               const isCompleted = currentStep > step.number;
-
+              
               return (
                 <div key={step.number} className="flex-1">
-                  <div className={`h-1.5 rounded-full transition-all duration-300 ${
+                  <div className={`h-2 rounded-full transition-all duration-300 ${
                     isCompleted || isActive
                       ? 'bg-primary-foreground'
                       : 'bg-primary-foreground/20'
                   }`} style={{ borderRadius: 'var(--radius)' }} />
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Step Labels */}
+          <div className="flex justify-between">
+            {steps.map((step) => {
+              const Icon = step.icon;
+              const isActive = currentStep === step.number;
+              const isCompleted = currentStep > step.number;
+              
+              return (
+                <div key={step.number} className="flex items-center gap-1.5">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${
+                    isCompleted
+                      ? 'bg-primary-foreground text-primary'
+                      : isActive
+                      ? 'bg-primary-foreground text-primary'
+                      : 'bg-transparent border border-primary-foreground/30'
+                  }`}>
+                    {isCompleted ? (
+                      <Check className="w-3 h-3" />
+                    ) : (
+                      <Icon className="w-3 h-3 text-primary-foreground" />
+                    )}
+                  </div>
+                  <span className={`text-primary-foreground ${isActive || isCompleted ? 'opacity-100' : 'opacity-60'}`} style={{ fontSize: 'var(--text-small)' }}>
+                    {step.number}
+                  </span>
                 </div>
               );
             })}
@@ -1076,33 +1040,7 @@ export function CustomMenuWizard() {
                     <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
                       Select dishes from our curated categories
                     </p>
-                    <div className="mt-4 flex items-center gap-2 text-sm" style={{ fontSize: 'var(--text-small)' }}>
-                      <span className="text-muted-foreground">
-                        Browse through all {categories.length} categories step-by-step
-                      </span>
-                      <span className="text-primary font-medium">
-                        • {visitedCategories.length} of {categories.length} visited
-                      </span>
-                    </div>
                   </div>
-
-                  {/* Guest Count & Pricing Info Bar - Only show for food categories */}
-                  {!['Technology', 'Decoration', 'Furniture', 'Miscellaneous'].includes(selectedCategory) && (
-                    <div className="mb-4 bg-secondary border-l-4 border-primary flex items-center gap-2 px-3 py-2" style={{ borderRadius: 'var(--radius)' }}>
-                      <Users className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span className="text-secondary-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-                        {eventDetails.guestCount || '0'} {parseInt(eventDetails.guestCount) === 1 ? 'guest' : 'guests'}
-                      </span>
-                      <span className="text-secondary-foreground/50 mx-1" style={{ fontSize: 'var(--text-small)' }}>
-                        |
-                      </span>
-                      <span className="text-secondary-foreground/70" style={{ fontSize: 'var(--text-small)' }}>
-                        {selectedCategory === 'Beverages'
-                          ? 'Charged by consumption • Per-person pricing available'
-                          : 'All items apply per person'}
-                      </span>
-                    </div>
-                  )}
 
                   {loadingMenu ? (
                     <div className="text-center py-16">
@@ -1120,30 +1058,25 @@ export function CustomMenuWizard() {
                       {categories.map((category) => {
                         const isActive = selectedCategory === category;
                         const isVisited = visitedCategories.includes(category);
-                        const isLocked = isCategoryLocked(category);
                         const categoryItemCount = getSelectedItemsByCategory(category).length;
-
+                        
                         return (
                           <button
                             key={category}
                             ref={(el) => { categoryRefs.current[category] = el; }}
                             onClick={() => handleCategoryChange(category)}
-                            disabled={isLocked}
                             className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all flex-shrink-0 whitespace-nowrap ${
                               isActive
                                 ? 'bg-primary text-primary-foreground hover:bg-secondary hover:text-secondary-foreground'
-                                : isLocked
-                                ? 'bg-muted/10 text-muted-foreground cursor-not-allowed opacity-50'
                                 : isVisited
                                 ? 'bg-muted/50 text-foreground hover:bg-muted hover:text-foreground border border-border'
                                 : 'bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
                             }`}
                             style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                           >
-                            {isLocked && <Lock className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />}
-                            {isVisited && !isActive && !isLocked && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
+                            {isVisited && !isActive && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
                             <span>{category}</span>
-                            {categoryItemCount > 0 && !isLocked && (
+                            {categoryItemCount > 0 && (
                               <span className={`px-2 py-0.5 rounded-full text-xs ${
                                 isActive ? 'bg-secondary-foreground/20 text-secondary-foreground' : 'bg-primary/10 text-primary'
                               }`}>
@@ -1220,12 +1153,10 @@ export function CustomMenuWizard() {
                                 {/* Item Content */}
                                 <div className="flex-1 p-4 flex flex-col">
                                   <div className="flex items-start gap-2 mb-2">
-                                    {item.dietaryType !== 'none' && (
-                                      <div className="flex-shrink-0 mt-0.5">
-                                        <DietaryIcon type={item.dietaryType} size="sm" isGlutenFree={item.isGlutenFree} />
-                                      </div>
-                                    )}
-                                    <div className={`flex-1 ${item.dietaryType === 'none' ? 'pl-0' : ''}`}>
+                                    <div className="flex-shrink-0 mt-0.5">
+                                      <DietaryIcon type={item.dietaryType} size="sm" />
+                                    </div>
+                                    <div className="flex-1">
                                       <div className="flex items-center gap-2 flex-wrap">
                                         <h5 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
                                           {item.name}
@@ -1286,21 +1217,6 @@ export function CustomMenuWizard() {
                             );
                           })}
                       </div>
-
-                      {/* Warning Message - Show if on last category but not all visited */}
-                      {isLastCategory() && !allCategoriesVisited() && (
-                        <div className="mt-5 p-4 bg-primary/10 border border-primary/20 rounded-lg flex items-start gap-3" style={{ borderRadius: 'var(--radius-card)' }}>
-                          <AlertTriangle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                          <div>
-                            <p className="text-foreground mb-1" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                              Please browse all categories
-                            </p>
-                            <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                              You've visited {visitedCategories.length} of {categories.length} categories. Please explore all menu sections before continuing to the summary.
-                            </p>
-                          </div>
-                        </div>
-                      )}
                     </div>
 
                     {/* Cart Summary - 1 column on desktop, full width on mobile */}
@@ -1787,9 +1703,7 @@ export function CustomMenuWizard() {
                                     {/* Item Content */}
                                     <div className="flex-1 p-3 pl-0">
                                       <div className="flex items-center gap-2 mb-1">
-                                        {item.dietaryType !== 'none' && (
-                                          <DietaryIcon type={item.dietaryType} size="sm" isGlutenFree={item.isGlutenFree} />
-                                        )}
+                                        <DietaryIcon type={item.dietaryType} size="sm" />
                                         <h5 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
                                           {item.name}
                                         </h5>
@@ -1915,11 +1829,8 @@ export function CustomMenuWizard() {
                         if (currentIndex > 0) {
                           setActiveTab(tabs[currentIndex - 1].id);
                         }
-                      } else if (currentStep === 2) {
-                        // On Step 2, go to previous category or back to Step 1
-                        handleStep2Back();
                       } else {
-                        // Step 3 or higher, navigate to previous step
+                        // Navigate to previous step
                         handleBack();
                       }
                     }}
@@ -1951,12 +1862,10 @@ export function CustomMenuWizard() {
                       onClick={handleNext}
                       icon={ChevronRight}
                       iconPosition="right"
-                      disabled={isLastCategory() && !allCategoriesVisited()}
+                      disabled={selectedItems.length === 0}
                       size="sm"
                     >
-                      {isLastCategory() && allCategoriesVisited()
-                        ? "Continue to Summary"
-                        : "Next Category"}
+                      Continue
                     </Button>
                   )}
 
@@ -1990,7 +1899,7 @@ export function CustomMenuWizard() {
             {/* Modal Header */}
             <div className="sticky top-0 bg-card border-b border-border px-6 py-4 flex items-center justify-between z-10">
               <div className="flex items-center gap-3">
-                <DietaryIcon type={detailsModalItem.dietaryType} size="md" isGlutenFree={detailsModalItem.isGlutenFree} />
+                <DietaryIcon type={detailsModalItem.dietaryType} size="md" />
                 <div>
                   <h3 className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
                     {detailsModalItem.name}
