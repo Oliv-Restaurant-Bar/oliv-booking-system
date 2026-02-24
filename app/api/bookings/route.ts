@@ -1,12 +1,29 @@
 import { fetchBookings } from "@/lib/actions/fetch-bookings";
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const bookings = await fetchBookings();
-    return NextResponse.json(bookings);
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const search = searchParams.get('search') || '';
+    const status = searchParams.get('status') || 'All Status';
+
+    const result = await fetchBookings({
+      page,
+      limit,
+      searchQuery: search,
+      status
+    });
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Error in bookings API:", error);
-    return NextResponse.json([], { status: 500 });
+    return NextResponse.json({
+      bookings: [],
+      totalCount: 0,
+      page: 1,
+      limit: 10,
+      totalPages: 0
+    }, { status: 500 });
   }
 }

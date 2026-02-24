@@ -16,14 +16,16 @@ interface StatusDropdownProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  disabled?: boolean;
 }
 
-export function StatusDropdown({ 
-  options, 
-  value, 
-  onChange, 
+export function StatusDropdown({
+  options,
+  value,
+  onChange,
   placeholder = 'Select status',
-  className = ''
+  className = '',
+  disabled = false
 }: StatusDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -47,14 +49,15 @@ export function StatusDropdown({
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
       {/* Trigger Button */}
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-2 bg-background border border-border text-foreground rounded-lg hover:bg-accent transition-colors flex items-center gap-2 justify-between cursor-pointer" 
+      <button
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
+        className={`w-full px-4 py-2 bg-background border border-border text-foreground rounded-lg transition-colors flex items-center gap-2 justify-between ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-accent cursor-pointer'}`}
         style={{ fontSize: 'var(--text-base)' }}
       >
         <div className="flex items-center gap-2">
           {selectedOption?.dotColor && (
-            <div 
+            <div
               className="w-1.5 h-1.5 rounded-full flex-shrink-0"
               style={{ backgroundColor: selectedOption.dotColor }}
             />
@@ -75,12 +78,11 @@ export function StatusDropdown({
                 onChange(option.value);
                 setIsOpen(false);
               }}
-              className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-left cursor-pointer ${
-                option.value === value ? 'bg-accent' : ''
-              } ${index > 0 ? 'border-t border-border' : ''}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-left cursor-pointer ${option.value === value ? 'bg-accent' : ''
+                } ${index > 0 ? 'border-t border-border' : ''}`}
             >
               {option.dotColor && (
-                <div 
+                <div
                   className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                   style={{ backgroundColor: option.dotColor }}
                 />

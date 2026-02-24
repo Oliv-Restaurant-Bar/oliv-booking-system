@@ -76,9 +76,6 @@ export async function deleteMenuCategory(id: string) {
 
 export async function getMenuCategories() {
   try {
-    // Require VIEW_MENU permission
-    await requirePermissionWrapper(Permission.VIEW_MENU);
-
     const categories = await db
       .select()
       .from(menuCategories)
@@ -95,6 +92,9 @@ export async function getMenuCategories() {
 // Get ALL categories (including inactive ones) - for admin panel
 export async function getAllMenuCategories() {
   try {
+    // Require VIEW_MENU permission
+    await requirePermissionWrapper(Permission.VIEW_MENU);
+
     const categories = await db
       .select()
       .from(menuCategories)
@@ -123,6 +123,9 @@ export async function createMenuItem(input: {
   sortOrder?: number;
 }) {
   try {
+    // Require CREATE_MENU_ITEM permission
+    await requirePermissionWrapper(Permission.CREATE_MENU_ITEM);
+
     const [item] = await db
       .insert(menuItems)
       .values({
@@ -145,6 +148,9 @@ export async function createMenuItem(input: {
 
 export async function updateMenuItem(id: string, updates: Partial<typeof menuItems.$inferInsert>) {
   try {
+    // Require EDIT_MENU_ITEM permission
+    await requirePermissionWrapper(Permission.EDIT_MENU_ITEM);
+
     const [item] = await db
       .update(menuItems)
       .set({
@@ -166,6 +172,9 @@ export async function updateMenuItem(id: string, updates: Partial<typeof menuIte
 
 export async function deleteMenuItem(id: string) {
   try {
+    // Require DELETE_MENU_ITEM permission
+    await requirePermissionWrapper(Permission.DELETE_MENU_ITEM);
+
     await db.delete(menuItems).where(eq(menuItems.id, id));
 
     revalidatePath("/admin/menu-config");
@@ -202,6 +211,9 @@ export async function getMenuItems(categoryId?: string) {
 // Get ALL menu items (including inactive ones) - for admin panel
 export async function getAllMenuItems(categoryId?: string) {
   try {
+    // Require VIEW_MENU permission
+    await requirePermissionWrapper(Permission.VIEW_MENU);
+
     let query = db
       .select()
       .from(menuItems);
@@ -246,6 +258,9 @@ export async function createAddon(input: {
   pricingType: "per_person" | "flat_fee" | "billed_by_consumption";
 }) {
   try {
+    // Require CREATE_ADDON permission
+    await requirePermissionWrapper(Permission.CREATE_ADDON);
+
     const [addon] = await db
       .insert(addons)
       .values({
@@ -271,6 +286,9 @@ export async function createAddon(input: {
 
 export async function updateAddon(id: string, updates: Partial<typeof addons.$inferInsert>) {
   try {
+    // Require EDIT_ADDON permission
+    await requirePermissionWrapper(Permission.EDIT_ADDON);
+
     const [addon] = await db
       .update(addons)
       .set({
@@ -291,6 +309,9 @@ export async function updateAddon(id: string, updates: Partial<typeof addons.$in
 
 export async function deleteAddon(id: string) {
   try {
+    // Require DELETE_ADDON permission
+    await requirePermissionWrapper(Permission.DELETE_ADDON);
+
     await db.delete(addons).where(eq(addons.id, id));
 
     revalidatePath("/admin/menu-config");
@@ -355,6 +376,9 @@ export async function getCompleteMenuData() {
 // Get ALL menu data (including inactive categories/items) - for admin panel
 export async function getAllMenuData() {
   try {
+    // Require VIEW_MENU permission
+    await requirePermissionWrapper(Permission.VIEW_MENU);
+
     const categoriesResult = await getAllMenuCategories();
     const itemsResult = await getAllMenuItems();
     const addonsResult = await getAddons();
@@ -421,6 +445,9 @@ export async function createAddonGroup(input: {
   sortOrder?: number;
 }) {
   try {
+    // Require CREATE_ADDON permission
+    await requirePermissionWrapper(Permission.CREATE_ADDON);
+
     const [addonGroup] = await db
       .insert(addonGroups)
       .values({
@@ -441,6 +468,9 @@ export async function createAddonGroup(input: {
 
 export async function updateAddonGroup(id: string, updates: Partial<typeof addonGroups.$inferInsert>) {
   try {
+    // Require EDIT_ADDON permission
+    await requirePermissionWrapper(Permission.EDIT_ADDON);
+
     const [addonGroup] = await db
       .update(addonGroups)
       .set({ ...updates, updatedAt: new Date() })
@@ -458,6 +488,9 @@ export async function updateAddonGroup(id: string, updates: Partial<typeof addon
 
 export async function deleteAddonGroup(id: string) {
   try {
+    // Require DELETE_ADDON permission
+    await requirePermissionWrapper(Permission.DELETE_ADDON);
+
     await db.delete(addonGroups).where(eq(addonGroups.id, id));
 
     revalidatePath("/admin/menu-config");
@@ -486,6 +519,9 @@ export async function getAddonGroups() {
 
 export async function getAllAddonGroups() {
   try {
+    // Require VIEW_MENU permission
+    await requirePermissionWrapper(Permission.VIEW_MENU);
+
     const groups = await db
       .select()
       .from(addonGroups)
@@ -512,6 +548,9 @@ export async function createAddonItem(input: {
   sortOrder?: number;
 }) {
   try {
+    // Require CREATE_ADDON permission
+    await requirePermissionWrapper(Permission.CREATE_ADDON);
+
     const [addonItem] = await db
       .insert(addonItems)
       .values({
@@ -540,6 +579,9 @@ export async function createAddonItem(input: {
 
 export async function updateAddonItem(id: string, updates: Partial<typeof addonItems.$inferInsert>) {
   try {
+    // Require EDIT_ADDON permission
+    await requirePermissionWrapper(Permission.EDIT_ADDON);
+
     const [addonItem] = await db
       .update(addonItems)
       .set({
@@ -561,6 +603,9 @@ export async function updateAddonItem(id: string, updates: Partial<typeof addonI
 
 export async function deleteAddonItem(id: string) {
   try {
+    // Require DELETE_ADDON permission
+    await requirePermissionWrapper(Permission.DELETE_ADDON);
+
     await db.delete(addonItems).where(eq(addonItems.id, id));
 
     revalidatePath("/admin/menu-config");
@@ -596,6 +641,9 @@ export async function getAddonItems(addonGroupId?: string) {
 
 export async function getAllAddonItems(addonGroupId?: string) {
   try {
+    // Require VIEW_MENU permission
+    await requirePermissionWrapper(Permission.VIEW_MENU);
+
     let query = db.select().from(addonItems);
 
     if (addonGroupId) {
@@ -620,6 +668,9 @@ export async function assignAddonGroupToCategory(input: {
   addonGroupId: string;
 }) {
   try {
+    // Require EDIT_MENU_CATEGORY permission
+    await requirePermissionWrapper(Permission.EDIT_MENU_CATEGORY);
+
     const [assignment] = await db
       .insert(categoryAddonGroups)
       .values({
@@ -639,6 +690,9 @@ export async function assignAddonGroupToCategory(input: {
 
 export async function removeAddonGroupFromCategory(categoryId: string, addonGroupId: string) {
   try {
+    // Require EDIT_MENU_CATEGORY permission
+    await requirePermissionWrapper(Permission.EDIT_MENU_CATEGORY);
+
     await db
       .delete(categoryAddonGroups)
       .where(eq(categoryAddonGroups.categoryId, categoryId))
@@ -656,6 +710,9 @@ export async function removeAddonGroupFromCategory(categoryId: string, addonGrou
 
 export async function updateCategoryAddonGroups(categoryId: string, addonGroupIds: string[]) {
   try {
+    // Require EDIT_MENU_CATEGORY permission
+    await requirePermissionWrapper(Permission.EDIT_MENU_CATEGORY);
+
     // First, remove all existing assignments for this category
     await db.delete(categoryAddonGroups).where(eq(categoryAddonGroups.categoryId, categoryId));
 

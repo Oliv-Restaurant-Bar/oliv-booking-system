@@ -1,26 +1,35 @@
-'use client';
-
 import { Home, Users, ShoppingBag, BarChart3, Settings, UtensilsCrossed } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
+import { Permission, hasPermission } from '@/lib/auth/rbac';
+import { UserRole } from '@/lib/db/schema';
 
 interface DashboardSidebarProps {
+  user?: any;
   activeItem?: string;
   onNavigate?: () => void;
 }
 
-export function DashboardSidebar({ activeItem = 'dashboard', onNavigate }: DashboardSidebarProps) {
+export function DashboardSidebar({ user, activeItem = 'dashboard', onNavigate }: DashboardSidebarProps) {
   const pathname = usePathname();
+  // Handle both user object and session object (which contains a user property)
+  const userData = user?.user || user;
+  const userRole = (userData?.role as UserRole) || 'read_only';
 
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', href: '/admin', icon: Home },
-    { id: 'bookings', label: 'Bookings', href: '/admin/bookings', icon: ShoppingBag },
-    { id: 'reports', label: 'Reports', href: '/admin/reports', icon: BarChart3 },
-    { id: 'menu-config', label: 'Menu Config', href: '/admin/menu-config', icon: UtensilsCrossed },
-    { id: 'user-management', label: 'User Management', href: '/admin/user-management', icon: Users },
-    { id: 'settings', label: 'Settings', href: '/admin/settings', icon: Settings },
+    { id: 'dashboard', label: 'Dashboard', href: '/admin', icon: Home, permission: Permission.VIEW_DASHBOARD },
+    { id: 'bookings', label: 'Bookings', href: '/admin/bookings', icon: ShoppingBag, permission: Permission.VIEW_BOOKINGS },
+    { id: 'reports', label: 'Reports', href: '/admin/reports', icon: BarChart3, permission: Permission.VIEW_REPORTS },
+    { id: 'menu-config', label: 'Menu Config', href: '/admin/menu-config', icon: UtensilsCrossed, permission: Permission.VIEW_MENU },
+    { id: 'user-management', label: 'User Management', href: '/admin/user-management', icon: Users, permission: Permission.VIEW_USERS },
+    { id: 'settings', label: 'Settings', href: '/admin/settings', icon: Settings, permission: Permission.VIEW_SETTINGS },
   ];
+
+  // Filter items based on user permissions
+  const visibleItems = menuItems.filter(item =>
+    !item.permission || hasPermission(userRole, item.permission)
+  );
 
   const handleNavigate = () => {
     if (onNavigate) {
@@ -44,7 +53,7 @@ export function DashboardSidebar({ activeItem = 'dashboard', onNavigate }: Dashb
         {/* Menu Items */}
         <nav className="flex-1 px-4 py-2">
           <ul className="space-y-1">
-            {menuItems.map((item) => {
+            {visibleItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href || (item.id === activeItem && pathname === '/admin');
 
@@ -53,11 +62,10 @@ export function DashboardSidebar({ activeItem = 'dashboard', onNavigate }: Dashb
                   <Link
                     href={item.href}
                     onClick={handleNavigate}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all relative group ${
-                      isActive
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                    }`}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all relative group ${isActive
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                      }`}
                     style={{ fontSize: 'var(--text-base)' }}
                   >
                     {/* Active indicator line */}

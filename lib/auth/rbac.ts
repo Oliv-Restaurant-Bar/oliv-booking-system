@@ -40,6 +40,7 @@ export enum Permission {
   CREATE_USER = "create_user",
   EDIT_USER = "edit_user",
   DELETE_USER = "delete_user",
+  MANAGE_USERS = "manage_users",
   ASSIGN_ROLES = "assign_roles",
 
   // Reports
@@ -96,6 +97,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.CREATE_USER,
     Permission.EDIT_USER,
     Permission.DELETE_USER,
+    Permission.MANAGE_USERS,
     Permission.ASSIGN_ROLES,
 
     // Reports
@@ -162,18 +164,20 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     // Dashboard
     Permission.VIEW_DASHBOARD,
 
-    // Bookings - Can manage but not delete
+    // Bookings - Full access
     Permission.VIEW_BOOKINGS,
     Permission.CREATE_BOOKING,
     Permission.EDIT_BOOKING,
     Permission.UPDATE_BOOKING_STATUS,
     Permission.CONVERT_LEAD_TO_BOOKING,
     Permission.VIEW_BOOKING_DETAILS,
+    Permission.DELETE_BOOKING,
 
-    // Leads - Can manage but not delete
+    // Leads - Full access
     Permission.VIEW_LEADS,
     Permission.EDIT_LEAD,
     Permission.UPDATE_LEAD_STATUS,
+    Permission.DELETE_LEAD,
 
     // Menu - View only
     Permission.VIEW_MENU,

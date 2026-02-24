@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Calendar, Clock, Users, Phone, Mail, Download, Search, RefreshCw, X, User, CalendarDays, Edit, UtensilsCrossed, Send, MessageSquare, ArrowLeft, Lock, Unlock, History } from 'lucide-react';
+import { Calendar, Clock, Users, Phone, Mail, Download, Search, RefreshCw, X, User, CalendarDays, Edit, UtensilsCrossed, Send, MessageSquare, ArrowLeft, Lock, Unlock, History, ChevronLeft, ChevronRight } from 'lucide-react';
 import { StatusDropdown } from './StatusDropdown';
 import { Button } from './Button';
 import * as XLSX from 'xlsx';
+import { Permission, hasPermission } from '@/lib/auth/rbac';
 
 const statusColors: Record<string, { bg: string; text: string; border: string; dotColor: string }> = {
   'confirmed': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dotColor: '#10b981' },
@@ -129,7 +130,12 @@ function GridLayout({ onOpenModal, bookings }: { onOpenModal: (booking: any) => 
 }
 
 // Booking Detail Page - Embedded Component
-function BookingDetailPage({ booking, onBack }: { booking: any | null; onBack: () => void }) {
+function BookingDetailPage({ booking, onBack, user }: { booking: any | null; onBack: () => void; user?: any }) {
+  const userRole = user?.role;
+  const canEditBooking = hasPermission(userRole, Permission.EDIT_BOOKING);
+  const canUpdateStatus = hasPermission(userRole, Permission.UPDATE_BOOKING_STATUS);
+  const canViewAudit = hasPermission(userRole, Permission.VIEW_BOOKING_DETAILS);
+
   const [comments, setComments] = useState<Array<{ by: string; time: string; date: string; action: string }>>(
     booking?.contactHistory || []
   );
@@ -387,52 +393,57 @@ function BookingDetailPage({ booking, onBack }: { booking: any | null; onBack: (
         </div>
         <div className="flex items-center gap-3">
           {/* Lock/Unlock Button */}
-          <button
-            onClick={handleToggleLock}
-            disabled={lockLoading}
-            className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 cursor-pointer ${
-              isLocked
+          {canEditBooking && (
+            <button
+              onClick={handleToggleLock}
+              disabled={lockLoading}
+              className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 cursor-pointer ${isLocked
                 ? 'bg-amber-500 hover:bg-amber-600 text-white'
                 : 'bg-secondary hover:bg-primary text-white'
-            }`}
-            style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
-            title={isLocked ? 'Unlock booking (allows client edits)' : 'Lock booking (prevents client edits)'}
-          >
-            {lockLoading ? (
-              'Loading...'
-            ) : isLocked ? (
-              <>
-                <Unlock className="w-4 h-4" />
-                Unlock
-              </>
-            ) : (
-              <>
-                <Lock className="w-4 h-4" />
-                Lock
-              </>
-            )}
-          </button>
+                }`}
+              style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+              title={isLocked ? 'Unlock booking (allows client edits)' : 'Lock booking (prevents client edits)'}
+            >
+              {lockLoading ? (
+                'Loading...'
+              ) : isLocked ? (
+                <>
+                  <Unlock className="w-4 h-4" />
+                  Unlock
+                </>
+              ) : (
+                <>
+                  <Lock className="w-4 h-4" />
+                  Lock
+                </>
+              )}
+            </button>
+          )}
 
           {/* Audit History Toggle */}
-          <button
-            onClick={() => setShowAuditHistory(!showAuditHistory)}
-            className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex items-center gap-2 cursor-pointer"
-            style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
-          >
-            <History className="w-4 h-4" />
-            {showAuditHistory ? 'Hide History' : 'Show History'}
-          </button>
+          {canViewAudit && (
+            <button
+              onClick={() => setShowAuditHistory(!showAuditHistory)}
+              className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex items-center gap-2 cursor-pointer"
+              style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+            >
+              <History className="w-4 h-4" />
+              {showAuditHistory ? 'Hide History' : 'Show History'}
+            </button>
+          )}
 
           {/* Copy Edit Link Button */}
-          <button
-            onClick={handleCopyEditLink}
-            className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex items-center gap-2 cursor-pointer"
-            style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
-            title="Copy client edit link to clipboard"
-          >
-            <Send className="w-4 h-4" />
-            Copy Edit Link
-          </button>
+          {canEditBooking && (
+            <button
+              onClick={handleCopyEditLink}
+              className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex items-center gap-2 cursor-pointer"
+              style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+              title="Copy client edit link to clipboard"
+            >
+              <Send className="w-4 h-4" />
+              Copy Edit Link
+            </button>
+          )}
         </div>
       </div>
 
@@ -631,6 +642,7 @@ function BookingDetailPage({ booking, onBack }: { booking: any | null; onBack: (
                 onChange={handleStatusChange}
                 placeholder="Select status"
                 className="w-full"
+                disabled={!canUpdateStatus}
               />
             </div>
           </div>
@@ -651,9 +663,10 @@ function BookingDetailPage({ booking, onBack }: { booking: any | null; onBack: (
                 value={allergies}
                 onChange={(e) => setAllergies(e.target.value)}
                 rows={2}
-                className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+                disabled={!canEditBooking}
+                className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-75"
                 style={{ fontSize: 'var(--text-base)' }}
-                placeholder="Enter allergies separated by commas..."
+                placeholder={canEditBooking ? "Enter allergies separated by commas..." : "No allergy information"}
               />
             </div>
             <div>
@@ -664,9 +677,10 @@ function BookingDetailPage({ booking, onBack }: { booking: any | null; onBack: (
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={2}
-                className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+                disabled={!canEditBooking}
+                className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-75"
                 style={{ fontSize: 'var(--text-base)' }}
-                placeholder="Enter special requests or notes..."
+                placeholder={canEditBooking ? "Enter special requests or notes..." : "No additional notes"}
               />
             </div>
           </div>
@@ -748,24 +762,26 @@ function BookingDetailPage({ booking, onBack }: { booking: any | null; onBack: (
             ))}
 
             {/* Add Comment Form */}
-            <div className="space-y-3 pt-2">
-              <textarea
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Add a comment..."
-                rows={3}
-                className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
-                style={{ fontSize: 'var(--text-base)' }}
-              />
-              <button
-                onClick={handleAddComment}
-                className="w-full px-4 py-3 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex items-center justify-center gap-2 cursor-pointer"
-                style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
-              >
-                <Send className="w-4 h-4" />
-                Add Comment
-              </button>
-            </div>
+            {canEditBooking && (
+              <div className="space-y-3 pt-2">
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Add a comment..."
+                  rows={3}
+                  className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  style={{ fontSize: 'var(--text-base)' }}
+                />
+                <button
+                  onClick={handleAddComment}
+                  className="w-full px-4 py-3 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+                >
+                  <Send className="w-4 h-4" />
+                  Add Comment
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -792,9 +808,8 @@ function BookingDetailPage({ booking, onBack }: { booking: any | null; onBack: (
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center text-white flex-shrink-0 ${
-                            log.actor_type === 'admin' ? 'bg-primary' : 'bg-secondary'
-                          }`}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center text-white flex-shrink-0 ${log.actor_type === 'admin' ? 'bg-primary' : 'bg-secondary'
+                            }`}
                           style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}
                         >
                           {log.actor_label.charAt(0)}
@@ -843,16 +858,18 @@ function BookingDetailPage({ booking, onBack }: { booking: any | null; onBack: (
         )}
 
         {/* Save Button */}
-        <div className="pb-4">
-          <button
-            onClick={handleSaveChanges}
-            disabled={isSaving}
-            className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}
-          >
-            {isSaving ? 'Saving...' : 'Save Changes'}
-          </button>
-        </div>
+        {canEditBooking && (
+          <div className="pb-4">
+            <button
+              onClick={handleSaveChanges}
+              disabled={isSaving}
+              className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}
+            >
+              {isSaving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        )}
 
         {/* Copyright Footer */}
         <div className="text-center pt-4 pb-1">
@@ -906,7 +923,7 @@ interface Booking {
   }>;
 }
 
-export function BookingsPage() {
+export function BookingsPage({ user }: { user?: any }) {
   const [bookingsData, setBookingsData] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState<'list' | 'detail'>('list');
@@ -915,17 +932,41 @@ export function BookingsPage() {
   const [selectedStatus, setSelectedStatus] = useState('All Status');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch bookings on component mount
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1); // Reset to first page on new search
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Reset to first page on status change
+  useEffect(() => {
+    setPage(1);
+  }, [selectedStatus]);
+
+  // Fetch bookings whenever page, status, or search changes
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/bookings');
+      const response = await fetch(`/api/bookings?page=${page}&limit=${pageSize}&search=${debouncedSearch}&status=${selectedStatus}`);
       if (!response.ok) throw new Error('Failed to fetch bookings');
       const data = await response.json();
-      setBookingsData(data);
+      setBookingsData(data.bookings);
+      setTotalCount(data.totalCount);
+      setTotalPages(data.totalPages);
     } catch (error) {
       console.error('Error fetching bookings:', error);
       setBookingsData([]);
+      setTotalCount(0);
+      setTotalPages(0);
     } finally {
       setLoading(false);
     }
@@ -933,32 +974,18 @@ export function BookingsPage() {
 
   useEffect(() => {
     fetchBookings();
-  }, []);
+  }, [page, debouncedSearch, selectedStatus]);
 
   // Status options for dropdown
   const statusOptions = allStatuses.map(status => ({ value: status, label: status }));
 
-  // Filter bookings based on search query and selected status
-  const filteredBookings = bookingsData.filter((booking) => {
-    const matchesSearch =
-      searchQuery === '' ||
-      booking.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      booking.customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      booking.customer.phone.includes(searchQuery) ||
-      booking.event.occasion.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus =
-      selectedStatus === 'All Status' ||
-      booking.status.toLowerCase() === selectedStatus.toLowerCase();
-
-    return matchesSearch && matchesStatus;
-  });
-
-  // Export to XLSX
+  // Export to XLSX - this will still only export the currently visible (filtered) results
+  // In a real app, you might want to fetch all filtered results without limit for export
   const handleExport = () => {
     const headers = ['Customer Name', 'Email', 'Phone', 'Event Date', 'Time', 'Guests', 'Occasion', 'Amount', 'Status', 'Contacted By', 'Contacted When'];
 
-    const excelData = filteredBookings.map(booking => ({
+    const excelData = bookingsData.map(booking => ({
       'Customer Name': booking.customer.name,
       'Email': booking.customer.email,
       'Phone': booking.customer.phone,
@@ -1029,7 +1056,7 @@ export function BookingsPage() {
             )}
 
             {/* Grid Layout */}
-            {!loading && filteredBookings.length === 0 && (
+            {!loading && bookingsData.length === 0 && (
               <div className="text-center py-16">
                 <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
                   No bookings found
@@ -1038,13 +1065,59 @@ export function BookingsPage() {
             )}
 
             {!loading && (
-              <GridLayout
-                onOpenModal={(booking) => {
-                  setSelectedBooking(booking);
-                  setCurrentPage('detail');
-                }}
-                bookings={filteredBookings}
-              />
+              <div className="flex-1 flex flex-col">
+                <GridLayout
+                  onOpenModal={(booking) => {
+                    setSelectedBooking(booking);
+                    setCurrentPage('detail');
+                  }}
+                  bookings={bookingsData}
+                />
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-8 mt-4 border-t border-border">
+                    <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                      Showing <span className="text-foreground font-medium">{(page - 1) * pageSize + 1}</span> to <span className="text-foreground font-medium">{Math.min(page * pageSize, totalCount)}</span> of <span className="text-foreground font-medium">{totalCount}</span> bookings
+                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={page === 1}
+                        className="p-2 rounded-lg border border-border hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+
+                      {/* Page numbers with ellipsis for large number of pages */}
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter(p => p === 1 || p === totalPages || (p >= page - 1 && p <= page + 1))
+                        .map((p, i, arr) => (
+                          <div key={p} className="flex items-center gap-1.5">
+                            {i > 0 && arr[i - 1] !== p - 1 && (
+                              <span className="text-muted-foreground px-1">...</span>
+                            )}
+                            <button
+                              onClick={() => setPage(p)}
+                              className={`w-10 h-10 rounded-lg border transition-all ${page === p ? 'bg-primary border-primary text-primary-foreground' : 'border-border hover:bg-accent text-foreground'}`}
+                              style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                            >
+                              {p}
+                            </button>
+                          </div>
+                        ))}
+
+                      <button
+                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                        disabled={page === totalPages}
+                        className="p-2 rounded-lg border border-border hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -1054,6 +1127,7 @@ export function BookingsPage() {
       {currentPage === 'detail' && selectedBooking && (
         <BookingDetailPage
           booking={selectedBooking}
+          user={user}
           onBack={() => {
             setCurrentPage('list');
             setSelectedBooking(null);

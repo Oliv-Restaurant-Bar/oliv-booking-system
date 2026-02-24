@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp, Download } from 'lucide-react';
 import { YearDropdown } from './YearDropdown';
 import * as XLSX from 'xlsx';
+import { Permission, hasPermission } from '@/lib/auth/rbac';
 
 interface MonthData {
   month: string;
@@ -24,7 +25,10 @@ interface MonthData {
   noShow: number;
 }
 
-export function MonthlyReportLayout2({ data }: { data: MonthData[] }) {
+export function MonthlyReportLayout2({ data, user }: { data: MonthData[]; user?: any }) {
+  const userRole = user?.role;
+  const canExport = hasPermission(userRole, Permission.EXPORT_REPORTS);
+
   const [expandedMonths, setExpandedMonths] = useState<Set<number>>(new Set());
   const [selectedYear, setSelectedYear] = useState('2026');
 
@@ -81,14 +85,16 @@ export function MonthlyReportLayout2({ data }: { data: MonthData[] }) {
           />
 
           {/* Export Button - Using consistent button styling */}
-          <button
-            onClick={handleExport}
-            className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary hover:text-white transition-colors flex items-center gap-2 cursor-pointer"
-            style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
-          >
-            <Download className="w-4 h-4" />
-            Export
-          </button>
+          {canExport && (
+            <button
+              onClick={handleExport}
+              className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary hover:text-white transition-colors flex items-center gap-2 cursor-pointer"
+              style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+            >
+              <Download className="w-4 h-4" />
+              Export
+            </button>
+          )}
         </div>
       </div>
 
@@ -96,7 +102,7 @@ export function MonthlyReportLayout2({ data }: { data: MonthData[] }) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {data.map((month, index) => {
           const isExpanded = expandedMonths.has(index);
-          
+
           return (
             <div key={index} className="border border-border rounded-lg overflow-hidden hover:shadow-sm transition-shadow">
               {/* Card Header - Always Visible */}

@@ -3,10 +3,15 @@ import { db } from "@/lib/db";
 import { adminUser } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
+import { requirePermissionWrapper } from "@/lib/auth/rbac-middleware";
+import { Permission } from "@/lib/auth/rbac";
 
 // GET /api/admin/users - Fetch all users
 export async function GET() {
   try {
+    // Check permission
+    await requirePermissionWrapper(Permission.VIEW_USERS);
+
     const users = await db.query.adminUser.findMany({
       orderBy: (adminUser, { desc }) => [desc(adminUser.createdAt)],
     });
@@ -24,6 +29,11 @@ export async function GET() {
     return NextResponse.json(formattedUsers);
   } catch (error) {
     console.error("Error fetching users:", error);
+
+    if (error instanceof Error && error.name === "AuthorizationError") {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
+
     return NextResponse.json(
       { error: "Failed to fetch users" },
       { status: 500 }
@@ -34,6 +44,9 @@ export async function GET() {
 // POST /api/admin/users - Create a new user
 export async function POST(request: NextRequest) {
   try {
+    // Check permission
+    await requirePermissionWrapper(Permission.CREATE_USER);
+
     const body = await request.json();
     const { name, email, role, password } = body;
 
@@ -91,6 +104,10 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error creating user:", error);
+
+    if (error instanceof Error && error.name === "AuthorizationError") {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
 
     // Check if error is from Better Auth
     const errorMessage = error instanceof Error ? error.message : "Failed to create user";

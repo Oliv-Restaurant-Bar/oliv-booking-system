@@ -43,6 +43,7 @@ import {
   getAllAddonGroups,
   getAllAddonItems,
 } from '@/lib/actions/menu';
+import { Permission, hasPermission } from '@/lib/auth/rbac';
 
 interface MenuItemData {
   id: string;
@@ -277,7 +278,18 @@ function SortableCategory({
   );
 }
 
-export function MenuConfigPage() {
+export function MenuConfigPage({ user }: { user?: any }) {
+  const userRole = user?.role;
+  const canCreateCategory = hasPermission(userRole, Permission.CREATE_MENU_CATEGORY);
+  const canEditCategory = hasPermission(userRole, Permission.EDIT_MENU_CATEGORY);
+  const canDeleteCategory = hasPermission(userRole, Permission.DELETE_MENU_CATEGORY);
+  const canCreateItem = hasPermission(userRole, Permission.CREATE_MENU_ITEM);
+  const canEditItem = hasPermission(userRole, Permission.EDIT_MENU_ITEM);
+  const canDeleteItem = hasPermission(userRole, Permission.DELETE_MENU_ITEM);
+  const canManageAddons = hasPermission(userRole, Permission.CREATE_ADDON) ||
+    hasPermission(userRole, Permission.EDIT_ADDON) ||
+    hasPermission(userRole, Permission.DELETE_ADDON);
+
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
   const [addonGroups, setAddonGroups] = useState<AddonGroup[]>([]);
@@ -465,13 +477,13 @@ export function MenuConfigPage() {
   };
 
   const toggleGroup = (groupId: string) => {
-    setAddonGroups(addonGroups.map(group => 
+    setAddonGroups(addonGroups.map(group =>
       group.id === groupId ? { ...group, isExpanded: !group.isExpanded } : group
     ));
   };
 
   const toggleAddonGroupActive = (groupId: string) => {
-    setAddonGroups(addonGroups.map(group => 
+    setAddonGroups(addonGroups.map(group =>
       group.id === groupId ? { ...group, isActive: group.isActive === false ? true : false } : group
     ));
   };
@@ -558,11 +570,11 @@ export function MenuConfigPage() {
     setCategories(categories.map(cat =>
       cat.id === categoryId
         ? {
-            ...cat,
-            items: cat.items.map(i =>
-              i.id === itemId ? { ...i, isActive: !i.isActive } : i
-            ),
-          }
+          ...cat,
+          items: cat.items.map(i =>
+            i.id === itemId ? { ...i, isActive: !i.isActive } : i
+          ),
+        }
         : cat
     ));
 
@@ -576,11 +588,11 @@ export function MenuConfigPage() {
       setCategories(categories.map(cat =>
         cat.id === categoryId
           ? {
-              ...cat,
-              items: cat.items.map(i =>
-                i.id === itemId ? { ...i, isActive: item.isActive } : i
-              ),
-            }
+            ...cat,
+            items: cat.items.map(i =>
+              i.id === itemId ? { ...i, isActive: item.isActive } : i
+            ),
+          }
           : cat
       ));
       alert(result.error || 'Failed to update item');
@@ -593,21 +605,21 @@ export function MenuConfigPage() {
     setCategories(categories.map(cat =>
       cat.id === activeCategoryId
         ? {
-            ...cat,
-            items: cat.items.map(item =>
-              item.id === settingsMenuItemId
-                ? {
-                    ...item,
-                    dietaryType: itemSettings.dietaryType,
-                    dietaryTags: itemSettings.dietaryTags,
-                    ingredients: itemSettings.ingredients,
-                    allergens: itemSettings.allergens,
-                    additives: itemSettings.additives,
-                    nutritionalInfo: itemSettings.nutritionalInfo,
-                  }
-                : item
-            ),
-          }
+          ...cat,
+          items: cat.items.map(item =>
+            item.id === settingsMenuItemId
+              ? {
+                ...item,
+                dietaryType: itemSettings.dietaryType,
+                dietaryTags: itemSettings.dietaryTags,
+                ingredients: itemSettings.ingredients,
+                allergens: itemSettings.allergens,
+                additives: itemSettings.additives,
+                nutritionalInfo: itemSettings.nutritionalInfo,
+              }
+              : item
+          ),
+        }
         : cat
     ));
 
@@ -650,7 +662,7 @@ export function MenuConfigPage() {
   const filteredCategories = categories.filter(cat =>
     cat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     cat.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    cat.items.some(item => 
+    cat.items.some(item =>
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.description.toLowerCase().includes(searchQuery.toLowerCase())
     )
@@ -659,591 +671,807 @@ export function MenuConfigPage() {
   return (
     <div className="px-8 pt-6 pb-1 flex flex-col min-h-full">
       <div className="flex-1">
-      {/* Loading State */}
-      {loading && (
-        <div className="text-center py-16">
-          <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
-            Loading menu data...
-          </p>
-        </div>
-      )}
-
-      {!loading && (
-        <>
-      {/* Tabs */}
-      <div className="flex items-center gap-1 mb-6">
-        <div className="inline-flex items-center gap-1 p-1 bg-card border border-border rounded-lg">
-          <button
-            onClick={() => setActiveTab('items')}
-            className={`px-4 py-2 rounded-md flex items-center gap-2 transition-colors ${
-              activeTab === 'items'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-            }`}
-            style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
-          >
-            <UtensilsCrossed className="w-4 h-4" />
-            Menu Categories
-          </button>
-          <button
-            onClick={() => setActiveTab('addons')}
-            className={`px-4 py-2 rounded-md flex items-center gap-2 transition-colors ${
-              activeTab === 'addons'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-            }`}
-            style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
-          >
-            <ListPlus className="w-4 h-4" />
-            Choices & Addons
-          </button>
-        </div>
-      </div>
-
-      {/* Menu Items Tab */}
-      {activeTab === 'items' && (
-        <div className="bg-card border border-border rounded-xl overflow-hidden">
-          {/* Search Bar with Add Button */}
-          <div className="p-4 border-b border-border">
-            <div className="flex items-center gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search menu categories by name, description..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-                  style={{ fontSize: 'var(--text-base)' }}
-                />
-              </div>
-              <Button
-                variant="primary"
-                icon={Plus}
-                onClick={() => {
-                  setEditingCategoryId(null);
-                  setNewCategory({ name: '', description: '', image: null, imageUrl: '' });
-                  setIsAddCategoryModalOpen(true);
-                }}
-              >
-                Add New Category
-              </Button>
-            </div>
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center py-16">
+            <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
+              Loading menu data...
+            </p>
           </div>
+        )}
 
-          {/* Categories List */}
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-            modifiers={[restrictToVerticalAxis]}
-          >
-            <SortableContext
-              items={filteredCategories.map(cat => cat.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              {filteredCategories.map((category) => (
-                <SortableCategory key={category.id} id={category.id}>
-                  {({ attributes, listeners, isDragging }) => (
-                    <>
-                      <div style={{ opacity: isDragging ? 0.5 : 1 }}>
-                        {/* Category Row */}
-                        <div className="px-6 py-4 border-b border-border hover:bg-accent/30 transition-colors flex items-center gap-4 group">
-                          {/* Drag Handle */}
-                          <button
-                            {...attributes}
-                            {...listeners}
-                            className="text-muted-foreground hover:text-foreground transition-colors cursor-grab active:cursor-grabbing flex-shrink-0"
-                          >
-                            <GripVertical className="w-5 h-5" />
-                          </button>
+        {!loading && (
+          <>
+            {/* Tabs */}
+            <div className="flex items-center gap-1 mb-6">
+              <div className="inline-flex items-center gap-1 p-1 bg-card border border-border rounded-lg">
+                <button
+                  onClick={() => setActiveTab('items')}
+                  className={`px-4 py-2 rounded-md flex items-center gap-2 transition-colors ${activeTab === 'items'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                    }`}
+                  style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+                >
+                  <UtensilsCrossed className="w-4 h-4" />
+                  Menu Categories
+                </button>
+                <button
+                  onClick={() => setActiveTab('addons')}
+                  className={`px-4 py-2 rounded-md flex items-center gap-2 transition-colors ${activeTab === 'addons'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                    }`}
+                  style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+                >
+                  <ListPlus className="w-4 h-4" />
+                  Choices & Addons
+                </button>
+              </div>
+            </div>
 
-                  {/* Expand/Collapse Button */}
-                  <button
-                    onClick={() => toggleCategoryExpanded(category.id)}
-                    className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 cursor-pointer"
-                  >
-                    {category.isExpanded ? (
-                      <ChevronDown className="w-5 h-5" />
-                    ) : (
-                      <Tooltip title="View item details" position="top">
-                        <ChevronRight className="w-5 h-5" />
-                      </Tooltip>
-                    )}
-                  </button>
-
-                  {/* Image - Larger rectangular */}
-                  <div className="w-24 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-muted relative">
-                    <ImageWithFallback
-                      src={category.image}
-                      alt={category.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-
-                  {/* Content - Name, Description, Item Count */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                        {category.name}
-                      </h4>
-                      {category.items.length > 0 && (
-                        <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full" style={{ fontSize: 'var(--text-small)' }}>
-                          {category.items.length} {category.items.length === 1 ? 'item' : 'items'}
-                        </span>
-                      )}
+            {/* Menu Items Tab */}
+            {activeTab === 'items' && (
+              <div className="bg-card border border-border rounded-xl overflow-hidden">
+                {/* Search Bar with Add Button */}
+                <div className="p-4 border-b border-border">
+                  <div className="flex items-center gap-3">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <input
+                        type="text"
+                        placeholder="Search menu categories by name, description..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                        style={{ fontSize: 'var(--text-base)' }}
+                      />
                     </div>
-                    <p className="text-muted-foreground line-clamp-1" style={{ fontSize: 'var(--text-small)' }}>
-                      {category.description}
-                    </p>
-                  </div>
-
-                  {/* Actions - Right side */}
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <Tooltip title="Edit category" position="top">
-                      <button 
+                    {canCreateCategory && (
+                      <Button
+                        variant="primary"
+                        icon={Plus}
                         onClick={() => {
-                          setEditingCategoryId(category.id);
-                          setNewCategory({
-                            name: category.name,
-                            description: category.description,
-                            image: null,
-                            imageUrl: category.image,
-                          });
+                          setEditingCategoryId(null);
+                          setNewCategory({ name: '', description: '', image: null, imageUrl: '' });
                           setIsAddCategoryModalOpen(true);
                         }}
-                        className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
                       >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                    </Tooltip>
-
-                    <Tooltip title="Add menu item" position="top">
-                      <button
-                        onClick={() => {
-                          setActiveCategoryId(category.id);
-                          setEditingMenuItemId(null);
-                          setNewMenuItem({
-                            name: '',
-                            description: '',
-                            price: '',
-                            pricingType: 'per_person',
-                            image: null,
-                            imageUrl: '',
-                            isActive: true,
-                            variants: [],
-                          });
-                          setIsAddMenuItemModalOpen(true);
-                        }}
-                        className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </Tooltip>
-
-                    <Tooltip title="Add choice" position="top">
-                      <button 
-                        onClick={() => {
-                          setChoiceCategoryId(category.id);
-                          setSelectedAddonGroups(category.assignedAddonGroups || []);
-                          setIsAddChoiceModalOpen(true);
-                        }}
-                        className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
-                      >
-                        <ListPlus className="w-4 h-4" />
-                      </button>
-                    </Tooltip>
-
-                    <div className="relative">
-                      <button 
-                        onClick={() => setOpenDropdownId(openDropdownId === category.id ? null : category.id)}
-                        className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-                      
-                      {/* Dropdown Menu */}
-                      {openDropdownId === category.id && (
-                        <>
-                          {/* Backdrop to close dropdown */}
-                          <div 
-                            className="fixed inset-0 z-10" 
-                            onClick={() => setOpenDropdownId(null)}
-                          />
-                          
-                          {/* Dropdown */}
-                          <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-20">
-                            <button
-                              onClick={() => {
-                                setChoiceCategoryId(category.id);
-                                setSelectedAddonGroups(category.assignedAddonGroups || []);
-                                setIsAddChoiceModalOpen(true);
-                                setOpenDropdownId(null);
-                              }}
-                              className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
-                            >
-                              <ListPlus className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                Add choice
-                              </span>
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                console.log('Duplicate', category.name);
-                                setOpenDropdownId(null);
-                              }}
-                              className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
-                            >
-                              <Copy className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                Duplicate
-                              </span>
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                toggleCategoryActive(category.id);
-                                setOpenDropdownId(null);
-                              }}
-                              className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
-                            >
-                              {category.isActive ? (
-                                <>
-                                  <EyeOff className="w-4 h-4 text-muted-foreground" />
-                                  <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                    Hide
-                                  </span>
-                                </>
-                              ) : (
-                                <>
-                                  <Eye className="w-4 h-4 text-muted-foreground" />
-                                  <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                    Show
-                                  </span>
-                                </>
-                              )}
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                setDeleteCategoryId(category.id);
-                                setOpenDropdownId(null);
-                              }}
-                              className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left"
-                            >
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                              <span className="text-destructive" style={{ fontSize: 'var(--text-base)' }}>
-                                Remove
-                              </span>
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
+                        Add New Category
+                      </Button>
+                    )}
                   </div>
                 </div>
 
-                {/* Menu Items - Nested under category */}
-                {category.isExpanded && category.items.length > 0 && (
-                  <div className="bg-muted/30">
-                    {category.items.map((item, index) => (
-                      <div
-                        key={item.id}
-                        className={`pl-20 pr-6 py-3 flex items-center gap-4 hover:bg-accent/30 transition-colors group ${
-                          index !== category.items.length - 1 ? 'border-b border-border/50' : ''
-                        }`}
+                {/* Categories List */}
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                  modifiers={[restrictToVerticalAxis]}
+                >
+                  <SortableContext
+                    items={filteredCategories.map(cat => cat.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {filteredCategories.map((category) => (
+                      <SortableCategory key={category.id} id={category.id}>
+                        {({ attributes, listeners, isDragging }) => (
+                          <>
+                            <div style={{ opacity: isDragging ? 0.5 : 1 }}>
+                              {/* Category Row */}
+                              <div className="px-6 py-4 border-b border-border hover:bg-accent/30 transition-colors flex items-center gap-4 group">
+                                {/* Drag Handle */}
+                                {canEditCategory && (
+                                  <button
+                                    {...attributes}
+                                    {...listeners}
+                                    className="text-muted-foreground hover:text-foreground transition-colors cursor-grab active:cursor-grabbing flex-shrink-0"
+                                  >
+                                    <GripVertical className="w-5 h-5" />
+                                  </button>
+                                )}
+
+                                {/* Expand/Collapse Button */}
+                                <button
+                                  onClick={() => toggleCategoryExpanded(category.id)}
+                                  className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 cursor-pointer"
+                                >
+                                  {category.isExpanded ? (
+                                    <ChevronDown className="w-5 h-5" />
+                                  ) : (
+                                    <Tooltip title="View item details" position="top">
+                                      <ChevronRight className="w-5 h-5" />
+                                    </Tooltip>
+                                  )}
+                                </button>
+
+                                {/* Image - Larger rectangular */}
+                                <div className="w-24 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-muted relative">
+                                  <ImageWithFallback
+                                    src={category.image}
+                                    alt={category.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+
+                                {/* Content - Name, Description, Item Count */}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h4 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                      {category.name}
+                                    </h4>
+                                    {category.items.length > 0 && (
+                                      <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full" style={{ fontSize: 'var(--text-small)' }}>
+                                        {category.items.length} {category.items.length === 1 ? 'item' : 'items'}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-muted-foreground line-clamp-1" style={{ fontSize: 'var(--text-small)' }}>
+                                    {category.description}
+                                  </p>
+                                </div>
+
+                                {/* Actions - Right side */}
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  {canEditCategory && (
+                                    <Tooltip title="Edit category" position="top">
+                                      <button
+                                        onClick={() => {
+                                          setEditingCategoryId(category.id);
+                                          setNewCategory({
+                                            name: category.name,
+                                            description: category.description,
+                                            image: null,
+                                            imageUrl: category.image,
+                                          });
+                                          setIsAddCategoryModalOpen(true);
+                                        }}
+                                        className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                      >
+                                        <Edit2 className="w-4 h-4" />
+                                      </button>
+                                    </Tooltip>
+                                  )}
+
+                                  {canCreateItem && (
+                                    <Tooltip title="Add menu item" position="top">
+                                      <button
+                                        onClick={() => {
+                                          setActiveCategoryId(category.id);
+                                          setEditingMenuItemId(null);
+                                          setNewMenuItem({
+                                            name: '',
+                                            description: '',
+                                            price: '',
+                                            pricingType: 'per_person',
+                                            image: null,
+                                            imageUrl: '',
+                                            isActive: true,
+                                            variants: [],
+                                          });
+                                          setIsAddMenuItemModalOpen(true);
+                                        }}
+                                        className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                      >
+                                        <Plus className="w-4 h-4" />
+                                      </button>
+                                    </Tooltip>
+                                  )}
+
+                                  {canEditCategory && (
+                                    <Tooltip title="Add choice" position="top">
+                                      <button
+                                        onClick={() => {
+                                          setChoiceCategoryId(category.id);
+                                          setSelectedAddonGroups(category.assignedAddonGroups || []);
+                                          setIsAddChoiceModalOpen(true);
+                                        }}
+                                        className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                      >
+                                        <ListPlus className="w-4 h-4" />
+                                      </button>
+                                    </Tooltip>
+                                  )}
+
+                                  {(canEditCategory || canDeleteCategory) && (
+                                    <div className="relative">
+                                      <button
+                                        onClick={() => setOpenDropdownId(openDropdownId === category.id ? null : category.id)}
+                                        className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                      >
+                                        <MoreVertical className="w-4 h-4" />
+                                      </button>
+
+                                      {/* Dropdown Menu */}
+                                      {openDropdownId === category.id && (
+                                        <>
+                                          {/* Backdrop to close dropdown */}
+                                          <div
+                                            className="fixed inset-0 z-10"
+                                            onClick={() => setOpenDropdownId(null)}
+                                          />
+
+                                          {/* Dropdown */}
+                                          <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-20">
+                                            {canEditCategory && (
+                                              <button
+                                                onClick={() => {
+                                                  setChoiceCategoryId(category.id);
+                                                  setSelectedAddonGroups(category.assignedAddonGroups || []);
+                                                  setIsAddChoiceModalOpen(true);
+                                                  setOpenDropdownId(null);
+                                                }}
+                                                className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
+                                              >
+                                                <ListPlus className="w-4 h-4 text-muted-foreground" />
+                                                <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                                  Add choice
+                                                </span>
+                                              </button>
+                                            )}
+
+                                            {canCreateCategory && (
+                                              <button
+                                                onClick={() => {
+                                                  console.log('Duplicate', category.name);
+                                                  setOpenDropdownId(null);
+                                                }}
+                                                className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
+                                              >
+                                                <Copy className="w-4 h-4 text-muted-foreground" />
+                                                <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                                  Duplicate
+                                                </span>
+                                              </button>
+                                            )}
+
+                                            {canEditCategory && (
+                                              <button
+                                                onClick={() => {
+                                                  toggleCategoryActive(category.id);
+                                                  setOpenDropdownId(null);
+                                                }}
+                                                className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
+                                              >
+                                                {category.isActive ? (
+                                                  <>
+                                                    <EyeOff className="w-4 h-4 text-muted-foreground" />
+                                                    <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                                      Hide
+                                                    </span>
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    <Eye className="w-4 h-4 text-muted-foreground" />
+                                                    <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                                      Show
+                                                    </span>
+                                                  </>
+                                                )}
+                                              </button>
+                                            )}
+
+                                            {canDeleteCategory && (
+                                              <button
+                                                onClick={() => {
+                                                  setDeleteCategoryId(category.id);
+                                                  setOpenDropdownId(null);
+                                                }}
+                                                className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left"
+                                              >
+                                                <Trash2 className="w-4 h-4 text-destructive" />
+                                                <span className="text-destructive" style={{ fontSize: 'var(--text-base)' }}>
+                                                  Remove
+                                                </span>
+                                              </button>
+                                            )}
+                                          </div>
+                                        </>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Menu Items - Nested under category */}
+                              {category.isExpanded && category.items.length > 0 && (
+                                <div className="bg-muted/30">
+                                  {category.items.map((item, index) => (
+                                    <div
+                                      key={item.id}
+                                      className={`pl-20 pr-6 py-3 flex items-center gap-4 hover:bg-accent/30 transition-colors group ${index !== category.items.length - 1 ? 'border-b border-border/50' : ''
+                                        }`}
+                                    >
+                                      {/* Drag Handle */}
+                                      {canEditItem && (
+                                        <button className="text-muted-foreground hover:text-foreground transition-colors cursor-grab active:cursor-grabbing flex-shrink-0">
+                                          <GripVertical className="w-4 h-4" />
+                                        </button>
+                                      )}
+
+                                      {/* Image - Smaller for items */}
+                                      <div className="w-16 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted relative">
+                                        <ImageWithFallback
+                                          src={item.image}
+                                          alt={item.name}
+                                          className="w-full h-full object-cover"
+                                        />
+                                        {!item.isActive && (
+                                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                            <EyeOff className="w-4 h-4 text-white" />
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* Content */}
+                                      <div className="flex-1 min-w-0">
+                                        <h5 className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                                          {item.name}
+                                        </h5>
+                                        <p className="text-muted-foreground line-clamp-1" style={{ fontSize: 'var(--text-small)' }}>
+                                          {item.description}
+                                        </p>
+                                        {item.variants.length > 0 && (
+                                          <div className="flex flex-wrap gap-1.5 mt-1.5">
+                                            {item.variants.map((variant) => (
+                                              <span
+                                                key={variant.id}
+                                                className="px-2 py-0.5 bg-secondary text-secondary-foreground rounded"
+                                                style={{ fontSize: 'var(--text-small)' }}
+                                              >
+                                                {variant.name}: €{variant.price.toFixed(2)}
+                                              </span>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* Price */}
+                                      <div className="text-right flex-shrink-0">
+                                        <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                          €{item.price.toFixed(2)}
+                                        </p>
+                                      </div>
+
+                                      {/* Actions */}
+                                      <div className="flex items-center gap-1 flex-shrink-0">
+                                        {canEditItem && (
+                                          <Tooltip title="Edit item" position="top">
+                                            <button
+                                              onClick={() => {
+                                                setActiveCategoryId(category.id);
+                                                setEditingMenuItemId(item.id);
+                                                setNewMenuItem({
+                                                  name: item.name,
+                                                  description: item.description,
+                                                  price: item.price.toString(),
+                                                  pricingType: 'per_person',
+                                                  image: null,
+                                                  imageUrl: item.image,
+                                                  isActive: item.isActive,
+                                                  variants: item.variants,
+                                                });
+                                                setIsAddMenuItemModalOpen(true);
+                                              }}
+                                              className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                            >
+                                              <Edit2 className="w-4 h-4" />
+                                            </button>
+                                          </Tooltip>
+                                        )}
+                                        {canEditItem && (
+                                          <Tooltip title="Item settings" position="top">
+                                            <button
+                                              onClick={() => {
+                                                setActiveCategoryId(category.id);
+                                                setSettingsMenuItemId(item.id);
+                                                setItemSettings({
+                                                  dietaryType: item.dietaryType || 'veg',
+                                                  dietaryTags: item.dietaryTags || [],
+                                                  ingredients: item.ingredients || '',
+                                                  allergens: item.allergens || [],
+                                                  additives: item.additives || [],
+                                                  nutritionalInfo: {
+                                                    servingSize: item.nutritionalInfo?.servingSize || '',
+                                                    calories: item.nutritionalInfo?.calories || '',
+                                                    protein: item.nutritionalInfo?.protein || '',
+                                                    carbs: item.nutritionalInfo?.carbs || '',
+                                                    fat: item.nutritionalInfo?.fat || '',
+                                                    fiber: item.nutritionalInfo?.fiber || '',
+                                                    sugar: item.nutritionalInfo?.sugar || '',
+                                                    sodium: item.nutritionalInfo?.sodium || '',
+                                                  },
+                                                });
+                                                setIsItemSettingsModalOpen(true);
+                                              }}
+                                              className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                            >
+                                              <Settings className="w-4 h-4" />
+                                            </button>
+                                          </Tooltip>
+                                        )}
+                                        {canEditItem && (
+                                          <Tooltip title={item.isActive ? "Hide item" : "Show item"} position="top">
+                                            <button
+                                              onClick={() => toggleMenuItemActive(category.id, item.id)}
+                                              className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                            >
+                                              {item.isActive ? (
+                                                <Eye className="w-4 h-4" />
+                                              ) : (
+                                                <EyeOff className="w-4 h-4" />
+                                              )}
+                                            </button>
+                                          </Tooltip>
+                                        )}
+                                        {canDeleteItem && (
+                                          <Tooltip title="Delete item" position="left">
+                                            <button
+                                              onClick={() => {
+                                                setDeleteMenuItemId(item.id);
+                                                setActiveCategoryId(category.id);
+                                              }}
+                                              className="p-1.5 hover:bg-accent rounded-lg transition-colors text-destructive hover:text-destructive cursor-pointer"
+                                            >
+                                              <Trash2 className="w-4 h-4" />
+                                            </button>
+                                          </Tooltip>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* Empty state for expanded category with no items */}
+                              {category.isExpanded && category.items.length === 0 && (
+                                <div className="bg-muted/30 pl-20 pr-6 py-8 text-center">
+                                  <p className="text-muted-foreground mb-3" style={{ fontSize: 'var(--text-base)' }}>
+                                    No items in this category yet
+                                  </p>
+                                  {canCreateItem && (
+                                    <button
+                                      onClick={() => {
+                                        setActiveCategoryId(category.id);
+                                        setEditingMenuItemId(null);
+                                        setNewMenuItem({
+                                          name: '',
+                                          description: '',
+                                          price: '',
+                                          pricingType: 'per_person',
+                                          image: null,
+                                          imageUrl: '',
+                                          isActive: true,
+                                          variants: [],
+                                        });
+                                        setIsAddMenuItemModalOpen(true);
+                                      }}
+                                      className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity inline-flex items-center gap-2"
+                                    >
+                                      <Plus className="w-4 h-4" />
+                                      <span style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                                        Add First Item
+                                      </span>
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </SortableCategory>
+                    ))}
+                  </SortableContext>
+                </DndContext>
+              </div>
+            )}
+
+            {/* Addons Tab */}
+            {activeTab === 'addons' && (
+              <div className="bg-card border border-border rounded-xl">
+                {/* Search Bar with Add Button */}
+                <div className="p-4 border-b border-border">
+                  <div className="flex items-center gap-3">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <input
+                        type="text"
+                        placeholder="Search choice groups by name..."
+                        className="w-full pl-10 pr-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                        style={{ fontSize: 'var(--text-base)' }}
+                      />
+                    </div>
+                    {canManageAddons && (
+                      <Button
+                        variant="primary"
+                        icon={Plus}
+                        onClick={() => {
+                          setNewGroup({ name: '', subtitle: '', type: 'optional', minSelect: 0, maxSelect: 1 });
+                          setIsAddGroupModalOpen(true);
+                        }}
                       >
+                        Add Group
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Choice Groups List */}
+                <div>
+                  {addonGroups.map((group) => (
+                    <div key={group.id}>
+                      {/* Group Row */}
+                      <div className="px-6 py-4 border-b border-border hover:bg-accent/30 transition-colors flex items-center gap-4 group">
                         {/* Drag Handle */}
-                        <button className="text-muted-foreground hover:text-foreground transition-colors cursor-grab active:cursor-grabbing flex-shrink-0">
-                          <GripVertical className="w-4 h-4" />
+                        {canManageAddons && (
+                          <button className="text-muted-foreground hover:text-foreground transition-colors cursor-grab active:cursor-grabbing flex-shrink-0">
+                            <GripVertical className="w-5 h-5" />
+                          </button>
+                        )}
+
+                        {/* Expand/Collapse Button */}
+                        <button
+                          onClick={() => toggleGroup(group.id)}
+                          className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                        >
+                          {group.isExpanded ? (
+                            <ChevronDown className="w-5 h-5" />
+                          ) : (
+                            <ChevronRight className="w-5 h-5" />
+                          )}
                         </button>
 
-                        {/* Image - Smaller for items */}
-                        <div className="w-16 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted relative">
-                          <ImageWithFallback
-                            src={item.image}
-                            alt={item.name}
-                            className="w-full h-full object-cover"
-                          />
-                          {!item.isActive && (
-                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                              <EyeOff className="w-4 h-4 text-white" />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Content */}
+                        {/* Content - Name, Description, Item Count */}
                         <div className="flex-1 min-w-0">
-                          <h5 className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                            {item.name}
-                          </h5>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                              {group.name}
+                            </h4>
+                            {group.isRequired && (
+                              <span className="px-2 py-0.5 bg-destructive/10 text-destructive rounded-full" style={{ fontSize: 'var(--text-small)' }}>
+                                Required
+                              </span>
+                            )}
+                            {group.items.length > 0 && (
+                              <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full" style={{ fontSize: 'var(--text-small)' }}>
+                                {group.items.length} {group.items.length === 1 ? 'item' : 'items'}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-muted-foreground line-clamp-1" style={{ fontSize: 'var(--text-small)' }}>
-                            {item.description}
-                          </p>
-                          {item.variants.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 mt-1.5">
-                              {item.variants.map((variant) => (
-                                <span
-                                  key={variant.id}
-                                  className="px-2 py-0.5 bg-secondary text-secondary-foreground rounded"
-                                  style={{ fontSize: 'var(--text-small)' }}
-                                >
-                                  {variant.name}: €{variant.price.toFixed(2)}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Price */}
-                        <div className="text-right flex-shrink-0">
-                          <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                            €{item.price.toFixed(2)}
+                            Select {group.minSelect}-{group.maxSelect}
+                            {group.subtitle && ` • ${group.subtitle}`}
                           </p>
                         </div>
 
-                        {/* Actions */}
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <Tooltip title="Edit item" position="top">
+                        {/* Actions - Right side */}
+                        {canManageAddons && (
+                          <button
+                            onClick={() => {
+                              setEditingGroupId(group.id);
+                              setNewGroup({
+                                name: group.name,
+                                subtitle: group.subtitle || '',
+                                type: group.isRequired ? 'mandatory' : 'optional',
+                                minSelect: group.minSelect,
+                                maxSelect: group.maxSelect,
+                              });
+                              setIsAddGroupModalOpen(true);
+                            }}
+                            className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                        )}
+                        {canManageAddons && (
+                          <button
+                            onClick={() => setDeleteGroupId(group.id)}
+                            className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                        {canManageAddons && (
+                          <div className="relative">
                             <button
-                              onClick={() => {
-                                setActiveCategoryId(category.id);
-                                setEditingMenuItemId(item.id);
-                                setNewMenuItem({
-                                  name: item.name,
-                                  description: item.description,
-                                  price: item.price.toString(),
-                                  pricingType: 'per_person',
-                                  image: null,
-                                  imageUrl: item.image,
-                                  isActive: item.isActive,
-                                  variants: item.variants,
-                                });
-                                setIsAddMenuItemModalOpen(true);
-                              }}
-                              className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                              onClick={() => setOpenAddonGroupDropdownId(openAddonGroupDropdownId === group.id ? null : group.id)}
+                              className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground relative z-30"
                             >
-                              <Edit2 className="w-4 h-4" />
+                              <MoreVertical className="w-4 h-4" />
                             </button>
-                          </Tooltip>
-                          <Tooltip title="Item settings" position="top">
-                            <button
-                              onClick={() => {
-                                setActiveCategoryId(category.id);
-                                setSettingsMenuItemId(item.id);
-                                setItemSettings({
-                                  dietaryType: item.dietaryType || 'veg',
-                                  dietaryTags: item.dietaryTags || [],
-                                  ingredients: item.ingredients || '',
-                                  allergens: item.allergens || [],
-                                  additives: item.additives || [],
-                                  nutritionalInfo: {
-                                    servingSize: item.nutritionalInfo?.servingSize || '',
-                                    calories: item.nutritionalInfo?.calories || '',
-                                    protein: item.nutritionalInfo?.protein || '',
-                                    carbs: item.nutritionalInfo?.carbs || '',
-                                    fat: item.nutritionalInfo?.fat || '',
-                                    fiber: item.nutritionalInfo?.fiber || '',
-                                    sugar: item.nutritionalInfo?.sugar || '',
-                                    sodium: item.nutritionalInfo?.sodium || '',
-                                  },
-                                });
-                                setIsItemSettingsModalOpen(true);
-                              }}
-                              className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+
+                            {/* Dropdown Menu */}
+                            {openAddonGroupDropdownId === group.id && (
+                              <>
+                                {/* Backdrop to close dropdown */}
+                                <div
+                                  className="fixed inset-0 z-40"
+                                  onClick={() => setOpenAddonGroupDropdownId(null)}
+                                />
+
+                                {/* Dropdown */}
+                                <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-lg shadow-xl overflow-hidden z-50">
+                                  <button
+                                    onClick={() => {
+                                      setCurrentGroupId(group.id);
+                                      setEditingAddonItemId(null);
+                                      setNewAddonItem({
+                                        name: '',
+                                        price: '',
+                                        dietaryType: 'veg',
+                                        isActive: true,
+                                      });
+                                      setIsAddAddonItemModalOpen(true);
+                                      setOpenAddonGroupDropdownId(null);
+                                    }}
+                                    className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
+                                  >
+                                    <Plus className="w-4 h-4 text-muted-foreground" />
+                                    <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                      Add Item
+                                    </span>
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
+                                      toggleAddonGroupActive(group.id);
+                                      setOpenAddonGroupDropdownId(null);
+                                    }}
+                                    className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
+                                  >
+                                    {group.isActive === false ? (
+                                      <Eye className="w-4 h-4 text-muted-foreground" />
+                                    ) : (
+                                      <EyeOff className="w-4 h-4 text-muted-foreground" />
+                                    )}
+                                    <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                      {group.isActive === false ? 'Show' : 'Hide'}
+                                    </span>
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
+                                      duplicateAddonGroup(group.id);
+                                      setOpenAddonGroupDropdownId(null);
+                                    }}
+                                    className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
+                                  >
+                                    <Copy className="w-4 h-4 text-muted-foreground" />
+                                    <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                      Duplicate
+                                    </span>
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
+                                      setDeleteGroupId(group.id);
+                                      setOpenAddonGroupDropdownId(null);
+                                    }}
+                                    className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left text-destructive"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    <span style={{ fontSize: 'var(--text-base)' }}>
+                                      Delete
+                                    </span>
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Addon Items - Nested under group */}
+                      {group.isExpanded && group.items.length > 0 && (
+                        <div className="bg-muted/30">
+                          {group.items.map((item, index) => (
+                            <div
+                              key={item.id}
+                              className={`pl-20 pr-6 py-3 flex items-center gap-4 hover:bg-accent/30 transition-colors group ${index !== group.items.length - 1 ? 'border-b border-border/50' : ''}`}
                             >
-                              <Settings className="w-4 h-4" />
-                            </button>
-                          </Tooltip>
-                          <Tooltip title={item.isActive ? "Hide item" : "Show item"} position="top">
-                            <button
-                              onClick={() => toggleMenuItemActive(category.id, item.id)}
-                              className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
-                            >
-                              {item.isActive ? (
-                                <Eye className="w-4 h-4" />
-                              ) : (
-                                <EyeOff className="w-4 h-4" />
+                              {/* Drag Handle */}
+                              {canManageAddons && (
+                                <button className="text-muted-foreground hover:text-foreground transition-colors cursor-grab active:cursor-grabbing flex-shrink-0">
+                                  <GripVertical className="w-4 h-4" />
+                                </button>
                               )}
-                            </button>
-                          </Tooltip>
-                          <Tooltip title="Delete item" position="left">
-                            <button
-                              onClick={() => {
-                                setDeleteMenuItemId(item.id);
-                                setActiveCategoryId(category.id);
-                              }}
-                              className="p-1.5 hover:bg-accent rounded-lg transition-colors text-destructive hover:text-destructive cursor-pointer"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </Tooltip>
+
+                              {/* Active Status Indicator */}
+                              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${item.isActive ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+
+                              {/* Content */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <h5 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                                    {item.name}
+                                  </h5>
+                                  {/* Veg/Non-Veg Indicator */}
+                                  <span className={`inline-flex items-center justify-center w-5 h-5 rounded border-2 flex-shrink-0 ${item.dietaryType === 'veg' ? 'border-green-600' : 'border-red-600'}`}>
+                                    <span className={`w-2 h-2 rounded-full ${item.dietaryType === 'veg' ? 'bg-green-600' : 'bg-red-600'}`} />
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Price */}
+                              <div className="text-right flex-shrink-0">
+                                <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                  €{item.price.toFixed(2)}
+                                </p>
+                              </div>
+
+                              {/* Actions */}
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                {canManageAddons && (
+                                  <button
+                                    onClick={() => {
+                                      setCurrentGroupId(group.id);
+                                      setEditingAddonItemId(item.id);
+                                      setNewAddonItem({
+                                        name: item.name,
+                                        price: item.price.toString(),
+                                        dietaryType: item.dietaryType,
+                                        isActive: item.isActive,
+                                      });
+                                      setIsAddAddonItemModalOpen(true);
+                                    }}
+                                    className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                )}
+                                {canManageAddons && (
+                                  <button
+                                    onClick={() => {
+                                      const updatedGroups = addonGroups.map(g => {
+                                        if (g.id === group.id) {
+                                          return {
+                                            ...g,
+                                            items: g.items.map(i =>
+                                              i.id === item.id ? { ...i, isActive: !i.isActive } : i
+                                            ),
+                                          };
+                                        }
+                                        return g;
+                                      });
+                                      setAddonGroups(updatedGroups);
+                                    }}
+                                    className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                                  >
+                                    {item.isActive ? (
+                                      <Eye className="w-4 h-4" />
+                                    ) : (
+                                      <EyeOff className="w-4 h-4" />
+                                    )}
+                                  </button>
+                                )}
+                                {canManageAddons && (
+                                  <button
+                                    onClick={() => {
+                                      setCurrentGroupId(group.id);
+                                      setDeleteAddonItemId(item.id);
+                                    }}
+                                    className="p-1.5 hover:bg-accent rounded-lg transition-colors text-destructive hover:text-destructive"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Empty state for expanded category with no items */}
-                {category.isExpanded && category.items.length === 0 && (
-                  <div className="bg-muted/30 pl-20 pr-6 py-8 text-center">
-                    <p className="text-muted-foreground mb-3" style={{ fontSize: 'var(--text-base)' }}>
-                      No items in this category yet
-                    </p>
-                    <button
-                      onClick={() => {
-                        setActiveCategoryId(category.id);
-                        setEditingMenuItemId(null);
-                        setNewMenuItem({
-                          name: '',
-                          description: '',
-                          price: '',
-                          pricingType: 'per_person',
-                          image: null,
-                          imageUrl: '',
-                          isActive: true,
-                          variants: [],
-                        });
-                        setIsAddMenuItemModalOpen(true);
-                      }}
-                      className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity inline-flex items-center gap-2"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                        Add First Item
-                      </span>
-                    </button>
-                  </div>
-                )}
-                      </div>
-                    </>
-                  )}
-                </SortableCategory>
-              ))}
-            </SortableContext>
-          </DndContext>
-        </div>
-      )}
-
-      {/* Addons Tab */}
-      {activeTab === 'addons' && (
-        <div className="bg-card border border-border rounded-xl">
-          {/* Search Bar with Add Button */}
-          <div className="p-4 border-b border-border">
-            <div className="flex items-center gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search choice groups by name..."
-                  className="w-full pl-10 pr-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-                  style={{ fontSize: 'var(--text-base)' }}
-                />
-              </div>
-              <Button
-                variant="primary"
-                icon={Plus}
-                onClick={() => {
-                  setNewGroup({ name: '', subtitle: '', type: 'optional', minSelect: 0, maxSelect: 1 });
-                  setIsAddGroupModalOpen(true);
-                }}
-              >
-                Add Group
-              </Button>
-            </div>
-          </div>
-
-          {/* Choice Groups List */}
-          <div>
-            {addonGroups.map((group) => (
-              <div key={group.id}>
-                {/* Group Row */}
-                <div className="px-6 py-4 border-b border-border hover:bg-accent/30 transition-colors flex items-center gap-4 group">
-                  {/* Drag Handle */}
-                  <button className="text-muted-foreground hover:text-foreground transition-colors cursor-grab active:cursor-grabbing flex-shrink-0">
-                    <GripVertical className="w-5 h-5" />
-                  </button>
-
-                  {/* Expand/Collapse Button */}
-                  <button
-                    onClick={() => toggleGroup(group.id)}
-                    className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
-                  >
-                    {group.isExpanded ? (
-                      <ChevronDown className="w-5 h-5" />
-                    ) : (
-                      <ChevronRight className="w-5 h-5" />
-                    )}
-                  </button>
-
-                  {/* Content - Name, Description, Item Count */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                        {group.name}
-                      </h4>
-                      {group.isRequired && (
-                        <span className="px-2 py-0.5 bg-destructive/10 text-destructive rounded-full" style={{ fontSize: 'var(--text-small)' }}>
-                          Required
-                        </span>
                       )}
-                      {group.items.length > 0 && (
-                        <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full" style={{ fontSize: 'var(--text-small)' }}>
-                          {group.items.length} {group.items.length === 1 ? 'item' : 'items'}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-muted-foreground line-clamp-1" style={{ fontSize: 'var(--text-small)' }}>
-                      Select {group.minSelect}-{group.maxSelect}
-                      {group.subtitle && ` • ${group.subtitle}`}
-                    </p>
-                  </div>
 
-                  {/* Actions - Right side */}
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <button 
-                      onClick={() => {
-                        setEditingGroupId(group.id);
-                        setNewGroup({
-                          name: group.name,
-                          subtitle: group.subtitle || '',
-                          type: group.isRequired ? 'mandatory' : 'optional',
-                          minSelect: group.minSelect,
-                          maxSelect: group.maxSelect,
-                        });
-                        setIsAddGroupModalOpen(true);
-                      }}
-                      className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={() => setDeleteGroupId(group.id)}
-                      className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                    <div className="relative">
-                      <button
-                        onClick={() => setOpenAddonGroupDropdownId(openAddonGroupDropdownId === group.id ? null : group.id)}
-                        className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground relative z-30"
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-
-                      {/* Dropdown Menu */}
-                      {openAddonGroupDropdownId === group.id && (
-                        <>
-                          {/* Backdrop to close dropdown */}
-                          <div
-                            className="fixed inset-0 z-40"
-                            onClick={() => setOpenAddonGroupDropdownId(null)}
-                          />
-
-                          {/* Dropdown */}
-                          <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-lg shadow-xl overflow-hidden z-50">
-                            <button
+                      {/* Empty state for expanded group with no items */}
+                      {group.isExpanded && group.items.length === 0 && (
+                        <div className="bg-muted/30 pl-20 pr-6 py-8 flex flex-col items-center">
+                          <p className="text-muted-foreground mb-3" style={{ fontSize: 'var(--text-base)' }}>
+                            No items in this choice group yet
+                          </p>
+                          {canManageAddons && (
+                            <Button
+                              variant="primary"
+                              icon={Plus}
                               onClick={() => {
                                 setCurrentGroupId(group.id);
                                 setEditingAddonItemId(null);
@@ -1254,283 +1482,108 @@ export function MenuConfigPage() {
                                   isActive: true,
                                 });
                                 setIsAddAddonItemModalOpen(true);
-                                setOpenAddonGroupDropdownId(null);
                               }}
-                              className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
                             >
-                              <Plus className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                Add Item
-                              </span>
-                            </button>
-                            
-                            <button
-                              onClick={() => {
-                                toggleAddonGroupActive(group.id);
-                                setOpenAddonGroupDropdownId(null);
-                              }}
-                              className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
-                            >
-                              {group.isActive === false ? (
-                                <Eye className="w-4 h-4 text-muted-foreground" />
-                              ) : (
-                                <EyeOff className="w-4 h-4 text-muted-foreground" />
-                              )}
-                              <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                {group.isActive === false ? 'Show' : 'Hide'}
-                              </span>
-                            </button>
-                            
-                            <button
-                              onClick={() => {
-                                duplicateAddonGroup(group.id);
-                                setOpenAddonGroupDropdownId(null);
-                              }}
-                              className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
-                            >
-                              <Copy className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                Duplicate
-                              </span>
-                            </button>
-                            
-                            <button
-                              onClick={() => {
-                                setDeleteGroupId(group.id);
-                                setOpenAddonGroupDropdownId(null);
-                              }}
-                              className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left text-destructive"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              <span style={{ fontSize: 'var(--text-base)' }}>
-                                Delete
-                              </span>
-                            </button>
-                          </div>
-                        </>
+                              Add First Item
+                            </Button>
+                          )}
+                        </div>
                       )}
                     </div>
-                  </div>
+                  ))}
                 </div>
-
-                {/* Addon Items - Nested under group */}
-                {group.isExpanded && group.items.length > 0 && (
-                  <div className="bg-muted/30">
-                    {group.items.map((item, index) => (
-                      <div
-                        key={item.id}
-                        className={`pl-20 pr-6 py-3 flex items-center gap-4 hover:bg-accent/30 transition-colors group ${
-                          index !== group.items.length - 1 ? 'border-b border-border/50' : ''
-                        }`}
-                      >
-                        {/* Drag Handle */}
-                        <button className="text-muted-foreground hover:text-foreground transition-colors cursor-grab active:cursor-grabbing flex-shrink-0">
-                          <GripVertical className="w-4 h-4" />
-                        </button>
-
-                        {/* Active Status Indicator */}
-                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${item.isActive ? 'bg-emerald-500' : 'bg-gray-300'}`} />
-
-                        {/* Content */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <h5 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                              {item.name}
-                            </h5>
-                            {/* Veg/Non-Veg Indicator */}
-                            <span className={`inline-flex items-center justify-center w-5 h-5 rounded border-2 flex-shrink-0 ${
-                              item.dietaryType === 'veg' ? 'border-green-600' : 'border-red-600'
-                            }`}>
-                              <span className={`w-2 h-2 rounded-full ${
-                                item.dietaryType === 'veg' ? 'bg-green-600' : 'bg-red-600'
-                              }`} />
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Price */}
-                        <div className="text-right flex-shrink-0">
-                          <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                            €{item.price.toFixed(2)}
-                          </p>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <button 
-                            onClick={() => {
-                              setCurrentGroupId(group.id);
-                              setEditingAddonItemId(item.id);
-                              setNewAddonItem({
-                                name: item.name,
-                                price: item.price.toString(),
-                                dietaryType: item.dietaryType,
-                                isActive: item.isActive,
-                              });
-                              setIsAddAddonItemModalOpen(true);
-                            }}
-                            className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button 
-                            onClick={() => {
-                              const updatedGroups = addonGroups.map(g => {
-                                if (g.id === group.id) {
-                                  return {
-                                    ...g,
-                                    items: g.items.map(i => 
-                                      i.id === item.id ? { ...i, isActive: !i.isActive } : i
-                                    ),
-                                  };
-                                }
-                                return g;
-                              });
-                              setAddonGroups(updatedGroups);
-                            }}
-                            className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
-                          >
-                            {item.isActive ? (
-                              <Eye className="w-4 h-4" />
-                            ) : (
-                              <EyeOff className="w-4 h-4" />
-                            )}
-                          </button>
-                          <button 
-                            onClick={() => {
-                              setCurrentGroupId(group.id);
-                              setDeleteAddonItemId(item.id);
-                            }}
-                            className="p-1.5 hover:bg-accent rounded-lg transition-colors text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Empty state for expanded group with no items */}
-                {group.isExpanded && group.items.length === 0 && (
-                  <div className="bg-muted/30 pl-20 pr-6 py-8 flex flex-col items-center">
-                    <p className="text-muted-foreground mb-3" style={{ fontSize: 'var(--text-base)' }}>
-                      No items in this choice group yet
-                    </p>
-                    <Button
-                      variant="primary"
-                      icon={Plus}
-                      onClick={() => {
-                        setCurrentGroupId(group.id);
-                        setEditingAddonItemId(null);
-                        setNewAddonItem({
-                          name: '',
-                          price: '',
-                          dietaryType: 'veg',
-                          isActive: true,
-                        });
-                        setIsAddAddonItemModalOpen(true);
-                      }}
-                    >
-                      Add First Item
-                    </Button>
-                  </div>
-                )}
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+            )}
 
-      {/* Copyright Footer */}
-      <div className="text-center pt-8 pb-1 mt-auto">
-        <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-          © 2026 Restaurant Oliv Restaurant & Bar
-        </p>
-      </div>
+            {/* Copyright Footer */}
+            <div className="text-center pt-8 pb-1 mt-auto">
+              <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                © 2026 Restaurant Oliv Restaurant & Bar
+              </p>
+            </div>
 
-      {/* Add/Edit Category Modal */}
-      <Modal
-        isOpen={isAddCategoryModalOpen}
-        onClose={() => setIsAddCategoryModalOpen(false)}
-        icon={UtensilsCrossed}
-        title={editingCategoryId ? 'Edit Category' : 'Add New Category'}
-        footer={
-          <>
-            <Button
-              variant="secondary"
-              icon={X}
-              onClick={() => {
-                setIsAddCategoryModalOpen(false);
-                setNewCategory({ name: '', description: '', image: null, imageUrl: '' });
-                setEditingCategoryId(null);
-              }}
+            {/* Add/Edit Category Modal */}
+            <Modal
+              isOpen={isAddCategoryModalOpen}
+              onClose={() => setIsAddCategoryModalOpen(false)}
+              icon={UtensilsCrossed}
+              title={editingCategoryId ? 'Edit Category' : 'Add New Category'}
+              footer={
+                <>
+                  <Button
+                    variant="secondary"
+                    icon={X}
+                    onClick={() => {
+                      setIsAddCategoryModalOpen(false);
+                      setNewCategory({ name: '', description: '', image: null, imageUrl: '' });
+                      setEditingCategoryId(null);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="primary"
+                    icon={editingCategoryId ? Check : Plus}
+                    onClick={async () => {
+                      if (editingCategoryId) {
+                        // Update existing category
+                        console.log('Updating category:', editingCategoryId);
+                        const result = await updateMenuCategory(editingCategoryId, {
+                          name: newCategory.name,
+                          nameDe: newCategory.name,
+                          description: newCategory.description,
+                          descriptionDe: newCategory.description,
+                        });
+                        console.log('Update category result:', result);
+                        if (result.success) {
+                          setCategories(categories.map(cat =>
+                            cat.id === editingCategoryId
+                              ? { ...cat, name: newCategory.name, description: newCategory.description, image: newCategory.image ? URL.createObjectURL(newCategory.image) : newCategory.imageUrl }
+                              : cat
+                          ));
+                          setIsAddCategoryModalOpen(false);
+                          setNewCategory({ name: '', description: '', image: null, imageUrl: '' });
+                          setEditingCategoryId(null);
+                        } else {
+                          alert(result.error || 'Failed to update category');
+                        }
+                      } else {
+                        // Create new category
+                        console.log('Creating category:', newCategory.name);
+                        const result = await createMenuCategory({
+                          name: newCategory.name,
+                          nameDe: newCategory.name,
+                          description: newCategory.description,
+                          descriptionDe: newCategory.description,
+                        });
+                        console.log('Create category result:', result);
+                        if (result.success && result.data) {
+                          const newCat: Category = {
+                            id: result.data.id,
+                            name: newCategory.name,
+                            description: newCategory.description,
+                            image: newCategory.image ? URL.createObjectURL(newCategory.image) : newCategory.imageUrl,
+                            isActive: true,
+                            isExpanded: false,
+                            items: [],
+                          };
+                          setCategories([...categories, newCat]);
+                          setIsAddCategoryModalOpen(false);
+                          setNewCategory({ name: '', description: '', image: null, imageUrl: '' });
+                          setEditingCategoryId(null);
+                        } else {
+                          alert(result.error || 'Failed to create category');
+                        }
+                      }
+                    }}
+                    disabled={!newCategory.name}
+                  >
+                    {editingCategoryId ? 'Save Changes' : 'Add Category'}
+                  </Button>
+                </>
+              }
             >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              icon={editingCategoryId ? Check : Plus}
-              onClick={async () => {
-                if (editingCategoryId) {
-                  // Update existing category
-                  console.log('Updating category:', editingCategoryId);
-                  const result = await updateMenuCategory(editingCategoryId, {
-                    name: newCategory.name,
-                    nameDe: newCategory.name,
-                    description: newCategory.description,
-                    descriptionDe: newCategory.description,
-                  });
-                  console.log('Update category result:', result);
-                  if (result.success) {
-                    setCategories(categories.map(cat =>
-                      cat.id === editingCategoryId
-                        ? { ...cat, name: newCategory.name, description: newCategory.description, image: newCategory.image ? URL.createObjectURL(newCategory.image) : newCategory.imageUrl }
-                        : cat
-                    ));
-                    setIsAddCategoryModalOpen(false);
-                    setNewCategory({ name: '', description: '', image: null, imageUrl: '' });
-                    setEditingCategoryId(null);
-                  } else {
-                    alert(result.error || 'Failed to update category');
-                  }
-                } else {
-                  // Create new category
-                  console.log('Creating category:', newCategory.name);
-                  const result = await createMenuCategory({
-                    name: newCategory.name,
-                    nameDe: newCategory.name,
-                    description: newCategory.description,
-                    descriptionDe: newCategory.description,
-                  });
-                  console.log('Create category result:', result);
-                  if (result.success && result.data) {
-                    const newCat: Category = {
-                      id: result.data.id,
-                      name: newCategory.name,
-                      description: newCategory.description,
-                      image: newCategory.image ? URL.createObjectURL(newCategory.image) : newCategory.imageUrl,
-                      isActive: true,
-                      isExpanded: false,
-                      items: [],
-                    };
-                    setCategories([...categories, newCat]);
-                    setIsAddCategoryModalOpen(false);
-                    setNewCategory({ name: '', description: '', image: null, imageUrl: '' });
-                    setEditingCategoryId(null);
-                  } else {
-                    alert(result.error || 'Failed to create category');
-                  }
-                }
-              }}
-              disabled={!newCategory.name}
-            >
-              {editingCategoryId ? 'Save Changes' : 'Add Category'}
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-4">
+              <div className="space-y-4">
                 <div>
                   <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                     Category Name *
@@ -1617,140 +1670,140 @@ export function MenuConfigPage() {
                     )}
                   </div>
                 </div>
-        </div>
-      </Modal>
+              </div>
+            </Modal>
 
-      {/* Add/Edit Menu Item Modal */}
-      <Modal
-        isOpen={isAddMenuItemModalOpen}
-        onClose={() => setIsAddMenuItemModalOpen(false)}
-        icon={UtensilsCrossed}
-        title={editingMenuItemId ? 'Edit Menu Item' : 'Add New Menu Item'}
-        footer={
-          <>
-            <Button
-              variant="secondary"
-              icon={X}
-              onClick={() => {
-                setIsAddMenuItemModalOpen(false);
-                setActiveCategoryId(null);
-              }}
+            {/* Add/Edit Menu Item Modal */}
+            <Modal
+              isOpen={isAddMenuItemModalOpen}
+              onClose={() => setIsAddMenuItemModalOpen(false)}
+              icon={UtensilsCrossed}
+              title={editingMenuItemId ? 'Edit Menu Item' : 'Add New Menu Item'}
+              footer={
+                <>
+                  <Button
+                    variant="secondary"
+                    icon={X}
+                    onClick={() => {
+                      setIsAddMenuItemModalOpen(false);
+                      setActiveCategoryId(null);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="primary"
+                    icon={editingMenuItemId ? Check : Plus}
+                    onClick={async () => {
+                      if (!activeCategoryId || !newMenuItem.name || !newMenuItem.price) return;
+
+                      if (editingMenuItemId) {
+                        // Edit existing item
+                        console.log('Updating menu item:', editingMenuItemId);
+                        const result = await updateMenuItem(editingMenuItemId, {
+                          name: newMenuItem.name,
+                          nameDe: newMenuItem.name,
+                          description: newMenuItem.description,
+                          descriptionDe: newMenuItem.description,
+                          pricePerPerson: newMenuItem.price,
+                          imageUrl: newMenuItem.imageUrl || newMenuItem.image?.name || '',
+                          isActive: newMenuItem.isActive,
+                        });
+                        console.log('Update item result:', result);
+                        if (result.success) {
+                          setCategories(categories.map(cat =>
+                            cat.id === activeCategoryId
+                              ? {
+                                ...cat,
+                                items: cat.items.map(item =>
+                                  item.id === editingMenuItemId
+                                    ? {
+                                      ...item,
+                                      name: newMenuItem.name,
+                                      description: newMenuItem.description,
+                                      price: Number(newMenuItem.price),
+                                      image: newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl,
+                                      isActive: newMenuItem.isActive,
+                                      variants: newMenuItem.variants,
+                                    }
+                                    : item
+                                ),
+                              }
+                              : cat
+                          ));
+                          setIsAddMenuItemModalOpen(false);
+                          setNewMenuItem({
+                            name: '',
+                            description: '',
+                            price: '',
+                            pricingType: 'per_person',
+                            image: null,
+                            imageUrl: '',
+                            isActive: true,
+                            variants: [],
+                          });
+                          setActiveCategoryId(null);
+                          setEditingMenuItemId(null);
+                        } else {
+                          alert(result.error || 'Failed to update menu item');
+                        }
+                      } else {
+                        // Add new item
+                        console.log('Creating menu item:', newMenuItem.name);
+                        const result = await createMenuItem({
+                          categoryId: activeCategoryId,
+                          name: newMenuItem.name,
+                          nameDe: newMenuItem.name,
+                          description: newMenuItem.description,
+                          descriptionDe: newMenuItem.description,
+                          pricePerPerson: Number(newMenuItem.price),
+                          pricingType: newMenuItem.pricingType,
+                          imageUrl: newMenuItem.imageUrl || newMenuItem.image?.name || '',
+                        });
+                        console.log('Create item result:', result);
+
+                        if (result.success && result.data) {
+                          const newItem: MenuItemData = {
+                            id: result.data.id,
+                            name: newMenuItem.name,
+                            description: newMenuItem.description,
+                            price: Number(newMenuItem.price),
+                            image: newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl,
+                            isActive: newMenuItem.isActive,
+                            variants: newMenuItem.variants,
+                          };
+
+                          setCategories(categories.map(cat =>
+                            cat.id === activeCategoryId
+                              ? { ...cat, items: [...cat.items, newItem] }
+                              : cat
+                          ));
+                          setIsAddMenuItemModalOpen(false);
+                          setNewMenuItem({
+                            name: '',
+                            description: '',
+                            price: '',
+                            pricingType: 'per_person',
+                            image: null,
+                            imageUrl: '',
+                            isActive: true,
+                            variants: [],
+                          });
+                          setActiveCategoryId(null);
+                          setEditingMenuItemId(null);
+                        } else {
+                          alert(result.error || 'Failed to create menu item');
+                        }
+                      }
+                    }}
+                    disabled={!activeCategoryId || !newMenuItem.name || !newMenuItem.price}
+                  >
+                    {editingMenuItemId ? 'Save Changes' : 'Add Item'}
+                  </Button>
+                </>
+              }
             >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              icon={editingMenuItemId ? Check : Plus}
-              onClick={async () => {
-                if (!activeCategoryId || !newMenuItem.name || !newMenuItem.price) return;
-
-                if (editingMenuItemId) {
-                  // Edit existing item
-                  console.log('Updating menu item:', editingMenuItemId);
-                  const result = await updateMenuItem(editingMenuItemId, {
-                    name: newMenuItem.name,
-                    nameDe: newMenuItem.name,
-                    description: newMenuItem.description,
-                    descriptionDe: newMenuItem.description,
-                    pricePerPerson: newMenuItem.price,
-                    imageUrl: newMenuItem.imageUrl || newMenuItem.image?.name || '',
-                    isActive: newMenuItem.isActive,
-                  });
-                  console.log('Update item result:', result);
-                  if (result.success) {
-                    setCategories(categories.map(cat =>
-                      cat.id === activeCategoryId
-                        ? {
-                            ...cat,
-                            items: cat.items.map(item =>
-                              item.id === editingMenuItemId
-                                ? {
-                                    ...item,
-                                    name: newMenuItem.name,
-                                    description: newMenuItem.description,
-                                    price: Number(newMenuItem.price),
-                                    image: newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl,
-                                    isActive: newMenuItem.isActive,
-                                    variants: newMenuItem.variants,
-                                  }
-                                : item
-                            ),
-                          }
-                        : cat
-                    ));
-                    setIsAddMenuItemModalOpen(false);
-                    setNewMenuItem({
-                      name: '',
-                      description: '',
-                      price: '',
-                      pricingType: 'per_person',
-                      image: null,
-                      imageUrl: '',
-                      isActive: true,
-                      variants: [],
-                    });
-                    setActiveCategoryId(null);
-                    setEditingMenuItemId(null);
-                  } else {
-                    alert(result.error || 'Failed to update menu item');
-                  }
-                } else {
-                  // Add new item
-                  console.log('Creating menu item:', newMenuItem.name);
-                  const result = await createMenuItem({
-                    categoryId: activeCategoryId,
-                    name: newMenuItem.name,
-                    nameDe: newMenuItem.name,
-                    description: newMenuItem.description,
-                    descriptionDe: newMenuItem.description,
-                    pricePerPerson: Number(newMenuItem.price),
-                    pricingType: newMenuItem.pricingType,
-                    imageUrl: newMenuItem.imageUrl || newMenuItem.image?.name || '',
-                  });
-                  console.log('Create item result:', result);
-
-                  if (result.success && result.data) {
-                    const newItem: MenuItemData = {
-                      id: result.data.id,
-                      name: newMenuItem.name,
-                      description: newMenuItem.description,
-                      price: Number(newMenuItem.price),
-                      image: newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl,
-                      isActive: newMenuItem.isActive,
-                      variants: newMenuItem.variants,
-                    };
-
-                    setCategories(categories.map(cat =>
-                      cat.id === activeCategoryId
-                        ? { ...cat, items: [...cat.items, newItem] }
-                        : cat
-                    ));
-                    setIsAddMenuItemModalOpen(false);
-                    setNewMenuItem({
-                      name: '',
-                      description: '',
-                      price: '',
-                      pricingType: 'per_person',
-                      image: null,
-                      imageUrl: '',
-                      isActive: true,
-                      variants: [],
-                    });
-                    setActiveCategoryId(null);
-                    setEditingMenuItemId(null);
-                  } else {
-                    alert(result.error || 'Failed to create menu item');
-                  }
-                }
-              }}
-              disabled={!activeCategoryId || !newMenuItem.name || !newMenuItem.price}
-            >
-              {editingMenuItemId ? 'Save Changes' : 'Add Item'}
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-4">
+              <div className="space-y-4">
                 {!activeCategoryId && (
                   <div>
                     <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
@@ -1910,7 +1963,7 @@ export function MenuConfigPage() {
                       <span style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>Add Variant</span>
                     </button>
                   </div>
-                  
+
                   {newMenuItem.variants.length > 0 && (
                     <div className="space-y-2 mt-3">
                       {newMenuItem.variants.map((variant, index) => (
@@ -1959,105 +2012,105 @@ export function MenuConfigPage() {
                     Item is active and visible to customers
                   </label>
                 </div>
-        </div>
-      </Modal>
+              </div>
+            </Modal>
 
-      {/* Add Group Modal */}
-      <Modal
-        isOpen={isAddGroupModalOpen}
-        onClose={() => {
-          setIsAddGroupModalOpen(false);
-          setEditingGroupId(null);
-          setNewGroup({ name: '', subtitle: '', type: 'optional', minSelect: 0, maxSelect: 1 });
-        }}
-        icon={ListPlus}
-        title={editingGroupId ? 'Edit Group' : 'Add New Group'}
-        maxWidth="lg"
-        footer={
-          <>
-            <Button
-              variant="secondary"
-              icon={X}
-              onClick={() => {
+            {/* Add Group Modal */}
+            <Modal
+              isOpen={isAddGroupModalOpen}
+              onClose={() => {
                 setIsAddGroupModalOpen(false);
                 setEditingGroupId(null);
                 setNewGroup({ name: '', subtitle: '', type: 'optional', minSelect: 0, maxSelect: 1 });
               }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              icon={editingGroupId ? Check : Plus}
-              onClick={async () => {
-                if (!newGroup.name) return;
+              icon={ListPlus}
+              title={editingGroupId ? 'Edit Group' : 'Add New Group'}
+              maxWidth="lg"
+              footer={
+                <>
+                  <Button
+                    variant="secondary"
+                    icon={X}
+                    onClick={() => {
+                      setIsAddGroupModalOpen(false);
+                      setEditingGroupId(null);
+                      setNewGroup({ name: '', subtitle: '', type: 'optional', minSelect: 0, maxSelect: 1 });
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="primary"
+                    icon={editingGroupId ? Check : Plus}
+                    onClick={async () => {
+                      if (!newGroup.name) return;
 
-                if (editingGroupId) {
-                  // Edit existing group - update in database
-                  const result = await updateAddonGroup(editingGroupId, {
-                    name: newGroup.name,
-                    nameDe: newGroup.name,
-                    subtitle: newGroup.subtitle,
-                    subtitleDe: newGroup.subtitle,
-                    minSelect: newGroup.type === 'mandatory' ? newGroup.minSelect : 0,
-                    maxSelect: newGroup.type === 'mandatory' ? newGroup.maxSelect : 999,
-                    isRequired: newGroup.type === 'mandatory',
-                  });
+                      if (editingGroupId) {
+                        // Edit existing group - update in database
+                        const result = await updateAddonGroup(editingGroupId, {
+                          name: newGroup.name,
+                          nameDe: newGroup.name,
+                          subtitle: newGroup.subtitle,
+                          subtitleDe: newGroup.subtitle,
+                          minSelect: newGroup.type === 'mandatory' ? newGroup.minSelect : 0,
+                          maxSelect: newGroup.type === 'mandatory' ? newGroup.maxSelect : 999,
+                          isRequired: newGroup.type === 'mandatory',
+                        });
 
-                  if (result.success) {
-                    setAddonGroups(addonGroups.map(group =>
-                      group.id === editingGroupId
-                        ? {
-                            ...group,
+                        if (result.success) {
+                          setAddonGroups(addonGroups.map(group =>
+                            group.id === editingGroupId
+                              ? {
+                                ...group,
+                                name: newGroup.name,
+                                subtitle: newGroup.subtitle,
+                                minSelect: newGroup.type === 'mandatory' ? newGroup.minSelect : 0,
+                                maxSelect: newGroup.type === 'mandatory' ? newGroup.maxSelect : 999,
+                                isRequired: newGroup.type === 'mandatory',
+                              }
+                              : group
+                          ));
+                        }
+                      } else {
+                        // Add new group - save to database
+                        const result = await createAddonGroup({
+                          name: newGroup.name,
+                          nameDe: newGroup.name,
+                          subtitle: newGroup.subtitle,
+                          subtitleDe: newGroup.subtitle,
+                          minSelect: newGroup.type === 'mandatory' ? newGroup.minSelect : 0,
+                          maxSelect: newGroup.type === 'mandatory' ? newGroup.maxSelect : 999,
+                          isRequired: newGroup.type === 'mandatory',
+                        });
+
+                        if (result.success && result.data) {
+                          const newAddonGroup: AddonGroup = {
+                            id: result.data.id,
                             name: newGroup.name,
                             subtitle: newGroup.subtitle,
                             minSelect: newGroup.type === 'mandatory' ? newGroup.minSelect : 0,
                             maxSelect: newGroup.type === 'mandatory' ? newGroup.maxSelect : 999,
+                            items: [],
+                            isExpanded: false,
                             isRequired: newGroup.type === 'mandatory',
-                          }
-                        : group
-                    ));
-                  }
-                } else {
-                  // Add new group - save to database
-                  const result = await createAddonGroup({
-                    name: newGroup.name,
-                    nameDe: newGroup.name,
-                    subtitle: newGroup.subtitle,
-                    subtitleDe: newGroup.subtitle,
-                    minSelect: newGroup.type === 'mandatory' ? newGroup.minSelect : 0,
-                    maxSelect: newGroup.type === 'mandatory' ? newGroup.maxSelect : 999,
-                    isRequired: newGroup.type === 'mandatory',
-                  });
+                          };
 
-                  if (result.success && result.data) {
-                    const newAddonGroup: AddonGroup = {
-                      id: result.data.id,
-                      name: newGroup.name,
-                      subtitle: newGroup.subtitle,
-                      minSelect: newGroup.type === 'mandatory' ? newGroup.minSelect : 0,
-                      maxSelect: newGroup.type === 'mandatory' ? newGroup.maxSelect : 999,
-                      items: [],
-                      isExpanded: false,
-                      isRequired: newGroup.type === 'mandatory',
-                    };
+                          setAddonGroups([...addonGroups, newAddonGroup]);
+                        }
+                      }
 
-                    setAddonGroups([...addonGroups, newAddonGroup]);
-                  }
-                }
-
-                setIsAddGroupModalOpen(false);
-                setEditingGroupId(null);
-                setNewGroup({ name: '', subtitle: '', type: 'optional', minSelect: 0, maxSelect: 1 });
-              }}
-              disabled={!newGroup.name}
+                      setIsAddGroupModalOpen(false);
+                      setEditingGroupId(null);
+                      setNewGroup({ name: '', subtitle: '', type: 'optional', minSelect: 0, maxSelect: 1 });
+                    }}
+                    disabled={!newGroup.name}
+                  >
+                    {editingGroupId ? 'Save Changes' : 'Add Group'}
+                  </Button>
+                </>
+              }
             >
-              {editingGroupId ? 'Save Changes' : 'Add Group'}
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-5">
+              <div className="space-y-5">
                 {/* Group Name */}
                 <div>
                   <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
@@ -2096,11 +2149,10 @@ export function MenuConfigPage() {
                           <span className="text-foreground peer-checked:text-primary" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                             Optional
                           </span>
-                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                            newGroup.type === 'optional' 
-                              ? 'border-primary bg-primary' 
-                              : 'border-border bg-background'
-                          }`}>
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${newGroup.type === 'optional'
+                            ? 'border-primary bg-primary'
+                            : 'border-border bg-background'
+                            }`}>
                             {newGroup.type === 'optional' && (
                               <div className="w-2 h-2 rounded-full bg-primary-foreground" />
                             )}
@@ -2121,11 +2173,10 @@ export function MenuConfigPage() {
                           <span className="text-foreground peer-checked:text-primary" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                             Mandatory
                           </span>
-                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                            newGroup.type === 'mandatory' 
-                              ? 'border-primary bg-primary' 
-                              : 'border-border bg-background'
-                          }`}>
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${newGroup.type === 'mandatory'
+                            ? 'border-primary bg-primary'
+                            : 'border-border bg-background'
+                            }`}>
                             {newGroup.type === 'mandatory' && (
                               <div className="w-2 h-2 rounded-full bg-primary-foreground" />
                             )}
@@ -2142,7 +2193,7 @@ export function MenuConfigPage() {
                     <h4 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
                       Selection Requirements
                     </h4>
-                    
+
                     {/* Minimum Selections */}
                     <div>
                       <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
@@ -2177,127 +2228,127 @@ export function MenuConfigPage() {
                     <div className="p-3 bg-card rounded-lg">
                       <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
                         <strong>Example:</strong> Min {newGroup.minSelect}, Max {newGroup.maxSelect} = "
-                        {newGroup.minSelect === newGroup.maxSelect 
+                        {newGroup.minSelect === newGroup.maxSelect
                           ? `Choose exactly ${newGroup.minSelect === 1 ? 'one' : newGroup.minSelect}`
                           : newGroup.minSelect === 0
-                          ? `Choose up to ${newGroup.maxSelect}`
-                          : `Choose ${newGroup.minSelect} to ${newGroup.maxSelect}`
+                            ? `Choose up to ${newGroup.maxSelect}`
+                            : `Choose ${newGroup.minSelect} to ${newGroup.maxSelect}`
                         }"
                       </p>
                     </div>
                   </div>
                 )}
-        </div>
-      </Modal>
+              </div>
+            </Modal>
 
-      {/* Add/Edit Addon Item Modal */}
-      <Modal
-        isOpen={isAddAddonItemModalOpen}
-        onClose={() => {
-          setIsAddAddonItemModalOpen(false);
-          setEditingAddonItemId(null);
-          setCurrentGroupId(null);
-          setNewAddonItem({ name: '', price: '', dietaryType: 'veg', isActive: true });
-        }}
-        icon={Plus}
-        title={editingAddonItemId ? 'Edit Addon Item' : 'Add New Addon Item'}
-        footer={
-          <>
-            <Button
-              variant="secondary"
-              icon={X}
-              onClick={() => {
+            {/* Add/Edit Addon Item Modal */}
+            <Modal
+              isOpen={isAddAddonItemModalOpen}
+              onClose={() => {
                 setIsAddAddonItemModalOpen(false);
                 setEditingAddonItemId(null);
                 setCurrentGroupId(null);
                 setNewAddonItem({ name: '', price: '', dietaryType: 'veg', isActive: true });
               }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              icon={editingAddonItemId ? Check : Plus}
-              onClick={async () => {
-                if (!currentGroupId) return;
+              icon={Plus}
+              title={editingAddonItemId ? 'Edit Addon Item' : 'Add New Addon Item'}
+              footer={
+                <>
+                  <Button
+                    variant="secondary"
+                    icon={X}
+                    onClick={() => {
+                      setIsAddAddonItemModalOpen(false);
+                      setEditingAddonItemId(null);
+                      setCurrentGroupId(null);
+                      setNewAddonItem({ name: '', price: '', dietaryType: 'veg', isActive: true });
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="primary"
+                    icon={editingAddonItemId ? Check : Plus}
+                    onClick={async () => {
+                      if (!currentGroupId) return;
 
-                if (editingAddonItemId) {
-                  // Edit existing item - update in database
-                  const result = await updateAddonItem(editingAddonItemId, {
-                    name: newAddonItem.name,
-                    nameDe: newAddonItem.name,
-                    price: parseFloat(newAddonItem.price) as any,
-                    dietaryType: newAddonItem.dietaryType,
-                    isActive: newAddonItem.isActive,
-                  });
-
-                  if (result.success) {
-                    const updatedGroups = addonGroups.map(group => {
-                      if (group.id === currentGroupId) {
-                        return {
-                          ...group,
-                          items: group.items.map(item =>
-                            item.id === editingAddonItemId
-                              ? {
-                                  ...item,
-                                  name: newAddonItem.name,
-                                  price: parseFloat(newAddonItem.price),
-                                  dietaryType: newAddonItem.dietaryType,
-                                  isActive: newAddonItem.isActive,
-                                }
-                              : item
-                          ),
-                        };
-                      }
-                      return group;
-                    });
-                    setAddonGroups(updatedGroups);
-                  }
-                } else {
-                  // Add new item - save to database
-                  const result = await createAddonItem({
-                    addonGroupId: currentGroupId,
-                    name: newAddonItem.name,
-                    nameDe: newAddonItem.name,
-                    price: parseFloat(newAddonItem.price) as any,
-                    dietaryType: newAddonItem.dietaryType,
-                    pricingType: 'per_person',
-                  });
-
-                  if (result.success && result.data) {
-                    const updatedGroups = addonGroups.map(group => {
-                      if (group.id === currentGroupId) {
-                        const newItem: AddonItem = {
-                          id: result.data.id,
+                      if (editingAddonItemId) {
+                        // Edit existing item - update in database
+                        const result = await updateAddonItem(editingAddonItemId, {
                           name: newAddonItem.name,
-                          price: parseFloat(newAddonItem.price),
+                          nameDe: newAddonItem.name,
+                          price: parseFloat(newAddonItem.price) as any,
                           dietaryType: newAddonItem.dietaryType,
                           isActive: newAddonItem.isActive,
-                        };
-                        return {
-                          ...group,
-                          items: [...group.items, newItem],
-                        };
-                      }
-                      return group;
-                    });
-                    setAddonGroups(updatedGroups);
-                  }
-                }
+                        });
 
-                setIsAddAddonItemModalOpen(false);
-                setEditingAddonItemId(null);
-                setCurrentGroupId(null);
-                setNewAddonItem({ name: '', price: '', dietaryType: 'veg', isActive: true });
-              }}
-              disabled={!newAddonItem.name || !newAddonItem.price}
+                        if (result.success) {
+                          const updatedGroups = addonGroups.map(group => {
+                            if (group.id === currentGroupId) {
+                              return {
+                                ...group,
+                                items: group.items.map(item =>
+                                  item.id === editingAddonItemId
+                                    ? {
+                                      ...item,
+                                      name: newAddonItem.name,
+                                      price: parseFloat(newAddonItem.price),
+                                      dietaryType: newAddonItem.dietaryType,
+                                      isActive: newAddonItem.isActive,
+                                    }
+                                    : item
+                                ),
+                              };
+                            }
+                            return group;
+                          });
+                          setAddonGroups(updatedGroups);
+                        }
+                      } else {
+                        // Add new item - save to database
+                        const result = await createAddonItem({
+                          addonGroupId: currentGroupId,
+                          name: newAddonItem.name,
+                          nameDe: newAddonItem.name,
+                          price: parseFloat(newAddonItem.price) as any,
+                          dietaryType: newAddonItem.dietaryType,
+                          pricingType: 'per_person',
+                        });
+
+                        if (result.success && result.data) {
+                          const updatedGroups = addonGroups.map(group => {
+                            if (group.id === currentGroupId) {
+                              const newItem: AddonItem = {
+                                id: result.data.id,
+                                name: newAddonItem.name,
+                                price: parseFloat(newAddonItem.price),
+                                dietaryType: newAddonItem.dietaryType,
+                                isActive: newAddonItem.isActive,
+                              };
+                              return {
+                                ...group,
+                                items: [...group.items, newItem],
+                              };
+                            }
+                            return group;
+                          });
+                          setAddonGroups(updatedGroups);
+                        }
+                      }
+
+                      setIsAddAddonItemModalOpen(false);
+                      setEditingAddonItemId(null);
+                      setCurrentGroupId(null);
+                      setNewAddonItem({ name: '', price: '', dietaryType: 'veg', isActive: true });
+                    }}
+                    disabled={!newAddonItem.name || !newAddonItem.price}
+                  >
+                    {editingAddonItemId ? 'Save Changes' : 'Add Item'}
+                  </Button>
+                </>
+              }
             >
-              {editingAddonItemId ? 'Save Changes' : 'Add Item'}
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-6">
+              <div className="space-y-6">
                 {/* Item Name */}
                 <div>
                   <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
@@ -2337,11 +2388,10 @@ export function MenuConfigPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       onClick={() => setNewAddonItem({ ...newAddonItem, dietaryType: 'veg' })}
-                      className={`p-4 rounded-lg border-2 transition-all ${
-                        newAddonItem.dietaryType === 'veg'
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border hover:border-border/60 bg-background'
-                      }`}
+                      className={`p-4 rounded-lg border-2 transition-all ${newAddonItem.dietaryType === 'veg'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-border/60 bg-background'
+                        }`}
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-6 h-6 rounded border-2 border-green-600 flex items-center justify-center flex-shrink-0">
@@ -2355,9 +2405,8 @@ export function MenuConfigPage() {
                             No meat or fish
                           </p>
                         </div>
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                          newAddonItem.dietaryType === 'veg' ? 'border-primary' : 'border-border'
-                        }`}>
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${newAddonItem.dietaryType === 'veg' ? 'border-primary' : 'border-border'
+                          }`}>
                           {newAddonItem.dietaryType === 'veg' && (
                             <div className="w-2.5 h-2.5 rounded-full bg-primary" />
                           )}
@@ -2367,11 +2416,10 @@ export function MenuConfigPage() {
 
                     <button
                       onClick={() => setNewAddonItem({ ...newAddonItem, dietaryType: 'non-veg' })}
-                      className={`p-4 rounded-lg border-2 transition-all ${
-                        newAddonItem.dietaryType === 'non-veg'
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border hover:border-border/60 bg-background'
-                      }`}
+                      className={`p-4 rounded-lg border-2 transition-all ${newAddonItem.dietaryType === 'non-veg'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-border/60 bg-background'
+                        }`}
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-6 h-6 rounded border-2 border-red-600 flex items-center justify-center flex-shrink-0">
@@ -2385,9 +2433,8 @@ export function MenuConfigPage() {
                             Contains meat or fish
                           </p>
                         </div>
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                          newAddonItem.dietaryType === 'non-veg' ? 'border-primary' : 'border-border'
-                        }`}>
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${newAddonItem.dietaryType === 'non-veg' ? 'border-primary' : 'border-border'
+                          }`}>
                           {newAddonItem.dietaryType === 'non-veg' && (
                             <div className="w-2.5 h-2.5 rounded-full bg-primary" />
                           )}
@@ -2409,245 +2456,243 @@ export function MenuConfigPage() {
                   </div>
                   <button
                     onClick={() => setNewAddonItem({ ...newAddonItem, isActive: !newAddonItem.isActive })}
-                    className={`relative w-12 h-6 rounded-full transition-colors ${
-                      newAddonItem.isActive ? 'bg-primary' : 'bg-border'
-                    }`}
+                    className={`relative w-12 h-6 rounded-full transition-colors ${newAddonItem.isActive ? 'bg-primary' : 'bg-border'
+                      }`}
                   >
-                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
-                      newAddonItem.isActive ? 'translate-x-6' : 'translate-x-0.5'
-                    }`} />
+                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${newAddonItem.isActive ? 'translate-x-6' : 'translate-x-0.5'
+                      }`} />
                   </button>
                 </div>
-        </div>
-      </Modal>
+              </div>
+            </Modal>
 
-      {/* Delete Category Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={!!deleteCategoryId}
-        onClose={() => setDeleteCategoryId(null)}
-        onConfirm={async () => {
-          // Call server action to delete from database
-          if (deleteCategoryId) {
-            console.log('Deleting category:', deleteCategoryId);
-            const result = await deleteMenuCategory(deleteCategoryId);
-            console.log('Delete category result:', result);
-            if (result.success) {
-              setCategories(categories.filter(cat => cat.id !== deleteCategoryId));
-            } else {
-              alert(result.error || 'Failed to delete category');
-            }
-          }
-          setDeleteCategoryId(null);
-        }}
-        title="Delete Category"
-        message={`Are you sure you want to delete "${categories.find(c => c.id === deleteCategoryId)?.name}"? This action cannot be undone and will remove all items in this category.`}
-      />
-
-      {/* Delete Menu Item Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={!!deleteMenuItemId && !!activeCategoryId}
-        onClose={() => {
-          setDeleteMenuItemId(null);
-          setActiveCategoryId(null);
-        }}
-        onConfirm={async () => {
-          // Call server action to delete from database
-          if (deleteMenuItemId) {
-            console.log('Deleting menu item:', deleteMenuItemId);
-            const result = await deleteMenuItem(deleteMenuItemId);
-            console.log('Delete item result:', result);
-            if (result.success) {
-              setCategories(categories.map(cat => {
-                if (cat.id === activeCategoryId) {
-                  return {
-                    ...cat,
-                    items: cat.items.filter(item => item.id !== deleteMenuItemId),
-                  };
-                }
-                return cat;
-              }));
-            } else {
-              alert(result.error || 'Failed to delete menu item');
-            }
-          }
-          setDeleteMenuItemId(null);
-          setActiveCategoryId(null);
-        }}
-        title="Delete Menu Item"
-        message={`Are you sure you want to delete "${categories.find(c => c.id === activeCategoryId)?.items.find(item => item.id === deleteMenuItemId)?.name}"? This action cannot be undone.`}
-      />
-
-      {/* Delete Group Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={!!deleteGroupId}
-        onClose={() => setDeleteGroupId(null)}
-        onConfirm={() => {
-          setAddonGroups(addonGroups.filter(group => group.id !== deleteGroupId));
-          setDeleteGroupId(null);
-        }}
-        title="Delete Group"
-        message={`Are you sure you want to delete "${addonGroups.find(g => g.id === deleteGroupId)?.name}"? This action cannot be undone.`}
-      />
-
-      {/* Delete Addon Item Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={!!deleteAddonItemId && !!currentGroupId}
-        onClose={() => {
-          setDeleteAddonItemId(null);
-          setCurrentGroupId(null);
-        }}
-        onConfirm={() => {
-          const updatedGroups = addonGroups.map(group => {
-            if (group.id === currentGroupId) {
-              return {
-                ...group,
-                items: group.items.filter(item => item.id !== deleteAddonItemId),
-              };
-            }
-            return group;
-          });
-          setAddonGroups(updatedGroups);
-          setDeleteAddonItemId(null);
-          setCurrentGroupId(null);
-        }}
-        title="Delete Item"
-        message={`Are you sure you want to delete "${addonGroups.find(g => g.id === currentGroupId)?.items.find(item => item.id === deleteAddonItemId)?.name}"? This action cannot be undone.`}
-      />
-
-      {/* Item Settings Modal */}
-      <ItemSettingsModal
-        isOpen={isItemSettingsModalOpen}
-        onClose={() => {
-          setIsItemSettingsModalOpen(false);
-          setSettingsMenuItemId(null);
-          setActiveCategoryId(null);
-        }}
-        onSave={handleSaveItemSettings}
-        itemSettings={itemSettings}
-        setItemSettings={setItemSettings}
-        itemName={
-          settingsMenuItemId && activeCategoryId
-            ? categories.find(c => c.id === activeCategoryId)?.items.find(i => i.id === settingsMenuItemId)?.name
-            : undefined
-        }
-      />
-
-      {/* Add Choice Modal */}
-      <Modal
-        isOpen={isAddChoiceModalOpen}
-        onClose={() => {
-          setIsAddChoiceModalOpen(false);
-          setChoiceCategoryId(null);
-          setSelectedAddonGroups([]);
-        }}
-        icon={ListPlus}
-        title="Add Choice"
-        footer={
-          <>
-            <Button
-              variant="secondary"
-              icon={X}
-              onClick={() => {
-                setIsAddChoiceModalOpen(false);
-                setChoiceCategoryId(null);
-                setSelectedAddonGroups([]);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              icon={Check}
-              onClick={async () => {
-                if (choiceCategoryId) {
-                  // Save to database
-                  const result = await updateCategoryAddonGroups(choiceCategoryId, selectedAddonGroups);
-
+            {/* Delete Category Confirmation Modal */}
+            <ConfirmationModal
+              isOpen={!!deleteCategoryId}
+              onClose={() => setDeleteCategoryId(null)}
+              onConfirm={async () => {
+                // Call server action to delete from database
+                if (deleteCategoryId) {
+                  console.log('Deleting category:', deleteCategoryId);
+                  const result = await deleteMenuCategory(deleteCategoryId);
+                  console.log('Delete category result:', result);
                   if (result.success) {
-                    setCategories(categories.map(cat =>
-                      cat.id === choiceCategoryId
-                        ? { ...cat, assignedAddonGroups: selectedAddonGroups }
-                        : cat
-                    ));
+                    setCategories(categories.filter(cat => cat.id !== deleteCategoryId));
+                  } else {
+                    alert(result.error || 'Failed to delete category');
                   }
                 }
+                setDeleteCategoryId(null);
+              }}
+              title="Delete Category"
+              message={`Are you sure you want to delete "${categories.find(c => c.id === deleteCategoryId)?.name}"? This action cannot be undone and will remove all items in this category.`}
+            />
+
+            {/* Delete Menu Item Confirmation Modal */}
+            <ConfirmationModal
+              isOpen={!!deleteMenuItemId && !!activeCategoryId}
+              onClose={() => {
+                setDeleteMenuItemId(null);
+                setActiveCategoryId(null);
+              }}
+              onConfirm={async () => {
+                // Call server action to delete from database
+                if (deleteMenuItemId) {
+                  console.log('Deleting menu item:', deleteMenuItemId);
+                  const result = await deleteMenuItem(deleteMenuItemId);
+                  console.log('Delete item result:', result);
+                  if (result.success) {
+                    setCategories(categories.map(cat => {
+                      if (cat.id === activeCategoryId) {
+                        return {
+                          ...cat,
+                          items: cat.items.filter(item => item.id !== deleteMenuItemId),
+                        };
+                      }
+                      return cat;
+                    }));
+                  } else {
+                    alert(result.error || 'Failed to delete menu item');
+                  }
+                }
+                setDeleteMenuItemId(null);
+                setActiveCategoryId(null);
+              }}
+              title="Delete Menu Item"
+              message={`Are you sure you want to delete "${categories.find(c => c.id === activeCategoryId)?.items.find(item => item.id === deleteMenuItemId)?.name}"? This action cannot be undone.`}
+            />
+
+            {/* Delete Group Confirmation Modal */}
+            <ConfirmationModal
+              isOpen={!!deleteGroupId}
+              onClose={() => setDeleteGroupId(null)}
+              onConfirm={() => {
+                setAddonGroups(addonGroups.filter(group => group.id !== deleteGroupId));
+                setDeleteGroupId(null);
+              }}
+              title="Delete Group"
+              message={`Are you sure you want to delete "${addonGroups.find(g => g.id === deleteGroupId)?.name}"? This action cannot be undone.`}
+            />
+
+            {/* Delete Addon Item Confirmation Modal */}
+            <ConfirmationModal
+              isOpen={!!deleteAddonItemId && !!currentGroupId}
+              onClose={() => {
+                setDeleteAddonItemId(null);
+                setCurrentGroupId(null);
+              }}
+              onConfirm={() => {
+                const updatedGroups = addonGroups.map(group => {
+                  if (group.id === currentGroupId) {
+                    return {
+                      ...group,
+                      items: group.items.filter(item => item.id !== deleteAddonItemId),
+                    };
+                  }
+                  return group;
+                });
+                setAddonGroups(updatedGroups);
+                setDeleteAddonItemId(null);
+                setCurrentGroupId(null);
+              }}
+              title="Delete Item"
+              message={`Are you sure you want to delete "${addonGroups.find(g => g.id === currentGroupId)?.items.find(item => item.id === deleteAddonItemId)?.name}"? This action cannot be undone.`}
+            />
+
+            {/* Item Settings Modal */}
+            <ItemSettingsModal
+              isOpen={isItemSettingsModalOpen}
+              onClose={() => {
+                setIsItemSettingsModalOpen(false);
+                setSettingsMenuItemId(null);
+                setActiveCategoryId(null);
+              }}
+              onSave={handleSaveItemSettings}
+              itemSettings={itemSettings}
+              setItemSettings={setItemSettings}
+              itemName={
+                settingsMenuItemId && activeCategoryId
+                  ? categories.find(c => c.id === activeCategoryId)?.items.find(i => i.id === settingsMenuItemId)?.name
+                  : undefined
+              }
+            />
+
+            {/* Add Choice Modal */}
+            <Modal
+              isOpen={isAddChoiceModalOpen}
+              onClose={() => {
                 setIsAddChoiceModalOpen(false);
                 setChoiceCategoryId(null);
                 setSelectedAddonGroups([]);
               }}
-            >
-              Save Changes
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-              Select Addon Groups
-            </label>
-            <p className="text-muted-foreground mb-4" style={{ fontSize: 'var(--text-small)' }}>
-              Choose which addon groups should be available for this category
-            </p>
-            
-            {/* Addon Groups Grid */}
-            <div className="grid grid-cols-3 gap-3">
-              {addonGroups.map((group) => {
-                const isSelected = selectedAddonGroups.includes(group.id);
-                return (
-                  <label
-                    key={group.id}
-                    className="cursor-pointer"
+              icon={ListPlus}
+              title="Add Choice"
+              footer={
+                <>
+                  <Button
+                    variant="secondary"
+                    icon={X}
+                    onClick={() => {
+                      setIsAddChoiceModalOpen(false);
+                      setChoiceCategoryId(null);
+                      setSelectedAddonGroups([]);
+                    }}
                   >
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedAddonGroups([...selectedAddonGroups, group.id]);
-                        } else {
-                          setSelectedAddonGroups(selectedAddonGroups.filter(id => id !== group.id));
-                        }
-                      }}
-                      className="sr-only peer"
-                    />
-                    <div 
-                      className="px-4 py-3 bg-card border border-border rounded-lg transition-all hover:border-primary/50 peer-checked:border-primary peer-checked:bg-primary/5"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                          isSelected 
-                            ? 'bg-primary border-primary' 
-                            : 'bg-background border-border'
-                        }`}>
-                          {isSelected && (
-                            <Check className="w-3.5 h-3.5 text-primary-foreground" strokeWidth={3} />
-                          )}
-                        </div>
-                        <span 
-                          className="text-foreground"
-                          style={{ fontSize: 'var(--text-base)' }}
-                        >
-                          {group.name}
-                        </span>
-                      </div>
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="primary"
+                    icon={Check}
+                    onClick={async () => {
+                      if (choiceCategoryId) {
+                        // Save to database
+                        const result = await updateCategoryAddonGroups(choiceCategoryId, selectedAddonGroups);
 
-            {selectedAddonGroups.length > 0 && (
-              <p className="text-muted-foreground mt-3" style={{ fontSize: 'var(--text-small)' }}>
-                {selectedAddonGroups.length} addon group{selectedAddonGroups.length !== 1 ? 's' : ''} selected
-              </p>
-            )}
-          </div>
-        </div>
-      </Modal>
-        </>
-      )}
-      </div>
-    </div>
+                        if (result.success) {
+                          setCategories(categories.map(cat =>
+                            cat.id === choiceCategoryId
+                              ? { ...cat, assignedAddonGroups: selectedAddonGroups }
+                              : cat
+                          ));
+                        }
+                      }
+                      setIsAddChoiceModalOpen(false);
+                      setChoiceCategoryId(null);
+                      setSelectedAddonGroups([]);
+                    }}
+                  >
+                    Save Changes
+                  </Button>
+                </>
+              }
+            >
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                    Select Addon Groups
+                  </label>
+                  <p className="text-muted-foreground mb-4" style={{ fontSize: 'var(--text-small)' }}>
+                    Choose which addon groups should be available for this category
+                  </p>
+
+                  {/* Addon Groups Grid */}
+                  <div className="grid grid-cols-3 gap-3">
+                    {addonGroups.map((group) => {
+                      const isSelected = selectedAddonGroups.includes(group.id);
+                      return (
+                        <label
+                          key={group.id}
+                          className="cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedAddonGroups([...selectedAddonGroups, group.id]);
+                              } else {
+                                setSelectedAddonGroups(selectedAddonGroups.filter(id => id !== group.id));
+                              }
+                            }}
+                            className="sr-only peer"
+                          />
+                          <div
+                            className="px-4 py-3 bg-card border border-border rounded-lg transition-all hover:border-primary/50 peer-checked:border-primary peer-checked:bg-primary/5"
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${isSelected
+                                ? 'bg-primary border-primary'
+                                : 'bg-background border-border'
+                                }`}>
+                                {isSelected && (
+                                  <Check className="w-3.5 h-3.5 text-primary-foreground" strokeWidth={3} />
+                                )}
+                              </div>
+                              <span
+                                className="text-foreground"
+                                style={{ fontSize: 'var(--text-base)' }}
+                              >
+                                {group.name}
+                              </span>
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+
+                  {selectedAddonGroups.length > 0 && (
+                    <p className="text-muted-foreground mt-3" style={{ fontSize: 'var(--text-small)' }}>
+                      {selectedAddonGroups.length} addon group{selectedAddonGroups.length !== 1 ? 's' : ''} selected
+                    </p>
+                  )}
+                </div>
+              </div>
+            </Modal>
+          </>
+        )
+        }
+      </div >
+    </div >
   );
 }

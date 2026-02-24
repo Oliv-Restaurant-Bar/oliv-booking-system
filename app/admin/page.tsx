@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth/server";
 import { KPICard } from "@/components/admin/KPICard";
 import { DashboardCharts } from "@/components/admin/DashboardCharts";
 import { getDashboardStats, getDailyBookingsData, getDailyRevenueData, getBookingStatusDistribution } from "@/lib/actions/stats";
+import { Permission, hasPermission } from "@/lib/auth/rbac";
 
 export const dynamic = 'force-dynamic';
 
@@ -10,6 +11,14 @@ export default async function AdminDashboardPage() {
   const session = await getSession();
 
   if (!session) {
+    redirect("/admin/login");
+  }
+
+  const userRole = session.user.role as any;
+  if (!hasPermission(userRole, Permission.VIEW_DASHBOARD)) {
+    // If they can't see the dashboard, they probably can't see anything, 
+    // but let's redirect to a safe place or logout if needed.
+    // For now, redirect to login if no permissions at all.
     redirect("/admin/login");
   }
 

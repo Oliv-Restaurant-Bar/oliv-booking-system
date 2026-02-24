@@ -3,8 +3,12 @@
 import { useState } from 'react';
 import { Globe, DollarSign, Check } from 'lucide-react';
 import { StatusDropdown } from './StatusDropdown';
+import { Permission, hasPermission } from '@/lib/auth/rbac';
 
-export function SettingsPage() {
+export function SettingsPage({ user }: { user?: any }) {
+  const userRole = user?.role;
+  const canUpdateSettings = hasPermission(userRole, Permission.UPDATE_SETTINGS);
+
   const [language, setLanguage] = useState('English');
   const [timeZone, setTimeZone] = useState('UTC');
   const [dateFormat, setDateFormat] = useState('MM/DD/YYYY');
@@ -70,6 +74,7 @@ export function SettingsPage() {
                   onChange={(value) => setLanguage(value)}
                   placeholder="Select language"
                   className="w-full"
+                  disabled={!canUpdateSettings}
                 />
               </div>
 
@@ -84,6 +89,7 @@ export function SettingsPage() {
                   onChange={(value) => setTimeZone(value)}
                   placeholder="Select time zone"
                   className="w-full"
+                  disabled={!canUpdateSettings}
                 />
               </div>
 
@@ -98,6 +104,7 @@ export function SettingsPage() {
                   onChange={(value) => setDateFormat(value)}
                   placeholder="Select date format"
                   className="w-full"
+                  disabled={!canUpdateSettings}
                 />
               </div>
             </div>
@@ -126,6 +133,7 @@ export function SettingsPage() {
                   onChange={(value) => setCurrency(value)}
                   placeholder="Select currency"
                   className="w-full"
+                  disabled={!canUpdateSettings}
                 />
               </div>
 
@@ -133,8 +141,9 @@ export function SettingsPage() {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => setShowCurrencySymbol(!showCurrencySymbol)}
-                  className="flex items-center justify-center transition-all duration-200"
+                  onClick={() => canUpdateSettings && setShowCurrencySymbol(!showCurrencySymbol)}
+                  disabled={!canUpdateSettings}
+                  className={`flex items-center justify-center transition-all duration-200 ${!canUpdateSettings ? 'opacity-50 cursor-not-allowed' : ''}`}
                   style={{
                     width: '20px',
                     height: '20px',
@@ -148,8 +157,8 @@ export function SettingsPage() {
                   )}
                 </button>
                 <label
-                  onClick={() => setShowCurrencySymbol(!showCurrencySymbol)}
-                  className="text-foreground cursor-pointer"
+                  onClick={() => canUpdateSettings && setShowCurrencySymbol(!showCurrencySymbol)}
+                  className={`text-foreground ${canUpdateSettings ? 'cursor-pointer' : 'cursor-default'}`}
                   style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}
                 >
                   Show currency symbol in reports

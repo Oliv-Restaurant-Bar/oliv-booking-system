@@ -6,7 +6,8 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { requireAuth } from "@/lib/auth/rbac-middleware";
-import { Permission, canModifyUser } from "@/lib/auth/rbac";
+import { Permission, canModifyUser, hasPermission } from "@/lib/auth/rbac";
+import { requirePermissionWrapper } from "@/lib/auth/rbac-middleware";
 
 export interface CreateAdminUserInput {
   id: string;
@@ -18,7 +19,8 @@ export interface CreateAdminUserInput {
 
 export async function createAdminUser(input: CreateAdminUserInput) {
   try {
-    // Check authentication
+    // Check authentication and permission
+    await requirePermissionWrapper(Permission.MANAGE_USERS);
     const session = await requireAuth();
     const currentUserId = session.user.id;
     const currentUserRole = session.user.role as any;
@@ -60,7 +62,8 @@ export async function createAdminUser(input: CreateAdminUserInput) {
 
 export async function updateAdminUser(id: string, updates: Partial<typeof adminUser.$inferInsert>) {
   try {
-    // Check authentication
+    // Check authentication and permission
+    await requirePermissionWrapper(Permission.MANAGE_USERS);
     const session = await requireAuth();
     const currentUserId = session.user.id;
     const currentUserRole = session.user.role as any;
@@ -101,7 +104,8 @@ export async function updateAdminUser(id: string, updates: Partial<typeof adminU
 
 export async function deleteAdminUser(id: string) {
   try {
-    // Check authentication
+    // Check authentication and permission
+    await requirePermissionWrapper(Permission.DELETE_USER);
     const session = await requireAuth();
     const currentUserId = session.user.id;
     const currentUserRole = session.user.role as any;
@@ -136,8 +140,8 @@ export async function deleteAdminUser(id: string) {
 
 export async function getAdminUsers() {
   try {
-    // Any authenticated user can view the user list
-    await requireAuth();
+    // Require VIEW_USERS permission
+    await requirePermissionWrapper(Permission.VIEW_USERS);
 
     const users = await db.select().from(adminUser);
 
@@ -153,8 +157,8 @@ export async function getAdminUsers() {
 
 export async function getAdminUserById(id: string) {
   try {
-    // Any authenticated user can view user details
-    await requireAuth();
+    // Require VIEW_USERS permission
+    await requirePermissionWrapper(Permission.VIEW_USERS);
 
     const [user] = await db.select().from(adminUser).where(eq(adminUser.id, id)).limit(1);
 

@@ -5,19 +5,23 @@ import { useRouter } from 'next/navigation';
 import { User, Menu, LogOut, UserCircle, ChevronDown } from 'lucide-react';
 
 interface DashboardHeaderProps {
+  user?: any;
   userName?: string;
   isScrolled?: boolean;
   currentPage?: string;
   onMenuClick?: () => void;
 }
 
-export function DashboardHeader({ 
-  userName = 'Admin User', 
-  isScrolled = false, 
+export function DashboardHeader({
+  user,
+  userName,
+  isScrolled = false,
   currentPage = 'dashboard',
   onMenuClick
 }: DashboardHeaderProps) {
   const router = useRouter();
+  const userData = user?.user || user;
+  const displayUserName = userName || userData?.name || 'Admin User';
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -39,7 +43,7 @@ export function DashboardHeader({
   const pageInfo: Record<string, { title: string; subtitle: string }> = {
     'dashboard': {
       title: 'Dashboard',
-      subtitle: `Welcome back, ${userName}! Here's what's happening today.`
+      subtitle: `Welcome back, ${displayUserName}! Here's what's happening today.`
     },
     'bookings': {
       title: 'Bookings',
@@ -75,7 +79,10 @@ export function DashboardHeader({
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/sign-out', { method: 'POST' });
+      await fetch('/api/auth/sign-out', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
       router.push('/admin/login');
     } catch (error) {
       console.error('Logout failed:', error);
@@ -84,9 +91,8 @@ export function DashboardHeader({
 
   return (
     <div
-      className={`mx-4 md:mx-8 mt-3 md:mt-5 mb-4 md:mb-5 flex items-center bg-card rounded-2xl px-4 md:px-[32px] py-[10px] border border-border transition-shadow duration-300 ${
-        isScrolled ? 'shadow-lg' : 'shadow-sm'
-      }`}
+      className={`mx-4 md:mx-8 mt-3 md:mt-5 mb-4 md:mb-5 flex items-center bg-card rounded-2xl px-4 md:px-[32px] py-[10px] border border-border transition-shadow duration-300 ${isScrolled ? 'shadow-lg' : 'shadow-sm'
+        }`}
     >
       {/* Mobile menu button - visible only on small screens */}
       {onMenuClick && (
@@ -117,11 +123,10 @@ export function DashboardHeader({
             <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
               <User className="w-4 h-4 text-primary-foreground" />
             </div>
-            <span style={{ fontSize: 'var(--text-base)' }} className="hidden md:block">{userName}</span>
+            <span style={{ fontSize: 'var(--text-base)' }} className="hidden md:block">{displayUserName}</span>
             <ChevronDown
-              className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${
-                isDropdownOpen ? 'rotate-180' : ''
-              }`}
+              className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''
+                }`}
             />
           </button>
 

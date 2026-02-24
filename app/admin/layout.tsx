@@ -10,16 +10,38 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const [session, setSession] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
   const mainRef = useRef<HTMLElement>(null);
+
+  // Fetch session on mount
+  useEffect(() => {
+    async function fetchSession() {
+      try {
+        const response = await fetch('/api/auth/get-session');
+        if (response.ok) {
+          const data = await response.json();
+          setSession(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch session:', error);
+      }
+    }
+
+    const isLoginPage = pathname === '/admin/login' || pathname?.startsWith('/admin/login');
+    if (!isLoginPage) {
+      fetchSession();
+    }
+  }, [pathname]);
 
   // Don't show sidebar/header on login page
   const isLoginPage = pathname === '/admin/login' || pathname?.startsWith('/admin/login');
 
   // Determine current page from pathname
   const getCurrentPage = () => {
+    if (!pathname) return 'dashboard';
     if (pathname === '/admin' || pathname === '/admin/') return 'dashboard';
     const segment = pathname.split('/')[2];
     if (segment === 'bookings') return 'bookings';
@@ -53,7 +75,7 @@ export default function AdminLayout({
     <div className="flex min-h-screen bg-background">
       {/* Desktop Sidebar - Hidden on mobile */}
       <div className="hidden lg:block sticky top-0 h-screen self-start">
-        <DashboardSidebar />
+        <DashboardSidebar user={session?.user} />
       </div>
 
       {/* Mobile Sidebar Overlay */}
@@ -64,7 +86,7 @@ export default function AdminLayout({
             onClick={() => setSidebarOpen(false)}
           />
           <div className="fixed inset-y-0 left-0 z-50 lg:hidden">
-            <DashboardSidebar onNavigate={() => setSidebarOpen(false)} />
+            <DashboardSidebar user={session?.user} onNavigate={() => setSidebarOpen(false)} />
           </div>
         </>
       )}
@@ -75,6 +97,7 @@ export default function AdminLayout({
           {/* Sticky Header */}
           <div className="sticky top-0 z-10 bg-background">
             <DashboardHeader
+              user={session?.user}
               onMenuClick={() => setSidebarOpen(!sidebarOpen)}
               isScrolled={isScrolled}
               currentPage={currentPage}

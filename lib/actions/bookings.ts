@@ -20,6 +20,8 @@ import {
   type FieldChange,
 } from "@/lib/booking-audit";
 import { ensureBookingSecret } from "@/lib/booking-security";
+import { requirePermissionWrapper } from "@/lib/auth/rbac-middleware";
+import { Permission } from "@/lib/auth/rbac";
 
 export interface CreateBookingInput {
   leadId?: string;
@@ -35,20 +37,23 @@ export interface CreateBookingInput {
 
 export async function createBooking(input: CreateBookingInput & { leadEmail?: string; leadName?: string }) {
   try {
+    // Require CREATE_BOOKING permission
+    await requirePermissionWrapper(Permission.CREATE_BOOKING);
+
     // @ts-ignore - Drizzle ORM type compatibility issue
     const [booking] = await db.insert(bookings).values({
-        leadId: input.leadId,
-        eventDate: input.eventDate,
-        eventTime: input.eventTime,
-        guestCount: input.guestCount,
-        allergyDetails: input.allergyDetails || [],
-        specialRequests: input.specialRequests,
-        estimatedTotal: input.estimatedTotal?.toString(),
-        requiresDeposit: input.requiresDeposit || false,
-        status: "pending",
-        internalNotes: input.internalNotes,
-        isLocked: true, // Bookings are locked by default - admin must unlock to allow client edits
-      })
+      leadId: input.leadId,
+      eventDate: input.eventDate,
+      eventTime: input.eventTime,
+      guestCount: input.guestCount,
+      allergyDetails: input.allergyDetails || [],
+      specialRequests: input.specialRequests,
+      estimatedTotal: input.estimatedTotal?.toString(),
+      requiresDeposit: input.requiresDeposit || false,
+      status: "pending",
+      internalNotes: input.internalNotes,
+      isLocked: true, // Bookings are locked by default - admin must unlock to allow client edits
+    })
       .returning();
 
     // Generate edit secret for the booking
@@ -106,6 +111,9 @@ export async function createBooking(input: CreateBookingInput & { leadEmail?: st
 
 export async function convertLeadToBooking(leadId: string, bookingData: CreateBookingInput) {
   try {
+    // Require CONVERT_LEAD_TO_BOOKING permission
+    await requirePermissionWrapper(Permission.CONVERT_LEAD_TO_BOOKING);
+
     // First, create the booking
     const result = await createBooking({
       ...bookingData,
@@ -141,6 +149,9 @@ export async function updateBookingStatus(
   }
 ) {
   try {
+    // Require UPDATE_BOOKING_STATUS permission
+    await requirePermissionWrapper(Permission.UPDATE_BOOKING_STATUS);
+
     // Get current booking with lead information
     const [currentBooking] = await db
       .select()
@@ -252,6 +263,9 @@ export async function updateBooking(
   auditContext?: AuditContext
 ) {
   try {
+    // Require EDIT_BOOKING permission
+    await requirePermissionWrapper(Permission.EDIT_BOOKING);
+
     console.log('\n========================================');
     console.log('🔄 UPDATE BOOKING FUNCTION START');
     console.log('========================================');
@@ -376,6 +390,9 @@ export async function updateBooking(
 
 export async function getBookings(filters?: { status?: string }) {
   try {
+    // Require VIEW_BOOKINGS permission
+    await requirePermissionWrapper(Permission.VIEW_BOOKINGS);
+
     let query: any = db.select().from(bookings);
 
     if (filters?.status) {
@@ -394,6 +411,9 @@ export async function getBookings(filters?: { status?: string }) {
 
 export async function getBookingById(id: string) {
   try {
+    // Require VIEW_BOOKING_DETAILS permission
+    await requirePermissionWrapper(Permission.VIEW_BOOKING_DETAILS);
+
     const [booking] = await db.select().from(bookings).where(eq(bookings.id, id)).limit(1);
 
     if (!booking) {
@@ -409,6 +429,9 @@ export async function getBookingById(id: string) {
 
 export async function getBookingWithDetails(id: string) {
   try {
+    // Require VIEW_BOOKING_DETAILS permission
+    await requirePermissionWrapper(Permission.VIEW_BOOKING_DETAILS);
+
     const [booking] = await db.select().from(bookings).where(eq(bookings.id, id)).limit(1);
 
     if (!booking) {
@@ -484,6 +507,9 @@ export async function addBookingItem(input: {
   notes?: string;
 }) {
   try {
+    // Require EDIT_BOOKING permission
+    await requirePermissionWrapper(Permission.EDIT_BOOKING);
+
     const [item] = await db
       .insert(bookingItems)
       .values({
@@ -507,6 +533,9 @@ export async function addBookingItem(input: {
 
 export async function getBookingItems(bookingId: string) {
   try {
+    // Require VIEW_BOOKING_DETAILS permission
+    await requirePermissionWrapper(Permission.VIEW_BOOKING_DETAILS);
+
     const items = await db
       .select()
       .from(bookingItems)
@@ -528,6 +557,9 @@ export async function logContactHistory(input: {
   isReminder?: boolean;
 }) {
   try {
+    // Require EDIT_BOOKING permission
+    await requirePermissionWrapper(Permission.EDIT_BOOKING);
+
     const [log] = await db
       .insert(bookingContactHistory)
       .values({
@@ -547,6 +579,9 @@ export async function logContactHistory(input: {
 
 export async function getBookingContactHistory(bookingId: string) {
   try {
+    // Require VIEW_BOOKING_DETAILS permission
+    await requirePermissionWrapper(Permission.VIEW_BOOKING_DETAILS);
+
     const history = await db
       .select()
       .from(bookingContactHistory)
@@ -574,6 +609,9 @@ export async function lockBooking(
   adminUserName: string
 ) {
   try {
+    // Require EDIT_BOOKING permission
+    await requirePermissionWrapper(Permission.EDIT_BOOKING);
+
     const [booking] = await db
       .update(bookings)
       .set({
@@ -622,6 +660,9 @@ export async function unlockBooking(
   adminUserName: string
 ) {
   try {
+    // Require EDIT_BOOKING permission
+    await requirePermissionWrapper(Permission.EDIT_BOOKING);
+
     const [booking] = await db
       .update(bookings)
       .set({
@@ -665,6 +706,9 @@ export async function unlockBooking(
  */
 export async function getBookingWithEditSecret(bookingId: string) {
   try {
+    // Require VIEW_BOOKING_DETAILS permission
+    await requirePermissionWrapper(Permission.VIEW_BOOKING_DETAILS);
+
     const [booking] = await db
       .select()
       .from(bookings)
@@ -699,6 +743,9 @@ export async function getBookingWithEditSecret(bookingId: string) {
  */
 export async function getBookingWithAudit(bookingId: string) {
   try {
+    // Require VIEW_BOOKING_DETAILS permission
+    await requirePermissionWrapper(Permission.VIEW_BOOKING_DETAILS);
+
     const [booking] = await db
       .select()
       .from(bookings)

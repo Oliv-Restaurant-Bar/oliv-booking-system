@@ -4,9 +4,41 @@ import { db } from "@/lib/db";
 import { bookings, leads, bookingItems, menuItems, menuCategories, bookingContactHistory } from "@/lib/db/schema";
 import { desc, eq, sql } from "drizzle-orm";
 
-export async function fetchBookings() {
+export async function fetchBookings(options: {
+  page?: number;
+  limit?: number;
+  searchQuery?: string;
+  status?: string;
+} = {}) {
   try {
-    // Using SQL query for ordering since neon-http doesn't support .orderBy()
+    const { page = 1, limit = 10, searchQuery = "", status = "All Status" } = options;
+    const offset = (page - 1) * limit;
+
+    // Build the query fragments
+    let whereClause = sql`TRUE`;
+    if (status !== "All Status") {
+      whereClause = sql`${whereClause} AND b.status = ${status.toLowerCase()}`;
+    }
+
+    if (searchQuery) {
+      const search = `%${searchQuery.toLowerCase()}%`;
+      whereClause = sql`${whereClause} AND (
+        LOWER(l.contact_name) LIKE ${search} OR 
+        LOWER(l.contact_email) LIKE ${search} OR 
+        l.contact_phone LIKE ${search}
+      )`;
+    }
+
+    // Get total count for pagination metadata
+    const countResult = await db.execute(sql`
+      SELECT COUNT(*) as count
+      FROM bookings b
+      LEFT JOIN leads l ON b.lead_id = l.id
+      WHERE ${whereClause}
+    `);
+    const totalCount = Number(('rows' in countResult ? countResult.rows[0] : (countResult as any)[0]).count);
+
+    // Get paginated bookings
     const result = await db.execute(sql`
       SELECT
         b.id,
@@ -26,29 +58,35 @@ export async function fetchBookings() {
         l.contact_phone
       FROM bookings b
       LEFT JOIN leads l ON b.lead_id = l.id
+      WHERE ${whereClause}
       ORDER BY b.created_at DESC
+      LIMIT ${limit} OFFSET ${offset}
     `);
 
     // db.execute returns { rows: [...] } with neon-http
     const allBookings = 'rows' in result ? result.rows : result;
 
-    // Fetch all booking items for all bookings
-    const bookingItemsResult = await db.execute(sql`
-      SELECT
-        bi.booking_id,
-        bi.item_id,
-        bi.quantity,
-        bi.unit_price,
-        mi.name,
-        mi.category_id,
-        mc.name as category_name
-      FROM booking_items bi
-      LEFT JOIN menu_items mi ON bi.item_id = mi.id
-      LEFT JOIN menu_categories mc ON mi.category_id = mc.id
-      WHERE bi.item_type = 'menu_item'
-    `);
+    // Fetch all booking items for the current page of bookings
+    const bookingIds = (allBookings as any[]).map(b => b.id);
+    let allBookingItems: any[] = [];
 
-    const allBookingItems = 'rows' in bookingItemsResult ? bookingItemsResult.rows : bookingItemsResult;
+    if (bookingIds.length > 0) {
+      const bookingItemsResult = await db.execute(sql`
+        SELECT
+          bi.booking_id,
+          bi.item_id,
+          bi.quantity,
+          bi.unit_price,
+          mi.name,
+          mi.category_id,
+          mc.name as category_name
+        FROM booking_items bi
+        LEFT JOIN menu_items mi ON bi.item_id = mi.id
+        LEFT JOIN menu_categories mc ON mi.category_id = mc.id
+        WHERE bi.item_type = 'menu_item' AND bi.booking_id IN (${sql.join(bookingIds, sql`, `)})
+      `);
+      allBookingItems = 'rows' in bookingItemsResult ? bookingItemsResult.rows : bookingItemsResult;
+    }
 
     // Group items by booking_id
     const itemsByBooking: Record<string, any[]> = {};
@@ -64,7 +102,7 @@ export async function fetchBookings() {
       });
     }
 
-    return (allBookings as any[]).map((booking: any) => {
+    const formattedBookings = (allBookings as any[]).map((booking: any) => {
       const contactName = booking.contact_name || 'Unknown';
       const firstName = contactName.split(' ')[0] || 'Guest';
       const lastName = contactName.split(' ').slice(1).join(' ') || '';
@@ -105,10 +143,10 @@ export async function fetchBookings() {
         event: {
           date: booking.event_date
             ? new Date(booking.event_date).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              })
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            })
             : '',
           time: booking.event_time ? booking.event_time.substring(0, 5) : '',
           occasion: 'Event',
@@ -130,9 +168,23 @@ export async function fetchBookings() {
         isLocked: booking.is_locked || false,
       };
     });
+
+    return {
+      bookings: formattedBookings,
+      totalCount,
+      page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit)
+    };
   } catch (error) {
     console.error("Error fetching bookings:", error);
-    return [];
+    return {
+      bookings: [],
+      totalCount: 0,
+      page: 1,
+      limit: 10,
+      totalPages: 0
+    };
   }
 }
 

@@ -17,8 +17,12 @@ interface User {
   createdAt: string;
 }
 
-export function UserManagementPage() {
+export function UserManagementPage({ currentUser }: { currentUser: any }) {
   const [users, setUsers] = useState<User[]>([]);
+
+  // Robust check for super_admin role - handle both direct user object and session object
+  const user = currentUser?.user || currentUser;
+  const isSuperAdmin = user?.role === 'super_admin' || user?.metadata?.role === 'super_admin';
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
@@ -301,14 +305,16 @@ export function UserManagementPage() {
               >
                 Export
               </Button>
-              <Button
-                variant="primary"
-                icon={Plus}
-                onClick={() => setIsAddUserModalOpen(true)}
-                className="sm:w-auto"
-              >
-                Add User
-              </Button>
+              {isSuperAdmin && (
+                <Button
+                  variant="primary"
+                  icon={Plus}
+                  onClick={() => setIsAddUserModalOpen(true)}
+                  className="sm:w-auto"
+                >
+                  Add User
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -344,9 +350,11 @@ export function UserManagementPage() {
                     <th className="text-left px-4 py-3 text-foreground hidden lg:table-cell" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
                       Created
                     </th>
-                    <th className="text-right px-4 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      Actions
-                    </th>
+                    {isSuperAdmin && (
+                      <th className="text-right px-4 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
+                        Actions
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -360,7 +368,7 @@ export function UserManagementPage() {
                       </td>
                     </tr>
                   ) : (
-                  filteredUsers.map((user) => (
+                    filteredUsers.map((user) => (
                       <tr key={user.id} className="border-b border-border last:border-0 hover:bg-accent/50 transition-colors">
                         <td className="px-4 py-4 hidden md:table-cell">
                           <div className="flex items-center gap-3">
@@ -400,24 +408,26 @@ export function UserManagementPage() {
                             day: 'numeric'
                           })}
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => handleEditClick(user)}
-                              className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
-                              title="Edit user"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteClick(user)}
-                              className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-muted-foreground hover:text-destructive"
-                              title="Delete user"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
+                        {isSuperAdmin && (
+                          <td className="px-6 py-4">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => handleEditClick(user)}
+                                className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                                title="Edit user"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteClick(user)}
+                                className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-muted-foreground hover:text-destructive"
+                                title="Delete user"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     ))
                   )}

@@ -3,9 +3,14 @@
 import { db } from "@/lib/db";
 import { bookings, menuItems, menuCategories, leads, adminUser } from "@/lib/db/schema";
 import { sql, eq, desc, count, and, gte } from "drizzle-orm";
+import { requirePermissionWrapper } from "@/lib/auth/rbac-middleware";
+import { Permission } from "@/lib/auth/rbac";
 
 export async function getDashboardStats() {
   try {
+    // Require VIEW_DASHBOARD permission
+    await requirePermissionWrapper(Permission.VIEW_DASHBOARD);
+
     const totalBookings = await db
       .select({ count: count() })
       .from(bookings);
@@ -43,6 +48,9 @@ export async function getDashboardStats() {
 
 export async function getDailyBookingsData() {
   try {
+    // Require VIEW_DASHBOARD permission
+    await requirePermissionWrapper(Permission.VIEW_DASHBOARD);
+
     // Get bookings for the last 30 days grouped by date
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -73,7 +81,7 @@ export async function getDailyBookingsData() {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const dateStr = (date.getMonth() + 1).toString().padStart(2, '0') + '/' +
-                      date.getDate().toString().padStart(2, '0');
+        date.getDate().toString().padStart(2, '0');
       allDates.push({
         date: dateStr,
         bookings: dataMap.get(dateStr) || 0,
@@ -89,6 +97,9 @@ export async function getDailyBookingsData() {
 
 export async function getDailyRevenueData() {
   try {
+    // Require VIEW_DASHBOARD permission
+    await requirePermissionWrapper(Permission.VIEW_DASHBOARD);
+
     // Get revenue for the last 30 days grouped by date
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -119,7 +130,7 @@ export async function getDailyRevenueData() {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const dateStr = (date.getMonth() + 1).toString().padStart(2, '0') + '/' +
-                      date.getDate().toString().padStart(2, '0');
+        date.getDate().toString().padStart(2, '0');
       allDates.push({
         date: dateStr,
         revenue: dataMap.get(dateStr) || 0,
@@ -135,6 +146,9 @@ export async function getDailyRevenueData() {
 
 export async function getMonthlyBookingsData() {
   try {
+    // Require VIEW_DASHBOARD permission
+    await requirePermissionWrapper(Permission.VIEW_DASHBOARD);
+
     // Get bookings grouped by month for the current year
     const currentYear = new Date().getFullYear();
 
@@ -171,6 +185,9 @@ export async function getMonthlyBookingsData() {
 
 export async function getBookingStatusDistribution() {
   try {
+    // Require VIEW_DASHBOARD permission
+    await requirePermissionWrapper(Permission.VIEW_DASHBOARD);
+
     const statusCounts = await db
       .select({
         status: bookings.status,
@@ -203,6 +220,9 @@ export async function getBookingStatusDistribution() {
 
 export async function getRecentBookings(limit: number = 10) {
   try {
+    // Require VIEW_DASHBOARD permission
+    await requirePermissionWrapper(Permission.VIEW_DASHBOARD);
+
     const recentBookings = await db
       .select({
         id: bookings.id,
@@ -258,6 +278,9 @@ export async function getRecentBookings(limit: number = 10) {
 
 export async function getTopMenuItems(limit: number = 10) {
   try {
+    // Require VIEW_DASHBOARD permission
+    await requirePermissionWrapper(Permission.VIEW_DASHBOARD);
+
     // This would require joining with booking_items table
     // For now, return all active menu items
     const menuItemsData = await db
@@ -282,6 +305,9 @@ export async function getTopMenuItems(limit: number = 10) {
 
 export async function getLeadsStats() {
   try {
+    // Require VIEW_DASHBOARD permission
+    await requirePermissionWrapper(Permission.VIEW_DASHBOARD);
+
     const totalLeads = await db
       .select({ count: count() })
       .from(leads);
@@ -311,6 +337,9 @@ export async function getLeadsStats() {
 
 export async function getTopCustomersByRevenue(limit: number = 10) {
   try {
+    // Require VIEW_REPORTS permission
+    await requirePermissionWrapper(Permission.VIEW_REPORTS);
+
     // Group by customer email (unique identifier) to aggregate all bookings per customer
     const result = await db.execute(sql`
       SELECT
@@ -356,6 +385,9 @@ export async function getTopCustomersByRevenue(limit: number = 10) {
 
 export async function getTrendingItems(limit: number = 10) {
   try {
+    // Require VIEW_REPORTS permission
+    await requirePermissionWrapper(Permission.VIEW_REPORTS);
+
     // Get menu items with their sales data from booking_items
     // Use LEFT JOIN to get all active menu items, even those with 0 sales
     const result = await db.execute(sql`
@@ -420,6 +452,9 @@ export async function getTrendingItems(limit: number = 10) {
 
 export async function getMonthlyReportData(year: number = new Date().getFullYear()) {
   try {
+    // Require VIEW_REPORTS permission
+    await requirePermissionWrapper(Permission.VIEW_REPORTS);
+
     // Use raw SQL to get all status counts in one query
     const result = await db.execute(sql`
       SELECT
