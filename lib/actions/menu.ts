@@ -5,6 +5,8 @@ import { menuCategories, menuItems, menuItemDependencies, addons, addonGroups, a
 import { eq, asc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
+import { requireAuth, requirePermissionWrapper } from "@/lib/auth/rbac-middleware";
+import { Permission } from "@/lib/auth/rbac";
 
 // Menu Categories
 export async function createMenuCategory(input: {
@@ -15,6 +17,9 @@ export async function createMenuCategory(input: {
   sortOrder?: number;
 }) {
   try {
+    // Require CREATE_MENU_CATEGORY permission
+    await requirePermissionWrapper(Permission.CREATE_MENU_CATEGORY);
+
     const [category] = await db
       .insert(menuCategories)
       .values({
@@ -35,6 +40,9 @@ export async function createMenuCategory(input: {
 
 export async function updateMenuCategory(id: string, updates: Partial<typeof menuCategories.$inferInsert>) {
   try {
+    // Require EDIT_MENU_CATEGORY permission
+    await requirePermissionWrapper(Permission.EDIT_MENU_CATEGORY);
+
     const [category] = await db
       .update(menuCategories)
       .set({ ...updates, updatedAt: new Date() })
@@ -52,6 +60,9 @@ export async function updateMenuCategory(id: string, updates: Partial<typeof men
 
 export async function deleteMenuCategory(id: string) {
   try {
+    // Require DELETE_MENU_CATEGORY permission
+    await requirePermissionWrapper(Permission.DELETE_MENU_CATEGORY);
+
     await db.delete(menuCategories).where(eq(menuCategories.id, id));
 
     revalidatePath("/admin/menu-config");
@@ -65,6 +76,9 @@ export async function deleteMenuCategory(id: string) {
 
 export async function getMenuCategories() {
   try {
+    // Require VIEW_MENU permission
+    await requirePermissionWrapper(Permission.VIEW_MENU);
+
     const categories = await db
       .select()
       .from(menuCategories)

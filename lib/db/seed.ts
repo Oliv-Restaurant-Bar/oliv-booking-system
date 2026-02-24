@@ -14,7 +14,27 @@ import {
 } from "@/lib/db/schema";
 import { randomUUID } from "crypto";
 import { eq } from "drizzle-orm";
-import * as argon2 from "@node-rs/argon2";
+import { scryptAsync } from "@noble/hashes/scrypt.js";
+import { hex } from "@better-auth/utils/hex";
+
+/**
+ * Better Auth compatible password hashing using scrypt
+ * Format: {salt}:{hash} (both hex-encoded)
+ */
+async function hashPassword(password: string): Promise<string> {
+  const salt = hex.encode(crypto.getRandomValues(new Uint8Array(16)));
+  const key = await scryptAsync(
+    password.normalize("NFKC"),
+    salt,
+    {
+      N: 16384, // Match project's scrypt config if different from default
+      p: 1,
+      r: 16,
+      dkLen: 64,
+    }
+  );
+  return `${salt}:${hex.encode(key)}`;
+}
 
 async function seed() {
   console.log("🌱 Seeding database...");
@@ -26,13 +46,8 @@ async function seed() {
     });
 
     if (!existingAdmin) {
-      // Hash the password using argon2 (same as Better Auth)
-      const hashedPassword = await argon2.hash("admin123", {
-        memoryCost: 19456,
-        timeCost: 2,
-        outputLen: 32,
-        parallelism: 1,
-      });
+      // Hash the password using scrypt (same as Better Auth)
+      const hashedPassword = await hashPassword("admin123");
 
       // Create admin user
       const adminId = randomUUID();
@@ -67,12 +82,7 @@ async function seed() {
       });
 
       if (!existingAccount) {
-        const hashedPassword = await argon2.hash("admin123", {
-          memoryCost: 19456,
-          timeCost: 2,
-          outputLen: 32,
-          parallelism: 1,
-        });
+        const hashedPassword = await hashPassword("admin123");
         await db.insert(account).values({
           id: randomUUID(),
           userId: existingAdmin.id,
@@ -316,19 +326,19 @@ async function seed() {
         // Create booking
         // @ts-ignore - Drizzle type issue with date columns
         const [booking] = await db.insert(bookings).values({
-            leadId: lead.id,
-            eventDate: eventDate,
-            eventTime: eventTimes[Math.floor(Math.random() * eventTimes.length)],
-            guestCount: bookingData.guestCount,
-            allergyDetails: [],
-            specialRequests: null,
-            estimatedTotal: estimatedTotal.toString(),
-            requiresDeposit: estimatedTotal > 2000,
-            status: bookingData.status,
-            internalNotes: `Test booking for ${bookingData.name}`,
-            termsAccepted: true,
-            termsAcceptedAt: new Date(),
-          }).returning();
+          leadId: lead.id,
+          eventDate: eventDate,
+          eventTime: eventTimes[Math.floor(Math.random() * eventTimes.length)],
+          guestCount: bookingData.guestCount,
+          allergyDetails: [],
+          specialRequests: null,
+          estimatedTotal: estimatedTotal.toString(),
+          requiresDeposit: estimatedTotal > 2000,
+          status: bookingData.status,
+          internalNotes: `Test booking for ${bookingData.name}`,
+          termsAccepted: true,
+          termsAcceptedAt: new Date(),
+        }).returning();
 
         // Create booking items
         for (const item of bookingItemsToCreate) {

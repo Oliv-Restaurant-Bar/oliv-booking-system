@@ -5,6 +5,8 @@ import { adminUser } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth/rbac-middleware";
+import { Permission, canModifyUser } from "@/lib/auth/rbac";
 
 export interface CreateAdminUserInput {
   id: string;
@@ -16,6 +18,21 @@ export interface CreateAdminUserInput {
 
 export async function createAdminUser(input: CreateAdminUserInput) {
   try {
+    // Check authentication
+    const session = await requireAuth();
+    const currentUserId = session.user.id;
+    const currentUserRole = session.user.role as any;
+
+    // Only super_admin can create users
+    if (currentUserRole !== 'super_admin') {
+      return { success: false, error: "Only super admins can create users" };
+    }
+
+    // Check if trying to create a user with equal or higher role
+    if (!canModifyUser(currentUserRole, input.id, currentUserId, input.role)) {
+      return { success: false, error: "You cannot create a user with equal or higher role" };
+    }
+
     // Create user using Better Auth
     await auth.api.signUpEmail({
       body: {
@@ -42,6 +59,30 @@ export async function createAdminUser(input: CreateAdminUserInput) {
 
 export async function updateAdminUser(id: string, updates: Partial<typeof adminUser.$inferInsert>) {
   try {
+    // Check authentication
+    const session = await requireAuth();
+    const currentUserId = session.user.id;
+    const currentUserRole = session.user.role as any;
+
+    // Get the target user to check their role
+    const [targetUser] = await db.select().from(adminUser).where(eq(adminUser.id, id)).limit(1);
+
+    if (!targetUser) {
+      return { success: false, error: "User not found" };
+    }
+
+    // Check if current user can modify this user
+    if (!canModifyUser(currentUserRole, id, currentUserId, targetUser.role as any)) {
+      return { success: false, error: "You don't have permission to modify this user" };
+    }
+
+    // If changing role, check if the new role is allowed
+    if (updates.role && updates.role !== targetUser.role) {
+      if (!canModifyUser(currentUserRole, id, currentUserId, updates.role as any)) {
+        return { success: false, error: "You cannot assign a role equal to or higher than your own" };
+      }
+    }
+
     const [user] = await db
       .update(adminUser)
       .set({ ...updates, updatedAt: new Date() })
@@ -59,6 +100,28 @@ export async function updateAdminUser(id: string, updates: Partial<typeof adminU
 
 export async function deleteAdminUser(id: string) {
   try {
+    // Check authentication
+    const session = await requireAuth();
+    const currentUserId = session.user.id;
+    const currentUserRole = session.user.role as any;
+
+    // Prevent self-deletion
+    if (id === currentUserId) {
+      return { success: false, error: "You cannot delete your own account" };
+    }
+
+    // Get the target user to check their role
+    const [targetUser] = await db.select().from(adminUser).where(eq(adminUser.id, id)).limit(1);
+
+    if (!targetUser) {
+      return { success: false, error: "User not found" };
+    }
+
+    // Check if current user can delete this user (only higher roles can delete)
+    if (!canModifyUser(currentUserRole, id, currentUserId, targetUser.role as any)) {
+      return { success: false, error: "You don't have permission to delete this user" };
+    }
+
     await db.delete(adminUser).where(eq(adminUser.id, id));
 
     revalidatePath("/admin/user-management");
@@ -72,6 +135,9 @@ export async function deleteAdminUser(id: string) {
 
 export async function getAdminUsers() {
   try {
+    // Any authenticated user can view the user list
+    await requireAuth();
+
     const users = await db.select().from(adminUser);
 
     // Remove passwords from response
@@ -86,6 +152,9 @@ export async function getAdminUsers() {
 
 export async function getAdminUserById(id: string) {
   try {
+    // Any authenticated user can view user details
+    await requireAuth();
+
     const [user] = await db.select().from(adminUser).where(eq(adminUser.id, id)).limit(1);
 
     if (!user) {

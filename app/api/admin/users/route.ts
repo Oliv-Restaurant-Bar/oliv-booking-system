@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { adminUser, account } from "@/lib/db/schema";
+import { adminUser } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import * as argon2 from "@node-rs/argon2";
+import { auth } from "@/lib/auth";
 
 // GET /api/admin/users - Fetch all users
 export async function GET() {
@@ -56,47 +56,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Hash the password
-    const hashedPassword = await argon2.hash(password || "defaultPassword123", {
-      memoryCost: 19456,
-      timeCost: 2,
-      outputLen: 32,
-      parallelism: 1,
+    // Create user using Better Auth programmatic API
+    // This will hash the password correctly and create the account record
+    const result = await auth.api.signUpEmail({
+      body: {
+        email,
+        password: password || "defaultPassword123",
+        name,
+      },
     });
 
-    // Create user
-    const [newUser] = await db
-      .insert(adminUser)
-      .values({
-        id: crypto.randomUUID(),
-        name,
-        email,
-        emailVerified: true,
+    if (!result || !result.user) {
+      throw new Error("Failed to create user via Better Auth");
+    }
+
+    // Update the role and ensure email is marked as verified
+    const [updatedUser] = await db
+      .update(adminUser)
+      .set({ 
         role: role || "read_only",
+        emailVerified: true 
       })
+      .where(eq(adminUser.id, result.user.id))
       .returning();
 
-    // Create credential account with password
-    await db.insert(account).values({
-      id: crypto.randomUUID(),
-      userId: newUser.id,
-      accountId: email,
-      providerId: "credential",
-      password: hashedPassword,
-    });
-
     return NextResponse.json({
-      id: newUser.id,
-      name: newUser.name,
-      email: newUser.email,
-      role: newUser.role,
-      status: newUser.emailVerified ? "Active" : "Inactive",
-      createdAt: newUser.createdAt?.toISOString() || new Date().toISOString(),
+      id: updatedUser.id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      status: updatedUser.emailVerified ? "Active" : "Inactive",
+      createdAt: updatedUser.createdAt?.toISOString() || new Date().toISOString(),
     });
   } catch (error) {
     console.error("Error creating user:", error);
+    
+    // Check if error is from Better Auth
+    const errorMessage = error instanceof Error ? error.message : "Failed to create user";
+    
     return NextResponse.json(
-      { error: "Failed to create user" },
+      { error: errorMessage },
       { status: 500 }
     );
   }
