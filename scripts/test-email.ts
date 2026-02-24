@@ -99,7 +99,9 @@ async function testBookingEmail() {
 
   const testBooking = {
     id: "test-booking-id",
-    eventDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    eventDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days from now
     eventTime: "19:00",
     guestCount: 10,
     estimatedTotal: "4500.00",
@@ -107,10 +109,26 @@ async function testBookingEmail() {
     specialRequests: "Vegetarische Optionen benötigt",
     allergyDetails: ["Nüsse", "Laktose"],
     requiresDeposit: false,
+    leadId: "test-lead-id",
+    internalNotes: "",
+    termsAccepted: true,
+    termsAcceptedAt: new Date(),
+    editSecret: "test-edit-secret",
+    isLocked: false,
+    lockedBy: null as string | null,
+    lockedAt: null as Date | null,
     lead: {
+      id: "test-lead-id",
       contactName: "Max Mustermann",
       contactEmail: "max.mustermann@example.com",
       contactPhone: "+41 44 123 45 67",
+      eventDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      eventTime: "19:00",
+      guestCount: 10,
+      source: "website",
+      status: "converted" as const,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     },
   };
 

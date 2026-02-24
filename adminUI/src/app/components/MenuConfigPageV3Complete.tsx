@@ -432,12 +432,28 @@ export function MenuConfigPage() {
     dietaryType: 'veg' as 'veg' | 'non-veg',
     isActive: true,
   });
-  const [itemSettings, setItemSettings] = useState({
-    dietaryType: 'veg' as 'veg' | 'non-veg' | 'vegan',
-    dietaryTags: [] as string[],
+  const [itemSettings, setItemSettings] = useState<{
+    dietaryType: 'veg' | 'non-veg' | 'vegan';
+    dietaryTags: string[];
+    ingredients: string;
+    allergens: string[];
+    additives: string[];
+    nutritionalInfo: {
+      servingSize?: string;
+      calories?: string;
+      protein?: string;
+      carbs?: string;
+      fat?: string;
+      fiber?: string;
+      sugar?: string;
+      sodium?: string;
+    };
+  }>({
+    dietaryType: 'veg',
+    dietaryTags: [],
     ingredients: '',
-    allergens: [] as string[],
-    additives: [] as string[],
+    allergens: [],
+    additives: [],
     nutritionalInfo: {
       servingSize: '',
       calories: '',

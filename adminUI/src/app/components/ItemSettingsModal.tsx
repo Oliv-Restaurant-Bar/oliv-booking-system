@@ -12,14 +12,14 @@ interface ItemSettingsModalProps {
     allergens: string[];
     additives: string[];
     nutritionalInfo: {
-      servingSize: string;
-      calories: string;
-      protein: string;
-      carbs: string;
-      fat: string;
-      fiber: string;
-      sugar: string;
-      sodium: string;
+      servingSize?: string;
+      calories?: string;
+      protein?: string;
+      carbs?: string;
+      fat?: string;
+      fiber?: string;
+      sugar?: string;
+      sodium?: string;
     };
   };
   setItemSettings: React.Dispatch<React.SetStateAction<any>>;

@@ -123,7 +123,7 @@ function ModernLayout() {
                     text: '',
                   },
                   labels: {
-                    formatter: function () {
+                    formatter: function (this: any) {
                       return Math.round(this.value).toString();
                     },
                     style: {
@@ -144,7 +144,7 @@ function ModernLayout() {
                     fontSize: '12px',
                     fontFamily: 'var(--font-sans)',
                   },
-                  formatter: function () {
+                  formatter: function (this: any) {
                     return '<b>' + this.x + '</b><br/>' + 'Bookings: <b>' + Math.round(this.y) + '</b>';
                   },
                 },
@@ -299,7 +299,7 @@ function ModernLayout() {
                 text: '',
               },
               labels: {
-                formatter: function () {
+                formatter: function (this: any) {
                   return '$' + (this.value / 1000).toFixed(1) + 'k';
                 },
                 style: {
@@ -319,7 +319,7 @@ function ModernLayout() {
                 fontSize: '12px',
                 fontFamily: 'var(--font-sans)',
               },
-              formatter: function () {
+              formatter: function (this: any) {
                 return '<b>' + this.x + '</b><br/>' + 'Revenue: <b>$' + this.y.toLocaleString() + '</b>';
               },
             },

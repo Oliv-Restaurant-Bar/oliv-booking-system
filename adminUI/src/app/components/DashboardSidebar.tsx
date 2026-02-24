@@ -1,5 +1,5 @@
 import { Home, Users, ShoppingBag, BarChart3, Settings, UtensilsCrossed } from 'lucide-react';
-import { ImageWithFallback } from '@/app/components/figma/ImageWithFallback';
+import { ImageWithFallback } from './figma/ImageWithFallback';
 
 interface DashboardSidebarProps {
   activeItem?: string;

@@ -493,7 +493,7 @@ export function UserManagementPage() {
         title="Delete User"
         message={`Are you sure you want to delete "${selectedUser?.name}"? This action cannot be undone.`}
         confirmText="Delete User"
-        confirmIcon={Trash2}
+        confirmIcon='delete'
       />
     </div>
   );
