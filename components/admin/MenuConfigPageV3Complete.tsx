@@ -1711,7 +1711,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                         }
                       }
                     }}
-                    disabled={!activeCategoryId || !newMenuItem.name || !newMenuItem.price || newMenuItem.name.trim() === '' || newMenuItem.name.length > 100 || newMenuItem.description.length > 500}
+                    disabled={!activeCategoryId || !newMenuItem.name || !newMenuItem.price || newMenuItem.name.trim() === '' || newMenuItem.name.length > 100 || newMenuItem.description.length > 500 || parseFloat(newMenuItem.price) < 0 || newMenuItem.variants.some(v => !v.name?.trim() || v.name.length > 100 || v.price < 0)}
                   >
                     {editingMenuItemId ? 'Save Changes' : 'Add Item'}
                   </Button>
@@ -1777,6 +1777,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                     <input
                       type="number"
                       step="0.01"
+                      min="0"
                       value={newMenuItem.price}
                       onChange={(e) => setNewMenuItem({ ...newMenuItem, price: e.target.value })}
                       placeholder="0.00"
@@ -1887,6 +1888,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                         <div key={variant.id} className="flex items-center gap-2 p-3 bg-muted rounded-lg">
                           <input
                             type="text"
+                            maxLength={100}
                             value={variant.name}
                             onChange={(e) => updateVariant(index, 'name', e.target.value)}
                             placeholder="Variant name (e.g., Small, Medium)"
@@ -1898,6 +1900,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             <input
                               type="number"
                               step="0.01"
+                              min="0"
                               value={variant.price}
                               onChange={(e) => updateVariant(index, 'price', parseFloat(e.target.value) || 0)}
                               placeholder="0.00"
@@ -2235,7 +2238,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                       setCurrentGroupId(null);
                       setNewAddonItem({ name: '', price: '', dietaryType: 'veg', isActive: true });
                     }}
-                    disabled={!newAddonItem.name || !newAddonItem.price || newAddonItem.name.trim() === '' || newAddonItem.name.length > 100}
+                    disabled={!newAddonItem.name || !newAddonItem.price || newAddonItem.name.trim() === '' || newAddonItem.name.length > 100 || parseFloat(newAddonItem.price) < 0}
                   >
                     {editingAddonItemId ? 'Save Changes' : 'Add Item'}
                   </Button>
@@ -2267,6 +2270,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                   <input
                     type="number"
                     step="0.01"
+                    min="0"
                     value={newAddonItem.price}
                     onChange={(e) => setNewAddonItem({ ...newAddonItem, price: e.target.value })}
                     placeholder="0.00"
