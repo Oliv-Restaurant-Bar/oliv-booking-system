@@ -468,7 +468,7 @@ export const menuItems: MenuItem[] = [
     price: 45,
     image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
     dietaryType: 'vegan',
-    pricingType: 'flat-rate'
+    pricingType: 'billed_by_consumption'
   },
   {
     id: 'bev2',
@@ -478,7 +478,7 @@ export const menuItems: MenuItem[] = [
     price: 32,
     image: 'https://images.unsplash.com/photo-1547595628-c61a29f496f0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
     dietaryType: 'vegan',
-    pricingType: 'flat-rate'
+    pricingType: 'billed_by_consumption'
   },
   {
     id: 'bev3',
@@ -488,7 +488,7 @@ export const menuItems: MenuItem[] = [
     price: 45,
     image: 'https://images.unsplash.com/photo-1608270586620-248524c67de9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
     dietaryType: 'vegan',
-    pricingType: 'flat-rate'
+    pricingType: 'billed_by_consumption'
   },
   {
     id: 'bev4',
@@ -498,7 +498,7 @@ export const menuItems: MenuItem[] = [
     price: 35,
     image: 'https://images.unsplash.com/photo-1625772452859-1c03d5bf1137?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
     dietaryType: 'vegan',
-    pricingType: 'flat-rate'
+    pricingType: 'billed_by_consumption'
   },
   {
     id: 'bev5',
@@ -518,7 +518,7 @@ export const menuItems: MenuItem[] = [
     price: 1200,
     image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
     dietaryType: 'vegan',
-    pricingType: 'flat-rate'
+    pricingType: 'billed_by_consumption'
   },
   {
     id: 'bev7',
@@ -538,7 +538,7 @@ export const menuItems: MenuItem[] = [
     price: 40,
     image: 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
     dietaryType: 'vegan',
-    pricingType: 'flat-rate'
+    pricingType: 'billed_by_consumption'
   },
 
   // Technology (Flat-rate services)

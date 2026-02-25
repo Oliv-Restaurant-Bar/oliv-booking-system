@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { User, Mail, Phone, Shield, Camera, Lock, Check, X, Eye, EyeOff } from 'lucide-react';
 import { Modal } from './Modal';
-import { Button } from './Button';
+import { Button } from '../user/Button';
 import { changePassword } from '@/lib/actions/auth';
 import type { Session } from '@/lib/auth';
 
@@ -206,8 +206,8 @@ export function ProfilePage({ session }: ProfilePageProps) {
               <div className="relative mb-4">
                 <div className="w-32 h-32 rounded-full bg-primary flex items-center justify-center text-white overflow-hidden" style={{ fontSize: '48px', fontWeight: 'var(--font-weight-semibold)' }}>
                   {profileData.avatar ? (
-                    <img 
-                      src={profileData.avatar} 
+                    <img
+                      src={profileData.avatar}
                       alt={`${profileData.firstName} ${profileData.lastName}`}
                       className="w-full h-full object-cover"
                     />
@@ -215,7 +215,7 @@ export function ProfilePage({ session }: ProfilePageProps) {
                     getInitials(profileData.firstName, profileData.lastName)
                   )}
                 </div>
-                <button 
+                <button
                   onClick={handleAvatarClick}
                   className="absolute bottom-0 right-0 w-10 h-10 bg-secondary rounded-full flex items-center justify-center border-4 border-card hover:bg-primary transition-colors"
                 >

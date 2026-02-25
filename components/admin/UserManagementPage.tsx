@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { User, Mail, Shield, Search, MoreVertical, Edit2, Trash2, Plus, X, Check, Users, Eye, RefreshCw, Download } from 'lucide-react';
 import { Modal } from './Modal';
 import { ConfirmationModal } from './ConfirmationModal';
-import { Button } from './Button';
+import { Button } from '../user/Button';
 import { StatusDropdown } from './StatusDropdown';
 import * as XLSX from 'xlsx';
 

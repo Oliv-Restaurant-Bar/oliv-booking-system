@@ -41,8 +41,8 @@
   --border: rgba(229, 231, 235, 1.00);
   /* The default background color for input fields once the text has been filled. Should be either transparent or match the input-background. */
   --input: rgba(255, 255, 255, 1.00);
-  /* The default background color for input fields, text areas, and other input elements. */
-  --input-background: rgba(249, 250, 251, 1.00);
+  /* The default background color for input fields, text areas, and other input elements. Make it equal to background for consistency */
+  --input-background: rgba(250, 250, 250, 1.00);
   /* The color for focus rings, outlines, and other focus indicators. */
   --ring: rgba(157, 174, 145, 1.00);
   /* Shadow for small elevations, such as cards or modals. */
@@ -169,6 +169,16 @@
   button:disabled {
     cursor: not-allowed;
   }
+
+  /* Override browsers' default autofill styling */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px var(--background) inset !important;
+    -webkit-text-fill-color: var(--foreground) !important;
+    caret-color: var(--foreground) !important;
+  }
 }
 
 /**
@@ -253,6 +263,7 @@ html {
   from {
     transform: translateY(100%);
   }
+
   to {
     transform: translateY(0);
   }

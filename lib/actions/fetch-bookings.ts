@@ -117,9 +117,15 @@ export async function fetchBookings(options: {
       const notes = booking.special_requests || '';
       const internalNotes = booking.internal_notes || '';
 
-      // Extract address from internal notes
+      // Extract fields from internal notes
+      const businessMatch = internalNotes.match(/Business: ([^\n]+)/);
+      const business = businessMatch ? businessMatch[1].replace('N/A', '').trim() : '';
+
       const addressMatch = internalNotes.match(/Address: ([^\n]+)/);
-      const address = addressMatch ? addressMatch[1] : '';
+      const address = addressMatch ? addressMatch[1].replace('N/A', '').trim() : '';
+
+      const occasionMatch = internalNotes.match(/Occasion: ([^\n]+)/);
+      const occasion = occasionMatch ? occasionMatch[1].replace('N/A', '').trim() : '';
 
       // Extract menu selection from internal notes for display in notes
       const menuMatch = internalNotes.match(/Menu Selection: ([^\n]+)/);
@@ -139,6 +145,7 @@ export async function fetchBookings(options: {
           avatar: contactName.charAt(0).toUpperCase() || 'G',
           avatarColor: '#9DAE91',
           address: address,
+          business: business,
         },
         event: {
           date: booking.event_date
@@ -149,7 +156,7 @@ export async function fetchBookings(options: {
             })
             : '',
           time: booking.event_time ? booking.event_time.substring(0, 5) : '',
-          occasion: 'Event',
+          occasion: occasion || 'Event',
         },
         guests: booking.guest_count || 0,
         amount: booking.estimated_total
@@ -162,7 +169,8 @@ export async function fetchBookings(options: {
         },
         booking: `${daysAgo}d ago`,
         allergies: booking.allergy_details || '',
-        notes: displayNotes,
+        notes: notes, // Special requests only
+        internalNotes: internalNotes, // Full internal notes including business, address, occasion
         menuItems: menuItemsList,
         contactHistory: [],
         isLocked: booking.is_locked || false,

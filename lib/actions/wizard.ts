@@ -23,8 +23,14 @@ export interface WizardFormData {
   guestCount: number;
   occasion?: string;
   specialRequests?: string;
+  paymentMethod?: string;
+  useSameAddressForBilling?: boolean;
+  billingStreet?: string;
+  billingPlz?: string;
+  billingLocation?: string;
   selectedItems: string[];
   itemQuantities: Record<string, number>;
+  itemGuestCounts?: Record<string, number>; // Per-item guest count for categories with guestCount enabled
   allergyDetails?: string[];
   bookingId?: string | null; // For editing existing bookings
 }
@@ -37,7 +43,7 @@ export async function submitWizardForm(data: WizardFormData) {
     console.log('Booking ID:', data.bookingId);
     console.log('Edit Mode:', !!data.bookingId);
 
-    // COMMON LOGIC: Fetch menu items and calculate totals
+    // COMMON LOGIC: Fetch menu items, categories, and calculate totals
     const allMenuItems = await db
       .select({
         id: menuItems.id,
@@ -48,7 +54,15 @@ export async function submitWizardForm(data: WizardFormData) {
       .from(menuItems)
       .where(eq(menuItems.isActive, true));
 
+    const allCategories = await db
+      .select({
+        id: menuCategories.id,
+        guestCount: menuCategories.guestCount,
+      })
+      .from(menuCategories);
+
     const menuItemMap = new Map(allMenuItems.map(item => [item.id, item]));
+    const categoryMap = new Map(allCategories.map(cat => [cat.id, cat.guestCount]));
 
     let estimatedTotal = 0;
     const itemsToCreate: Array<{
@@ -65,7 +79,14 @@ export async function submitWizardForm(data: WizardFormData) {
 
       if (dbItem) {
         const unitPrice = Number(dbItem.pricePerPerson);
-        const itemTotal = unitPrice * quantity * data.guestCount;
+        const categoryHasGuestCount = categoryMap.get(dbItem.categoryId || '') || false;
+
+        // Use per-item guest count if category has guestCount enabled, otherwise use total guest count
+        const effectiveGuestCount = categoryHasGuestCount
+          ? (data.itemGuestCounts?.[itemId] || data.guestCount)
+          : data.guestCount;
+
+        const itemTotal = unitPrice * quantity * effectiveGuestCount;
         estimatedTotal += itemTotal;
 
         itemsToCreate.push({
@@ -85,7 +106,7 @@ export async function submitWizardForm(data: WizardFormData) {
 
       // Update booking details
       const updateData: any = {
-        eventDate: new Date(data.eventDate),
+        eventDate: data.eventDate,
         eventTime: eventTime,
         guestCount: data.guestCount,
         allergyDetails: data.allergyDetails || [],
@@ -110,7 +131,7 @@ export async function submitWizardForm(data: WizardFormData) {
             contactEmail: data.contactEmail,
             contactPhone: data.contactPhone,
             // @ts-ignore - Drizzle ORM type compatibility issue
-            eventDate: new Date(data.eventDate),
+            eventDate: data.eventDate,
             eventTime: eventTime,
             guestCount: data.guestCount,
             updatedAt: new Date(),
@@ -150,25 +171,43 @@ export async function submitWizardForm(data: WizardFormData) {
       console.log('========================================\n');
 
       // Non-blocking email sending
+      // Convert Date objects to strings for template serialization
+      const bookingForEmailUpdate = {
+        id: booking.id,
+        leadId: booking.leadId,
+        eventDate: (booking.eventDate as any) instanceof Date ? (booking.eventDate as any).toISOString() : booking.eventDate,
+        eventTime: booking.eventTime,
+        guestCount: booking.guestCount,
+        allergyDetails: booking.allergyDetails,
+        specialRequests: booking.specialRequests,
+        estimatedTotal: booking.estimatedTotal,
+        requiresDeposit: booking.requiresDeposit,
+        status: booking.status,
+        internalNotes: booking.internalNotes,
+        termsAccepted: booking.termsAccepted,
+        termsAcceptedAt: booking.termsAcceptedAt instanceof Date ? booking.termsAcceptedAt.toISOString() : booking.termsAcceptedAt,
+        isLocked: booking.isLocked,
+        createdAt: booking.createdAt instanceof Date ? booking.createdAt.toISOString() : booking.createdAt,
+        updatedAt: booking.updatedAt instanceof Date ? booking.updatedAt.toISOString() : booking.updatedAt,
+        lead: booking.leadId ? {
+          id: booking.leadId,
+          contactName: data.contactName,
+          contactEmail: data.contactEmail,
+          contactPhone: data.contactPhone,
+          eventDate: data.eventDate,
+          eventTime: eventTime,
+          guestCount: data.guestCount,
+          source: "website",
+          status: "new",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        } : null,
+      } as any;
+
       sendThankYouEmail({
         bookingId: data.bookingId,
         recipientEmail: data.contactEmail,
-        bookingData: {
-          ...booking,
-          lead: booking.leadId ? {
-            id: booking.leadId,
-            contactName: data.contactName,
-            contactEmail: data.contactEmail,
-            contactPhone: data.contactPhone,
-            eventDate: data.eventDate,
-            eventTime: eventTime,
-            guestCount: data.guestCount,
-            source: "website",
-            status: "new",
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          } : null,
-        } as any,
+        bookingData: bookingForEmailUpdate,
         estimatedTotal: estimatedTotal,
         bookingEditUrl: bookingEditUrl,
       }).catch(err => console.error("Error sending wizard update email:", err));
@@ -194,7 +233,7 @@ export async function submitWizardForm(data: WizardFormData) {
       contactName: data.contactName,
       contactEmail: data.contactEmail,
       contactPhone: data.contactPhone,
-      eventDate: new Date(data.eventDate),
+      eventDate: data.eventDate,
       eventTime: eventTime,
       guestCount: data.guestCount,
       source: "website",
@@ -216,7 +255,7 @@ export async function submitWizardForm(data: WizardFormData) {
     const [booking] = await db.insert(bookings).values({
       id: randomUUID(),
       leadId: lead.id,
-      eventDate: new Date(data.eventDate),
+      eventDate: data.eventDate,
       eventTime: eventTime,
       guestCount: data.guestCount,
       allergyDetails: data.allergyDetails || [],
@@ -256,14 +295,42 @@ export async function submitWizardForm(data: WizardFormData) {
     console.log(`Edit Link: ${bookingEditUrl}`);
     console.log('========================================\n');
 
-    // Send confirmation email
-    sendThankYouEmail({
-      bookingId: booking.id,
-      recipientEmail: data.contactEmail,
-      bookingData: { ...booking, lead } as any,
-      estimatedTotal: estimatedTotal,
-      bookingEditUrl: bookingEditUrl,
-    }).catch(err => console.error("Error sending wizard new booking email:", err));
+    // Send confirmation email (non-blocking, wrapped in try-catch for detailed error logging)
+    try {
+      // Convert Date objects to strings for template serialization
+      const bookingForEmail = {
+        id: booking.id,
+        leadId: booking.leadId,
+        eventDate: (booking.eventDate as any) instanceof Date ? (booking.eventDate as any).toISOString() : booking.eventDate,
+        eventTime: booking.eventTime,
+        guestCount: booking.guestCount,
+        allergyDetails: booking.allergyDetails,
+        specialRequests: booking.specialRequests,
+        estimatedTotal: booking.estimatedTotal,
+        requiresDeposit: booking.requiresDeposit,
+        status: booking.status,
+        internalNotes: booking.internalNotes,
+        termsAccepted: booking.termsAccepted,
+        termsAcceptedAt: booking.termsAcceptedAt instanceof Date ? booking.termsAcceptedAt.toISOString() : booking.termsAcceptedAt,
+        isLocked: booking.isLocked,
+        createdAt: booking.createdAt instanceof Date ? booking.createdAt.toISOString() : booking.createdAt,
+        updatedAt: booking.updatedAt instanceof Date ? booking.updatedAt.toISOString() : booking.updatedAt,
+        lead,
+      };
+
+      sendThankYouEmail({
+        bookingId: booking.id,
+        recipientEmail: data.contactEmail,
+        bookingData: bookingForEmail as any,
+        estimatedTotal: estimatedTotal,
+        bookingEditUrl: bookingEditUrl,
+      }).catch(err => {
+        console.error("Error sending wizard new booking email:", err);
+      });
+    } catch (emailError) {
+      console.error("Error preparing/sending email:", emailError);
+      // Don't throw - email failure should not block booking creation
+    }
 
     revalidatePath("/admin/bookings");
     revalidatePath("/admin/leads");

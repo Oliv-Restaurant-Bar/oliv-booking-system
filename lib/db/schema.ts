@@ -208,6 +208,7 @@ export const menuCategories = pgTable(
     descriptionDe: text("description_de"),
     sortOrder: integer("sort_order").notNull().default(0),
     isActive: boolean("is_active").notNull().default(true),
+    guestCount: boolean("guest_count").notNull().default(false),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Calendar, Clock, Users, Phone, Mail, Download, Search, RefreshCw, X, User, CalendarDays, Edit, UtensilsCrossed, Send, MessageSquare, ArrowLeft, Lock, Unlock, History, ChevronLeft, ChevronRight } from 'lucide-react';
 import { StatusDropdown } from './StatusDropdown';
-import { Button } from './Button';
+import { Button } from '../user/Button';
 import * as XLSX from 'xlsx';
 import { Permission, hasPermission } from '@/lib/auth/rbac';
 
@@ -117,10 +117,10 @@ function GridLayout({ onOpenModal, bookings }: { onOpenModal: (booking: Booking)
           {/* CTA Button */}
           <button
             onClick={() => onOpenModal(booking)}
-            className="w-full px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-secondary hover:text-white transition-colors flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full px-4 py-3 bg-primary text-white rounded-lg hover:bg-secondary hover:text-white transition-colors flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
             style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
           >
-            View Details
+            <span>View Details</span>
           </button>
         </div>
       ))}
@@ -331,12 +331,12 @@ function BookingDetailPage({ booking, onBack, user }: { booking: Booking | null;
             <span className="hidden sm:inline">Back to Bookings</span>
           </button>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
           {canEditBooking && (
             <button
               onClick={handleToggleLock}
               disabled={lockLoading}
-              className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 cursor-pointer ${isLocked
+              className={`px-4 py-2 rounded-lg transition-colors flex-1 sm:flex-none flex justify-center items-center gap-2 cursor-pointer whitespace-nowrap ${isLocked
                 ? 'bg-amber-500 hover:bg-amber-600 text-white'
                 : 'bg-secondary hover:bg-primary text-white'
                 }`}
@@ -348,7 +348,7 @@ function BookingDetailPage({ booking, onBack, user }: { booking: Booking | null;
           {canViewAudit && (
             <button
               onClick={() => setShowAuditHistory(!showAuditHistory)}
-              className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex items-center gap-2 cursor-pointer"
+              className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex-1 sm:flex-none flex justify-center items-center gap-2 cursor-pointer whitespace-nowrap"
               style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
             >
               <History className="w-4 h-4" />
@@ -358,7 +358,7 @@ function BookingDetailPage({ booking, onBack, user }: { booking: Booking | null;
           {canEditBooking && (
             <button
               onClick={handleCopyEditLink}
-              className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex items-center gap-2 cursor-pointer"
+              className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex-1 sm:flex-none flex justify-center items-center gap-2 cursor-pointer whitespace-nowrap"
               style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
             >
               <Send className="w-4 h-4" />
@@ -389,14 +389,14 @@ function BookingDetailPage({ booking, onBack, user }: { booking: Booking | null;
           <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
             <User className="w-5 h-5 text-primary" /> Customer Information
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>First Name</label>
-              <input type="text" value={booking.customer.firstName} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
+              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Name</label>
+              <input type="text" value={booking.customer.name} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
             </div>
             <div>
-              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Last Name</label>
-              <input type="text" value={booking.customer.lastName} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
+              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Business</label>
+              <input type="text" value={booking.customer.business || '-'} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
             </div>
             <div>
               <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Email</label>
@@ -406,9 +406,9 @@ function BookingDetailPage({ booking, onBack, user }: { booking: Booking | null;
               <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Phone Number</label>
               <input type="tel" value={booking.customer.phone} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
             </div>
-            <div className="sm:col-span-2">
+            <div className="col-span-2">
               <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Address</label>
-              <input type="text" value={booking.customer.address} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
+              <input type="text" value={booking.customer.address || '-'} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
             </div>
           </div>
         </div>
@@ -453,11 +453,15 @@ function BookingDetailPage({ booking, onBack, user }: { booking: Booking | null;
           </h3>
           <div className="space-y-4">
             <div>
+              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Special Requests</label>
+              <textarea value={booking.notes || ''} readOnly rows={2} className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground resize-none disabled:opacity-75" style={{ fontSize: 'var(--text-base)' }} />
+            </div>
+            <div>
               <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Allergies</label>
               <textarea value={allergies} onChange={(e) => setAllergies(e.target.value)} rows={2} disabled={!canEditBooking} className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-75" style={{ fontSize: 'var(--text-base)' }} />
             </div>
             <div>
-              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Notes</label>
+              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Admin Notes</label>
               <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} disabled={!canEditBooking} className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-75" style={{ fontSize: 'var(--text-base)' }} />
             </div>
           </div>
@@ -598,6 +602,7 @@ interface Booking {
     avatar: string;
     avatarColor: string;
     address: string;
+    business?: string;
   };
   event: {
     date: string;

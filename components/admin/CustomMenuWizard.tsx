@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Calendar, Users, Mail, Phone, User, Check, ChevronLeft, ChevronRight, Send, Eye, Edit2, ClipboardList } from 'lucide-react';
-import { Button } from './Button';
+import { Button } from '../user/Button';
 
 interface EventDetails {
   fullName: string;
@@ -26,25 +26,25 @@ const menuItems: MenuItem[] = [
   { id: '2', name: 'Caprese Salad', description: 'Fresh mozzarella, tomatoes, and basil', category: 'Appetizers' },
   { id: '3', name: 'Stuffed Mushrooms', description: 'Baked mushrooms with herbs and cheese', category: 'Appetizers' },
   { id: '4', name: 'Spring Rolls', description: 'Crispy vegetable rolls with dipping sauce', category: 'Appetizers' },
-  
+
   // Mains
   { id: '5', name: 'Grilled Salmon', description: 'Fresh salmon with lemon butter sauce', category: 'Mains' },
   { id: '6', name: 'Chicken Parmesan', description: 'Breaded chicken with marinara and mozzarella', category: 'Mains' },
   { id: '7', name: 'Beef Tenderloin', description: 'Premium beef with red wine reduction', category: 'Mains' },
   { id: '8', name: 'Vegetable Risotto', description: 'Creamy arborio rice with seasonal vegetables', category: 'Mains' },
-  
+
   // Sides
   { id: '9', name: 'Garlic Mashed Potatoes', description: 'Creamy potatoes with roasted garlic', category: 'Sides' },
   { id: '10', name: 'Grilled Vegetables', description: 'Seasonal vegetables with balsamic glaze', category: 'Sides' },
   { id: '11', name: 'Caesar Salad', description: 'Romaine lettuce with Caesar dressing', category: 'Sides' },
   { id: '12', name: 'Garlic Bread', description: 'Toasted bread with garlic butter', category: 'Sides' },
-  
+
   // Desserts
   { id: '13', name: 'Tiramisu', description: 'Classic Italian coffee-flavored dessert', category: 'Desserts' },
   { id: '14', name: 'Chocolate Lava Cake', description: 'Warm chocolate cake with molten center', category: 'Desserts' },
   { id: '15', name: 'Panna Cotta', description: 'Italian cream dessert with berry compote', category: 'Desserts' },
   { id: '16', name: 'Fruit Tart', description: 'Fresh seasonal fruits on pastry cream', category: 'Desserts' },
-  
+
   // Beverages
   { id: '17', name: 'Fresh Lemonade', description: 'House-made lemonade with mint', category: 'Beverages' },
   { id: '18', name: 'Iced Tea', description: 'Refreshing black tea with lemon', category: 'Beverages' },
@@ -69,21 +69,21 @@ export function CustomMenuWizard() {
   const [showPreview, setShowPreview] = useState(false);
 
   const steps = [
-    { 
-      number: 1, 
-      title: 'Event Details', 
+    {
+      number: 1,
+      title: 'Event Details',
       subtitle: 'Share your contact details, event date, and number of guests with us.',
       icon: User
     },
-    { 
-      number: 2, 
-      title: 'Choose Menu', 
+    {
+      number: 2,
+      title: 'Choose Menu',
       subtitle: 'Select from our curated offerings - from appetizers to desserts.',
       icon: ClipboardList
     },
-    { 
-      number: 3, 
-      title: 'Review & Submit', 
+    {
+      number: 3,
+      title: 'Review & Submit',
       subtitle: 'We\'ll contact you to review your request and confirm availability.',
       icon: Check
     },
@@ -91,31 +91,31 @@ export function CustomMenuWizard() {
 
   const validateStep1 = () => {
     const newErrors: Partial<EventDetails> = {};
-    
+
     if (!eventDetails.fullName.trim()) {
       newErrors.fullName = 'Full name is required';
     }
-    
+
     if (!eventDetails.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(eventDetails.email)) {
       newErrors.email = 'Please enter a valid email';
     }
-    
+
     if (!eventDetails.phone.trim()) {
       newErrors.phone = 'Phone number is required';
     }
-    
+
     if (!eventDetails.eventDate) {
       newErrors.eventDate = 'Event date is required';
     }
-    
+
     if (!eventDetails.guestCount) {
       newErrors.guestCount = 'Number of guests is required';
     } else if (parseInt(eventDetails.guestCount) < 1) {
       newErrors.guestCount = 'Must have at least 1 guest';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -153,15 +153,15 @@ export function CustomMenuWizard() {
   };
 
   const toggleMenuItem = (itemId: string) => {
-    setSelectedItems(prev => 
-      prev.includes(itemId) 
+    setSelectedItems(prev =>
+      prev.includes(itemId)
         ? prev.filter(id => id !== itemId)
         : [...prev, itemId]
     );
   };
 
   const getSelectedItemsByCategory = (category: string) => {
-    return menuItems.filter(item => 
+    return menuItems.filter(item =>
       item.category === category && selectedItems.includes(item.id)
     );
   };
@@ -172,9 +172,9 @@ export function CustomMenuWizard() {
       <header className="bg-card border-b border-border py-6 px-4">
         <div className="max-w-screen-2xl mx-auto flex justify-center">
           <div className="text-center">
-            <img 
+            <img
               src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=200&h=80&fit=crop"
-              alt="Restaurant Logo" 
+              alt="Restaurant Logo"
               className="h-16 w-auto mx-auto object-contain"
             />
             <h1 className="text-primary mt-2" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
@@ -220,13 +220,12 @@ export function CustomMenuWizard() {
                     <div className="flex items-start gap-4">
                       {/* Step Circle */}
                       <div
-                        className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
-                          isCompleted
+                        className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 ${isCompleted
                             ? 'bg-primary-foreground text-primary'
                             : isActive
-                            ? 'bg-primary-foreground text-primary ring-4 ring-primary-foreground/20'
-                            : 'bg-transparent text-primary-foreground border-2 border-primary-foreground/30'
-                        }`}
+                              ? 'bg-primary-foreground text-primary ring-4 ring-primary-foreground/20'
+                              : 'bg-transparent text-primary-foreground border-2 border-primary-foreground/30'
+                          }`}
                       >
                         {isCompleted ? (
                           <Check className="w-6 h-6" />
@@ -237,14 +236,14 @@ export function CustomMenuWizard() {
 
                       {/* Step Content */}
                       <div className="flex-1 pt-1">
-                        <p 
+                        <p
                           className={`mb-2 text-primary-foreground ${isActive || isCompleted ? 'opacity-100' : 'opacity-60'}`}
                           style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}
                         >
                           {step.title}
                         </p>
-                        <p 
-                          className="text-primary-foreground opacity-80" 
+                        <p
+                          className="text-primary-foreground opacity-80"
                           style={{ fontSize: 'var(--text-small)' }}
                         >
                           {step.subtitle}
@@ -263,7 +262,7 @@ export function CustomMenuWizard() {
               </p>
               <div className="flex items-center gap-3">
                 <div className="flex-1 h-3 bg-primary-foreground/20 rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-primary-foreground transition-all duration-500"
                     style={{ width: `${((currentStep - 1) / 2) * 100}%` }}
                   />
@@ -307,9 +306,8 @@ export function CustomMenuWizard() {
                           type="text"
                           value={eventDetails.fullName}
                           onChange={(e) => setEventDetails({ ...eventDetails, fullName: e.target.value })}
-                          className={`w-full pl-11 pr-4 py-2.5 bg-input-background border rounded-lg transition-colors ${
-                            errors.fullName ? 'border-destructive' : 'border-border focus:border-primary'
-                          }`}
+                          className={`w-full pl-11 pr-4 py-2.5 bg-input-background border rounded-lg transition-colors ${errors.fullName ? 'border-destructive' : 'border-border focus:border-primary'
+                            }`}
                           placeholder="John Doe"
                           style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
                         />
@@ -332,9 +330,8 @@ export function CustomMenuWizard() {
                           type="email"
                           value={eventDetails.email}
                           onChange={(e) => setEventDetails({ ...eventDetails, email: e.target.value })}
-                          className={`w-full pl-11 pr-4 py-2.5 bg-input-background border rounded-lg transition-colors ${
-                            errors.email ? 'border-destructive' : 'border-border focus:border-primary'
-                          }`}
+                          className={`w-full pl-11 pr-4 py-2.5 bg-input-background border rounded-lg transition-colors ${errors.email ? 'border-destructive' : 'border-border focus:border-primary'
+                            }`}
                           placeholder="john@example.com"
                           style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
                         />
@@ -357,9 +354,8 @@ export function CustomMenuWizard() {
                           type="tel"
                           value={eventDetails.phone}
                           onChange={(e) => setEventDetails({ ...eventDetails, phone: e.target.value })}
-                          className={`w-full pl-11 pr-4 py-2.5 bg-input-background border rounded-lg transition-colors ${
-                            errors.phone ? 'border-destructive' : 'border-border focus:border-primary'
-                          }`}
+                          className={`w-full pl-11 pr-4 py-2.5 bg-input-background border rounded-lg transition-colors ${errors.phone ? 'border-destructive' : 'border-border focus:border-primary'
+                            }`}
                           placeholder="+1 (555) 123-4567"
                           style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
                         />
@@ -382,9 +378,8 @@ export function CustomMenuWizard() {
                           type="date"
                           value={eventDetails.eventDate}
                           onChange={(e) => setEventDetails({ ...eventDetails, eventDate: e.target.value })}
-                          className={`w-full pl-11 pr-4 py-2.5 bg-input-background border rounded-lg transition-colors ${
-                            errors.eventDate ? 'border-destructive' : 'border-border focus:border-primary'
-                          }`}
+                          className={`w-full pl-11 pr-4 py-2.5 bg-input-background border rounded-lg transition-colors ${errors.eventDate ? 'border-destructive' : 'border-border focus:border-primary'
+                            }`}
                           min={new Date().toISOString().split('T')[0]}
                           style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
                         />
@@ -407,9 +402,8 @@ export function CustomMenuWizard() {
                           type="number"
                           value={eventDetails.guestCount}
                           onChange={(e) => setEventDetails({ ...eventDetails, guestCount: e.target.value })}
-                          className={`w-full pl-11 pr-4 py-2.5 bg-input-background border rounded-lg transition-colors ${
-                            errors.guestCount ? 'border-destructive' : 'border-border focus:border-primary'
-                          }`}
+                          className={`w-full pl-11 pr-4 py-2.5 bg-input-background border rounded-lg transition-colors ${errors.guestCount ? 'border-destructive' : 'border-border focus:border-primary'
+                            }`}
                           placeholder="50"
                           min="1"
                           style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
@@ -464,11 +458,10 @@ export function CustomMenuWizard() {
                             <button
                               key={item.id}
                               onClick={() => toggleMenuItem(item.id)}
-                              className={`text-left p-4 rounded-lg border-2 transition-all ${
-                                selectedItems.includes(item.id)
+                              className={`text-left p-4 rounded-lg border-2 transition-all ${selectedItems.includes(item.id)
                                   ? 'border-primary bg-primary/5'
                                   : 'border-border bg-card hover:border-primary/50 hover:bg-accent'
-                              }`}
+                                }`}
                               style={{ borderRadius: 'var(--radius)' }}
                             >
                               <div className="flex items-start justify-between gap-3">
@@ -480,11 +473,10 @@ export function CustomMenuWizard() {
                                     {item.description}
                                   </p>
                                 </div>
-                                <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                                  selectedItems.includes(item.id)
+                                <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5 ${selectedItems.includes(item.id)
                                     ? 'bg-primary text-primary-foreground'
                                     : 'border-2 border-border'
-                                }`}>
+                                  }`}>
                                   {selectedItems.includes(item.id) && <Check className="w-3 h-3" />}
                                 </div>
                               </div>
@@ -544,11 +536,11 @@ export function CustomMenuWizard() {
                       <div>
                         <p className="text-muted-foreground mb-1" style={{ fontSize: 'var(--text-small)' }}>Event Date</p>
                         <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                          {new Date(eventDetails.eventDate).toLocaleDateString('en-US', { 
-                            weekday: 'long', 
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric' 
+                          {new Date(eventDetails.eventDate).toLocaleDateString('en-US', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
                           })}
                         </p>
                       </div>
@@ -577,7 +569,7 @@ export function CustomMenuWizard() {
                     {categories.map((category) => {
                       const categoryItems = getSelectedItemsByCategory(category);
                       if (categoryItems.length === 0) return null;
-                      
+
                       return (
                         <div key={category} className="mb-4 last:mb-0">
                           <h5 className="text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
@@ -617,7 +609,7 @@ export function CustomMenuWizard() {
                     Back
                   </Button>
                 )}
-                
+
                 <div className="flex items-center gap-3 ml-auto">
                   {currentStep === 2 && selectedItems.length > 0 && (
                     <Button
@@ -696,7 +688,7 @@ export function CustomMenuWizard() {
               {categories.map((category) => {
                 const categoryItems = getSelectedItemsByCategory(category);
                 if (categoryItems.length === 0) return null;
-                
+
                 return (
                   <div key={category} className="border-b border-border pb-6 last:border-0 last:pb-0">
                     <h4 className="text-foreground mb-4 flex items-center gap-2" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>

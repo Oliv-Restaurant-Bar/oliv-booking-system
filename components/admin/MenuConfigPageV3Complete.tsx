@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { GripVertical, Edit2, MoreVertical, Plus, ChevronDown, ChevronRight, Trash2, Eye, EyeOff, Search, UtensilsCrossed, ListPlus, Upload, X, Copy, Settings, Check } from 'lucide-react';
+import { GripVertical, Edit2, MoreVertical, Plus, ChevronDown, ChevronRight, Trash2, Eye, EyeOff, Search, UtensilsCrossed, ListPlus, Upload, X, Copy, Settings, Check, Users } from 'lucide-react';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import { Modal } from './Modal';
 import { ConfirmationModal } from './ConfirmationModal';
 import { ItemSettingsModal } from './ItemSettingsModal';
-import { Button } from './Button';
+import { Button } from '../user/Button';
 import { Tooltip } from './Tooltip';
+import { NativeRadio } from '../ui/NativeRadio';
 import {
   DndContext,
   closestCenter,
@@ -83,6 +84,7 @@ interface Category {
   image: string;
   isActive: boolean;
   isExpanded: boolean;
+  guestCount: boolean;
   items: MenuItemData[];
   assignedAddonGroups?: string[]; // IDs of assigned addon groups
 }
@@ -115,6 +117,7 @@ const mockCategories: Category[] = [
     image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400&h=400&fit=crop',
     isActive: true,
     isExpanded: false,
+    guestCount: false,
     items: [
       {
         id: '1-1',
@@ -146,6 +149,7 @@ const mockCategories: Category[] = [
     image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=400&fit=crop',
     isActive: true,
     isExpanded: false,
+    guestCount: false,
     items: [
       {
         id: '2-1',
@@ -169,6 +173,7 @@ const mockCategories: Category[] = [
     image: 'https://images.unsplash.com/photo-1758384077555-36242d3f2b4d?w=400&h=400&fit=crop',
     isActive: true,
     isExpanded: false,
+    guestCount: false,
     items: [],
   },
   {
@@ -178,6 +183,7 @@ const mockCategories: Category[] = [
     image: 'https://images.unsplash.com/photo-1705948731485-6e4c6c180d0d?w=400&h=400&fit=crop',
     isActive: false,
     isExpanded: false,
+    guestCount: false,
     items: [
       {
         id: '4-1',
@@ -379,6 +385,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
             image: cat.imageUrl || 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=400&fit=crop',
             isActive: cat.isActive,
             isExpanded: false,
+            guestCount: cat.guestCount || false,
             items: data.itemsByCategory[cat.id]?.map((item: any) => ({
               id: item.id,
               name: item.name,
@@ -542,6 +549,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
           image: cat.imageUrl || 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=400&fit=crop',
           isActive: cat.isActive,
           isExpanded: cat.isExpanded || false,
+          guestCount: cat.guestCount || false,
           items: data.itemsByCategory[cat.id]?.map((item: any) => ({
             id: item.id,
             name: item.name,
@@ -557,6 +565,27 @@ export function MenuConfigPage({ user }: { user?: any }) {
         }));
         setCategories(mappedCategories);
       }
+    }
+  };
+
+  const toggleGuestCount = async (categoryId: string) => {
+    // Persist to database first
+    const category = categories.find(cat => cat.id === categoryId);
+    if (category) {
+      const newValue = !category.guestCount; // Toggle false/undefined to true, true to false
+      console.log('Toggling guest count:', categoryId, 'from', category.guestCount, 'to', newValue);
+      const result = await updateMenuCategory(categoryId, { guestCount: newValue });
+      console.log('Update result:', result);
+      if (!result.success) {
+        console.error('Failed to update category:', result.error);
+        alert(result.error || 'Failed to update category');
+        return;
+      }
+
+      // Update local state only after successful database update
+      setCategories(categories.map(cat =>
+        cat.id === categoryId ? { ...cat, guestCount: newValue } : cat
+      ));
     }
   };
 
@@ -806,6 +835,14 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                         {category.items.length} {category.items.length === 1 ? 'item' : 'items'}
                                       </span>
                                     )}
+                                    {category.guestCount && (
+                                      <Tooltip title="Manual guest count enabled" position="top">
+                                        <span className="px-2 py-0.5 bg-green-500/10 text-green-600 dark:text-green-400 rounded-full flex items-center gap-1" style={{ fontSize: 'var(--text-small)' }}>
+                                          <Users className="w-3 h-3" />
+                                          Manual
+                                        </span>
+                                      </Tooltip>
+                                    )}
                                   </div>
                                   <p className="text-muted-foreground line-clamp-1" style={{ fontSize: 'var(--text-small)' }}>
                                     {category.description}
@@ -949,6 +986,21 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                                     </span>
                                                   </>
                                                 )}
+                                              </button>
+                                            )}
+
+                                            {canEditCategory && (
+                                              <button
+                                                onClick={() => {
+                                                  toggleGuestCount(category.id);
+                                                  setOpenDropdownId(null);
+                                                }}
+                                                className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
+                                              >
+                                                <Users className="w-4 h-4 text-muted-foreground" />
+                                                <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                                  {category.guestCount ? 'Auto guest count' : 'Manual guest count'}
+                                                </span>
                                               </button>
                                             )}
 
@@ -1565,6 +1617,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             image: newCategory.image ? URL.createObjectURL(newCategory.image) : newCategory.imageUrl,
                             isActive: true,
                             isExpanded: false,
+                            guestCount: false,
                             items: [],
                           };
                           setCategories([...categories, newCat]);
@@ -2137,51 +2190,27 @@ export function MenuConfigPage({ user }: { user?: any }) {
                   </p>
                   <div className="flex gap-3">
                     <label className="flex-1 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="groupType"
-                        checked={newGroup.type === 'optional'}
-                        onChange={() => setNewGroup({ ...newGroup, type: 'optional' })}
-                        className="sr-only peer"
-                      />
-                      <div className="px-4 py-3 border-2 border-border rounded-lg transition-all peer-checked:border-primary peer-checked:bg-primary/10 hover:border-primary/50">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-foreground peer-checked:text-primary" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                            Optional
-                          </span>
-                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${newGroup.type === 'optional'
-                            ? 'border-primary bg-primary'
-                            : 'border-border bg-background'
-                            }`}>
-                            {newGroup.type === 'optional' && (
-                              <div className="w-2 h-2 rounded-full bg-primary-foreground" />
-                            )}
-                          </div>
-                        </div>
+                      <div className={`px-4 py-3 border-2 rounded-lg transition-all flex items-center justify-between gap-2 hover:border-primary/50 ${newGroup.type === 'optional' ? 'border-primary bg-primary/10' : 'border-border'}`}>
+                        <span className={`text-foreground ${newGroup.type === 'optional' ? 'text-primary' : ''}`} style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                          Optional
+                        </span>
+                        <NativeRadio
+                          name="groupType"
+                          checked={newGroup.type === 'optional'}
+                          onChange={() => setNewGroup({ ...newGroup, type: 'optional' })}
+                        />
                       </div>
                     </label>
                     <label className="flex-1 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="groupType"
-                        checked={newGroup.type === 'mandatory'}
-                        onChange={() => setNewGroup({ ...newGroup, type: 'mandatory' })}
-                        className="sr-only peer"
-                      />
-                      <div className="px-4 py-3 border-2 border-border rounded-lg transition-all peer-checked:border-primary peer-checked:bg-primary/10 hover:border-primary/50">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-foreground peer-checked:text-primary" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                            Mandatory
-                          </span>
-                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${newGroup.type === 'mandatory'
-                            ? 'border-primary bg-primary'
-                            : 'border-border bg-background'
-                            }`}>
-                            {newGroup.type === 'mandatory' && (
-                              <div className="w-2 h-2 rounded-full bg-primary-foreground" />
-                            )}
-                          </div>
-                        </div>
+                      <div className={`px-4 py-3 border-2 rounded-lg transition-all flex items-center justify-between gap-2 hover:border-primary/50 ${newGroup.type === 'mandatory' ? 'border-primary bg-primary/10' : 'border-border'}`}>
+                        <span className={`text-foreground ${newGroup.type === 'mandatory' ? 'text-primary' : ''}`} style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                          Mandatory
+                        </span>
+                        <NativeRadio
+                          name="groupType"
+                          checked={newGroup.type === 'mandatory'}
+                          onChange={() => setNewGroup({ ...newGroup, type: 'mandatory' })}
+                        />
                       </div>
                     </label>
                   </div>
