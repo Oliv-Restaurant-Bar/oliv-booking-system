@@ -194,11 +194,9 @@ export async function getMenuItems(categoryId?: string) {
       .where(eq(menuItems.isActive, true));
 
     if (categoryId) {
-      // @ts-ignore - neon-http driver type limitation
       query = query.where(eq(menuItems.categoryId, categoryId));
     }
 
-    // @ts-ignore - neon-http doesn't support orderBy in this context
     const items = await query.orderBy(asc(menuItems.sortOrder));
 
     return { success: true, data: items };
@@ -219,11 +217,9 @@ export async function getAllMenuItems(categoryId?: string) {
       .from(menuItems);
 
     if (categoryId) {
-      // @ts-ignore - neon-http driver type limitation
       query = query.where(eq(menuItems.categoryId, categoryId));
     }
 
-    // @ts-ignore - neon-http doesn't support orderBy in this context
     const items = await query.orderBy(asc(menuItems.sortOrder));
 
     return { success: true, data: items };

@@ -36,7 +36,8 @@ export async function fetchBookings(options: {
       LEFT JOIN leads l ON b.lead_id = l.id
       WHERE ${whereClause}
     `);
-    const totalCount = Number(('rows' in countResult ? countResult.rows[0] : (countResult as any)[0]).count);
+    const countRows = 'rows' in countResult ? (countResult.rows as any[]) : (countResult as any[]);
+    const totalCount = Number(countRows[0]?.count || 0);
 
     // Get paginated bookings
     const result = await db.execute(sql`
@@ -63,8 +64,7 @@ export async function fetchBookings(options: {
       LIMIT ${limit} OFFSET ${offset}
     `);
 
-    // db.execute returns { rows: [...] } with neon-http
-    const allBookings = 'rows' in result ? result.rows : result;
+    const allBookings = 'rows' in result ? (result.rows as any[]) : (result as any[]);
 
     // Fetch all booking items for the current page of bookings
     const bookingIds = (allBookings as any[]).map(b => b.id);
@@ -85,7 +85,7 @@ export async function fetchBookings(options: {
         LEFT JOIN menu_categories mc ON mi.category_id = mc.id
         WHERE bi.item_type = 'menu_item' AND bi.booking_id IN (${sql.join(bookingIds, sql`, `)})
       `);
-      allBookingItems = 'rows' in bookingItemsResult ? bookingItemsResult.rows : bookingItemsResult;
+      allBookingItems = 'rows' in bookingItemsResult ? (bookingItemsResult.rows as any[]) : (bookingItemsResult as any[]);
     }
 
     // Group items by booking_id
@@ -190,12 +190,9 @@ export async function fetchBookings(options: {
 
 export async function updateBookingStatus(bookingId: string, newStatus: string) {
   try {
-    // Use raw SQL for update since neon-http doesn't support .update() properly
-    await db.execute(sql`
-      UPDATE bookings
-      SET status = ${newStatus}
-      WHERE id = ${bookingId}
-    `);
+    await db.update(bookings)
+      .set({ status: newStatus as any })
+      .where(eq(bookings.id, bookingId));
 
     return { success: true };
   } catch (error) {

@@ -37,7 +37,6 @@ function GridLayout({ onOpenModal, bookings }: { onOpenModal: (booking: Booking)
           key={booking.id}
           className="bg-card border border-border rounded-xl p-5 hover:shadow-md transition-all"
         >
-          {/* Header */}
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
               <div
@@ -161,11 +160,6 @@ function BookingDetailPage({ booking, onBack, user }: { booking: Booking | null;
     }
     setAllergies(booking?.allergies || '');
     setNotes(booking?.notes || '');
-
-    // Debug logging
-    console.log('Booking data isLocked field:', booking?.isLocked);
-    console.log('Full booking object:', booking);
-
     setIsLocked(booking?.isLocked || false);
   }, [booking]);
 
@@ -197,8 +191,6 @@ function BookingDetailPage({ booking, onBack, user }: { booking: Booking | null;
     setLockLoading(true);
     try {
       const action = isLocked ? 'unlock' : 'lock';
-      console.log(`Toggle lock: ${action} (current state: ${isLocked})`);
-
       const response = await fetch(`/api/bookings/${booking.id}/lock`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -206,22 +198,11 @@ function BookingDetailPage({ booking, onBack, user }: { booking: Booking | null;
       });
 
       if (response.ok) {
-        const data = await response.json();
-        console.log('Lock response:', data);
-
-        // Toggle the lock state
-        const newLockedState = !isLocked;
-        setIsLocked(newLockedState);
-
-        // Refresh audit history if it's shown
-        if (showAuditHistory) {
-          fetchAuditHistory();
-        }
-
-        alert(`Booking ${newLockedState ? 'locked' : 'unlocked'} successfully!`);
+        setIsLocked(!isLocked);
+        if (showAuditHistory) fetchAuditHistory();
+        alert(`Booking ${!isLocked ? 'locked' : 'unlocked'} successfully!`);
       } else {
         const errorData = await response.json();
-        console.error('Lock API error:', errorData);
         alert(`Failed to ${action} booking: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
@@ -238,38 +219,24 @@ function BookingDetailPage({ booking, onBack, user }: { booking: Booking | null;
       const response = await fetch(`/api/bookings/${booking.id}`);
       if (response.ok) {
         const data = await response.json();
-
-        // If secret exists in the response, use it
         if (data.editSecret) {
-          const baseUrl = window.location.origin;
-          const editLink = `${baseUrl}/booking/${booking.id}/edit/${data.editSecret}`;
+          const editLink = `${window.location.origin}/booking/${booking.id}/edit/${data.editSecret}`;
           await navigator.clipboard.writeText(editLink);
           alert('Edit link copied to clipboard!\n\n' + editLink);
-          console.log('✅ Edit link copied:', editLink);
           return;
         }
 
-        // If no secret, try to generate one via API
-        console.log('No edit secret found, attempting to generate one...');
-
-        // Try to call a function to generate the secret
-        const generateResponse = await fetch(`/api/bookings/${booking.id}/generate-secret`, {
-          method: 'POST',
-        });
-
+        const generateResponse = await fetch(`/api/bookings/${booking.id}/generate-secret`, { method: 'POST' });
         if (generateResponse.ok) {
           const generateData = await generateResponse.json();
           if (generateData.success && generateData.editSecret) {
-            const baseUrl = window.location.origin;
-            const editLink = `${baseUrl}/booking/${booking.id}/edit/${generateData.editSecret}`;
+            const editLink = `${window.location.origin}/booking/${booking.id}/edit/${generateData.editSecret}`;
             await navigator.clipboard.writeText(editLink);
             alert('Edit link generated and copied to clipboard!\n\n' + editLink);
-            console.log('✅ Edit link generated and copied:', editLink);
             return;
           }
         }
       }
-
       alert('Unable to generate edit link. Please try again.');
     } catch (error) {
       console.error('Error copying edit link:', error);
@@ -290,18 +257,13 @@ function BookingDetailPage({ booking, onBack, user }: { booking: Booking | null;
 
   const handleAddComment = () => {
     if (!newComment.trim()) return;
-
     const now = new Date();
-    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-    const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-
     const newCommentObj = {
       by: 'Admin',
-      time: timeStr,
-      date: dateStr,
+      time: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+      date: now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
       action: newComment
     };
-
     setComments([...comments, newCommentObj]);
     setNewComment('');
   };
@@ -310,17 +272,9 @@ function BookingDetailPage({ booking, onBack, user }: { booking: Booking | null;
     if (!booking) return;
     setIsSendingReminder(true);
     try {
-      // Call API to send reminder
-      const response = await fetch(`/api/bookings/${booking.id}/reminder`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      if (response.ok) {
-        alert('Reminder sent successfully!');
-      } else {
-        alert('Failed to send reminder');
-      }
+      const response = await fetch(`/api/bookings/${booking.id}/reminder`, { method: 'POST' });
+      if (response.ok) alert('Reminder sent successfully!');
+      else alert('Failed to send reminder');
     } catch (error) {
       console.error('Error sending reminder:', error);
       alert('Failed to send reminder');
@@ -333,17 +287,11 @@ function BookingDetailPage({ booking, onBack, user }: { booking: Booking | null;
     if (!booking) return;
     setLocalStatus(value);
     try {
-      const response = await fetch('/api/bookings/update-status', {
+      await fetch('/api/bookings/update-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bookingId: booking.id, status: value }),
       });
-
-      if (response.ok) {
-        // Update local booking status
-        const updatedBooking = { ...booking, status: value };
-        // This would trigger a re-render with new status
-      }
     } catch (error) {
       console.error('Error updating status:', error);
     }
@@ -353,28 +301,14 @@ function BookingDetailPage({ booking, onBack, user }: { booking: Booking | null;
     if (!booking) return;
     setIsSaving(true);
     try {
-      // Prepare allergy details as array
-      const allergyDetails = allergies
-        ? allergies.split(',').map((a: string) => a.trim()).filter((a: string) => a.length > 0)
-        : [];
-
+      const allergyDetails = allergies ? allergies.split(',').map(a => a.trim()).filter(Boolean) : [];
       const response = await fetch(`/api/bookings/${booking.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          allergyDetails,
-          specialRequests: notes,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ allergyDetails, specialRequests: notes }),
       });
-
-      if (response.ok) {
-        // Reload the page to show updated data
-        window.location.reload();
-      } else {
-        alert('Failed to save changes');
-      }
+      if (response.ok) window.location.reload();
+      else alert('Failed to save changes');
     } catch (error) {
       console.error('Error saving booking changes:', error);
       alert('Failed to save changes');
@@ -385,7 +319,7 @@ function BookingDetailPage({ booking, onBack, user }: { booking: Booking | null;
 
   return (
     <div className="px-4 md:px-8 pt-3 pb-8">
-      {/* Header */}
+      {/* Detail Header */}
       <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">
           <button
@@ -398,7 +332,6 @@ function BookingDetailPage({ booking, onBack, user }: { booking: Booking | null;
           </button>
         </div>
         <div className="flex items-center gap-3">
-          {/* Lock/Unlock Button */}
           {canEditBooking && (
             <button
               onClick={handleToggleLock}
@@ -408,25 +341,10 @@ function BookingDetailPage({ booking, onBack, user }: { booking: Booking | null;
                 : 'bg-secondary hover:bg-primary text-white'
                 }`}
               style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
-              title={isLocked ? 'Unlock booking (allows client edits)' : 'Lock booking (prevents client edits)'}
             >
-              {lockLoading ? (
-                'Loading...'
-              ) : isLocked ? (
-                <>
-                  <Unlock className="w-4 h-4" />
-                  Unlock
-                </>
-              ) : (
-                <>
-                  <Lock className="w-4 h-4" />
-                  Lock
-                </>
-              )}
+              {lockLoading ? 'Loading...' : isLocked ? <><Unlock className="w-4 h-4" />Unlock</> : <><Lock className="w-4 h-4" />Lock</>}
             </button>
           )}
-
-          {/* Audit History Toggle */}
           {canViewAudit && (
             <button
               onClick={() => setShowAuditHistory(!showAuditHistory)}
@@ -437,14 +355,11 @@ function BookingDetailPage({ booking, onBack, user }: { booking: Booking | null;
               {showAuditHistory ? 'Hide History' : 'Show History'}
             </button>
           )}
-
-          {/* Copy Edit Link Button */}
           {canEditBooking && (
             <button
               onClick={handleCopyEditLink}
               className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex items-center gap-2 cursor-pointer"
               style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
-              title="Copy client edit link to clipboard"
             >
               <Send className="w-4 h-4" />
               Copy Edit Link
@@ -453,250 +368,104 @@ function BookingDetailPage({ booking, onBack, user }: { booking: Booking | null;
         </div>
       </div>
 
-      {/* Lock Status Banner */}
       {isLocked && (
-        <div
-          className="mb-6 p-4 border rounded-lg flex items-center gap-3"
-          style={{
-            backgroundColor: 'rgba(245, 158, 11, 0.15)',
-            borderColor: 'rgba(245, 158, 11, 0.4)',
-            borderWidth: '1px'
-          }}
-        >
-          <Lock
-            className="w-5 h-5 flex-shrink-0"
-            style={{ color: '#f59e0b' }}
-          />
+        <div className="mb-6 p-4 border rounded-lg flex items-center gap-3 bg-amber-500/10 border-amber-500/40">
+          <Lock className="w-5 h-5 flex-shrink-0 text-amber-600" />
           <div>
-            <p
-              className="font-medium"
-              style={{ color: '#b45309', fontSize: 'var(--text-base)' }}
-            >
-              Booking is Locked
-            </p>
-            <p
-              className="text-sm"
-              style={{ color: '#d97706', fontSize: 'var(--text-small)' }}
-            >
-              Clients cannot edit this booking. You can still make changes as an admin.
-            </p>
+            <p className="font-medium text-amber-800" style={{ fontSize: 'var(--text-base)' }}>Booking is Locked</p>
+            <p className="text-sm text-amber-700" style={{ fontSize: 'var(--text-small)' }}>Clients cannot edit this booking. You can still make changes as an admin.</p>
           </div>
         </div>
       )}
 
       {/* Page Title */}
       <div className="mb-6">
-        <h1 className="text-foreground" style={{ fontSize: 'var(--text-h1)', fontWeight: 'var(--font-weight-semibold)' }}>
-          Booking Details
-        </h1>
-        <p className="text-muted-foreground mt-1" style={{ fontSize: 'var(--text-base)' }}>
-          View and manage booking information
-        </p>
+        <h1 className="text-foreground" style={{ fontSize: 'var(--text-h1)', fontWeight: 'var(--font-weight-semibold)' }}>Booking Details</h1>
+        <p className="text-muted-foreground mt-1" style={{ fontSize: 'var(--text-base)' }}>View and manage booking information</p>
       </div>
 
       <div className="space-y-6">
-        {/* Customer Information */}
         <div className="bg-card border border-border rounded-xl p-6">
           <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-            <User className="w-5 h-5 text-primary" />
-            Customer Information
+            <User className="w-5 h-5 text-primary" /> Customer Information
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
-                First Name
-              </label>
-              <input
-                type="text"
-                value={booking.customer.firstName}
-                readOnly
-                className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
-                style={{ fontSize: 'var(--text-base)' }}
-              />
+              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>First Name</label>
+              <input type="text" value={booking.customer.firstName} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
             </div>
             <div>
-              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
-                Last Name
-              </label>
-              <input
-                type="text"
-                value={booking.customer.lastName}
-                readOnly
-                className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
-                style={{ fontSize: 'var(--text-base)' }}
-              />
+              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Last Name</label>
+              <input type="text" value={booking.customer.lastName} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
             </div>
             <div>
-              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
-                Email
-              </label>
-              <input
-                type="email"
-                value={booking.customer.email}
-                readOnly
-                className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
-                style={{ fontSize: 'var(--text-base)' }}
-              />
+              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Email</label>
+              <input type="email" value={booking.customer.email} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
             </div>
             <div>
-              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                value={booking.customer.phone}
-                readOnly
-                className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
-                style={{ fontSize: 'var(--text-base)' }}
-              />
+              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Phone Number</label>
+              <input type="tel" value={booking.customer.phone} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
             </div>
             <div className="sm:col-span-2">
-              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
-                Address
-              </label>
-              <input
-                type="text"
-                value={booking.customer.address}
-                readOnly
-                className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
-                style={{ fontSize: 'var(--text-base)' }}
-              />
+              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Address</label>
+              <input type="text" value={booking.customer.address} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
             </div>
           </div>
         </div>
 
-        {/* Event Details */}
         <div className="bg-card border border-border rounded-xl p-6">
           <div className="flex items-center justify-between mb-5">
             <h3 className="text-foreground flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-              <CalendarDays className="w-5 h-5 text-primary" />
-              Event Details
+              <CalendarDays className="w-5 h-5 text-primary" /> Event Details
             </h3>
-            <button className="text-foreground hover:bg-accent px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2 cursor-pointer" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
-              <Edit className="w-3.5 h-3.5" />
-              Edit
-            </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
-                Event Date
-              </label>
-              <input
-                type="text"
-                value={booking.event.date}
-                readOnly
-                className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
-                style={{ fontSize: 'var(--text-base)' }}
-              />
+              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Event Date</label>
+              <input type="text" value={booking.event.date} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
             </div>
             <div>
-              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
-                Time
-              </label>
-              <input
-                type="text"
-                value={booking.event.time}
-                readOnly
-                className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
-                style={{ fontSize: 'var(--text-base)' }}
-              />
+              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Time</label>
+              <input type="text" value={booking.event.time} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
             </div>
             <div>
-              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
-                Guests
-              </label>
-              <input
-                type="text"
-                value={booking.guests}
-                readOnly
-                className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
-                style={{ fontSize: 'var(--text-base)' }}
-              />
+              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Guests</label>
+              <input type="text" value={booking.guests} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
             </div>
             <div>
-              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
-                Occasion
-              </label>
-              <input
-                type="text"
-                value={booking.event.occasion}
-                readOnly
-                className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
-                style={{ fontSize: 'var(--text-base)' }}
-              />
+              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Occasion</label>
+              <input type="text" value={booking.event.occasion} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
             </div>
             <div>
-              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
-                Amount (CHF)
-              </label>
-              <input
-                type="text"
-                value={booking.amount}
-                readOnly
-                className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
-                style={{ fontSize: 'var(--text-base)' }}
-              />
+              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Amount (CHF)</label>
+              <input type="text" value={booking.amount} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
             </div>
             <div>
-              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
-                Status
-              </label>
-              <StatusDropdown
-                options={statusOptions}
-                value={localStatus}
-                onChange={handleStatusChange}
-                placeholder="Select status"
-                className="w-full"
-                disabled={!canUpdateStatus}
-              />
+              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Status</label>
+              <StatusDropdown options={statusOptions} value={localStatus} onChange={handleStatusChange} placeholder="Select status" className="w-full" disabled={!canUpdateStatus} />
             </div>
           </div>
         </div>
 
-        {/* Additional Information */}
         <div className="bg-card border border-border rounded-xl p-6">
           <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-            <MessageSquare className="w-5 h-5 text-primary" />
-            Additional Information
+            <MessageSquare className="w-5 h-5 text-primary" /> Additional Information
           </h3>
           <div className="space-y-4">
             <div>
-              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
-                Allergies
-              </label>
-              <textarea
-                value={allergies}
-                onChange={(e) => setAllergies(e.target.value)}
-                rows={2}
-                disabled={!canEditBooking}
-                className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-75"
-                style={{ fontSize: 'var(--text-base)' }}
-                placeholder={canEditBooking ? "Enter allergies separated by commas..." : "No allergy information"}
-              />
+              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Allergies</label>
+              <textarea value={allergies} onChange={(e) => setAllergies(e.target.value)} rows={2} disabled={!canEditBooking} className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-75" style={{ fontSize: 'var(--text-base)' }} />
             </div>
             <div>
-              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
-                Notes
-              </label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={2}
-                disabled={!canEditBooking}
-                className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-75"
-                style={{ fontSize: 'var(--text-base)' }}
-                placeholder={canEditBooking ? "Enter special requests or notes..." : "No additional notes"}
-              />
+              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Notes</label>
+              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} disabled={!canEditBooking} className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-75" style={{ fontSize: 'var(--text-base)' }} />
             </div>
           </div>
         </div>
 
-        {/* Menu Items */}
         <div className="bg-card border border-border rounded-xl p-6">
           <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-            <UtensilsCrossed className="w-5 h-5 text-primary" />
-            Menu Items
+            <UtensilsCrossed className="w-5 h-5 text-primary" /> Menu Items
           </h3>
           <div className="bg-background border border-border rounded-lg overflow-hidden overflow-x-auto">
             <table className="w-full">
@@ -709,7 +478,7 @@ function BookingDetailPage({ booking, onBack, user }: { booking: Booking | null;
                 </tr>
               </thead>
               <tbody>
-                {booking.menuItems && booking.menuItems.length > 0 ? (
+                {booking.menuItems?.length > 0 ? (
                   booking.menuItems.map((item: any, index: number) => (
                     <tr key={index} className="border-t border-border">
                       <td className="px-4 py-3 text-foreground" style={{ fontSize: 'var(--text-base)' }}>{item.item || item.name}</td>
@@ -719,13 +488,9 @@ function BookingDetailPage({ booking, onBack, user }: { booking: Booking | null;
                     </tr>
                   ))
                 ) : (
-                  <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                      No items selected for this booking
-                    </td>
-                  </tr>
+                  <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>No items selected</td></tr>
                 )}
-                {booking.menuItems && booking.menuItems.length > 0 && (
+                {booking.menuItems?.length > 0 && (
                   <tr className="border-t-2 border-border bg-muted">
                     <td colSpan={3} className="px-4 py-3 text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>Total Amount</td>
                     <td className="px-4 py-3 text-right text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>{booking.amount}</td>
@@ -736,126 +501,69 @@ function BookingDetailPage({ booking, onBack, user }: { booking: Booking | null;
           </div>
         </div>
 
-        {/* Contact History */}
         <div className="bg-card border border-border rounded-xl p-6">
           <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-            <MessageSquare className="w-5 h-5 text-primary" />
-            Comments
+            <MessageSquare className="w-5 h-5 text-primary" /> Comments
           </h3>
           <div className="space-y-3">
             {comments.map((contact, index) => (
               <div key={index} className="bg-background border border-border rounded-lg p-4 flex items-start gap-3">
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white flex-shrink-0"
-                  style={{ backgroundColor: '#9DAE91', fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}
-                >
-                  {contact.by.charAt(0)}
-                </div>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-white flex-shrink-0 bg-[#9DAE91]" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>{contact.by.charAt(0)}</div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      {contact.by}
-                    </span>
-                    <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                      • {contact.time} • {contact.date}
-                    </span>
+                    <span className="text-foreground font-semibold" style={{ fontSize: 'var(--text-base)' }}>{contact.by}</span>
+                    <span className="text-muted-foreground text-sm">• {contact.time} • {contact.date}</span>
                   </div>
-                  <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                    {contact.action}
-                  </p>
+                  <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>{contact.action}</p>
                 </div>
               </div>
             ))}
-
-            {/* Add Comment Form */}
             {canEditBooking && (
               <div className="space-y-3 pt-2">
-                <textarea
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Add a comment..."
-                  rows={3}
-                  className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  style={{ fontSize: 'var(--text-base)' }}
-                />
-                <button
-                  onClick={handleAddComment}
-                  className="w-full px-4 py-3 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex items-center justify-center gap-2 cursor-pointer"
-                  style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
-                >
-                  <Send className="w-4 h-4" />
-                  Add Comment
+                <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Add a comment..." rows={3} className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20" style={{ fontSize: 'var(--text-base)' }} />
+                <button onClick={handleAddComment} className="w-full px-4 py-3 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex items-center justify-center gap-2 cursor-pointer" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                  <Send className="w-4 h-4" /> Add Comment
                 </button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Audit History Section */}
         {showAuditHistory && (
           <div className="bg-card border border-border rounded-xl p-6">
             <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-              <History className="w-5 h-5 text-primary" />
-              Audit History
+              <History className="w-5 h-5 text-primary" /> Audit History
             </h3>
-
             {auditLoading ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Loading audit history...
-              </div>
+              <div className="text-center py-8 text-muted-foreground">Loading audit history...</div>
             ) : auditLogs.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No changes recorded yet
-              </div>
+              <div className="text-center py-8 text-muted-foreground">No changes recorded yet</div>
             ) : (
               <div className="space-y-4">
                 {auditLogs.map((log) => (
                   <div key={log.id} className="bg-background border border-border rounded-lg p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center text-white flex-shrink-0 ${log.actor_type === 'admin' ? 'bg-primary' : 'bg-secondary'
-                            }`}
-                          style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}
-                        >
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white flex-shrink-0 ${log.actor_type === 'admin' ? 'bg-primary' : 'bg-secondary'}`}>
                           {log.actor_label.charAt(0)}
                         </div>
                         <div>
-                          <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>
-                            {log.actor_label}
-                          </p>
-                          {log.admin_name && (
-                            <p className="text-muted-foreground text-sm">{log.admin_email}</p>
-                          )}
+                          <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{log.actor_label}</p>
+                          {log.admin_name && <p className="text-muted-foreground text-sm">{log.admin_email}</p>}
                         </div>
                       </div>
-                      <span className="text-muted-foreground text-sm">
-                        {new Date(log.created_at).toLocaleString()}
-                      </span>
+                      <span className="text-muted-foreground text-sm">{new Date(log.created_at).toLocaleString()}</span>
                     </div>
-
                     <div className="space-y-2">
                       {log.changes.map((change: any, idx: number) => (
                         <div key={idx} className="flex items-center gap-2 text-sm">
-                          <span className="text-muted-foreground">
-                            {change.field.replace(/([A-Z])/g, ' $1').replace(/^./, (str: string) => str.toUpperCase())}:
-                          </span>
-                          <span className={`line-through ${change.from ? 'text-red-500' : 'text-muted-foreground'}`}>
-                            {change.from === null || change.from === undefined ? 'None' : String(change.from)}
-                          </span>
+                          <span className="text-muted-foreground">{change.field.replace(/([A-Z])/g, ' $1').replace(/^./, (str: string) => str.toUpperCase())}:</span>
+                          <span className={`line-through ${change.from ? 'text-red-500' : 'text-muted-foreground'}`}>{change.from === null || change.from === undefined ? 'None' : String(change.from)}</span>
                           <span className="text-muted-foreground">→</span>
-                          <span className="text-green-500 font-medium">
-                            {change.to === null || change.to === undefined ? 'None' : String(change.to)}
-                          </span>
+                          <span className="text-green-500 font-medium">{change.to === null || change.to === undefined ? 'None' : String(change.to)}</span>
                         </div>
                       ))}
                     </div>
-
-                    {log.ip_address && (
-                      <p className="text-xs text-muted-foreground mt-2">
-                        IP: {log.ip_address}
-                      </p>
-                    )}
                   </div>
                 ))}
               </div>
@@ -863,25 +571,16 @@ function BookingDetailPage({ booking, onBack, user }: { booking: Booking | null;
           </div>
         )}
 
-        {/* Save Button */}
         {canEditBooking && (
           <div className="pb-4">
-            <button
-              onClick={handleSaveChanges}
-              disabled={isSaving}
-              className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}
-            >
+            <button onClick={handleSaveChanges} disabled={isSaving} className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
               {isSaving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         )}
 
-        {/* Copyright Footer */}
         <div className="text-center pt-4 pb-1">
-          <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-            © 2026 Restaurant Oliv Restaurant & Bar
-          </p>
+          <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>© 2026 Restaurant Oliv Restaurant & Bar</p>
         </div>
       </div>
     </div>
@@ -986,12 +685,7 @@ export function BookingsPage({ user }: { user?: any }) {
   // Status options for dropdown
   const statusOptions = allStatuses.map(status => ({ value: status, label: status }));
 
-
-  // Export to XLSX - this will still only export the currently visible (filtered) results
-  // In a real app, you might want to fetch all filtered results without limit for export
   const handleExport = () => {
-    const headers = ['Customer Name', 'Email', 'Phone', 'Event Date', 'Time', 'Guests', 'Occasion', 'Amount', 'Status', 'Contacted By', 'Contacted When'];
-
     const excelData = bookingsData.map(booking => ({
       'Customer Name': booking.customer.name,
       'Email': booking.customer.email,
@@ -1005,128 +699,99 @@ export function BookingsPage({ user }: { user?: any }) {
       'Contacted By': booking.contacted?.by || '',
       'Contacted When': booking.contacted?.when || '',
     }));
-
-    // Create worksheet
     const worksheet = XLSX.utils.json_to_sheet(excelData);
-
-    // Create workbook
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Bookings');
-
-    // Generate and download file
     XLSX.writeFile(workbook, `bookings_export_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   return (
-    <div className="min-h-full bg-background flex flex-col">
+    <div className="min-h-full bg-background px-4 md:px-8 pt-6 pb-1 flex flex-col">
       {/* List View */}
       {currentPage === 'list' && (
-        <div className="flex-1 flex flex-col">
-          <div className="px-4 md:px-0 pb-1">
-            {/* Search & Filter Bar */}
-            <div className="bg-card border border-border rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-              {/* Search Bar - Left Side */}
-              <div className="relative flex-1 max-w-full sm:max-w-lg">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search by name, email, or phone..."
-                  className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  style={{ fontSize: 'var(--text-base)' }}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  ref={searchInputRef}
-                />
-              </div>
-
-              {/* Status Dropdown & Export - Right Side */}
-              <div className="flex items-center gap-3">
-                <StatusDropdown
-                  options={statusOptions}
-                  value={selectedStatus}
-                  onChange={setSelectedStatus}
-                />
-                {/* Export Button */}
-                <Button variant="primary" icon={Download} onClick={handleExport}>
-                  Export
-                </Button>
-              </div>
-            </div>
-
-            {/* Loading State */}
-            {loading && (
-              <div className="text-center py-16">
-                <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                  Loading bookings...
-                </p>
-              </div>
-            )}
-
-            {/* Grid Layout */}
-            {!loading && bookingsData.length === 0 && (
-              <div className="text-center py-16">
-                <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                  No bookings found
-                </p>
-              </div>
-            )}
-
-            {!loading && (
-              <div className="flex-1 flex flex-col">
-                <GridLayout
-                  onOpenModal={(booking: Booking) => {
-                    setSelectedBooking(booking);
-                    setCurrentPage('detail');
-                  }}
-                  bookings={bookingsData}
-                />
-
-                {/* Pagination Controls */}
-                {totalPages > 1 && (
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-8 mt-4 border-t border-border">
-                    <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                      Showing <span className="text-foreground font-medium">{(page - 1) * pageSize + 1}</span> to <span className="text-foreground font-medium">{Math.min(page * pageSize, totalCount)}</span> of <span className="text-foreground font-medium">{totalCount}</span> bookings
-                    </p>
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => setPage(p => Math.max(1, p - 1))}
-                        disabled={page === 1}
-                        className="p-2 rounded-lg border border-border hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        <ChevronLeft className="w-5 h-5" />
-                      </button>
-
-                      {/* Page numbers with ellipsis for large number of pages */}
-                      {Array.from({ length: totalPages }, (_, i) => i + 1)
-                        .filter(p => p === 1 || p === totalPages || (p >= page - 1 && p <= page + 1))
-                        .map((p, i, arr) => (
-                          <div key={p} className="flex items-center gap-1.5">
-                            {i > 0 && arr[i - 1] !== p - 1 && (
-                              <span className="text-muted-foreground px-1">...</span>
-                            )}
-                            <button
-                              onClick={() => setPage(p)}
-                              className={`w-10 h-10 rounded-lg border transition-all ${page === p ? 'bg-primary border-primary text-primary-foreground' : 'border-border hover:bg-accent text-foreground'}`}
-                              style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                            >
-                              {p}
-                            </button>
-                          </div>
-                        ))}
-
-                      <button
-                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                        disabled={page === totalPages}
-                        className="p-2 rounded-lg border border-border hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        <ChevronRight className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+        <div className="w-full flex-1">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-foreground" style={{ fontSize: 'var(--text-h1)', fontWeight: 'var(--font-weight-semibold)' }}>
+              Bookings
+            </h1>
+            <button
+              onClick={fetchBookings}
+              disabled={loading}
+              className="p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer"
+              title="Refresh"
+            >
+              <RefreshCw className={`w-5 h-5 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
+            </button>
           </div>
+          {/* Search & Filter Bar */}
+          <div className="bg-card border border-border rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+            <div className="relative flex-1 max-w-full sm:max-w-lg">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search by name, email, or phone..."
+                className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                style={{ fontSize: 'var(--text-base)' }}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                ref={searchInputRef}
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <StatusDropdown options={statusOptions} value={selectedStatus} onChange={setSelectedStatus} />
+              <Button variant="primary" icon={Download} onClick={handleExport}>
+                Export
+              </Button>
+            </div>
+          </div>
+
+          {/* Loading State */}
+          {loading && (
+            <div className="text-center py-16">
+              <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>Loading bookings...</p>
+            </div>
+          )}
+
+          {/* Grid Layout */}
+          {!loading && bookingsData.length === 0 && (
+            <div className="text-center py-16">
+              <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>No bookings found</p>
+            </div>
+          )}
+
+          {!loading && (
+            <div className="flex-1 flex flex-col">
+              <GridLayout
+                onOpenModal={(booking: Booking) => {
+                  setSelectedBooking(booking);
+                  setCurrentPage('detail');
+                }}
+                bookings={bookingsData}
+              />
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-8 mt-4 border-t border-border">
+                  <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                    Showing <span className="text-foreground font-medium">{(page - 1) * pageSize + 1}</span> to <span className="text-foreground font-medium">{Math.min(page * pageSize, totalCount)}</span> of <span className="text-foreground font-medium">{totalCount}</span> bookings
+                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="p-2 rounded-lg border border-border hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"><ChevronLeft className="w-5 h-5" /></button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(p => p === 1 || p === totalPages || (p >= page - 1 && p <= page + 1))
+                      .map((p, i, arr) => (
+                        <div key={p} className="flex items-center gap-1.5">
+                          {i > 0 && arr[i - 1] !== p - 1 && <span className="text-muted-foreground px-1">...</span>}
+                          <button onClick={() => setPage(p)} className={`w-10 h-10 rounded-lg border transition-all ${page === p ? 'bg-primary border-primary text-primary-foreground' : 'border-border hover:bg-accent text-foreground'}`} style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>{p}</button>
+                        </div>
+                      ))}
+                    <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="p-2 rounded-lg border border-border hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"><ChevronRight className="w-5 h-5" /></button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
