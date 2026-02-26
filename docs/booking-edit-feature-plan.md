@@ -24,6 +24,8 @@ This document outlines the implementation of a **secure client-facing booking ed
 - 🔐 **Admin-controlled lock** to prevent client edits
 - 👥 **Separate routes** for admin and client with shared UI
 
+
+
 ---
 
 ## 🎯 Business Requirements

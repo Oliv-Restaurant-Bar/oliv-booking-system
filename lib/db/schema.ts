@@ -70,6 +70,8 @@ export const leadStatusEnum = [
 export type LeadStatus = (typeof leadStatusEnum)[number];
 
 export const bookingStatusEnum = [
+  "new",
+  "touchbase",
   "pending",
   "confirmed",
   "completed",
@@ -361,6 +363,25 @@ export const categoryAddonGroups = pgTable(
   }),
 );
 
+// ITEM_ADDON_GROUPS table - junction table for linking individual menu items to addon groups
+export const itemAddonGroups = pgTable(
+  "item_addon_groups",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    itemId: uuid("item_id").references(() => menuItems.id, {
+      onDelete: "cascade",
+    }),
+    addonGroupId: uuid("addon_group_id").references(() => addonGroups.id, {
+      onDelete: "cascade",
+    }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    itemIdIdx: index("item_addon_groups_item_id_idx").on(table.itemId),
+    addonGroupIdIdx: index("item_addon_groups_addon_group_id_idx").on(table.addonGroupId),
+  }),
+);
+
 // BOOKING_ITEMS table
 export const bookingItems = pgTable(
   "booking_items",
@@ -519,6 +540,8 @@ export type AddonItem = typeof addonItems.$inferSelect;
 export type NewAddonItem = typeof addonItems.$inferInsert;
 export type CategoryAddonGroup = typeof categoryAddonGroups.$inferSelect;
 export type NewCategoryAddonGroup = typeof categoryAddonGroups.$inferInsert;
+export type ItemAddonGroup = typeof itemAddonGroups.$inferSelect;
+export type NewItemAddonGroup = typeof itemAddonGroups.$inferInsert;
 export type BookingItem = typeof bookingItems.$inferSelect;
 export type NewBookingItem = typeof bookingItems.$inferInsert;
 export type BookingContactHistory = typeof bookingContactHistory.$inferSelect;

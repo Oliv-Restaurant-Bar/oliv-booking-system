@@ -43,6 +43,13 @@
       "when": 1771849721693,
       "tag": "0005_parched_synch",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1772082812662,
+      "tag": "0006_pretty_deathstrike",
+      "breakpoints": true
     }
   ]
 }

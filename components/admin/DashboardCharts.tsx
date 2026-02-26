@@ -59,11 +59,11 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
                 chart: {
                   type: 'column',
                   backgroundColor: 'transparent',
-                  marginBottom: 40,
-                  marginTop: 10,
-                  marginLeft: 50,
+                  marginBottom: 80,
+                  marginTop: 30,
+                  marginLeft: 60,
                   marginRight: 20,
-                  height: 280,
+                  height: 350,
                 },
                 title: {
                   text: '',
@@ -103,6 +103,7 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
                   gridLineColor: '#F3F4F6',
                   gridLineWidth: 1,
                   allowDecimals: false,
+                  softMax: 10,
                 },
                 tooltip: {
                   backgroundColor: '#FFFFFF',
@@ -189,7 +190,7 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
                 {
                   name: 'Status',
                   colorByPoint: true,
-                  data: statusData.filter(d => d.value > 0).map((item) => ({
+                  data: statusData.map((item) => ({
                     name: item.name,
                     y: item.value,
                     color: {
@@ -205,7 +206,7 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
             }}
           />
           <div className="mt-4 space-y-2">
-            {statusData.filter(d => d.value > 0).map((item) => (
+            {statusData.map((item) => (
               <div key={item.name} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div

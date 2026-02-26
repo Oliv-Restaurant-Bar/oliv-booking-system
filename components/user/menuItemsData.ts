@@ -16,6 +16,14 @@ export interface MenuItem {
   image: string;
   allergens?: string[];
   addOns?: { id: string; name: string; price: number }[];
+  addonGroups?: {
+    id: string;
+    name: string;
+    isRequired: boolean;
+    minSelect: number;
+    maxSelect: number;
+    items: { id: string; name: string; price: number }[];
+  }[];
   variants?: MenuItemVariant[];
   /** 'none' is used for non-food service items (tech, furniture, etc.) from the database */
   dietaryType: 'vegetarian' | 'non-vegetarian' | 'vegan' | 'none';

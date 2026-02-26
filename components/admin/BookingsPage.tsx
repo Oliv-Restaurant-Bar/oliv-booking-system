@@ -245,6 +245,8 @@ function BookingDetailPage({ booking, onBack, user }: { booking: Booking | null;
   };
 
   const statusOptions = [
+    { value: 'new', label: 'New' },
+    { value: 'touchbase', label: 'Touchbase' },
     { value: 'pending', label: 'Pending' },
     { value: 'confirmed', label: 'Confirmed' },
     { value: 'completed', label: 'Completed' },

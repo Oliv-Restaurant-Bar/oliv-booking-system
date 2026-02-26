@@ -43,6 +43,7 @@ import {
   updateCategoryAddonGroups,
   getAllAddonGroups,
   getAllAddonItems,
+  updateItemAddonGroups,
 } from '@/lib/actions/menu';
 import { Permission, hasPermission } from '@/lib/auth/rbac';
 
@@ -52,6 +53,7 @@ interface MenuItemData {
   description: string;
   image: string;
   price: number;
+  pricingType?: 'per_person' | 'flat_fee' | 'billed_by_consumption';
   isActive: boolean;
   variants: VariantOption[];
   dietaryType?: 'veg' | 'non-veg' | 'vegan';
@@ -69,6 +71,7 @@ interface MenuItemData {
     sugar?: string;
     sodium?: string;
   };
+  assignedAddonGroups?: string[];
 }
 
 interface VariantOption {
@@ -181,6 +184,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [isAddChoiceModalOpen, setIsAddChoiceModalOpen] = useState(false);
   const [choiceCategoryId, setChoiceCategoryId] = useState<string | null>(null);
+  const [choiceItemId, setChoiceItemId] = useState<string | null>(null);
   const [selectedAddonGroups, setSelectedAddonGroups] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState({
     name: '',
@@ -197,6 +201,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
     imageUrl: '' as string,
     isActive: true,
     variants: [] as VariantOption[],
+    assignedAddonGroups: [] as string[],
   });
   const [newGroup, setNewGroup] = useState({
     name: '',
@@ -252,12 +257,14 @@ export function MenuConfigPage({ user }: { user?: any }) {
               description: item.description || '',
               image: item.imageUrl || 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=400&fit=crop',
               price: Number(item.pricePerPerson) || 0,
+              pricingType: item.pricingType || 'per_person',
               isActive: item.isActive,
               variants: [],
               dietaryType: item.isVegan ? 'vegan' : item.isVegetarian ? 'veg' : 'non-veg',
               dietaryTags: [],
+              assignedAddonGroups: (data.itemAddonGroups || []).filter((a: any) => a.itemId === item.id).map((a: any) => a.addonGroupId),
             })) || [],
-            assignedAddonGroups: [],
+            assignedAddonGroups: (data.categoryAddonGroups || []).filter((a: any) => a.categoryId === cat.id).map((a: any) => a.addonGroupId),
           }));
 
           // Map database addon groups to component format
@@ -416,12 +423,14 @@ export function MenuConfigPage({ user }: { user?: any }) {
             description: item.description || '',
             image: item.imageUrl || 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=400&fit=crop',
             price: Number(item.pricePerPerson) || 0,
+            pricingType: item.pricingType || 'per_person',
             isActive: item.isActive,
             variants: [],
             dietaryType: item.isVegan ? 'vegan' : item.isVegetarian ? 'veg' : 'non-veg',
             dietaryTags: [],
+            assignedAddonGroups: (data.itemAddonGroups || []).filter((a: any) => a.itemId === item.id).map((a: any) => a.addonGroupId),
           })) || [],
-          assignedAddonGroups: [],
+          assignedAddonGroups: (data.categoryAddonGroups || []).filter((a: any) => a.categoryId === cat.id).map((a: any) => a.addonGroupId),
         }));
         setCategories(mappedCategories);
       }
@@ -746,6 +755,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                             imageUrl: '',
                                             isActive: true,
                                             variants: [],
+                                            assignedAddonGroups: [],
                                           });
                                           setIsAddMenuItemModalOpen(true);
                                         }}
@@ -958,11 +968,12 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                                   name: item.name,
                                                   description: item.description,
                                                   price: item.price.toString(),
-                                                  pricingType: 'per_person',
+                                                  pricingType: (item as any).pricingType || 'per_person',
                                                   image: null,
                                                   imageUrl: item.image,
                                                   isActive: item.isActive,
-                                                  variants: item.variants,
+                                                  variants: item.variants || [],
+                                                  assignedAddonGroups: item.assignedAddonGroups || [],
                                                 });
                                                 setIsAddMenuItemModalOpen(true);
                                               }}
@@ -1000,6 +1011,20 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                               className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
                                             >
                                               <Settings className="w-4 h-4" />
+                                            </button>
+                                          </Tooltip>
+                                        )}
+                                        {canEditItem && (
+                                          <Tooltip title="Add choice" position="top">
+                                            <button
+                                              onClick={() => {
+                                                setChoiceItemId(item.id);
+                                                setSelectedAddonGroups(item.assignedAddonGroups || []);
+                                                setIsAddChoiceModalOpen(true);
+                                              }}
+                                              className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                            >
+                                              <ListPlus className="w-4 h-4" />
                                             </button>
                                           </Tooltip>
                                         )}
@@ -1056,6 +1081,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                           imageUrl: '',
                                           isActive: true,
                                           variants: [],
+                                          assignedAddonGroups: [],
                                         });
                                         setIsAddMenuItemModalOpen(true);
                                       }}
@@ -1626,6 +1652,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                         });
                         console.log('Update item result:', result);
                         if (result.success) {
+                          await updateItemAddonGroups(editingMenuItemId, newMenuItem.assignedAddonGroups);
                           setCategories(categories.map(cat =>
                             cat.id === activeCategoryId
                               ? {
@@ -1637,9 +1664,11 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                       name: newMenuItem.name,
                                       description: newMenuItem.description,
                                       price: Number(newMenuItem.price),
+                                      pricingType: newMenuItem.pricingType,
                                       image: newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl,
                                       isActive: newMenuItem.isActive,
                                       variants: newMenuItem.variants,
+                                      assignedAddonGroups: newMenuItem.assignedAddonGroups,
                                     }
                                     : item
                                 ),
@@ -1656,6 +1685,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             imageUrl: '',
                             isActive: true,
                             variants: [],
+                            assignedAddonGroups: [],
                           });
                           setActiveCategoryId(null);
                           setEditingMenuItemId(null);
@@ -1678,14 +1708,17 @@ export function MenuConfigPage({ user }: { user?: any }) {
                         console.log('Create item result:', result);
 
                         if (result.success && result.data) {
+                          await updateItemAddonGroups(result.data.id, newMenuItem.assignedAddonGroups);
                           const newItem: MenuItemData = {
                             id: result.data.id,
                             name: newMenuItem.name,
                             description: newMenuItem.description,
                             price: Number(newMenuItem.price),
+                            pricingType: newMenuItem.pricingType,
                             image: newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl,
                             isActive: newMenuItem.isActive,
                             variants: newMenuItem.variants,
+                            assignedAddonGroups: newMenuItem.assignedAddonGroups,
                           };
 
                           setCategories(categories.map(cat =>
@@ -1703,6 +1736,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             imageUrl: '',
                             isActive: true,
                             variants: [],
+                            assignedAddonGroups: [],
                           });
                           setActiveCategoryId(null);
                           setEditingMenuItemId(null);
@@ -1920,7 +1954,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                   )}
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 pt-2 border-t border-border mt-2">
                   <input
                     type="checkbox"
                     id="itemActive"
@@ -2482,6 +2516,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
               onClose={() => {
                 setIsAddChoiceModalOpen(false);
                 setChoiceCategoryId(null);
+                setChoiceItemId(null);
                 setSelectedAddonGroups([]);
               }}
               icon={ListPlus}
@@ -2494,6 +2529,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                     onClick={() => {
                       setIsAddChoiceModalOpen(false);
                       setChoiceCategoryId(null);
+                      setChoiceItemId(null);
                       setSelectedAddonGroups([]);
                     }}
                   >
@@ -2514,9 +2550,27 @@ export function MenuConfigPage({ user }: { user?: any }) {
                               : cat
                           ));
                         }
+                      } else if (choiceItemId && activeCategoryId) {
+                        const result = await updateItemAddonGroups(choiceItemId, selectedAddonGroups);
+                        if (result.success) {
+                          setCategories(categories.map(cat => {
+                            if (cat.id === activeCategoryId) {
+                              return {
+                                ...cat,
+                                items: cat.items.map(item =>
+                                  item.id === choiceItemId
+                                    ? { ...item, assignedAddonGroups: selectedAddonGroups }
+                                    : item
+                                )
+                              };
+                            }
+                            return cat;
+                          }));
+                        }
                       }
                       setIsAddChoiceModalOpen(false);
                       setChoiceCategoryId(null);
+                      setChoiceItemId(null);
                       setSelectedAddonGroups([]);
                     }}
                   >
@@ -2531,12 +2585,18 @@ export function MenuConfigPage({ user }: { user?: any }) {
                     Select Addon Groups
                   </label>
                   <p className="text-muted-foreground mb-4" style={{ fontSize: 'var(--text-small)' }}>
-                    Choose which addon groups should be available for this category
+                    Choose which addon groups should be available for this {choiceItemId ? 'item' : 'category'}
                   </p>
 
                   {/* Addon Groups Grid */}
                   <div className="grid grid-cols-3 gap-3">
-                    {addonGroups.map((group) => {
+                    {addonGroups.filter(group => {
+                      if (choiceItemId && activeCategoryId) {
+                        const parentCategory = categories.find(c => c.id === activeCategoryId);
+                        return !parentCategory?.assignedAddonGroups?.includes(group.id);
+                      }
+                      return true;
+                    }).map((group) => {
                       const isSelected = selectedAddonGroups.includes(group.id);
                       return (
                         <label
@@ -2585,6 +2645,14 @@ export function MenuConfigPage({ user }: { user?: any }) {
                       {selectedAddonGroups.length} addon group{selectedAddonGroups.length !== 1 ? 's' : ''} selected
                     </p>
                   )}
+                  {choiceItemId && activeCategoryId && addonGroups.filter(group => {
+                    const parentCategory = categories.find(c => c.id === activeCategoryId);
+                    return !parentCategory?.assignedAddonGroups?.includes(group.id);
+                  }).length === 0 && (
+                      <p className="text-muted-foreground italic mt-3" style={{ fontSize: 'var(--text-small)' }}>
+                        No separate choice groups available.
+                      </p>
+                    )}
                 </div>
               </div>
             </Modal>

@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from "@/lib/db";
-import { menuCategories, menuItems, menuItemDependencies, addons, addonGroups, addonItems, categoryAddonGroups } from "@/lib/db/schema";
+import { menuCategories, menuItems, menuItemDependencies, addons, addonGroups, addonItems, categoryAddonGroups, itemAddonGroups } from "@/lib/db/schema";
 import { eq, asc, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
@@ -335,6 +335,12 @@ export async function getCompleteMenuData() {
     const categoriesResult = await getMenuCategories();
     const itemsResult = await getMenuItems();
     const addonsResult = await getAddons();
+    const addonGroupsResult = await getAllAddonGroups();
+    const addonItemsResult = await getAllAddonItems();
+
+    // Fetch active assignments
+    const categoryAddons = await db.select().from(categoryAddonGroups);
+    const itemAddons = await db.select().from(itemAddonGroups);
 
     if (!categoriesResult.success || !itemsResult.success || !addonsResult.success) {
       throw new Error("Failed to fetch menu data");
@@ -349,11 +355,27 @@ export async function getCompleteMenuData() {
       itemsByCategory.get(item.categoryId)!.push(item);
     });
 
+    // Group addon items by addon group
+    const addonItemsByGroup = new Map();
+    if (addonItemsResult.success) {
+      addonItemsResult.data.forEach((item: any) => {
+        if (!addonItemsByGroup.has(item.addonGroupId)) {
+          addonItemsByGroup.set(item.addonGroupId, []);
+        }
+        addonItemsByGroup.get(item.addonGroupId)!.push(item);
+      });
+    }
+
     return {
       categories: categoriesResult.data,
       items: itemsResult.data,
       addons: addonsResult.data,
+      addonGroups: addonGroupsResult.data || [],
+      addonItems: addonItemsResult.data || [],
       itemsByCategory: Object.fromEntries(itemsByCategory),
+      addonItemsByGroup: Object.fromEntries(addonItemsByGroup),
+      categoryAddonGroups: categoryAddons,
+      itemAddonGroups: itemAddons,
     };
   } catch (error) {
     console.error("Error fetching complete menu data:", error);
@@ -361,7 +383,12 @@ export async function getCompleteMenuData() {
       categories: [],
       items: [],
       addons: [],
+      addonGroups: [],
+      addonItems: [],
       itemsByCategory: {},
+      addonItemsByGroup: {},
+      categoryAddonGroups: [],
+      itemAddonGroups: [],
     };
   }
 }
@@ -377,6 +404,10 @@ export async function getAllMenuData() {
     const addonsResult = await getAddons();
     const addonGroupsResult = await getAllAddonGroups();
     const addonItemsResult = await getAllAddonItems();
+
+    // Fetch all assignments without requiring a new standalone function
+    const categoryAddons = await db.select().from(categoryAddonGroups);
+    const itemAddons = await db.select().from(itemAddonGroups);
 
     if (!categoriesResult.success || !itemsResult.success || !addonsResult.success) {
       throw new Error("Failed to fetch all menu data");
@@ -410,6 +441,8 @@ export async function getAllMenuData() {
       addonItems: addonItemsResult.data || [],
       itemsByCategory: Object.fromEntries(itemsByCategory),
       addonItemsByGroup: Object.fromEntries(addonItemsByGroup),
+      categoryAddonGroups: categoryAddons,
+      itemAddonGroups: itemAddons,
     };
   } catch (error) {
     console.error("Error fetching all menu data:", error);
@@ -421,6 +454,8 @@ export async function getAllMenuData() {
       addonItems: [],
       itemsByCategory: {},
       addonItemsByGroup: {},
+      categoryAddonGroups: [],
+      itemAddonGroups: [],
     };
   }
 }
@@ -740,5 +775,92 @@ export async function getCategoryAddonGroups(categoryId: string) {
   } catch (error) {
     console.error("Error fetching category addon groups:", error);
     return { success: false, error: "Failed to fetch category addon groups", data: [] };
+  }
+}
+
+// ==================== ITEM ADDON GROUPS ====================
+
+export async function assignAddonGroupToItem(input: {
+  itemId: string;
+  addonGroupId: string;
+}) {
+  try {
+    // Require EDIT_MENU_ITEM permission
+    await requirePermissionWrapper(Permission.EDIT_MENU_ITEM);
+
+    const [assignment] = await db
+      .insert(itemAddonGroups)
+      .values({
+        id: randomUUID(),
+        ...input,
+      })
+      .returning();
+
+    revalidatePath("/admin/menu-config");
+
+    return { success: true, data: assignment };
+  } catch (error) {
+    console.error("Error assigning addon group to item:", error);
+    return { success: false, error: "Failed to assign addon group to item" };
+  }
+}
+
+export async function removeAddonGroupFromItem(itemId: string, addonGroupId: string) {
+  try {
+    // Require EDIT_MENU_ITEM permission
+    await requirePermissionWrapper(Permission.EDIT_MENU_ITEM);
+
+    await db
+      .delete(itemAddonGroups)
+      .where(and(eq(itemAddonGroups.itemId, itemId), eq(itemAddonGroups.addonGroupId, addonGroupId)));
+
+    revalidatePath("/admin/menu-config");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error removing addon group from item:", error);
+    return { success: false, error: "Failed to remove addon group from item" };
+  }
+}
+
+export async function updateItemAddonGroups(itemId: string, addonGroupIds: string[]) {
+  try {
+    // Require EDIT_MENU_ITEM permission
+    await requirePermissionWrapper(Permission.EDIT_MENU_ITEM);
+
+    // First, remove all existing assignments for this item
+    await db.delete(itemAddonGroups).where(eq(itemAddonGroups.itemId, itemId));
+
+    // Then, add new assignments
+    if (addonGroupIds.length > 0) {
+      await db.insert(itemAddonGroups).values(
+        addonGroupIds.map((addonGroupId) => ({
+          id: randomUUID(),
+          itemId,
+          addonGroupId,
+        }))
+      );
+    }
+
+    revalidatePath("/admin/menu-config");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating item addon groups:", error);
+    return { success: false, error: "Failed to update item addon groups" };
+  }
+}
+
+export async function getItemAddonGroups(itemId: string) {
+  try {
+    const assignments = await db
+      .select()
+      .from(itemAddonGroups)
+      .where(eq(itemAddonGroups.itemId, itemId));
+
+    return { success: true, data: assignments };
+  } catch (error) {
+    console.error("Error fetching item addon groups:", error);
+    return { success: false, error: "Failed to fetch item addon groups", data: [] };
   }
 }

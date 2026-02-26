@@ -197,15 +197,19 @@ export async function getBookingStatusDistribution() {
       .groupBy(bookings.status);
 
     const statusData = [
-      { name: 'Confirmed', value: 0, color: '#9DAE91' },
       { name: 'Pending', value: 0, color: '#F59E0B' },
-      { name: 'Completed', value: 0, color: '#10B981' },
-      { name: 'Cancelled', value: 0, color: '#EF4444' },
-      { name: 'No Show', value: 0, color: '#6B7280' },
+      { name: 'New', value: 0, color: '#A78BFA' },
+      { name: 'Touchbase', value: 0, color: '#B8C9AE' },
+      { name: 'Confirmed', value: 0, color: '#34D399' },
+      { name: 'Completed', value: 0, color: '#60A5FA' },
+      { name: 'Declined', value: 0, color: '#F87171' },
+      { name: 'Cancelled', value: 0, color: '#A78BFA' },
+      { name: 'No Show', value: 0, color: '#9CA3AF' },
     ];
 
     statusCounts.forEach(({ status, count }) => {
-      const item = statusData.find(d => d.name.toLowerCase() === status);
+      const normalizedStatus = status.replace('_', ' ');
+      const item = statusData.find(d => d.name.toLowerCase() === normalizedStatus);
       if (item) {
         item.value = Math.floor(Number(count));
       }
@@ -463,12 +467,16 @@ export async function getMonthlyReportData(year: number = new Date().getFullYear
         COUNT(*) as total_bookings,
         COALESCE(SUM(CAST(estimated_total AS NUMERIC)), 0) as total_revenue,
         COUNT(*) FILTER (WHERE status = 'pending') as pending_count,
+        COUNT(*) FILTER (WHERE status = 'new') as new_count,
+        COUNT(*) FILTER (WHERE status = 'touchbase') as touchbase_count,
         COUNT(*) FILTER (WHERE status = 'confirmed') as confirmed_count,
         COUNT(*) FILTER (WHERE status = 'completed') as completed_count,
         COUNT(*) FILTER (WHERE status = 'declined') as declined_count,
         COUNT(*) FILTER (WHERE status = 'no_show') as noshow_count,
         COUNT(*) FILTER (WHERE status = 'cancelled') as cancelled_count,
         COALESCE(SUM(CAST(estimated_total AS NUMERIC)) FILTER (WHERE status = 'pending'), 0) as pending_revenue,
+        COALESCE(SUM(CAST(estimated_total AS NUMERIC)) FILTER (WHERE status = 'new'), 0) as new_revenue,
+        COALESCE(SUM(CAST(estimated_total AS NUMERIC)) FILTER (WHERE status = 'touchbase'), 0) as touchbase_revenue,
         COALESCE(SUM(CAST(estimated_total AS NUMERIC)) FILTER (WHERE status = 'confirmed'), 0) as confirmed_revenue,
         COALESCE(SUM(CAST(estimated_total AS NUMERIC)) FILTER (WHERE status = 'completed'), 0) as completed_revenue,
         COALESCE(SUM(CAST(estimated_total AS NUMERIC)) FILTER (WHERE status = 'declined'), 0) as declined_revenue,
@@ -495,9 +503,9 @@ export async function getMonthlyReportData(year: number = new Date().getFullYear
           totalBookings: Math.floor(Number(d.total_bookings) || 0),
           totalRevenue: Number(d.total_revenue) || 0,
           avgRevenue: Number(d.total_bookings) > 0 ? Number(d.total_revenue) / Number(d.total_bookings) : 0,
-          // Map pending to "new" and split between new/touchbase
-          new: Math.ceil((Number(d.pending_count) || 0) / 2),
-          touchbase: Math.floor((Number(d.pending_count) || 0) / 2),
+          // Map correctly without splitting pending
+          new: Math.floor(Number(d.new_count) || 0),
+          touchbase: Math.floor(Number(d.touchbase_count) || 0),
           confirmed: Math.floor(Number(d.confirmed_count) || 0),
           declined: Math.floor(Number(d.declined_count) || 0),
           completed: Math.floor(Number(d.completed_count) || 0),
@@ -505,8 +513,8 @@ export async function getMonthlyReportData(year: number = new Date().getFullYear
           unresponsive: Math.floor(Number(d.cancelled_count) || 0),
           noShow: Math.floor(Number(d.noshow_count) || 0),
           // Revenue breakdown
-          newRevenue: Number(d.pending_revenue) / 2 || 0,
-          touchbaseRevenue: Number(d.pending_revenue) / 2 || 0,
+          newRevenue: Number(d.new_revenue) || 0,
+          touchbaseRevenue: Number(d.touchbase_revenue) || 0,
           confirmedRevenue: Number(d.confirmed_revenue) || 0,
           declinedRevenue: Number(d.declined_revenue) || 0,
           completedRevenue: Number(d.completed_revenue) || 0,
