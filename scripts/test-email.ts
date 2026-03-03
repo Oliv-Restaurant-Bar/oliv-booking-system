@@ -110,6 +110,7 @@ async function testBookingEmail() {
     allergyDetails: ["Nüsse", "Laktose"],
     requiresDeposit: false,
     leadId: "test-lead-id",
+    location: null as string | null,
     internalNotes: "",
     termsAccepted: true,
     termsAcceptedAt: new Date(),

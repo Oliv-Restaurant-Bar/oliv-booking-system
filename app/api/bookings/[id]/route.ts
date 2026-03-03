@@ -25,6 +25,7 @@ export async function GET(
         b.internal_notes,
         b.estimated_total,
         b.status,
+        b.location,
         b.created_at,
         b.edit_secret,
         b.is_locked,
@@ -118,14 +119,16 @@ export async function GET(
       event: {
         date: booking.event_date
           ? new Date(booking.event_date).toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-            })
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          })
           : '',
         time: booking.event_time ? booking.event_time.substring(0, 5) : '',
         occasion: 'Event',
+        location: booking.location || undefined,
       },
+      location: booking.location || '',
       guests: booking.guest_count || 0,
       amount: booking.estimated_total
         ? `CHF ${Number(booking.estimated_total).toLocaleString()}`
@@ -174,8 +177,8 @@ export async function PUT(
       adminUserId: session.user.id,
       actorLabel: `Admin: ${session.user.name || "Unknown"}`,
       ipAddress: request.headers.get("x-forwarded-for") ||
-                 request.headers.get("x-real-ip") ||
-                 undefined,
+        request.headers.get("x-real-ip") ||
+        undefined,
       userAgent: request.headers.get("user-agent") || undefined,
     };
 

@@ -180,6 +180,7 @@ export const bookings = pgTable(
     status: text("status", { enum: bookingStatusEnum })
       .notNull()
       .default("pending"),
+    location: text("location"),
     internalNotes: text("internal_notes"),
     termsAccepted: boolean("terms_accepted").notNull().default(false),
     termsAcceptedAt: timestamp("terms_accepted_at"),
@@ -513,6 +514,52 @@ export const landingPageContent = pgTable(
   }),
 );
 
+// Venues
+export const venues = pgTable(
+  "venues",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull().unique(),
+    description: text("description"),
+    isActive: boolean("is_active").notNull().default(true),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    nameIdx: index("venues_name_idx").on(table.name),
+    sortOrderIdx: index("venues_sort_order_idx").on(table.sortOrder),
+  }),
+);
+
+// Kitchen PDF Logs
+export const kitchenPdfLogs = pgTable(
+  "kitchen_pdf_logs",
+  {
+    id: text("id").primaryKey(),
+    bookingId: uuid("booking_id")
+      .notNull()
+      .references(() => bookings.id, { onDelete: "cascade" }),
+    documentName: text("document_name").notNull(),
+    sentAt: timestamp("sent_at").notNull(),
+    sentBy: text("sent_by").notNull(),
+    recipientEmail: text("recipient_email").notNull(),
+    status: text("status").notNull(), // 'sent' | 'failed'
+    errorMessage: text("error_message"),
+    idempotencyKey: text("idempotency_key").unique(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    bookingIdIdx: index("kitchen_pdf_logs_booking_id_idx").on(
+      table.bookingId
+    ),
+    idempotencyKeyIdx: index("kitchen_pdf_logs_idempotency_key_idx").on(
+      table.idempotencyKey
+    ),
+    sentAtIdx: index("kitchen_pdf_logs_sent_at_idx").on(table.sentAt),
+  }),
+);
+
 // Better Auth type exports
 export type Session = typeof session.$inferSelect;
 export type NewSession = typeof session.$inferInsert;
@@ -551,5 +598,9 @@ export type EmailLog = typeof emailLogs.$inferSelect;
 export type NewEmailLog = typeof emailLogs.$inferInsert;
 export type BookingAuditLog = typeof bookingAuditLog.$inferSelect;
 export type NewBookingAuditLog = typeof bookingAuditLog.$inferInsert;
+export type Venue = typeof venues.$inferSelect;
+export type NewVenue = typeof venues.$inferInsert;
+export type KitchenPdfLog = typeof kitchenPdfLogs.$inferSelect;
+export type NewKitchenPdfLog = typeof kitchenPdfLogs.$inferInsert;
 export type LandingPageContent = typeof landingPageContent.$inferSelect;
 export type NewLandingPageContent = typeof landingPageContent.$inferInsert;

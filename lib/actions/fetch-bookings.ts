@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from "@/lib/db";
-import { bookings, leads, bookingItems, menuItems, menuCategories, bookingContactHistory } from "@/lib/db/schema";
+import { bookings, leads, bookingItems, menuItems, menuCategories, bookingContactHistory, kitchenPdfLogs } from "@/lib/db/schema";
 import { desc, eq, sql } from "drizzle-orm";
 
 export async function fetchBookings(options: {
@@ -52,6 +52,7 @@ export async function fetchBookings(options: {
         b.internal_notes,
         b.estimated_total,
         b.status,
+        b.location,
         b.created_at,
         b.is_locked,
         l.contact_name,
@@ -100,6 +101,31 @@ export async function fetchBookings(options: {
         quantity: `${item.quantity} x ${Math.round(Number(item.unit_price))} CHF`,
         price: `CHF ${(Number(item.unit_price) * item.quantity).toFixed(2)}`,
       });
+    }
+
+    // Fetch latest kitchen PDF status for each booking
+    let kitchenPdfByBooking: Record<string, any> = {};
+    if (bookingIds.length > 0) {
+      const pdfResult = await db.execute(sql`
+        SELECT DISTINCT ON (booking_id)
+          booking_id,
+          document_name,
+          status,
+          sent_at,
+          sent_by
+        FROM kitchen_pdf_logs
+        WHERE booking_id IN (${sql.join(bookingIds, sql`, `)})
+        ORDER BY booking_id, sent_at DESC
+      `);
+      const pdfRows = 'rows' in pdfResult ? (pdfResult.rows as any[]) : (pdfResult as any[]);
+      for (const row of pdfRows) {
+        kitchenPdfByBooking[row.booking_id] = {
+          documentName: row.document_name,
+          sentStatus: row.status === 'sent' ? 'sent' : 'failed',
+          lastSentAt: row.sent_at,
+          sentBy: row.sent_by,
+        };
+      }
     }
 
     const formattedBookings = (allBookings as any[]).map((booking: any) => {
@@ -157,6 +183,7 @@ export async function fetchBookings(options: {
             : '',
           time: booking.event_time ? booking.event_time.substring(0, 5) : '',
           occasion: occasion || 'Event',
+          location: booking.location || '',
         },
         guests: booking.guest_count || 0,
         amount: booking.estimated_total
@@ -174,6 +201,7 @@ export async function fetchBookings(options: {
         menuItems: menuItemsList,
         contactHistory: [],
         isLocked: booking.is_locked || false,
+        kitchenPdf: kitchenPdfByBooking[booking.id] || undefined,
       };
     });
 

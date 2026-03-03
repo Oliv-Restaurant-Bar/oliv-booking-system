@@ -50,6 +50,20 @@
       "when": 1772082812662,
       "tag": "0006_pretty_deathstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1772525781706,
+      "tag": "0007_dark_warbound",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1772527628558,
+      "tag": "0008_young_jamie_braddock",
+      "breakpoints": true
     }
   ]
 }

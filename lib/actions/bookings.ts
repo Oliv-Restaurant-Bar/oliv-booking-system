@@ -36,6 +36,7 @@ export interface CreateBookingInput {
   estimatedTotal?: number;
   requiresDeposit?: boolean;
   internalNotes?: string;
+  location?: string;
 }
 
 export async function createBooking(input: CreateBookingInput & { leadEmail?: string; leadName?: string }) {
@@ -54,6 +55,7 @@ export async function createBooking(input: CreateBookingInput & { leadEmail?: st
       estimatedTotal: input.estimatedTotal?.toString(),
       requiresDeposit: input.requiresDeposit || false,
       status: "pending",
+      location: input.location,
       internalNotes: input.internalNotes,
       isLocked: false, // Bookings are unlocked by default - admin can lock to prevent client edits
     })
@@ -330,6 +332,10 @@ export async function updateBooking(
     if (updates.requiresDeposit !== undefined) {
       updateData.requiresDeposit = updates.requiresDeposit;
       console.log('  → Updating requiresDeposit:', updates.requiresDeposit);
+    }
+    if (updates.location !== undefined) {
+      updateData.location = updates.location;
+      console.log('  → Updating location:', updates.location);
     }
     if (updates.internalNotes !== undefined) {
       updateData.internalNotes = updates.internalNotes;
