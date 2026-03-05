@@ -128,7 +128,7 @@ The database consists of 14 tables:
    ```
 
 3. **Set up environment variables:**
-   Copy `.env.local` and update the values:
+   Copy `.env` and update the values:
    ```env
    DATABASE_URL="postgresql://..."
    NEXT_PUBLIC_APP_URL="http://localhost:3000"

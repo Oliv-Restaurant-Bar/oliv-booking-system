@@ -259,7 +259,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
               price: Number(item.pricePerPerson) || 0,
               pricingType: item.pricingType || 'per_person',
               isActive: item.isActive,
-              variants: [],
+              variants: item.variants || [],
               dietaryType: item.isVegan ? 'vegan' : item.isVegetarian ? 'veg' : 'non-veg',
               dietaryTags: [],
               assignedAddonGroups: (data.itemAddonGroups || []).filter((a: any) => a.itemId === item.id).map((a: any) => a.addonGroupId),
@@ -1018,6 +1018,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                           <Tooltip title="Add choice" position="top">
                                             <button
                                               onClick={() => {
+                                                setActiveCategoryId(category.id);
                                                 setChoiceItemId(item.id);
                                                 setSelectedAddonGroups(item.assignedAddonGroups || []);
                                                 setIsAddChoiceModalOpen(true);
@@ -1636,7 +1637,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                     variant="primary"
                     icon={editingMenuItemId ? Check : Plus}
                     onClick={async () => {
-                      if (!activeCategoryId || !newMenuItem.name || !newMenuItem.price) return;
+                      if (!activeCategoryId || !newMenuItem.name || (!newMenuItem.price && newMenuItem.variants.length === 0)) return;
 
                       if (editingMenuItemId) {
                         // Edit existing item
@@ -1646,9 +1647,10 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           nameDe: newMenuItem.name,
                           description: newMenuItem.description,
                           descriptionDe: newMenuItem.description,
-                          pricePerPerson: newMenuItem.price,
+                          pricePerPerson: newMenuItem.price || '0',
                           imageUrl: newMenuItem.imageUrl || newMenuItem.image?.name || '',
                           isActive: newMenuItem.isActive,
+                          variants: newMenuItem.variants,
                         });
                         console.log('Update item result:', result);
                         if (result.success) {
@@ -1663,7 +1665,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                       ...item,
                                       name: newMenuItem.name,
                                       description: newMenuItem.description,
-                                      price: Number(newMenuItem.price),
+                                      price: Number(newMenuItem.price || 0),
                                       pricingType: newMenuItem.pricingType,
                                       image: newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl,
                                       isActive: newMenuItem.isActive,
@@ -1701,9 +1703,10 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           nameDe: newMenuItem.name,
                           description: newMenuItem.description,
                           descriptionDe: newMenuItem.description,
-                          pricePerPerson: Number(newMenuItem.price),
+                          pricePerPerson: Number(newMenuItem.price || 0),
                           pricingType: newMenuItem.pricingType,
                           imageUrl: newMenuItem.imageUrl || newMenuItem.image?.name || '',
+                          variants: newMenuItem.variants,
                         });
                         console.log('Create item result:', result);
 
@@ -1713,7 +1716,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             id: result.data.id,
                             name: newMenuItem.name,
                             description: newMenuItem.description,
-                            price: Number(newMenuItem.price),
+                            price: Number(newMenuItem.price || 0),
                             pricingType: newMenuItem.pricingType,
                             image: newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl,
                             isActive: newMenuItem.isActive,
@@ -1745,7 +1748,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                         }
                       }
                     }}
-                    disabled={!activeCategoryId || !newMenuItem.name || !newMenuItem.price || newMenuItem.name.trim() === '' || newMenuItem.name.length > 100 || newMenuItem.description.length > 500 || parseFloat(newMenuItem.price) < 0 || newMenuItem.variants.some(v => !v.name?.trim() || v.name.length > 100 || v.price < 0)}
+                    disabled={!activeCategoryId || !newMenuItem.name || (!newMenuItem.price && newMenuItem.variants.length === 0) || newMenuItem.name.trim() === '' || newMenuItem.name.length > 100 || newMenuItem.description.length > 500 || (newMenuItem.price !== '' && parseFloat(newMenuItem.price) < 0) || newMenuItem.variants.some(v => !v.name?.trim() || v.name.length > 100 || v.price < 0)}
                   >
                     {editingMenuItemId ? 'Save Changes' : 'Add Item'}
                   </Button>
@@ -2087,14 +2090,14 @@ export function MenuConfigPage({ user }: { user?: any }) {
                     Type
                   </label>
                   <p className="text-muted-foreground mb-3" style={{ fontSize: 'var(--text-small)' }}>
-                    Optional: customers can choose but aren't required.<br />
-                    Mandatory: customers must select.
+                    Addons: customers can choose but aren't required.<br />
+                    Choices: customers must select.
                   </p>
                   <div className="flex gap-3">
                     <label className="flex-1 cursor-pointer">
                       <div className={`px-4 py-3 border-2 rounded-lg transition-all flex items-center justify-between gap-2 hover:border-primary/50 ${newGroup.type === 'optional' ? 'border-primary bg-primary/10' : 'border-border'}`}>
                         <span className={`text-foreground ${newGroup.type === 'optional' ? 'text-primary' : ''}`} style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                          Optional
+                          Addons
                         </span>
                         <NativeRadio
                           name="groupType"
@@ -2106,7 +2109,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                     <label className="flex-1 cursor-pointer">
                       <div className={`px-4 py-3 border-2 rounded-lg transition-all flex items-center justify-between gap-2 hover:border-primary/50 ${newGroup.type === 'mandatory' ? 'border-primary bg-primary/10' : 'border-border'}`}>
                         <span className={`text-foreground ${newGroup.type === 'mandatory' ? 'text-primary' : ''}`} style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                          Mandatory
+                          Choices
                         </span>
                         <NativeRadio
                           name="groupType"
@@ -2118,7 +2121,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                   </div>
                 </div>
 
-                {/* Selection Requirements - Only show when Mandatory */}
+                {/* Selection Requirements - Only show when Choices */}
                 {newGroup.type === 'mandatory' && (
                   <div className="p-4 bg-muted/30 border border-border rounded-lg space-y-4">
                     <h4 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
@@ -2300,6 +2303,9 @@ export function MenuConfigPage({ user }: { user?: any }) {
                 <div>
                   <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                     Price (€) *
+                    <span className="text-muted-foreground ml-2" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-normal)' }}>
+                      (Can be set to 0)
+                    </span>
                   </label>
                   <input
                     type="number"
@@ -2627,12 +2633,17 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                   <Check className="w-3.5 h-3.5 text-primary-foreground" strokeWidth={3} />
                                 )}
                               </div>
-                              <span
-                                className="text-foreground"
-                                style={{ fontSize: 'var(--text-base)' }}
-                              >
-                                {group.name}
-                              </span>
+                              <div className="flex flex-col flex-1 min-w-0">
+                                <span
+                                  className="text-foreground truncate"
+                                  style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+                                >
+                                  {group.name}
+                                </span>
+                                <span className="text-muted-foreground" style={{ fontSize: '10px' }}>
+                                  {group.items.length} {group.items.length === 1 ? 'item' : 'items'} • {group.minSelect > 0 || group.maxSelect === 1 ? 'Choice' : 'Addon'}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </label>

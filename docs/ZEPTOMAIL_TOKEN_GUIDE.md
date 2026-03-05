@@ -55,7 +55,7 @@ zt-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
 ### 4. Add to Environment Variables
-Edit `.env.local` and add:
+Edit `.env` and add:
 
 ```env
 # ZeptoMail API Configuration
@@ -167,14 +167,14 @@ ZEPTOMAIL_REPLY_TO=           # Reply-to address (optional)
 - [ ] Add and verify domain: `oliv-restaurant.ch`
 - [ ] Add DNS records (TXT, CNAME, SPF)
 - [ ] Generate API token
-- [ ] Copy token to `.env.local`
+- [ ] Copy token to `.env`
 - [ ] Run test: `npm run email:test`
 - [ ] Receive test email
 
 ## 💡 Important Notes
 
 1. **Domain Verification Required:** You cannot send emails until your domain is verified
-2. **Token Security:** Never commit `.env.local` to git
+2. **Token Security:** Never commit `.env` to git
 3. **Free Tier:** ZeptoMail has a free tier with limited emails per month
 4. **Rate Limits:** Check your plan for sending limits
 5. **Token Format:** Token starts with `zt-` and is quite long

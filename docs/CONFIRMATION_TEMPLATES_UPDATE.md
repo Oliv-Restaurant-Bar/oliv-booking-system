@@ -37,7 +37,7 @@ if (estimatedTotal >= DEPOSIT_THRESHOLD) {
 
 ## Environment Variables
 
-Update your `.env.local`:
+Update your `.env`:
 
 ```env
 # Confirmation templates (TWO templates)

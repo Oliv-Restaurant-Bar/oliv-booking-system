@@ -2,8 +2,8 @@ import 'dotenv/config';
 import { resolve } from 'path';
 import { config } from 'dotenv';
 
-// Load environment variables from .env.local
-config({ path: resolve(process.cwd(), '.env.local') });
+// Load environment variables from .env
+config({ path: resolve(process.cwd(), '.env') });
 
 import { db } from '../lib/db';
 import { sql } from 'drizzle-orm';

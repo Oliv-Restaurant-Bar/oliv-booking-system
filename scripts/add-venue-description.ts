@@ -1,10 +1,10 @@
 import { db } from '../lib/db';
 import { sql } from 'drizzle-orm';
 
-// Load environment variables from .env.local
+// Load environment variables from .env
 import * as dotenv from 'dotenv';
 import { resolve } from 'path';
-dotenv.config({ path: resolve(process.cwd(), '.env.local') });
+dotenv.config({ path: resolve(process.cwd(), '.env') });
 
 async function addVenueDescription() {
   try {

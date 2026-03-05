@@ -4,7 +4,7 @@
  * Run this script to test your ZeptoMail integration:
  * npx tsx scripts/test-email.ts
  *
- * Make sure to set up your .env.local with ZEPTOMAIL_API_TOKEN first
+ * Make sure to set up your .env with ZEPTOMAIL_API_TOKEN first
  */
 
 import { validateEmailConfig, sendEmail } from "../lib/email/zeptomail";
@@ -21,7 +21,7 @@ async function testEmailConfiguration() {
     config.missing.forEach((missing) => {
       console.error(`   - ${missing}`);
     });
-    console.log("\nPlease add these to your .env.local file");
+    console.log("\nPlease add these to your .env file");
     return false;
   }
 
@@ -118,6 +118,8 @@ async function testBookingEmail() {
     isLocked: false,
     lockedBy: null as string | null,
     lockedAt: null as Date | null,
+    assignedTo: null as string | null,
+    kitchenNotes: "",
     lead: {
       id: "test-lead-id",
       contactName: "Max Mustermann",

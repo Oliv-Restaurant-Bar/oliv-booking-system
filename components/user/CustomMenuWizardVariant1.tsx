@@ -696,13 +696,21 @@ export function CustomMenuWizard() {
         ? (itemGuestCounts[itemId] || parseInt(eventDetails.guestCount) || 1)
         : (parseInt(eventDetails.guestCount) || 1);
 
+      // Get price (per-person or flat fee)
+      let basePrice = item.price;
+      const selectedVariantId = itemVariants[itemId];
+      if (selectedVariantId && item.variants && item.variants.length > 0) {
+        const variant = item.variants.find(v => v.id === selectedVariantId);
+        if (variant) basePrice = variant.price;
+      }
+
       // For flat-fee items (billed by consumption), don't multiply by guest count
       if (item.pricingType === 'flat_fee') {
-        return total + item.price * quantity;
+        return total + basePrice * quantity;
       }
 
       // For per-person items, multiply by guest count
-      return total + item.price * quantity * effectiveGuestCount;
+      return total + basePrice * quantity * effectiveGuestCount;
     }, 0);
   };
 
@@ -735,7 +743,8 @@ export function CustomMenuWizard() {
     setTempAddOns(defaultAddOns);
 
     // Set variant - use existing selection or default to first variant
-    setTempVariant(isAlreadySelected ? (itemVariants[item.id] || (item.variants?.[0]?.id || '')) : (item.variants?.[0]?.id || ''));
+    const defaultVariantId = item.variants?.[0]?.id || '';
+    setTempVariant(isAlreadySelected ? (itemVariants[item.id] || defaultVariantId) : defaultVariantId);
     setTempComment(isAlreadySelected ? (itemComments[item.id] || '') : '');
 
     // Set guest count - if category has guestCount enabled, use existing or total guest count
@@ -1672,7 +1681,9 @@ export function CustomMenuWizard() {
                                           <p className="text-primary" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
                                             {item.category === 'Beverages'
                                               ? `CHF ${item.price.toFixed(2)}/bottle`
-                                              : (item.variants && item.variants.length > 0 ? 'From ' : '') + `CHF ${item.price.toFixed(2)}`}
+                                              : (item.variants && item.variants.length > 0 && item.price === 0)
+                                                ? `From CHF ${item.variants[0].price.toFixed(2)}`
+                                                : (item.variants && item.variants.length > 0 ? 'From ' : '') + `CHF ${item.price.toFixed(2)}`}
                                           </p>
                                           <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
                                             {isConsumption(item) ? 'billed by consumption' :
@@ -3310,7 +3321,7 @@ export function CustomMenuWizard() {
                         {requiredGroups.length > 0 && (
                           <div className="mb-6">
                             <h4 className="text-foreground mb-4" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                              Included Items
+                              Choices
                             </h4>
                             <div className="space-y-6">
                               {requiredGroups.map((group) => (
@@ -3328,11 +3339,11 @@ export function CustomMenuWizard() {
                                           <div className="flex items-center gap-3 flex-1">
                                             <div className="relative flex items-center justify-center">
                                               <input
-                                                type="checkbox"
+                                                type="radio"
+                                                name={`choice-${group.id}`}
                                                 checked={isChecked}
                                                 onChange={() => toggleTempAddOn(addOn.id, group.id, group.maxSelect)}
-                                                disabled={true}
-                                                className={`appearance-none border-2 border-border transition-all w-5 h-5 rounded checked:bg-primary checked:border-primary opacity-50 cursor-not-allowed`}
+                                                className={`appearance-none border-2 border-border transition-all w-5 h-5 rounded-full checked:border-primary checked:border-[6px] cursor-pointer`}
                                               />
                                               {isChecked && (
                                                 <Check className="w-3 h-3 text-white absolute pointer-events-none" style={{ strokeWidth: 3 }} />
@@ -3359,7 +3370,7 @@ export function CustomMenuWizard() {
                         {optionalGroups.length > 0 && (
                           <div className="mb-6">
                             <h4 className="text-foreground mb-4" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                              Optional Add-ons
+                              Addons
                             </h4>
                             <div className="space-y-6">
                               {optionalGroups.map((group) => (
@@ -3379,7 +3390,7 @@ export function CustomMenuWizard() {
                                               <input
                                                 type="checkbox"
                                                 checked={isChecked}
-                                                onChange={() => toggleTempAddOn(addOn.id, group.id, 1)}
+                                                onChange={() => toggleTempAddOn(addOn.id, group.id, group.maxSelect)}
                                                 className={`appearance-none border-2 border-border transition-all cursor-pointer w-5 h-5 rounded checked:bg-primary checked:border-primary`}
                                               />
                                               {isChecked && (
@@ -3411,7 +3422,7 @@ export function CustomMenuWizard() {
                     detailsModalItem.addOns && detailsModalItem.addOns.length > 0 && (
                       <div className="mb-6">
                         <h4 className="text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                          Optional Add-ons
+                          Addons
                         </h4>
                         <div className="space-y-3">
                           {detailsModalItem.addOns.map((addOn) => {

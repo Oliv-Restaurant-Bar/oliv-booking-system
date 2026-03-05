@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth/server';
 import { db } from '@/lib/db';
-import { bookings, kitchenPdfLogs } from '@/lib/db/schema';
+import { bookings, kitchenPdfLogs, leads } from '@/lib/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { z } from 'zod';
+import { sendKitchenPdfEmail } from '@/lib/actions/email';
 
 // Validation schema
 const sendSchema = z.object({
   bookingId: z.string().uuid(),
   documentName: z.string(),
   sentBy: z.string(),
+  pdfBase64: z.string(),
+  emails: z.array(z.string().email()),
 });
 
 export async function POST(request: NextRequest) {
@@ -54,38 +57,32 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Get recipient emails from request body or use default kitchen email
-    const recipientEmails = body.emails || ['kitchen@oliv.com'];
+    // Get recipient emails from request body
+    const recipientEmails = body.emails;
 
-    // Here you would actually send the email
-    // For now, we'll just log it
-    // TODO: Integrate with your email service (e.g., ZeptoMail, Resend, etc.)
-
-    const sentAt = new Date();
-
-    // Log the send
-    const logId = `kpl-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-    await db.insert(kitchenPdfLogs).values({
-      id: logId,
+    // Send the email with the PDF attachment
+    const emailResult = await sendKitchenPdfEmail({
       bookingId,
+      recipientEmails,
       documentName,
-      sentAt,
-      sentBy: sentBy || session.user.name || 'Admin',
-      recipientEmail: recipientEmails.join(', '),
-      status: 'sent',
-      idempotencyKey: idempotencyKey || null,
+      pdfBase64: body.pdfBase64,
+      customerName: booking.leadId ? (await db.query.leads.findFirst({ where: eq(leads.id, booking.leadId) }))?.contactName || "Customer" : "Customer",
+      eventDate: (booking.eventDate as any) instanceof Date
+        ? (booking.eventDate as unknown as Date).toLocaleDateString('de-CH')
+        : String(booking.eventDate),
     });
 
-    // Update booking with kitchen PDF status
-    // Note: You might need to add kitchenPdfStatus field to your bookings table
-    // For now, we'll just return success
+    if (!emailResult.success) {
+      throw new Error(emailResult.error || 'Failed to send kitchen PDF email');
+    }
+
+    const sentAt = new Date();
 
     return NextResponse.json({
       success: true,
       documentName,
       sentAt,
-      messageId: logId,
+      messageId: "sent",
       kitchenEmail: recipientEmails.join(', '),
     });
 

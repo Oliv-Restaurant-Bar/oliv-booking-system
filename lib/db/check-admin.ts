@@ -1,6 +1,6 @@
 import { config } from "dotenv";
-// Try loading from .env.local first, then fall back to .env
-config({ path: ".env.local" });
+// Try loading from .env first, then fall back to .env
+config({ path: ".env" });
 if (!process.env.DATABASE_URL) {
   config();
 }

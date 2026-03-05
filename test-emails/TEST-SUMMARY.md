@@ -130,7 +130,7 @@ Feedback URL: "https://oliv-restaurant.ch/feedback"
 - Generate API token
 
 ### 4. Configure Environment
-- Add credentials to `.env.local`:
+- Add credentials to `.env`:
   ```env
   ZEPTOMAIL_API_TOKEN="your-token"
   ZEPTOMAIL_FROM_EMAIL="bookings@oliv-restaurant.ch"

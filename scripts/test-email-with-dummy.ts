@@ -105,6 +105,8 @@ async function generateTestEmails() {
       isLocked: false,
       lockedBy: null as string | null,
       lockedAt: null as Date | null,
+      assignedTo: null as string | null,
+      kitchenNotes: "",
       lead: {
         id: "test-lead-id",
         contactName: "Max Mustermann",
@@ -163,6 +165,8 @@ async function generateTestEmails() {
       isLocked: false,
       lockedBy: null as string | null,
       lockedAt: null as Date | null,
+      assignedTo: null as string | null,
+      kitchenNotes: "",
       lead: {
         id: "test-lead-id-2",
         contactName: "Sarah Schweizer",
@@ -221,6 +225,8 @@ async function generateTestEmails() {
       isLocked: false,
       lockedBy: null as string | null,
       lockedAt: null as Date | null,
+      assignedTo: null as string | null,
+      kitchenNotes: "",
       lead: {
         id: "test-lead-id-3",
         contactName: "Peter Müller",
@@ -278,6 +284,8 @@ async function generateTestEmails() {
       isLocked: false,
       lockedBy: null as string | null,
       lockedAt: null as Date | null,
+      assignedTo: null as string | null,
+      kitchenNotes: "",
       lead: {
         id: "test-lead-id-4",
         contactName: "Anna Andrea",
@@ -335,6 +343,8 @@ async function generateTestEmails() {
       isLocked: false,
       lockedBy: null as string | null,
       lockedAt: null as Date | null,
+      assignedTo: null as string | null,
+      kitchenNotes: "",
       lead: {
         id: "test-lead-id-5",
         contactName: "Thomas Weber",
@@ -393,6 +403,8 @@ async function generateTestEmails() {
       isLocked: false,
       lockedBy: null as string | null,
       lockedAt: null as Date | null,
+      assignedTo: null as string | null,
+      kitchenNotes: "",
       lead: {
         id: "test-lead-id-6",
         contactName: "Julia Jenkins",
@@ -449,6 +461,8 @@ async function generateTestEmails() {
       isLocked: false,
       lockedBy: null as string | null,
       lockedAt: null as Date | null,
+      assignedTo: null as string | null,
+      kitchenNotes: "",
       lead: {
         id: "test-lead-id-7",
         contactName: "Marco Marco",

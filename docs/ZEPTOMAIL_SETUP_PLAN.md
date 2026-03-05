@@ -38,7 +38,7 @@ You'll need these values for the setup:
 ## Phase 2: Implementation Plan (After you get the keys)
 
 ### 2.1 Environment Configuration
-Create/update `.env.local` file with:
+Create/update `.env` file with:
 ```env
 # ZeptoMail Configuration
 ZEPTOMAIL_API_TOKEN=your-token-here
@@ -168,7 +168,7 @@ For each booking status change, verify correct email is sent:
 
 Once you have the ZeptoMail credentials:
 
-1. **Reply with your credentials** (I'll help you set up `.env.local`)
+1. **Reply with your credentials** (I'll help you set up `.env`)
 2. **Answer the questions above** (for customization)
 3. **I'll implement the complete email system** following this plan
 

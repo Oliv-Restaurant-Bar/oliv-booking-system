@@ -1,11 +1,12 @@
 'use server';
 
 import { db } from "@/lib/db";
-import { bookings, bookingItems, bookingContactHistory, emailLogs, leads, menuItems } from "@/lib/db/schema";
+import { bookings, bookingItems, bookingContactHistory, emailLogs, leads, menuItems, adminUser } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
 import {
+  sendAssignmentNotification,
   sendThankYouEmail,
   sendBookingConfirmation,
   sendBookingCancellation,
@@ -37,6 +38,8 @@ export interface CreateBookingInput {
   requiresDeposit?: boolean;
   internalNotes?: string;
   location?: string;
+  assignedTo?: string;
+  kitchenNotes?: string;
 }
 
 export async function createBooking(input: CreateBookingInput & { leadEmail?: string; leadName?: string }) {
@@ -57,6 +60,7 @@ export async function createBooking(input: CreateBookingInput & { leadEmail?: st
       status: "pending",
       location: input.location,
       internalNotes: input.internalNotes,
+      assignedTo: input.assignedTo,
       isLocked: false, // Bookings are unlocked by default - admin can lock to prevent client edits
     })
       .returning();
@@ -268,8 +272,11 @@ export async function updateBooking(
   auditContext?: AuditContext
 ) {
   try {
-    // Require EDIT_BOOKING permission
-    await requirePermissionWrapper(Permission.EDIT_BOOKING);
+    // Only require EDIT_BOOKING permission for admin edits
+    // Client edits (actorType: "client") are allowed without authentication
+    if (auditContext?.actorType !== "client") {
+      await requirePermissionWrapper(Permission.EDIT_BOOKING);
+    }
 
     console.log('\n========================================');
     console.log('🔄 UPDATE BOOKING FUNCTION START');
@@ -337,10 +344,19 @@ export async function updateBooking(
       updateData.location = updates.location;
       console.log('  → Updating location:', updates.location);
     }
+    if (updates.assignedTo !== undefined) {
+      updateData.assignedTo = updates.assignedTo;
+      console.log('  → Updating assignedTo:', updates.assignedTo);
+    }
     if (updates.internalNotes !== undefined) {
       updateData.internalNotes = updates.internalNotes;
       console.log('  → Updating internalNotes');
     }
+    if (updates.kitchenNotes !== undefined) {
+      updateData.kitchenNotes = updates.kitchenNotes;
+      console.log('  → Updating kitchenNotes:', updates.kitchenNotes);
+    }
+
 
     console.log('\n🔧 Executing UPDATE query...');
     console.log('   WHERE id =', id);
@@ -424,6 +440,47 @@ export async function updateBooking(
 
     console.log('✅ UPDATE BOOKING FUNCTION COMPLETE');
     console.log('========================================\n');
+
+    // Trigger assignment notification if assignedTo changed
+    if (updates.assignedTo && updates.assignedTo !== currentBooking.assignedTo) {
+      try {
+        // Fetch assigned user details
+        const [assignedAdmin] = await db
+          .select()
+          .from(adminUser)
+          .where(eq(adminUser.id, updates.assignedTo))
+          .limit(1);
+
+        if (assignedAdmin && assignedAdmin.email) {
+          // Fetch customer name (lead info)
+          const [bookingWithLead] = await db
+            .select()
+            .from(bookings)
+            .where(eq(bookings.id, id))
+            .leftJoin(leads, eq(bookings.leadId, leads.id))
+            .limit(1);
+
+          if (bookingWithLead) {
+            const customerName = bookingWithLead.leads?.contactName || "Customer";
+            const eventDate = (booking.eventDate as any) instanceof Date
+              ? (booking.eventDate as unknown as Date).toLocaleDateString('de-CH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+              : String(booking.eventDate);
+
+            console.log(`📧 Sending assignment notification to: ${assignedAdmin.email}`);
+            await sendAssignmentNotification({
+              bookingId: id,
+              adminEmail: assignedAdmin.email,
+              adminName: assignedAdmin.name || "Admin",
+              customerName: customerName,
+              eventDate: eventDate,
+              eventTime: booking.eventTime || "TBD",
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Error sending assignment notification:", err);
+      }
+    }
 
     return { success: true, data: booking };
   } catch (error) {
@@ -868,6 +925,12 @@ export async function getBookingWithEditSecret(bookingId: string) {
  * @param bookingId - The booking ID
  * @returns Booking with audit history
  */
+/**
+ * Get a booking with audit history
+ *
+ * @param bookingId - The booking ID
+ * @returns Booking with audit history
+ */
 export async function getBookingWithAudit(bookingId: string) {
   try {
     // Require VIEW_BOOKING_DETAILS permission
@@ -895,6 +958,85 @@ export async function getBookingWithAudit(bookingId: string) {
     };
   } catch (error) {
     console.error("Error fetching booking with audit:", error);
+    return { success: false, error: "Failed to fetch booking", data: null };
+  }
+}
+
+/**
+ * Get booking details for CLIENT edit access
+ * Does NOT require authentication - only the booking secret is validated by the caller
+ * This is used by the client edit endpoint where users access their bookings via secret link
+ *
+ * @param bookingId - The booking ID
+ * @returns Booking with full details for client editing
+ */
+export async function getBookingForClientEdit(bookingId: string) {
+  try {
+    // NO authentication required - secret is validated by the API route before calling this
+    const [booking] = await db.select().from(bookings).where(eq(bookings.id, bookingId)).limit(1);
+
+    if (!booking) {
+      return { success: false, error: "Booking not found", data: null };
+    }
+
+    // Get lead information
+    const lead = booking.leadId ? await db.select().from(leads).where(eq(leads.id, booking.leadId)).limit(1) : null;
+
+    // Get booking items
+    const items = await db.select().from(bookingItems).where(eq(bookingItems.bookingId, bookingId));
+
+    // Parse internalNotes to extract business, address, and occasion
+    let businessName = '';
+    let occasion = '';
+    let street = '';
+    let plz = '';
+    let location = '';
+
+    if (booking.internalNotes) {
+      const lines = booking.internalNotes.split('\n');
+      for (const line of lines) {
+        if (line.startsWith('Business: ')) {
+          businessName = line.replace('Business: ', '');
+        } else if (line.startsWith('Occasion: ')) {
+          occasion = line.replace('Occasion: ', '');
+        } else if (line.startsWith('Address: ')) {
+          const address = line.replace('Address: ', '');
+          const addressParts = address.split(', ');
+          if (addressParts.length >= 2) {
+            street = addressParts[0];
+            const plzLocation = addressParts.slice(1).join(', ');
+            const plzMatch = plzLocation.match(/^(\d{4,5})\s+(.+)$/);
+            if (plzMatch) {
+              plz = plzMatch[1];
+              location = plzMatch[2];
+            } else {
+              location = plzLocation;
+            }
+          }
+        }
+      }
+    }
+
+    return {
+      success: true,
+      data: {
+        id: booking.id,
+        eventDate: booking.eventDate,
+        eventTime: booking.eventTime,
+        guestCount: booking.guestCount,
+        allergyDetails: booking.allergyDetails,
+        specialRequests: booking.specialRequests,
+        businessName,
+        occasion,
+        street,
+        plz,
+        location,
+        lead: lead && lead[0] ? lead[0] : null,
+        booking_items: items,
+      }
+    };
+  } catch (error) {
+    console.error("Error fetching booking for client edit:", error);
     return { success: false, error: "Failed to fetch booking", data: null };
   }
 }

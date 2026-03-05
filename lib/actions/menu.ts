@@ -121,6 +121,7 @@ export async function createMenuItem(input: {
   isVegan?: boolean;
   isGlutenFree?: boolean;
   sortOrder?: number;
+  variants?: any[];
 }) {
   try {
     // Require CREATE_MENU_ITEM permission
@@ -133,6 +134,7 @@ export async function createMenuItem(input: {
         ...input,
         pricePerPerson: input.pricePerPerson.toString(),
         pricingType: input.pricingType || "per_person",
+        variants: input.variants as any,
         isActive: true,
       })
       .returning();
@@ -156,6 +158,7 @@ export async function updateMenuItem(id: string, updates: Partial<typeof menuIte
       .set({
         ...updates,
         pricePerPerson: updates.pricePerPerson?.toString(),
+        variants: (updates as any).variants,
         updatedAt: new Date(),
       })
       .where(eq(menuItems.id, id))

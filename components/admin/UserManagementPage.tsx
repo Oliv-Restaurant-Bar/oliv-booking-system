@@ -240,21 +240,6 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
   return (
     <div className="min-h-full bg-background px-4 md:px-8 pt-6 pb-1 flex flex-col">
       <div className="w-full flex-1">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-foreground" style={{ fontSize: 'var(--text-h1)', fontWeight: 'var(--font-weight-semibold)' }}>
-            Users
-          </h1>
-          <button
-            onClick={fetchUsers}
-            disabled={loading}
-            className="p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer"
-            title="Refresh"
-          >
-            <RefreshCw className={`w-5 h-5 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
-          </button>
-        </div>
-
         {/* Error Message */}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center justify-between">
@@ -315,6 +300,15 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
                   Add User
                 </Button>
               )}
+              <Button
+                variant="secondary"
+                onClick={fetchUsers}
+                disabled={loading}
+                className="sm:w-auto"
+                title="Refresh"
+              >
+                Refresh
+              </Button>
             </div>
           </div>
         </div>

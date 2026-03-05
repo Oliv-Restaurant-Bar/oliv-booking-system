@@ -1,0 +1,2 @@
+ALTER TABLE "bookings" ADD COLUMN "assigned_to" text;--> statement-breakpoint
+ALTER TABLE "bookings" ADD CONSTRAINT "bookings_assigned_to_admin_user_id_fk" FOREIGN KEY ("assigned_to") REFERENCES "public"."admin_user"("id") ON DELETE no action ON UPDATE no action;

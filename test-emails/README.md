@@ -107,7 +107,7 @@ Telefon: +41 XX XXX XX XX            // ← Your phone
 1. ✅ **Review all test emails** (open HTML files)
 2. ✅ **Update account details** in templates
 3. ✅ **Get ZeptoMail credentials** from https://zeptomail.com/
-4. ✅ **Add credentials to .env.local**
+4. ✅ **Add credentials to .env**
 5. ✅ **Test with real API:** `npm run email:test`
 
 ---

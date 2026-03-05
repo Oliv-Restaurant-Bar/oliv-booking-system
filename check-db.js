@@ -1,6 +1,6 @@
 // Load environment variables before importing anything
 import { config } from "dotenv";
-config({ path: ".env.local" });
+config({ path: ".env" });
 if (!process.env.DATABASE_URL) {
   config();
 }

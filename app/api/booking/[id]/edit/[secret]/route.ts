@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { updateBooking, getBookingWithDetails } from "@/lib/actions/bookings";
+import { updateBooking, getBookingForClientEdit } from "@/lib/actions/bookings";
 import { canClientEditBooking } from "@/lib/booking-security";
 import type { AuditContext } from "@/lib/booking-audit";
 
@@ -16,7 +16,8 @@ export async function GET(
     const { id, secret } = await params;
 
     // Get the booking with full details (lead and booking_items)
-    const bookingResult = await getBookingWithDetails(id);
+    // NO authentication required - only secret validation
+    const bookingResult = await getBookingForClientEdit(id);
 
     if (!bookingResult.success || !bookingResult.data) {
       return NextResponse.json(

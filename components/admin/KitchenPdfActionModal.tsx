@@ -3,20 +3,12 @@
 import { useState } from 'react';
 import { Mail, Download, Users, X, Loader2, CheckSquare, ChevronLeft, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface AdminUser {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-}
+import { jsPDF } from 'jspdf';
 
 interface KitchenPdfActionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onActionComplete: (action: 'admin' | 'external' | 'download', data?: { emails?: string[]; notes?: string }) => void;
-  adminUsers?: AdminUser[];
-  isLoadingUsers?: boolean;
+  onActionComplete: (action: 'email' | 'download', data?: { emails?: string[]; notes?: string }) => void;
   booking: {
     id: string;
     customer: {
@@ -37,27 +29,18 @@ interface KitchenPdfActionModalProps {
     }>;
     allergies?: string;
     notes?: string;
+    kitchenNotes?: string;
   };
 }
-
-// Default admin users if none provided
-const DEFAULT_ADMIN_USERS: AdminUser[] = [
-  { id: '1', name: 'Chef Manager', email: 'chef@oliv.com', role: 'Kitchen Manager' },
-  { id: '2', name: 'Sous Chef', email: 'sous@oliv.com', role: 'Sous Chef' },
-  { id: '3', name: 'Kitchen Staff', email: 'kitchen@oliv.com', role: 'Kitchen Staff' },
-];
 
 export function KitchenPdfActionModal({
   isOpen,
   onClose,
   onActionComplete,
-  adminUsers = DEFAULT_ADMIN_USERS,
-  isLoadingUsers = false,
   booking
 }: KitchenPdfActionModalProps) {
-  const [expandedSection, setExpandedSection] = useState<'admin' | 'external' | null>(null);
+  const [expandedSection, setExpandedSection] = useState<'email' | null>(null);
   const [externalEmails, setExternalEmails] = useState('');
-  const [selectedAdminUsers, setSelectedAdminUsers] = useState<Set<string>>(new Set());
   const [isProcessing, setIsProcessing] = useState(false);
 
   if (!isOpen) return null;
@@ -66,77 +49,234 @@ export function KitchenPdfActionModal({
   const shortId = booking.id.slice(-8);
   const documentName = `Booking #${shortId} – Kitchen Sheet`;
 
-  const toggleSection = (section: 'admin' | 'external') => {
+  const toggleSection = (section: 'email') => {
     setExpandedSection(prev => prev === section ? null : section);
   };
 
-  const toggleAdminUser = (userId: string) => {
-    const newSelection = new Set(selectedAdminUsers);
-    if (newSelection.has(userId)) {
-      newSelection.delete(userId);
-    } else {
-      newSelection.add(userId);
-    }
-    setSelectedAdminUsers(newSelection);
-  };
 
-  const selectAllAdminUsers = () => {
-    if (selectedAdminUsers.size === adminUsers.length) {
-      setSelectedAdminUsers(new Set());
-    } else {
-      setSelectedAdminUsers(new Set(adminUsers.map(u => u.id)));
-    }
-  };
+  const generatePdf = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 20;
+    const contentWidth = pageWidth - (margin * 2);
+    let yPos = 0;
 
-  const generatePdfContent = () => {
+    // --- Helper for Rects and Backgrounds ---
+    const drawHeader = () => {
+      // Primary Header Bar
+      doc.setFillColor(15, 23, 42); // slate-900
+      doc.rect(0, 0, pageWidth, 40, 'F');
+
+      doc.setFontSize(24);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.text("KITCHEN SHEET", margin, 20);
+
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(148, 163, 184); // slate-400
+      doc.text(`Document: ${documentName}`, margin, 32);
+
+      doc.setFontSize(10);
+      doc.setTextColor(255, 255, 255);
+      doc.text("FOR INTERNAL KITCHEN USE", pageWidth - margin, 18, { align: 'right' });
+
+      yPos = 55;
+    };
+
+    drawHeader();
+
+    // --- Two Column Info Section ---
+    doc.setFontSize(14);
+    doc.setTextColor(15, 23, 42);
+    doc.setFont("helvetica", "bold");
+
+    // Left Column: Customer
+    doc.text("CUSTOMER DETAILS", margin, yPos);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    yPos += 8;
+    doc.text(`Name: ${booking.customer.name}`, margin + 5, yPos);
+    yPos += 6;
+    doc.text(`Guests: ${booking.guests}`, margin + 5, yPos);
+
+    // Right Column: Event (Reset yPos for same row)
+    const rightColX = pageWidth / 2 + 5;
+    let eventYPos = yPos - 14;
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("EVENT DETAILS", rightColX, eventYPos);
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    eventYPos += 8;
+    doc.text(`Date: ${booking.event.date}`, rightColX + 5, eventYPos);
+    eventYPos += 6;
+    doc.text(`Time: ${booking.event.time}`, rightColX + 5, eventYPos);
+    eventYPos += 6;
+    doc.text(`Occasion: ${booking.event.occasion}`, rightColX + 5, eventYPos);
+    if (booking.event.location) {
+      eventYPos += 6;
+      doc.text(`Location: ${booking.event.location}`, rightColX + 5, eventYPos);
+    }
+
+    yPos = Math.max(yPos, eventYPos) + 15;
+
+    // --- Menu Selection Table ---
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("MENU SELECTION", margin, yPos);
+
+    yPos += 10;
+
+    // Table Header
+    doc.setFillColor(241, 245, 249); // slate-100
+    doc.rect(margin, yPos - 6, contentWidth, 10, 'F');
+
+    doc.setFontSize(9);
+    doc.setTextColor(71, 85, 105); // slate-600
+    doc.setFont("helvetica", "bold");
+    doc.text("ITEM NAME", margin + 2, yPos);
+    doc.text("CATEGORY", margin + 85, yPos);
+    doc.text("QTY", margin + 135, yPos);
+    doc.text("STATUS", margin + 155, yPos);
+
+    yPos += 8;
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+
     const menuItems = booking.menuItems || [];
+    if (menuItems.length > 0) {
+      menuItems.forEach((item, index) => {
+        // Page break logic
+        if (yPos > 260) {
+          doc.addPage();
+          drawHeader();
+          yPos += 10;
+          // Re-draw table header on new page
+          doc.setFillColor(241, 245, 249);
+          doc.rect(margin, yPos - 6, contentWidth, 10, 'F');
+          doc.setFontSize(9);
+          doc.setTextColor(71, 85, 105);
+          doc.setFont("helvetica", "bold");
+          doc.text("ITEM NAME", margin + 2, yPos);
+          doc.text("CATEGORY", margin + 85, yPos);
+          doc.text("QTY", margin + 135, yPos);
+          doc.text("STATUS", margin + 155, yPos);
+          yPos += 10;
+          doc.setTextColor(15, 23, 42);
+          doc.setFontSize(10);
+          doc.setFont("helvetica", "normal");
+        }
 
-    return `
-KITCHEN SHEET - ${documentName}
-=====================================
+        doc.text(item.item, margin + 2, yPos);
+        doc.text(item.category, margin + 85, yPos);
+        doc.text(String(item.quantity), margin + 135, yPos);
 
-CUSTOMER: ${booking.customer.name}
+        // Checkbox box (Now at the end)
+        doc.setDrawColor(203, 213, 225); // slate-300
+        doc.rect(margin + 158, yPos - 4, 4, 4);
 
-EVENT DETAILS
-==============
-Date: ${booking.event.date}
-Time: ${booking.event.time}
-Occasion: ${booking.event.occasion}
-${booking.event.location ? `Location: ${booking.event.location}` : ''}
-Guests: ${booking.guests}
+        // Row separator
+        doc.setDrawColor(241, 245, 249);
+        doc.line(margin, yPos + 2, margin + contentWidth, yPos + 2);
 
-MENU ITEMS
-===========
-${menuItems.length > 0
-        ? menuItems.map(item => `${item.item} (${item.category}) - ${item.quantity} - ${item.price}`).join('\n')
-        : 'No menu items specified'
-      }
+        yPos += 8;
+      });
+    } else {
+      doc.setFont("helvetica", "italic");
+      doc.text("No menu items specified", margin + 5, yPos);
+      yPos += 8;
+    }
 
-ALLERGIES & DIETARY NOTES
-==========================
-${booking.allergies || 'None specified'}
+    yPos += 12;
 
-ADDITIONAL NOTES
-================
-${booking.notes || 'None'}
+    // --- Allergies Section ---
+    if (yPos > 240) { doc.addPage(); drawHeader(); yPos += 10; }
 
-Generated: ${new Date().toLocaleString()}
-    `.trim();
+    // Warning background for allergies
+    doc.setFillColor(254, 242, 242); // red-50
+    const allergyLines = doc.splitTextToSize(booking.allergies || 'None specified', contentWidth - 10);
+    const allergyBoxHeight = (allergyLines.length * 6) + 15;
+
+    doc.setDrawColor(252, 165, 165); // red-300
+    doc.rect(margin, yPos - 6, contentWidth, allergyBoxHeight, 'F');
+    doc.rect(margin, yPos - 6, contentWidth, allergyBoxHeight, 'S');
+
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(185, 28, 28); // red-700
+    doc.text("ALLERGIES & DIETARY NOTES", margin + 5, yPos + 2);
+
+    yPos += 10;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(153, 27, 27); // red-800
+    doc.text(allergyLines, margin + 8, yPos);
+
+    yPos += allergyBoxHeight - 5;
+
+    // --- Additional Notes ---
+    if (yPos > 240) { doc.addPage(); drawHeader(); yPos += 10; }
+    yPos += 10;
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text("ADDITIONAL NOTES", margin, yPos);
+
+    yPos += 8;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    const noteLines = doc.splitTextToSize(booking.notes || 'None', contentWidth - margin);
+    doc.text(noteLines, margin + 5, yPos);
+
+    // --- Kitchen Notes Section ---
+    if (booking.kitchenNotes) {
+      yPos += (noteLines.length * 6) + 10;
+      if (yPos > 240) { doc.addPage(); drawHeader(); yPos += 10; }
+
+      doc.setFontSize(13);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(15, 23, 42);
+      doc.text("NOTES FOR KITCHEN TEAM", margin, yPos);
+
+      yPos += 8;
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      const kitchenNoteLines = doc.splitTextToSize(booking.kitchenNotes, contentWidth - margin);
+
+      // Highlight background for kitchen notes
+      doc.setFillColor(248, 250, 252); // slate-50
+      doc.rect(margin, yPos - 4, contentWidth, (kitchenNoteLines.length * 6) + 8, 'F');
+
+      doc.setTextColor(51, 65, 85); // slate-700
+      doc.text(kitchenNoteLines, margin + 5, yPos + 2);
+    }
+
+    // --- Footer & Page Numbering ---
+    const totalPages = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(148, 163, 184);
+      doc.text(
+        `Generated on ${new Date().toLocaleString('de-CH')} | Page ${i} of ${totalPages} | Oliv Booking System`,
+        pageWidth / 2,
+        pageHeight - 10,
+        { align: 'center' }
+      );
+    }
+
+    return doc;
   };
 
   const handleDownload = async () => {
     setIsProcessing(true);
     try {
-      const pdfContent = generatePdfContent();
-      const blob = new Blob([pdfContent], { type: 'text/plain' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${documentName}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+      const doc = generatePdf();
+      doc.save(`${documentName}.pdf`);
 
       onActionComplete('download');
       setTimeout(() => {
@@ -150,32 +290,27 @@ Generated: ${new Date().toLocaleString()}
     }
   };
 
-  const handleSubmit = async (action: 'admin' | 'external') => {
+  const handleSubmit = async (action: 'email') => {
     setIsProcessing(true);
     try {
       let emails: string[] = [];
-      if (action === 'admin') {
-        if (selectedAdminUsers.size === 0) {
-          alert('Please select at least one team member');
-          setIsProcessing(false);
-          return;
-        }
-        emails = adminUsers.filter(u => selectedAdminUsers.has(u.id)).map(u => u.email);
-      } else if (action === 'external') {
-        if (!externalEmails.trim()) {
-          alert('Please enter at least one email address');
-          setIsProcessing(false);
-          return;
-        }
-        emails = externalEmails.split(',').map(e => e.trim()).filter(e => e);
-        if (emails.length === 0) {
-          alert('Please enter a valid email address');
-          setIsProcessing(false);
-          return;
-        }
+      if (!externalEmails.trim()) {
+        alert('Please enter at least one email address');
+        setIsProcessing(false);
+        return;
+      }
+      emails = externalEmails.split(',').map(e => e.trim()).filter(e => e);
+      if (emails.length === 0) {
+        alert('Please enter a valid email address');
+        setIsProcessing(false);
+        return;
       }
 
-      // Persist the send log to the database
+      // Generate PDF as Base64 for sending
+      const doc = generatePdf();
+      const pdfBase64 = doc.output('datauristring');
+
+      // Persist the send log and trigger email via API
       const response = await fetch('/api/kitchen-pdf/send', {
         method: 'POST',
         headers: {
@@ -187,14 +322,15 @@ Generated: ${new Date().toLocaleString()}
           documentName,
           sentBy: 'Admin',
           emails,
+          pdfBase64,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to log kitchen PDF send');
+        throw new Error('Failed to send kitchen PDF');
       }
 
-      onActionComplete(action, { emails });
+      onActionComplete('download', { emails });
       setTimeout(() => {
         onClose();
       }, 500);
@@ -241,88 +377,13 @@ Generated: ${new Date().toLocaleString()}
                 Select destination for this document:
               </p>
 
-              {/* Admin Accordion */}
+              {/* Email Sharing Accordion */}
               <div className="relative">
                 <button
-                  onClick={() => toggleSection('admin')}
+                  onClick={() => toggleSection('email')}
                   className={cn(
                     "w-full p-4 bg-background border rounded-xl transition-all duration-200 cursor-pointer flex items-center gap-4 text-left group",
-                    expandedSection === 'admin' ? "border-primary shadow-sm" : "border-border/60 hover:border-primary/50 hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.08)]"
-                  )}
-                  disabled={isProcessing}
-                >
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:scale-105 group-hover:bg-primary/15 transition-all duration-200 text-primary">
-                    <Users className="w-6 h-6" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-foreground font-semibold mb-0.5">Kitchen Staff</div>
-                    <div className="text-muted-foreground text-sm">Send to internal team members</div>
-                  </div>
-                  <ChevronLeft className={cn("w-5 h-5 text-muted-foreground transition-transform duration-200", expandedSection === 'admin' ? "-rotate-90" : "rotate-180")} />
-                </button>
-
-                {expandedSection === 'admin' && (
-                  <div className="mt-3 p-4 bg-muted/20 border border-border/50 rounded-xl space-y-4">
-                    {isLoadingUsers ? (
-                      <div className="flex flex-col items-center justify-center py-8 space-y-3">
-                        <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                        <p className="text-sm text-muted-foreground animate-pulse">Fetching team members...</p>
-                      </div>
-                    ) : (
-                      <>
-                        {adminUsers.length === 0 ? (
-                          <div className="text-center py-6 text-muted-foreground text-sm">
-                            No team members found.
-                          </div>
-                        ) : (
-                          <div className="space-y-2 border border-border/50 rounded-xl p-1.5 bg-background max-h-[180px] overflow-y-auto">
-                            {adminUsers.map((user) => (
-                              <button
-                                key={user.id}
-                                onClick={() => toggleAdminUser(user.id)}
-                                className={cn(
-                                  "w-full px-3 py-2.5 rounded-lg transition-all duration-200 flex items-center gap-3 cursor-pointer group text-left",
-                                  selectedAdminUsers.has(user.id) ? "bg-muted/50 shadow-sm border border-border" : "hover:bg-black/5 border border-transparent"
-                                )}
-                              >
-                                <div className={cn(
-                                  "w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-colors",
-                                  selectedAdminUsers.has(user.id) ? "bg-primary text-primary-foreground" : "border border-muted-foreground/30 text-transparent group-hover:border-muted-foreground/50"
-                                )}>
-                                  <CheckSquare className="w-3.5 h-3.5 opacity-100" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className={cn("text-sm transition-colors truncate", selectedAdminUsers.has(user.id) ? "text-foreground font-medium" : "text-muted-foreground")}>{user.name}</div>
-                                  <div className="text-muted-foreground/70 text-xs truncate">{user.email}</div>
-                                </div>
-                                <div className="text-[11px] font-medium text-muted-foreground bg-black/5 dark:bg-white/10 px-2 py-0.5 rounded-full whitespace-nowrap">
-                                  {user.role}
-                                </div>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </>
-                    )}
-                    <button
-                      onClick={() => handleSubmit('admin')}
-                      disabled={isProcessing || selectedAdminUsers.size === 0}
-                      className="w-full py-2.5 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/95 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
-                    >
-                      {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                      Send to Selected
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* External User Accordion */}
-              <div className="relative">
-                <button
-                  onClick={() => toggleSection('external')}
-                  className={cn(
-                    "w-full p-4 bg-background border rounded-xl transition-all duration-200 cursor-pointer flex items-center gap-4 text-left group",
-                    expandedSection === 'external' ? "border-purple-500 shadow-sm" : "border-border/60 hover:border-purple-500/50 hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.08)]"
+                    expandedSection === 'email' ? "border-purple-500 shadow-sm" : "border-border/60 hover:border-purple-500/50 hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.08)]"
                   )}
                   disabled={isProcessing}
                 >
@@ -330,13 +391,13 @@ Generated: ${new Date().toLocaleString()}
                     <Mail className="w-6 h-6" />
                   </div>
                   <div className="flex-1">
-                    <div className="text-foreground font-semibold mb-0.5">External User</div>
-                    <div className="text-muted-foreground text-sm">Send to specific email addresses</div>
+                    <div className="text-foreground font-semibold mb-0.5">Share via Email</div>
+                    <div className="text-muted-foreground text-sm">Send sheet directly to any email address</div>
                   </div>
-                  <ChevronLeft className={cn("w-5 h-5 text-muted-foreground transition-transform duration-200", expandedSection === 'external' ? "-rotate-90" : "rotate-180")} />
+                  <ChevronLeft className={cn("w-5 h-5 text-muted-foreground transition-transform duration-200", expandedSection === 'email' ? "-rotate-90" : "rotate-180")} />
                 </button>
 
-                {expandedSection === 'external' && (
+                {expandedSection === 'email' && (
                   <div className="mt-3 p-4 bg-muted/20 border border-border/50 rounded-xl space-y-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-foreground">Recipient Emails</label>
@@ -354,7 +415,7 @@ Generated: ${new Date().toLocaleString()}
                       </div>
                     </div>
                     <button
-                      onClick={() => handleSubmit('external')}
+                      onClick={() => handleSubmit('email')}
                       disabled={isProcessing || !externalEmails.trim()}
                       className="w-full py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
                     >

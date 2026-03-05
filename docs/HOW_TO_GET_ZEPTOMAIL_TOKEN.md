@@ -42,7 +42,7 @@ ztok-a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0
 ```
 
 ### 6. Add to Your Environment
-Edit `.env.local`:
+Edit `.env`:
 
 ```env
 # ZeptoMail API Token (NOT SMTP!)
@@ -100,7 +100,7 @@ ZEPTOMAIL_FROM_EMAIL="bookings@oliv-restaurant.ch"
 Once you have the token, test it:
 
 ```bash
-# Add token to .env.local first!
+# Add token to .env first!
 npm run email:test
 ```
 
@@ -108,7 +108,7 @@ This will send a test email using your API token.
 
 ## 🔒 Security Best Practices
 
-1. **Never commit `.env.local`** to git
+1. **Never commit `.env`** to git
 2. **Use environment-specific tokens:**
    - Development token for testing
    - Production token for live site
@@ -150,7 +150,7 @@ curl "https://api.zeptomail.com/v1.1/email" \
 ✅ We use **ZeptoMail SendMail API** (npm package: `zeptomail`)
 ✅ You need an **API Token** (not SMTP credentials)
 ✅ Get token from: ZeptoMail Dashboard → Settings → API Keys
-✅ Add to `.env.local` as `ZEPTOMAIL_API_TOKEN`
+✅ Add to `.env` as `ZEPTOMAIL_API_TOKEN`
 ✅ Test with: `npm run email:test`
 
 ---

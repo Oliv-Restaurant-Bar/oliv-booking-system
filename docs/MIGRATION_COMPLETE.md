@@ -40,7 +40,7 @@ The guide includes:
 - ✅ Conditional logic (deposits, etc.)
 - ✅ German content ready to use
 
-### Step 2: Add to `.env.local`
+### Step 2: Add to `.env`
 
 ```env
 # Enable template mode
@@ -182,7 +182,7 @@ USE_ZEPTOMAIL_TEMPLATES=false
 # or just remove this line
 ```
 
-**Restart your dev server** after changing `.env.local`!
+**Restart your dev server** after changing `.env`!
 
 ---
 
@@ -239,7 +239,7 @@ await sendBookingConfirmation({
 
 1. ✅ Read `ZEPTOMAIL_TEMPLATES_SETUP.md`
 2. ✅ Create templates in ZeptoMail dashboard
-3. ✅ Add environment variables to `.env.local`
+3. ✅ Add environment variables to `.env`
 4. ✅ Test with a real booking
 5. ✅ Verify emails use dashboard templates
 
@@ -272,7 +272,7 @@ await sendBookingConfirmation({
 ### Templates Not Working?
 
 1. Check `USE_ZEPTOMAIL_TEMPLATES=true`
-2. Restart dev server after changing `.env.local`
+2. Restart dev server after changing `.env`
 3. Verify template names match exactly
 4. Check ZeptoMail dashboard for template errors
 5. Check browser console for errors

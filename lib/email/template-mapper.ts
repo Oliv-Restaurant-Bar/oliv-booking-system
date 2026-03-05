@@ -298,10 +298,37 @@ export function getUnlockDeclinedTemplateData(
 }
 
 /**
+ * Prepare template data for assignment notification (to admin)
+ */
+export function getAssignmentTemplateData(
+  booking: Booking & { lead?: Lead | null },
+  params: { adminName?: string; eventDate?: string; eventTime?: string; bookingUrl?: string } = {}
+): TemplateData {
+  return {
+    admin_name: params.adminName || "Admin",
+    customer_name: booking.lead?.contactName || "Customer",
+    event_date: params.eventDate || formatGermanDate(booking.eventDate),
+    event_time: params.eventTime || booking.eventTime,
+    booking_url: params.bookingUrl || `${process.env.NEXT_PUBLIC_APP_URL}/admin/bookings?id=${booking.id}`,
+  };
+}
+
+/**
+ * Prepare template data for kitchen PDF routing
+ */
+export function getKitchenPdfTemplateData(
+  booking: Booking & { lead?: Lead | null },
+  params: { documentName?: string; eventDate?: string } = {}
+): TemplateData {
+  return {
+    customer_name: booking.lead?.contactName || "Customer",
+    event_date: params.eventDate || formatGermanDate(booking.eventDate),
+    document_name: params.documentName || "Kitchen Sheet",
+  };
+}
+
+/**
  * Get template data for any email type
- *
- * This is the main function to get template data based on email type
- * For confirmation emails, returns different data based on deposit requirement
  */
 export function getTemplateData(
   emailType: EmailType,
@@ -312,6 +339,11 @@ export function getTemplateData(
     bookingEditUrl?: string;
     feedbackUrl?: string;
     rebookingUrl?: string;
+    adminName?: string;
+    eventDate?: string;
+    eventTime?: string;
+    bookingUrl?: string;
+    documentName?: string;
   } = {}
 ): TemplateData {
   const DEPOSIT_THRESHOLD = 5000;
@@ -369,6 +401,20 @@ export function getTemplateData(
     case "unlock_declined":
       return getUnlockDeclinedTemplateData(booking, params.reason);
 
+    case "assignment":
+      return getAssignmentTemplateData(booking, {
+        adminName: params.adminName,
+        eventDate: params.eventDate,
+        eventTime: params.eventTime,
+        bookingUrl: params.bookingUrl,
+      });
+
+    case "kitchen_pdf":
+      return getKitchenPdfTemplateData(booking, {
+        documentName: params.documentName,
+        eventDate: params.eventDate,
+      });
+
     case "custom":
       // For custom emails, return basic data
       return {
@@ -408,6 +454,8 @@ export function getTemplateName(emailType: EmailType, estimatedTotal?: number): 
     unlock_requested: process.env.ZEPTOMAIL_TEMPLATE_UNLOCK_REQUESTED || "unlock-requested",
     unlock_granted: process.env.ZEPTOMAIL_TEMPLATE_UNLOCK_GRANTED || "unlock-granted",
     unlock_declined: process.env.ZEPTOMAIL_TEMPLATE_UNLOCK_DECLINED || "unlock-declined",
+    assignment: process.env.ZEPTOMAIL_TEMPLATE_ASSIGNED || "booking-assigned",
+    kitchen_pdf: process.env.ZEPTOMAIL_TEMPLATE_KITCHEN_PDF || "kitchen-pdf",
     custom: "custom-email",
   };
 
@@ -452,6 +500,8 @@ export function getEmailSubject(
     unlock_requested: `Anfrage auf Bearbeitung - Booking #${generateShortBookingId(booking.id).toUpperCase()}`,
     unlock_granted: `Ihre Buchung wurde freigeschaltet - Oliv Restaurant`,
     unlock_declined: `Update zu Ihrer Anfrage auf Bearbeitung - Oliv Restaurant`,
+    assignment: `New Booking Assigned: ${booking.lead?.contactName || "Customer"}`,
+    kitchen_pdf: `Kitchen Sheet: ${booking.lead?.contactName || "Customer"} - ${formattedDate}`,
     custom: `Nachricht von Oliv Restaurant`,
   };
 

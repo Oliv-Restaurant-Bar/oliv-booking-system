@@ -14,7 +14,7 @@ You can now manage email templates directly in ZeptoMail dashboard instead of ha
 - ✅ Marketing team can manage content
 - ✅ Instant updates
 
-**To enable:** Set `USE_ZEPTOMAIL_TEMPLATES=true` in `.env.local`
+**To enable:** Set `USE_ZEPTOMAIL_TEMPLATES=true` in `.env`
 
 See `ZEPTOMAIL_TEMPLATES_SETUP.md` for detailed setup instructions.
 
@@ -61,7 +61,7 @@ Follow the guide in `ZEPTOMAIL_SETUP_PLAN.md` to:
 
 #### 2. Configure Environment Variables
 
-Add these to your `.env.local` file:
+Add these to your `.env` file:
 
 ```env
 # ZeptoMail Configuration
@@ -85,7 +85,7 @@ That's it! Emails will use HTML templates in code.
 
 #### 3. Enable Template Mode
 
-Add to `.env.local`:
+Add to `.env`:
 
 ```env
 USE_ZEPTOMAIL_TEMPLATES=true
@@ -344,7 +344,7 @@ if (estimatedTotal >= DEPOSIT_THRESHOLD) {
 
 ## Security Considerations
 
-1. **Never commit `.env.local`** to version control
+1. **Never commit `.env`** to version control
 2. **Use strong CRON_SECRET** in production (generate with: `openssl rand -base64 32`)
 3. **Rotate API tokens** regularly
 4. **Monitor email logs** for suspicious activity

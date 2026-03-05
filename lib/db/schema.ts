@@ -110,6 +110,8 @@ export const emailTypeEnum = [
   "unlock_requested",
   "unlock_granted",
   "unlock_declined",
+  "assignment",
+  "kitchen_pdf",
 ] as const;
 export type EmailType = (typeof emailTypeEnum)[number];
 
@@ -182,6 +184,7 @@ export const bookings = pgTable(
       .default("pending"),
     location: text("location"),
     internalNotes: text("internal_notes"),
+    kitchenNotes: text("kitchen_notes"),
     termsAccepted: boolean("terms_accepted").notNull().default(false),
     termsAcceptedAt: timestamp("terms_accepted_at"),
     // Client edit fields
@@ -189,6 +192,7 @@ export const bookings = pgTable(
     isLocked: boolean("is_locked").notNull().default(false),
     lockedBy: text("locked_by").references(() => adminUser.id),
     lockedAt: timestamp("locked_at"),
+    assignedTo: text("assigned_to").references(() => adminUser.id),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
@@ -242,6 +246,7 @@ export const menuItems = pgTable(
     isVegan: boolean("is_vegan").notNull().default(false),
     isGlutenFree: boolean("is_gluten_free").notNull().default(false),
     isActive: boolean("is_active").notNull().default(true),
+    variants: jsonb("variants"),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),

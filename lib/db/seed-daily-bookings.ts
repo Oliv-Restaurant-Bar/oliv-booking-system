@@ -1,5 +1,5 @@
 import { config } from "dotenv";
-config({ path: ".env.local" });
+config({ path: ".env" });
 
 import { db } from "@/lib/db";
 import {
@@ -84,16 +84,16 @@ async function seedDailyBookings() {
         // Create lead
         // @ts-ignore - Drizzle type issue with date columns
         const [lead] = await db.insert(leads).values({
-            id: randomUUID(),
-            contactName: name,
-            contactEmail: email,
-            contactPhone: phone,
-            eventDate: eventDate,
-            eventTime: eventTimes[Math.floor(Math.random() * eventTimes.length)],
-            guestCount: guestCount,
-            source: "manual",
-            status: "contacted",
-          }).returning();
+          id: randomUUID(),
+          contactName: name,
+          contactEmail: email,
+          contactPhone: phone,
+          eventDate: eventDate,
+          eventTime: eventTimes[Math.floor(Math.random() * eventTimes.length)],
+          guestCount: guestCount,
+          source: "manual",
+          status: "contacted",
+        }).returning();
 
         // Randomly select 2-3 menu items
         const shuffledMenuItems = [...allMenuItems].sort(() => Math.random() - 0.5);
@@ -119,30 +119,30 @@ async function seedDailyBookings() {
         // Create booking
         // @ts-ignore - Drizzle type issue with date columns
         const [booking] = await db.insert(bookings).values({
-            leadId: lead.id,
-            eventDate: eventDate,
-            eventTime: eventTimes[Math.floor(Math.random() * eventTimes.length)],
-            guestCount: guestCount,
-            allergyDetails: [],
-            specialRequests: null,
-            estimatedTotal: estimatedTotal.toString(),
-            requiresDeposit: estimatedTotal > 2000,
-            status: status,
-            internalNotes: `Test booking for ${name}`,
-            termsAccepted: true,
-            termsAcceptedAt: new Date(),
-          }).returning();
+          leadId: lead.id,
+          eventDate: eventDate,
+          eventTime: eventTimes[Math.floor(Math.random() * eventTimes.length)],
+          guestCount: guestCount,
+          allergyDetails: [],
+          specialRequests: null,
+          estimatedTotal: estimatedTotal.toString(),
+          requiresDeposit: estimatedTotal > 2000,
+          status: status,
+          internalNotes: `Test booking for ${name}`,
+          termsAccepted: true,
+          termsAcceptedAt: new Date(),
+        }).returning();
 
         // Create booking items
         for (const item of bookingItemsToCreate) {
           // @ts-ignore - Drizzle type issue with itemType
           await db.insert(bookingItems).values({
-              bookingId: booking.id,
-              itemType: item.itemType as "menu_item" | "addon",
-              itemId: item.itemId,
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-            });
+            bookingId: booking.id,
+            itemType: item.itemType as "menu_item" | "addon",
+            itemId: item.itemId,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+          });
         }
 
         bookingCount++;

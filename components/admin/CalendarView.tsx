@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Users, Clock, Check, MapPin, Calendar as CalendarIcon, CheckCircle2, XCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, Clock, Check, MapPin, Calendar as CalendarIcon, CheckCircle2, XCircle, X, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Date utilities
@@ -80,8 +80,114 @@ interface CalendarViewProps {
   onOpenModal: (booking: any) => void;
 }
 
+interface DayBookingsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  date: Date | null;
+  bookings: any[];
+  onOpenBooking: (booking: any) => void;
+}
+
+function DayBookingsModal({ isOpen, onClose, date, bookings, onOpenBooking }: DayBookingsModalProps) {
+  if (!isOpen || !date) return null;
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+      <div
+        className="bg-card w-full max-w-lg rounded-2xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-5 border-b border-border bg-muted/30">
+          <div>
+            <h2 className="text-xl font-bold text-foreground">
+              {bookings.length} {bookings.length === 1 ? 'Booking' : 'Bookings'}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 text-muted-foreground hover:bg-accent hover:text-foreground rounded-full transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-4 max-h-[60vh] overflow-y-auto space-y-3">
+          {bookings.map((booking) => (
+            <div
+              key={booking.id}
+              className="group relative p-4 bg-background border border-border rounded-xl hover:border-primary/50 hover:bg-accent/30 transition-all cursor-pointer"
+              onClick={() => onOpenBooking(booking)}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                    style={{ backgroundColor: booking.customer.avatarColor || '#9DAE91' }}
+                  >
+                    {booking.customer.avatar || booking.customer.name.charAt(0)}
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-foreground truncate">{booking.customer.name}</h3>
+                    <p className="text-sm text-muted-foreground truncate">{booking.event.occasion}</p>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                  <span
+                    className={cn(
+                      "px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border",
+                      getStatusStyle(booking.status).bg,
+                      getStatusStyle(booking.status).text,
+                      getStatusStyle(booking.status).border
+                    )}
+                  >
+                    {booking.status}
+                  </span>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                    <Clock className="w-3.5 h-3.5" />
+                    {booking.event.time}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground border-t border-border/50 pt-3">
+                <div className="flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5" />
+                  <span>{booking.guests} Guests</span>
+                </div>
+                {booking.event.location && (
+                  <div className="flex items-center gap-1.5 text-primary/80">
+                    <MapPin className="w-3.5 h-3.5" />
+                    <span className="truncate max-w-[150px]">{booking.event.location}</span>
+                  </div>
+                )}
+                <div className="ml-auto flex items-center gap-1 text-primary font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                  View <ExternalLink className="w-3 h-3" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="p-4 border-t border-border bg-muted/10 flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-6 py-2 bg-secondary text-secondary-foreground font-semibold rounded-xl hover:bg-secondary/80 transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [isDayModalOpen, setIsDayModalOpen] = useState(false);
 
   // Group bookings by date
   const bookingsByDate = useMemo(() => {
@@ -218,8 +324,10 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
                   isToday && "ring-2 ring-primary/20"
                 )}
                 onClick={() => {
-                  // Handle date click - could show a modal with all bookings for that day
-                  if (dayBookings.length > 0 && dayBookings.length === 1) {
+                  if (dayBookings.length > 1) {
+                    setSelectedDate(date);
+                    setIsDayModalOpen(true);
+                  } else if (dayBookings.length === 1) {
                     onOpenModal(dayBookings[0]);
                   }
                 }}
@@ -233,7 +341,7 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
 
                 {/* Booking chips */}
                 <div className="space-y-0.5">
-                  {dayBookings.slice(0, 3).map(booking => (
+                  {dayBookings.slice(0, 2).map(booking => (
                     <div
                       key={booking.id}
                       className={cn(
@@ -247,7 +355,12 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
                       }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        onOpenModal(booking);
+                        if (dayBookings.length > 1) {
+                          setSelectedDate(date);
+                          setIsDayModalOpen(true);
+                        } else {
+                          onOpenModal(booking);
+                        }
                       }}
                       title={`${booking.customer.name} - ${booking.event.occasion}`}
                     >
@@ -262,9 +375,9 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
                       </div>
                     </div>
                   ))}
-                  {dayBookings.length > 3 && (
+                  {dayBookings.length > 2 && (
                     <div className="text-xs text-muted-foreground px-1.5 py-0.5">
-                      +{dayBookings.length - 3} more
+                      +{dayBookings.length - 2} more
                     </div>
                   )}
                 </div>
@@ -370,6 +483,18 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
           )}
         </div>
       </div>
+
+      {/* Day Bookings Modal */}
+      <DayBookingsModal
+        isOpen={isDayModalOpen}
+        onClose={() => setIsDayModalOpen(false)}
+        date={selectedDate}
+        bookings={selectedDate ? getBookingsForDate(selectedDate) : []}
+        onOpenBooking={(booking) => {
+          setIsDayModalOpen(false);
+          onOpenModal(booking);
+        }}
+      />
     </div>
   );
 }

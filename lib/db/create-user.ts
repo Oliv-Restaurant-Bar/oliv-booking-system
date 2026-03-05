@@ -1,5 +1,5 @@
 import { config } from "dotenv";
-config({ path: ".env.local" });
+config({ path: ".env" });
 
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";

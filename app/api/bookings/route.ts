@@ -8,12 +8,14 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status') || 'All Status';
+    const sort = searchParams.get('sort') || 'created_at';
 
     const result = await fetchBookings({
       page,
       limit,
       searchQuery: search,
-      status
+      status,
+      sort: sort as 'created_at' | 'event_date'
     });
     return NextResponse.json(result);
   } catch (error) {

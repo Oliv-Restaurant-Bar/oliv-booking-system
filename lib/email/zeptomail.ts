@@ -39,6 +39,11 @@ export interface EmailParams {
     address: string;
     name: string;
   };
+  attachments?: Array<{
+    content: string; // base64 content
+    mime_type: string;
+    name: string;
+  }>;
 }
 
 export interface TemplateEmailParams {
@@ -50,6 +55,11 @@ export interface TemplateEmailParams {
     address: string;
     name: string;
   };
+  attachments?: Array<{
+    content: string; // base64 content
+    mime_type: string;
+    name: string;
+  }>;
 }
 
 /**
@@ -75,6 +85,7 @@ export async function sendEmail(params: EmailParams): Promise<{ success: boolean
       to: Array.isArray(params.to) ? params.to.map(email => ({ email_address: { address: email, name: "" } })) : [{ email_address: { address: params.to, name: "" } }],
       subject: params.subject,
       htmlbody: params.html,
+      ...(params.attachments && params.attachments.length > 0 ? { attachments: params.attachments } : {}),
     };
 
     // @ts-ignore - ZeptoMail types may not match exactly
@@ -139,6 +150,7 @@ export async function sendTemplateEmail(params: TemplateEmailParams): Promise<{ 
         ? params.to.map(email => ({ email_address: { address: email, name: "" } }))
         : [{ email_address: { address: params.to, name: "" } }],
       merge_info: params.templateData,
+      ...(params.attachments && params.attachments.length > 0 ? { attachments: params.attachments } : {}),
     };
 
     const startTime = Date.now();

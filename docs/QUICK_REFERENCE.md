@@ -7,7 +7,7 @@ You can now edit email templates in ZeptoMail dashboard instead of code! 🎉
 ## Enable Dashboard Templates
 
 ```env
-# Add to .env.local
+# Add to .env
 USE_ZEPTOMAIL_TEMPLATES=true
 
 # Confirmation has TWO templates (based on amount)

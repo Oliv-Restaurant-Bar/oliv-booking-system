@@ -215,7 +215,7 @@ D:\OLIV\New folder\
 ├── tailwind.config.ts
 ├── tsconfig.json
 ├── package.json
-├── .env.local                   # Environment Variables
+├── .env                   # Environment Variables
 └── README.md                    # Documentation
 ```
 

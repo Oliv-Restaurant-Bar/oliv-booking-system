@@ -815,9 +815,104 @@ This document contains **clean ZeptoMail templates** with **ZERO conditional log
 
 ---
 
+## Template 11: `booking-assigned`
+
+**When to use:** Notifies a system user that a booking is assigned to them.
+
+**Subject:** `New Booking Assigned: {{customer_name}}`
+
+**HTML:**
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; color: #333; }
+    .box { background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0; }
+    .btn { display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2 style="color: #4CAF50;">Booking Assignment Notification</h2>
+    <p>Hello {{admin_name}},</p>
+    <p>A new booking has been assigned to you in the system.</p>
+    <div class="box">
+      <p><strong>Customer:</strong> {{customer_name}}</p>
+      <p><strong>Date:</strong> {{event_date}}</p>
+      <p><strong>Time:</strong> {{event_time}}</p>
+    </div>
+    <p>Please log in to the admin panel to view full details and manage this booking.</p>
+    <a href="{{booking_url}}" class="btn">View Booking</a>
+    <p style="margin-top: 30px; font-size: 12px; color: #777;">
+      This is an automated message from the Oliv Booking System.
+    </p>
+  </div>
+</body>
+</html>
+```
+
+**Variables:**
+- `admin_name`
+- `customer_name`
+- `event_date`
+- `event_time`
+- `booking_url`
+
 ---
 
-## Template 11: `booking-thank-you-deposit`
+## Template 12: `kitchen-pdf`
+
+**When to use:** Dispatch of kitchen PDF sheet.
+
+**Subject:** `Kitchen Sheet: {{customer_name}} - {{event_date}}`
+
+**HTML:**
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; color: #333; }
+    .header { background-color: #f8fafc; border-bottom: 2px solid #e2e8f0; padding: 20px 30px; }
+    .box { background-color: #f1f5f9; border-left: 4px solid #3b82f6; padding: 15px 20px; margin: 25px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2 style="color: #0f172a; margin: 0; font-size: 24px;">Kitchen Sheet Routing</h2>
+    </div>
+    <div style="padding: 30px;">
+      <p>Hello,</p>
+      <p>A new kitchen sheet has been generated for an upcoming booking. Please find the PDF attached to this email.</p>
+      <div class="box">
+        <p style="margin: 0 0 10px 0;"><strong>Customer:</strong> {{customer_name}}</p>
+        <p style="margin: 0;"><strong>Date:</strong> {{event_date}}</p>
+      </div>
+      <p>Document Name: <em>{{document_name}}</em></p>
+      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;" />
+      <p style="font-size: 13px; color: #64748b; margin: 0; text-align: center;">
+        This is an automated operational message from the Oliv Booking System.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+```
+
+**Variables:**
+- `customer_name`
+- `event_date`
+- `document_name`
+
+---
+
+---
+
+## Template 13: `booking-thank-you-deposit`
 
 **When to use:** Initial inquiry for bookings ≥ 5000 CHF (Phase 1)
 
@@ -908,7 +1003,7 @@ This document contains **clean ZeptoMail templates** with **ZERO conditional log
 
 ---
 
-## Template 12: `booking-thank-you-no-deposit`
+## Template 14: `booking-thank-you-no-deposit`
 
 **When to use:** Initial inquiry for bookings < 5000 CHF (Phase 1)
 

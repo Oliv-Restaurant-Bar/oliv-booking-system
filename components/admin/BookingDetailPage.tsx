@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Send, User, CalendarDays, Edit, UtensilsCrossed, MessageSquare, Mail, Lock, Unlock, History, FileText, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Send, User, CalendarDays, UtensilsCrossed, MessageSquare, Link, Lock, Unlock, History, FileText, RefreshCw, UserPlus } from 'lucide-react';
 import { StatusDropdown } from './StatusDropdown';
 import { KitchenPdfStatusBadge } from './KitchenPdfStatusBadge';
 import { KitchenPdfActionModal } from './KitchenPdfActionModal';
@@ -10,6 +10,7 @@ import { KitchenPdfService, type KitchenPdfStatus } from '@/services/kitchen-pdf
 import { VenueService } from '@/services/venue.service';
 import { toast } from 'sonner';
 import { Permission, hasPermission } from '@/lib/auth/rbac';
+import { AssignUserModal } from './AssignUserModal';
 
 export interface Booking {
     id: string;
@@ -39,6 +40,8 @@ export interface Booking {
     isLocked?: boolean;
     kitchenPdf?: KitchenPdfStatus;
     menuItems?: Array<{ item: string; category: string; quantity: string; price: string }>;
+    assignedTo?: { id: string; name: string; email: string } | null;
+    kitchenNotes?: string;
 }
 
 interface AuditLog {
@@ -73,6 +76,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     const [localStatus, setLocalStatus] = useState(initialBooking?.status || 'pending');
     const [allergies, setAllergies] = useState('');
     const [notes, setNotes] = useState(initialBooking?.notes || '');
+    const [kitchenNotes, setKitchenNotes] = useState(initialBooking?.kitchenNotes || '');
     const [isSaving, setIsSaving] = useState(false);
     const [isLocked, setIsLocked] = useState(initialBooking?.isLocked || false);
     const [lockLoading, setLockLoading] = useState(false);
@@ -94,9 +98,10 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     const [isAdminUsersLoading, setIsAdminUsersLoading] = useState(false);
     const [adminUsers, setAdminUsers] = useState<Array<{ id: string; name: string; email: string; role: string }>>([]);
 
-    // Venue locations
     const [venueLocations, setVenueLocations] = useState<string[]>([]);
     const [selectedVenue, setSelectedVenue] = useState<string>(initialBooking?.event?.location || '');
+    const [assignedTo, setAssignedTo] = useState<string>((initialBooking as any)?.assignedTo?.id || '');
+    const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
 
     // Update local state when booking prop changes
     useEffect(() => {
@@ -107,39 +112,42 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             const allergiesVal = initialBooking.allergies;
             setAllergies(Array.isArray(allergiesVal) ? (allergiesVal as string[]).join(', ') : (allergiesVal || ''));
             setNotes(initialBooking.notes || '');
+            setKitchenNotes(initialBooking.kitchenNotes || '');
             setIsLocked(initialBooking.isLocked || false);
             setSelectedVenue(initialBooking.event?.location || '');
             setKitchenPdfStatus(initialBooking.kitchenPdf);
+            setAssignedTo((initialBooking as any).assignedTo?.id || '');
         }
     }, [initialBooking]);
 
-    // Fetch booking data if not provided
+    // Always fetch fresh booking data from API to avoid stale list data
     useEffect(() => {
-        if (!initialBooking) {
-            const fetchBooking = async () => {
-                try {
-                    const response = await fetch(`/api/bookings/${bookingId}`);
-                    if (response.ok) {
-                        const data = await response.json();
-                        setBooking(data);
-                        setComments(data.contactHistory || []);
-                        setLocalStatus(data.status || 'pending');
-                        const allergiesVal = data.allergies;
-                        setAllergies(Array.isArray(allergiesVal) ? (allergiesVal as string[]).join(', ') : (allergiesVal || ''));
-                        setNotes(data.notes || '');
-                        setIsLocked(data.isLocked || false);
-                        setSelectedVenue(data.event?.location || data.location || '');
-                    }
-                } catch (error) {
-                    console.error('Error fetching booking:', error);
-                } finally {
-                    setLoading(false);
+        const fetchBooking = async () => {
+            try {
+                const response = await fetch(`/api/bookings/${bookingId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setBooking(data);
+                    setComments(data.contactHistory || []);
+                    setLocalStatus(data.status || 'pending');
+                    const allergiesVal = data.allergies;
+                    setAllergies(Array.isArray(allergiesVal) ? (allergiesVal as string[]).join(', ') : (allergiesVal || ''));
+                    setNotes(data.notes || '');
+                    setKitchenNotes(data.kitchenNotes || '');
+                    setIsLocked(data.isLocked || false);
+                    setSelectedVenue(data.event?.location || data.location || '');
+                    setAssignedTo(data.assignedTo?.id || '');
+                    setKitchenPdfStatus(data.kitchenPdf);
                 }
-            };
+            } catch (error) {
+                console.error('Error fetching booking:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-            fetchBooking();
-        }
-    }, [bookingId, initialBooking]);
+        fetchBooking();
+    }, [bookingId]);
 
     // Fetch venue locations on mount
     useEffect(() => {
@@ -174,9 +182,9 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         }
     }, [bookingId, initialBooking]);
 
-    // Fetch admin users when modal opens
+    // Fetch admin users
     useEffect(() => {
-        if (isPdfActionModalOpen) {
+        if (canEditBooking && adminUsers.length === 0 && !isAdminUsersLoading) {
             const fetchAdminUsers = async () => {
                 setIsAdminUsersLoading(true);
                 try {
@@ -200,7 +208,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             };
             fetchAdminUsers();
         }
-    }, [isPdfActionModalOpen]);
+    }, [canEditBooking, adminUsers.length, isAdminUsersLoading]);
 
     // Fetch audit history when shown
     useEffect(() => {
@@ -253,6 +261,34 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
     const handleCopyEditLink = async () => {
         if (!booking) return;
+
+        const copyToClipboard = async (text: string) => {
+            try {
+                if (navigator?.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                } else {
+                    throw new Error('Clipboard API not available');
+                }
+            } catch (error) {
+                console.log('Using fallback clipboard approach', error);
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-999999px";
+                textArea.style.top = "-999999px";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                } catch (err) {
+                    console.error('Fallback clipboard copy failed:', err);
+                } finally {
+                    textArea.remove();
+                }
+            }
+        };
+
         try {
             const response = await fetch(`/api/bookings/${booking.id}`);
             if (response.ok) {
@@ -260,7 +296,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                 if (data.editSecret) {
                     const baseUrl = window.location.origin;
                     const editLink = `${baseUrl}/booking/${booking.id}/edit/${data.editSecret}`;
-                    await navigator.clipboard.writeText(editLink);
+                    await copyToClipboard(editLink);
                     toast.success('Edit link copied to clipboard!');
                     return;
                 }
@@ -271,7 +307,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                     if (generateData.success && generateData.editSecret) {
                         const baseUrl = window.location.origin;
                         const editLink = `${baseUrl}/booking/${booking.id}/edit/${generateData.editSecret}`;
-                        await navigator.clipboard.writeText(editLink);
+                        await copyToClipboard(editLink);
                         toast.success('Edit link generated and copied to clipboard!');
                         return;
                     }
@@ -336,7 +372,9 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                 body: JSON.stringify({
                     allergyDetails,
                     specialRequests: notes,
-                    location: selectedVenue
+                    kitchenNotes: kitchenNotes,
+                    location: selectedVenue,
+                    assignedTo: assignedTo || null
                 }),
             });
             if (response.ok) {
@@ -353,7 +391,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         }
     };
 
-    const handlePdfActionComplete = (action: 'admin' | 'external' | 'download', data?: { emails?: string[]; notes?: string }) => {
+    const handlePdfActionComplete = (action: 'email' | 'download', data?: { emails?: string[]; notes?: string }) => {
         const documentName = KitchenPdfService.getDocumentName(bookingId);
         const now = new Date();
         const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -362,7 +400,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         let actionText = '';
         if (action === 'download') {
             actionText = `Downloaded kitchen sheet PDF: ${documentName}`;
-        } else if (action === 'admin' || action === 'external') {
+        } else if (action === 'email') {
             const recipients = data?.emails?.join(', ') || '';
             actionText = `Kitchen sheet PDF sent to ${recipients || 'kitchen'}: ${documentName}`;
 
@@ -447,20 +485,6 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                             </button>
                         )}
 
-                        {canEditBooking && (
-                            <button
-                                onClick={handleToggleLock}
-                                disabled={lockLoading}
-                                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 cursor-pointer ${isLocked
-                                    ? 'bg-amber-500 hover:bg-amber-600 text-white'
-                                    : 'bg-secondary hover:bg-primary text-white'
-                                    }`}
-                                style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
-                            >
-                                {lockLoading ? 'Loading...' : isLocked ? <><Unlock className="w-4 h-4" />Unlock</> : <><Lock className="w-4 h-4" />Lock</>}
-                            </button>
-                        )}
-
                         {canViewAudit && (
                             <button
                                 onClick={() => setShowAuditHistory(!showAuditHistory)}
@@ -472,14 +496,39 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                             </button>
                         )}
 
-                        {canEditBooking && (
+                        {canEditBooking && !isLocked && (
                             <button
                                 onClick={handleCopyEditLink}
-                                className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex items-center gap-2 cursor-pointer"
+                                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 cursor-pointer"
                                 style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
                             >
-                                <Send className="w-4 h-4" />
+                                <Link className="w-4 h-4" />
                                 Copy Edit Link
+                            </button>
+                        )}
+
+                        {canEditBooking && (
+                            <button
+                                onClick={() => setIsAssignModalOpen(true)}
+                                className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors flex items-center gap-2 cursor-pointer border border-border"
+                                style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+                            >
+                                <UserPlus className="w-4 h-4" />
+                                {assignedTo ? adminUsers.find(u => u.id === assignedTo)?.name || 'Assigned' : 'Not Assigned Yet'}
+                            </button>
+                        )}
+
+                        {canEditBooking && (
+                            <button
+                                onClick={handleToggleLock}
+                                disabled={lockLoading}
+                                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 cursor-pointer ${isLocked
+                                    ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                                    : 'bg-primary hover:bg-primary/90 text-primary-foreground '
+                                    }`}
+                                style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+                            >
+                                {lockLoading ? 'Loading...' : isLocked ? <><Unlock className="w-4 h-4" />Unlock</> : <><Lock className="w-4 h-4" />Lock</>}
                             </button>
                         )}
                     </div>
@@ -603,23 +652,6 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                         </div>
                     </div>
 
-                    {/* Additional Information */}
-                    <div className="bg-card border border-border rounded-xl p-6">
-                        <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                            <MessageSquare className="w-5 h-5 text-primary" /> Additional Information
-                        </h3>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Allergies</label>
-                                <textarea value={allergies} onChange={(e) => setAllergies(e.target.value)} rows={2} disabled={!canEditBooking} className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-75" style={{ fontSize: 'var(--text-base)' }} placeholder="Enter allergies separated by commas..." />
-                            </div>
-                            <div>
-                                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Notes</label>
-                                <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} disabled={!canEditBooking} className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-75" style={{ fontSize: 'var(--text-base)' }} placeholder="Enter special requests or notes..." />
-                            </div>
-                        </div>
-                    </div>
-
                     {/* Menu Items */}
                     <div className="bg-card border border-border rounded-xl p-6">
                         <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
@@ -656,6 +688,38 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     )}
                                 </tbody>
                             </table>
+                        </div>
+
+                        <h3 className="text-foreground mt-10 mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                            <MessageSquare className="w-5 h-5 text-primary" /> Notes for kitchen team
+                        </h3>
+                        <div>
+                            <textarea
+                                value={kitchenNotes}
+                                onChange={(e) => setKitchenNotes(e.target.value)}
+                                rows={3}
+                                disabled={!canEditBooking}
+                                className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-75"
+                                style={{ fontSize: 'var(--text-base)' }}
+                                placeholder="Enter notes specifically for the kitchen team (will be included in PDF)..."
+                            />
+                        </div>
+                    </div>
+
+                    {/* Additional Information */}
+                    <div className="bg-card border border-border rounded-xl p-6">
+                        <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                            <MessageSquare className="w-5 h-5 text-primary" /> Additional Information
+                        </h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Allergies</label>
+                                <textarea value={allergies} onChange={(e) => setAllergies(e.target.value)} rows={2} disabled={!canEditBooking} className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-75" style={{ fontSize: 'var(--text-base)' }} placeholder="Enter allergies separated by commas..." />
+                            </div>
+                            <div>
+                                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Notes</label>
+                                <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} disabled={!canEditBooking} className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-75" style={{ fontSize: 'var(--text-base)' }} placeholder="Enter special requests or notes..." />
+                            </div>
                         </div>
                     </div>
 
@@ -759,16 +823,48 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                         isOpen={isPdfActionModalOpen}
                         onClose={() => setIsPdfActionModalOpen(false)}
                         onActionComplete={handlePdfActionComplete}
-                        adminUsers={adminUsers}
-                        isLoadingUsers={isAdminUsersLoading}
                         booking={{
                             ...booking,
-                            allergies: Array.isArray(booking.allergies) ? booking.allergies.join(', ') : (booking.allergies || ''),
+                            allergies: typeof allergies === 'string' ? allergies : (Array.isArray(allergies) ? (allergies as string[]).join(', ') : ''),
+                            notes: notes,
+                            kitchenNotes: kitchenNotes,
                             menuItems: booking.menuItems?.map(item => ({
                                 ...item,
                                 quantity: String(item.quantity)
                             }))
                         }}
+                    />
+                )}
+
+                {/* Assign User Modal */}
+                {isAssignModalOpen && (
+                    <AssignUserModal
+                        isOpen={isAssignModalOpen}
+                        onClose={() => setIsAssignModalOpen(false)}
+                        adminUsers={adminUsers}
+                        assignedTo={assignedTo}
+                        onAssign={async (userId) => {
+                            setAssignedTo(userId);
+                            try {
+                                const response = await fetch(`/api/bookings/${booking.id}`, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        assignedTo: userId || null
+                                    }),
+                                });
+                                if (response.ok) {
+                                    toast.success('Assignment updated successfully');
+                                    window.location.reload();
+                                } else {
+                                    toast.error('Failed to update assignment');
+                                }
+                            } catch (error) {
+                                console.error('Error updating assignment:', error);
+                                toast.error('Failed to update assignment');
+                            }
+                        }}
+                        isLoadingUsers={isAdminUsersLoading}
                     />
                 )}
             </div>

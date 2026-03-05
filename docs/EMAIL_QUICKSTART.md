@@ -46,7 +46,7 @@ scripts/
 
 ### 2. Update Environment Variables
 
-Edit `.env.local` and add:
+Edit `.env` and add:
 
 ```env
 # ZeptoMail Configuration
@@ -195,7 +195,7 @@ All emails are in **German** as requested.
 Before going live:
 
 - [ ] Get ZeptoMail API token
-- [ ] Configure `.env.local` variables
+- [ ] Configure `.env` variables
 - [ ] Update account details in templates (IBAN, phone, address)
 - [ ] Run test: `npm run email:test`
 - [ ] Check test email arrives in inbox

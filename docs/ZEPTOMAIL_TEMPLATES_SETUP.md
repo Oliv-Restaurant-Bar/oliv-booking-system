@@ -844,7 +844,7 @@ After creating each template, **note down the template name/ID** shown in ZeptoM
 
 ## Step 3: Update Environment Variables
 
-Add to your `.env.local`:
+Add to your `.env`:
 
 ```env
 # ZeptoMail Template Names (update these with actual template names from ZeptoMail dashboard)
@@ -856,6 +856,8 @@ ZEPTOMAIL_TEMPLATE_COMPLETED=booking-completed
 ZEPTOMAIL_TEMPLATE_REMINDER=booking-reminder
 ZEPTOMAIL_TEMPLATE_NO_SHOW=booking-no-show
 ZEPTOMAIL_TEMPLATE_DECLINED=booking-declined
+ZEPTOMAIL_TEMPLATE_ASSIGNED=booking-assigned
+ZEPTOMAIL_TEMPLATE_KITCHEN_PDF=kitchen-pdf
 ```
 
 ---
@@ -929,7 +931,7 @@ After creating templates in ZeptoMail:
 Once templates are created in ZeptoMail dashboard:
 
 1. ✅ Templates created in ZeptoMail
-2. ✅ Template names saved in `.env.local`
+2. ✅ Template names saved in `.env`
 3. ⏭️ Update code to send templates instead of HTML (I'll help with this)
 
 ---

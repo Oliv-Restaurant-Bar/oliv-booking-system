@@ -2,7 +2,7 @@ import postgres from 'postgres';
 import fs from 'fs';
 import path from 'path';
 
-require('dotenv').config({ path: '.env.local' });
+require('dotenv').config({ path: '.env' });
 require('dotenv').config({ path: '.env' });
 
 async function main() {

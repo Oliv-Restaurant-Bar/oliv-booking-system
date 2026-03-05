@@ -29,11 +29,16 @@ export async function GET(
         b.created_at,
         b.edit_secret,
         b.is_locked,
+        b.assigned_to,
+        b.kitchen_notes,
         l.contact_name,
         l.contact_email,
-        l.contact_phone
+        l.contact_phone,
+        a.name as assigned_to_name,
+        a.email as assigned_to_email
       FROM bookings b
       LEFT JOIN leads l ON b.lead_id = l.id
+      LEFT JOIN admin_user a ON b.assigned_to = a.id
       WHERE b.id = ${id}
       LIMIT 1
     `);
@@ -106,6 +111,11 @@ export async function GET(
 
     return NextResponse.json({
       id: booking.id,
+      assignedTo: booking.assigned_to ? {
+        id: booking.assigned_to,
+        name: booking.assigned_to_name || 'Unknown',
+        email: booking.assigned_to_email || '',
+      } : null,
       customer: {
         name: contactName,
         firstName,
@@ -141,6 +151,7 @@ export async function GET(
       booking: `${daysAgo}d ago`,
       allergies: allergies || '',
       notes: displayNotes || '',
+      kitchenNotes: booking.kitchen_notes || '',
       menuItems: menuItems,
       contactHistory: [],
     });

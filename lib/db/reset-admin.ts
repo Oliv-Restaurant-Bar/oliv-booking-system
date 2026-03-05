@@ -1,5 +1,5 @@
 import { config } from "dotenv";
-config({ path: ".env.local" });
+config({ path: ".env" });
 
 import { db } from "@/lib/db";
 import { adminUser, account } from "@/lib/db/schema";

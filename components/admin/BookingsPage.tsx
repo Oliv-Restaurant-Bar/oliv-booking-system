@@ -54,7 +54,13 @@ export function BookingsPage({ user }: { user?: any }) {
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/bookings?page=${page}&limit=${pageSize}&search=${debouncedSearch}&status=${selectedStatus}`);
+      // For calendar view, we want to fetch all relevant bookings without pagination
+      // and potentially focus on upcoming ones
+      const limit = viewMode === 'calendar' ? 1000 : pageSize;
+      const p = viewMode === 'calendar' ? 1 : page;
+      const sort = viewMode === 'calendar' ? 'event_date' : 'created_at';
+
+      const response = await fetch(`/api/bookings?page=${p}&limit=${limit}&search=${debouncedSearch}&status=${selectedStatus}&sort=${sort}`);
       if (!response.ok) throw new Error('Failed to fetch bookings');
       const data = await response.json();
       setBookingsData(data.bookings);
@@ -72,7 +78,7 @@ export function BookingsPage({ user }: { user?: any }) {
 
   useEffect(() => {
     fetchBookings();
-  }, [page, debouncedSearch, selectedStatus]);
+  }, [page, debouncedSearch, selectedStatus, viewMode]);
 
   // Status options for dropdown
   const statusOptions = allStatuses;
@@ -140,12 +146,12 @@ export function BookingsPage({ user }: { user?: any }) {
             </div>
           )}
 
-          {/* Empty State */}
+          {/* Empty State
           {!loading && bookingsData.length === 0 && (
             <div className="text-center py-16">
               <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>No bookings found</p>
             </div>
-          )}
+          )} */}
 
           {!loading && (
             <div className="flex-1 flex flex-col">

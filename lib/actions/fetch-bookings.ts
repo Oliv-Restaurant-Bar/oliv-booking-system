@@ -3,19 +3,32 @@
 import { db } from "@/lib/db";
 import { bookings, leads, bookingItems, menuItems, menuCategories, bookingContactHistory, kitchenPdfLogs } from "@/lib/db/schema";
 import { desc, eq, sql } from "drizzle-orm";
+import { getCurrentUser } from "@/lib/auth/rbac-middleware";
 
 export async function fetchBookings(options: {
   page?: number;
   limit?: number;
   searchQuery?: string;
   status?: string;
+  sort?: 'created_at' | 'event_date';
 } = {}) {
   try {
     const { page = 1, limit = 10, searchQuery = "", status = "All Status" } = options;
     const offset = (page - 1) * limit;
 
+    // Get current user for role-based filtering
+    const session = await getCurrentUser();
+    const currentUser = session?.user;
+    const isModerator = currentUser?.role === 'moderator';
+
     // Build the query fragments
     let whereClause = sql`TRUE`;
+
+    // Moderators can only see bookings assigned to them
+    if (isModerator && currentUser?.id) {
+      whereClause = sql`${whereClause} AND b.assigned_to = ${currentUser.id}`;
+    }
+
     if (status !== "All Status") {
       whereClause = sql`${whereClause} AND b.status = ${status.toLowerCase()}`;
     }
@@ -55,13 +68,18 @@ export async function fetchBookings(options: {
         b.location,
         b.created_at,
         b.is_locked,
+        b.assigned_to,
+        b.kitchen_notes,
         l.contact_name,
         l.contact_email,
-        l.contact_phone
+        l.contact_phone,
+        a.name as assigned_to_name,
+        a.email as assigned_to_email
       FROM bookings b
       LEFT JOIN leads l ON b.lead_id = l.id
+      LEFT JOIN admin_user a ON b.assigned_to = a.id
       WHERE ${whereClause}
-      ORDER BY b.created_at DESC
+      ORDER BY ${options.sort === 'event_date' ? sql`b.event_date DESC, b.event_time DESC` : sql`b.created_at DESC`}
       LIMIT ${limit} OFFSET ${offset}
     `);
 
@@ -198,9 +216,15 @@ export async function fetchBookings(options: {
         allergies: booking.allergy_details || '',
         notes: notes, // Special requests only
         internalNotes: internalNotes, // Full internal notes including business, address, occasion
+        kitchenNotes: booking.kitchen_notes || '',
         menuItems: menuItemsList,
         contactHistory: [],
         isLocked: booking.is_locked || false,
+        assignedTo: booking.assigned_to ? {
+          id: booking.assigned_to,
+          name: booking.assigned_to_name || 'Unknown',
+          email: booking.assigned_to_email || '',
+        } : null,
         kitchenPdf: kitchenPdfByBooking[booking.id] || undefined,
       };
     });
