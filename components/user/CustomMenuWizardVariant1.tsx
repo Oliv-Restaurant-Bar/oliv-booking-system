@@ -3331,8 +3331,13 @@ export function CustomMenuWizard() {
                             </h4>
                             <div className="space-y-6">
                               {requiredGroups.map((group) => (
-                                <div key={group.id}>
-                                  <div className="space-y-3 mt-2">
+                                <div key={group.id} className="mb-4 last:mb-0">
+                                  {group.name && (
+                                    <p className="text-foreground mb-2" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
+                                      {group.name}
+                                    </p>
+                                  )}
+                                  <div className="space-y-3">
                                     {group.items.map((addOn) => {
                                       const isChecked = tempAddOns.includes(addOn.id);
                                       return (
@@ -3380,8 +3385,13 @@ export function CustomMenuWizard() {
                             </h4>
                             <div className="space-y-6">
                               {optionalGroups.map((group) => (
-                                <div key={group.id}>
-                                  <div className="space-y-3 mt-2">
+                                <div key={group.id} className="mb-4 last:mb-0">
+                                  {group.name && (
+                                    <p className="text-foreground mb-2" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
+                                      {group.name}
+                                    </p>
+                                  )}
+                                  <div className="space-y-3">
                                     {group.items.map((addOn) => {
                                       const isChecked = tempAddOns.includes(addOn.id);
                                       return (
