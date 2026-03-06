@@ -1387,9 +1387,12 @@ export function CustomMenuWizard() {
                           Choose your preferred payment method
                         </p>
                         <div className="bg-background/50 border border-border rounded-lg p-4 space-y-3" style={{ borderRadius: 'var(--radius)' }}>
-                          <label className="flex items-center gap-3 cursor-pointer">
-                            <NativeRadio
+                          <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-muted/50 rounded-md transition-colors">
+                            <input
+                              type="radio"
                               name="paymentMethod"
+                              className="w-5 h-5 text-primary border-border focus:ring-primary focus:ring-offset-background cursor-pointer"
+                              style={{ accentColor: 'var(--color-primary)' }}
                               checked={eventDetails.paymentMethod === 'on_bill'}
                               onChange={() => setEventDetails({ ...eventDetails, paymentMethod: 'on_bill' })}
                             />
@@ -1400,9 +1403,12 @@ export function CustomMenuWizard() {
                             </div>
                           </label>
 
-                          <label className="flex items-center gap-3 cursor-pointer">
-                            <NativeRadio
+                          <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-muted/50 rounded-md transition-colors">
+                            <input
+                              type="radio"
                               name="paymentMethod"
+                              className="w-5 h-5 text-primary border-border focus:ring-primary focus:ring-offset-background cursor-pointer"
+                              style={{ accentColor: 'var(--color-primary)' }}
                               checked={eventDetails.paymentMethod === 'cash_card'}
                               onChange={() => setEventDetails({ ...eventDetails, paymentMethod: 'cash_card' })}
                             />

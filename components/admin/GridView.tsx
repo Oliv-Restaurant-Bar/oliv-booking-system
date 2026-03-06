@@ -1,4 +1,4 @@
-import { Mail, Calendar, Users, Phone, Clock } from 'lucide-react';
+import { Mail, Calendar, Users, Phone, Clock, User } from 'lucide-react';
 import { KitchenPdfStatusBadge } from './KitchenPdfStatusBadge';
 import type { KitchenPdfStatus } from '@/services/kitchen-pdf.service';
 
@@ -38,6 +38,11 @@ interface GridViewProps {
       when: string;
     };
     kitchenPdf?: KitchenPdfStatus;
+    assignedTo?: {
+      id: string;
+      name: string;
+      email: string;
+    } | null;
   }>;
   onOpenModal: (booking: any) => void;
 }
@@ -84,25 +89,27 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 flex-wrap justify-end">
-              {booking.kitchenPdf && (
-                <KitchenPdfStatusBadge
-                  status={booking.kitchenPdf.sentStatus}
-                  lastSentAt={booking.kitchenPdf.lastSentAt}
-                />
-              )}
-              <span
-                className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 ${statusColors[getStatusKey(booking.status)]?.bg
-                  } ${statusColors[getStatusKey(booking.status)]?.text} ${statusColors[getStatusKey(booking.status)]?.border
-                  }`}
-                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-              >
-                <div
-                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: statusColors[getStatusKey(booking.status)]?.dotColor }}
-                />
-                {booking.status}
-              </span>
+            <div className="flex flex-col items-end gap-2">
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                {booking.kitchenPdf && (
+                  <KitchenPdfStatusBadge
+                    status={booking.kitchenPdf.sentStatus}
+                    lastSentAt={booking.kitchenPdf.lastSentAt}
+                  />
+                )}
+                <span
+                  className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 ${statusColors[getStatusKey(booking.status)]?.bg
+                    } ${statusColors[getStatusKey(booking.status)]?.text} ${statusColors[getStatusKey(booking.status)]?.border
+                    }`}
+                  style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                >
+                  <div
+                    className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: statusColors[getStatusKey(booking.status)]?.dotColor }}
+                  />
+                  {booking.status}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -141,8 +148,11 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
 
             {/* Row 3: Contacted + Amount */}
             <div className="flex items-center justify-between gap-4">
-              <div className="text-muted-foreground flex-1" style={{ fontSize: 'var(--text-small)' }}>
-                By {booking.contacted?.by || 'Admin'} • {booking.contacted?.when || ''}
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <User className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                <span className="text-muted-foreground truncate" style={{ fontSize: 'var(--text-small)' }}>
+                  {booking.assignedTo ? booking.assignedTo.name : 'Unassigned'}
+                </span>
               </div>
               {booking.event.location && (
                 <div className="flex items-center gap-1.5 text-primary font-medium" style={{ fontSize: 'var(--text-small)' }}>
