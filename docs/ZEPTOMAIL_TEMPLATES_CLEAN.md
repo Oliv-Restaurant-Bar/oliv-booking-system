@@ -819,35 +819,62 @@ This document contains **clean ZeptoMail templates** with **ZERO conditional log
 
 **When to use:** Notifies a system user that a booking is assigned to them.
 
-**Subject:** `New Booking Assigned: {{customer_name}}`
+**Subject:** `Neue Buchung zugewiesen - {{customer_name}} - {{event_date}}`
 
 **HTML:**
 ```html
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; color: #333; }
-    .box { background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0; }
-    .btn { display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #17a2b8; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+    .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+    .details { background-color: white; padding: 20px; border-radius: 5px; margin: 20px 0; }
+    .details h3 { color: #2c3e50; margin-top: 0; }
+    .details p { margin: 10px 0; }
+    .details strong { color: #2c3e50; }
+    .info-box { background-color: #d1ecf1; border-left: 4px solid #17a2b8; padding: 20px; margin: 20px 0; border-radius: 4px; }
+    .button { display: inline-block; padding: 12px 24px; background-color: #17a2b8; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 10px 0; }
+    .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 14px; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2 style="color: #4CAF50;">Booking Assignment Notification</h2>
-    <p>Hello {{admin_name}},</p>
-    <p>A new booking has been assigned to you in the system.</p>
-    <div class="box">
-      <p><strong>Customer:</strong> {{customer_name}}</p>
-      <p><strong>Date:</strong> {{event_date}}</p>
-      <p><strong>Time:</strong> {{event_time}}</p>
+    <div class="header">
+      <h1 style="margin: 0; font-size: 28px;">📋 Neue Buchung zugewiesen</h1>
+      <p style="margin: 10px 0 0 0;">Oliv Restaurant</p>
     </div>
-    <p>Please log in to the admin panel to view full details and manage this booking.</p>
-    <a href="{{booking_url}}" class="btn">View Booking</a>
-    <p style="margin-top: 30px; font-size: 12px; color: #777;">
-      This is an automated message from the Oliv Booking System.
-    </p>
+
+    <div class="content">
+      <p>Hallo {{admin_name}},</p>
+      <p>eine neue Buchung wurde Ihnen im System zugewiesen.</p>
+
+      <div class="details">
+        <h3>📋 Buchungsdetails:</h3>
+        <p><strong>Kunde:</strong> {{customer_name}}</p>
+        <p><strong>Datum:</strong> {{event_date}}</p>
+        <p><strong>Uhrzeit:</strong> {{event_time}}</p>
+      </div>
+
+      <p>Bitte melden Sie sich im Admin-Panel an, um die vollständigen Details anzusehen und diese Buchung zu verwalten.</p>
+
+      <div style="text-align: center; margin: 20px 0;">
+        <a href="{{booking_url}}" class="button">Zur Buchung</a>
+      </div>
+
+      <p>Mit freundlichen Grüßen,<br/>Oliv Buchungssystem</p>
+    </div>
+
+    <div class="footer">
+      <p>Oliv Restaurant System</p>
+      <p style="font-size: 12px; margin-top: 10px;">
+        Dies ist eine automatisch generierte E-Mail aus dem Oliv Buchungssystem.
+      </p>
+    </div>
   </div>
 </body>
 </html>
@@ -866,36 +893,60 @@ This document contains **clean ZeptoMail templates** with **ZERO conditional log
 
 **When to use:** Dispatch of kitchen PDF sheet.
 
-**Subject:** `Kitchen Sheet: {{customer_name}} - {{event_date}}`
+**Subject:** `Küchenblatt: {{customer_name}} - {{event_date}}`
 
 **HTML:**
 ```html
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; color: #333; }
-    .header { background-color: #f8fafc; border-bottom: 2px solid #e2e8f0; padding: 20px 30px; }
-    .box { background-color: #f1f5f9; border-left: 4px solid #3b82f6; padding: 15px 20px; margin: 25px 0; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #6f42c1; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+    .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+    .details { background-color: white; padding: 20px; border-radius: 5px; margin: 20px 0; }
+    .details h3 { color: #2c3e50; margin-top: 0; }
+    .details p { margin: 10px 0; }
+    .details strong { color: #2c3e50; }
+    .info-box { background-color: #d1ecf1; border-left: 4px solid #17a2b8; padding: 20px; margin: 20px 0; border-radius: 4px; }
+    .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 14px; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h2 style="color: #0f172a; margin: 0; font-size: 24px;">Kitchen Sheet Routing</h2>
+      <h1 style="margin: 0; font-size: 28px;">👨‍🍳 Küchenblatt</h1>
+      <p style="margin: 10px 0 0 0;">Oliv Restaurant</p>
     </div>
-    <div style="padding: 30px;">
-      <p>Hello,</p>
-      <p>A new kitchen sheet has been generated for an upcoming booking. Please find the PDF attached to this email.</p>
-      <div class="box">
-        <p style="margin: 0 0 10px 0;"><strong>Customer:</strong> {{customer_name}}</p>
-        <p style="margin: 0;"><strong>Date:</strong> {{event_date}}</p>
+
+    <div class="content">
+      <p>Hallo,</p>
+      <p>für eine bevorstehende Buchung wurde ein neues Küchenblatt erstellt. Bitte finden Sie das PDF im Anhang dieser E-Mail.</p>
+
+      <div class="details">
+        <h3>📋 Details:</h3>
+        <p><strong>Kunde:</strong> {{customer_name}}</p>
+        <p><strong>Datum:</strong> {{event_date}}</p>
+        <p><strong>Dokument:</strong> <em>{{document_name}}</em></p>
       </div>
-      <p>Document Name: <em>{{document_name}}</em></p>
-      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;" />
-      <p style="font-size: 13px; color: #64748b; margin: 0; text-align: center;">
-        This is an automated operational message from the Oliv Booking System.
+
+      <p>Bitte überprüfen Sie das Küchenblatt und bereiten Sie die Bestellung entsprechend vor.</p>
+
+      <p>Falls Sie Fragen haben, kontaktieren Sie bitte die Verwaltung:</p>
+      <p>
+        📧 E-Mail: info@oliv-restaurant.ch<br/>
+      </p>
+
+      <p>Mit freundlichen Grüßen,<br/>Oliv Buchungssystem</p>
+    </div>
+
+    <div class="footer">
+      <p>Oliv Restaurant System</p>
+      <p style="font-size: 12px; margin-top: 10px;">
+        Dies ist eine automatisch generierte operative E-Mail aus dem Oliv Buchungssystem.
       </p>
     </div>
   </div>

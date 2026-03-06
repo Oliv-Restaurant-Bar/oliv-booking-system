@@ -247,6 +247,7 @@ export const menuItems = pgTable(
     isGlutenFree: boolean("is_gluten_free").notNull().default(false),
     isActive: boolean("is_active").notNull().default(true),
     variants: jsonb("variants"),
+    isCombo: boolean("is_combo").notNull().default(false),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),

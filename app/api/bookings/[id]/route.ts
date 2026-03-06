@@ -152,6 +152,7 @@ export async function GET(
       allergies: allergies || '',
       notes: displayNotes || '',
       kitchenNotes: booking.kitchen_notes || '',
+      isLocked: booking.is_locked || false,
       menuItems: menuItems,
       contactHistory: [],
     });

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Download, Search, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { StatusDropdown } from './StatusDropdown';
 import { Button } from '../user/Button';
@@ -21,6 +22,8 @@ const allStatuses = [
 ];
 
 export function BookingsPage({ user }: { user?: any }) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [bookingsData, setBookingsData] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState<'list' | 'detail'>('list');
@@ -79,6 +82,34 @@ export function BookingsPage({ user }: { user?: any }) {
   useEffect(() => {
     fetchBookings();
   }, [page, debouncedSearch, selectedStatus, viewMode]);
+
+  // Handle deep linking from URL search params (?id=...)
+  useEffect(() => {
+    const bookingId = searchParams.get('id');
+    if (bookingId && (!selectedBooking || selectedBooking.id !== bookingId)) {
+      const fetchSingleBooking = async () => {
+        try {
+          const res = await fetch(`/api/bookings/${bookingId}`);
+          if (res.ok) {
+            const data = await res.json();
+            setSelectedBooking(data);
+            setCurrentPage('detail');
+          } else {
+            // If booking not found, clear the ID from URL
+            router.replace('/admin/bookings');
+          }
+        } catch (err) {
+          console.error('Error fetching deep-linked booking:', err);
+          router.replace('/admin/bookings');
+        }
+      };
+      fetchSingleBooking();
+    } else if (!bookingId && currentPage === 'detail') {
+      // Sync state if URL is cleared manually
+      setCurrentPage('list');
+      setSelectedBooking(null);
+    }
+  }, [searchParams]);
 
   // Status options for dropdown
   const statusOptions = allStatuses;
@@ -158,8 +189,7 @@ export function BookingsPage({ user }: { user?: any }) {
               {viewMode === 'grid' && (
                 <GridView
                   onOpenModal={(booking: Booking) => {
-                    setSelectedBooking(booking);
-                    setCurrentPage('detail');
+                    router.push(`/admin/bookings?id=${booking.id}`);
                   }}
                   bookings={bookingsData}
                 />
@@ -168,8 +198,7 @@ export function BookingsPage({ user }: { user?: any }) {
               {viewMode === 'calendar' && (
                 <CalendarView
                   onOpenModal={(booking: Booking) => {
-                    setSelectedBooking(booking);
-                    setCurrentPage('detail');
+                    router.push(`/admin/bookings?id=${booking.id}`);
                   }}
                   bookings={bookingsData}
                 />
@@ -207,8 +236,7 @@ export function BookingsPage({ user }: { user?: any }) {
           booking={selectedBooking}
           user={user}
           onBack={() => {
-            setCurrentPage('list');
-            setSelectedBooking(null);
+            router.push('/admin/bookings');
           }}
         />
       )}

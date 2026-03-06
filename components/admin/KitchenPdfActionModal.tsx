@@ -330,7 +330,7 @@ export function KitchenPdfActionModal({
         throw new Error('Failed to send kitchen PDF');
       }
 
-      onActionComplete('download', { emails });
+      onActionComplete('email', { emails });
       setTimeout(() => {
         onClose();
       }, 500);

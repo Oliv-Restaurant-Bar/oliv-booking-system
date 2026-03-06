@@ -400,6 +400,24 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         let actionText = '';
         if (action === 'download') {
             actionText = `Downloaded kitchen sheet PDF: ${documentName}`;
+
+            // Persist the download action
+            KitchenPdfService.logAction({
+                bookingId,
+                documentName,
+                sentBy: user?.name || 'Admin',
+                status: 'sent',
+                recipientEmail: 'Internal Download'
+            }).catch(err => console.error('Failed to log PDF download:', err));
+
+            // Update UI status immediately
+            setKitchenPdfStatus({
+                documentName,
+                sentStatus: 'sent',
+                lastSentAt: now.toISOString(),
+                sentBy: user?.name || 'Admin',
+                sendAttempts: (kitchenPdfStatus?.sendAttempts || 0) + 1,
+            });
         } else if (action === 'email') {
             const recipients = data?.emails?.join(', ') || '';
             actionText = `Kitchen sheet PDF sent to ${recipients || 'kitchen'}: ${documentName}`;

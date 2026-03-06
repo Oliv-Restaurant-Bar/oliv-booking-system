@@ -83,6 +83,34 @@ export class KitchenPdfService {
   }
 
   /**
+   * Log a kitchen PDF action (like download) to the database.
+   *
+   * @param data - Log data
+   * @returns Promise with log response
+   */
+  static async logAction(data: {
+    bookingId: string;
+    documentName: string;
+    sentBy: string;
+    status: 'sent' | 'failed';
+    recipientEmail?: string;
+  }): Promise<any> {
+    const response = await fetch('/api/kitchen-pdf/log', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to log kitchen PDF action');
+    }
+
+    return response.json();
+  }
+
+  /**
    * Get send history for a specific booking.
    *
    * @param bookingId - The booking ID

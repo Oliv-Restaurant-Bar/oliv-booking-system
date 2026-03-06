@@ -130,29 +130,26 @@ export function SettingsPage({ user }: { user?: any }) {
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <MapPin className="w-5 h-5 text-primary" />
               </div>
-              <div>
-                <h3 className="text-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                  Venue Locations
-                </h3>
-                <p className="text-muted-foreground text-sm mt-0.5">
-                  Manage restaurant locations for bookings
-                </p>
+              <div className="flex justify-between w-full">
+                <div>
+                  <h3 className="text-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                    Venue Locations
+                  </h3>
+                  <p className="text-muted-foreground text-sm mt-0.5">
+                    Manage restaurant locations for bookings
+                  </p>
+                </div>
+                <button
+                  onClick={handleAddVenue}
+                  disabled={!canUpdateSettings}
+                  className="px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add New Venue
+                </button>
               </div>
             </div>
-
-            {/* Add New Venue */}
-            <div className="flex justify-end mb-6">
-              <button
-                onClick={handleAddVenue}
-                disabled={!canUpdateSettings}
-                className="px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Plus className="w-4 h-4" />
-                Add New Venue
-              </button>
-            </div>
-
-            {/* Venues List */}
+             {/* Venues List */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {isLoadingVenues ? (
                 <div className="col-span-full flex items-center justify-center py-12">

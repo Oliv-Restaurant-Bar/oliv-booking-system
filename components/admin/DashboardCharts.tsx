@@ -83,6 +83,17 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
                       fontFamily: 'var(--font-sans)',
                     },
                   },
+                  tickPositioner: function (this: any) {
+                    const step = Math.ceil(this.dataMax / 15);
+                    const positions = [];
+                    for (let i = 0; i <= this.dataMax; i += step) {
+                      positions.push(i);
+                    }
+                    if (positions.length > 0 && positions[positions.length - 1] !== this.dataMax) {
+                      positions[positions.length - 1] = this.dataMax;
+                    }
+                    return positions;
+                  },
                   lineWidth: 0,
                   tickWidth: 0,
                 },
@@ -119,7 +130,8 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
                 },
                 plotOptions: {
                   column: {
-                    pointPadding: 0.1,
+                    pointPadding: 0,
+                    groupPadding: 0.1,
                     borderWidth: 0,
                     borderRadius: 4,
                     states: {
@@ -259,6 +271,17 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
                   color: '#6B7280',
                   fontFamily: 'var(--font-sans)',
                 },
+              },
+              tickPositioner: function (this: any) {
+                const step = Math.ceil(this.dataMax / 15);
+                const positions = [];
+                for (let i = 0; i <= this.dataMax; i += step) {
+                  positions.push(i);
+                }
+                if (positions.length > 0 && positions[positions.length - 1] !== this.dataMax) {
+                  positions[positions.length - 1] = this.dataMax;
+                }
+                return positions;
               },
               lineWidth: 0,
               tickWidth: 0,

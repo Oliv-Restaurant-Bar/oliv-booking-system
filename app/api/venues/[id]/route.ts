@@ -8,7 +8,7 @@ import { z } from 'zod';
 // PUT /api/venues/[id] - Update a venue
 const updateVenueSchema = z.object({
   name: z.string().min(1, 'Venue name is required'),
-  description: z.string().optional(),
+  description: z.string().nullable().optional(),
 });
 
 export async function PUT(

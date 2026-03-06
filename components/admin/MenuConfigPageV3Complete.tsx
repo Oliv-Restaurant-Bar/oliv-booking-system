@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { GripVertical, Edit2, MoreVertical, Plus, ChevronDown, ChevronRight, Trash2, Eye, EyeOff, Search, UtensilsCrossed, ListPlus, Upload, X, Copy, Settings, Check, Users } from 'lucide-react';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
+import { DietaryIcon } from '@/components/user/DietaryIcon';
 import { Modal } from '../user/Modal';
 import { ConfirmationModal } from '../user/ConfirmationModal';
 import { ItemSettingsModal } from '../user/ItemSettingsModal';
@@ -56,8 +57,12 @@ interface MenuItemData {
   pricingType?: 'per_person' | 'flat_fee' | 'billed_by_consumption';
   isActive: boolean;
   variants: VariantOption[];
-  dietaryType?: 'veg' | 'non-veg' | 'vegan';
+  dietaryType?: 'veg' | 'non-veg' | 'vegan' | 'none';
   dietaryTags?: string[];
+  isGlutenFree?: boolean;
+  isVegetarian?: boolean;
+  isVegan?: boolean;
+  isCombo?: boolean;
   ingredients?: string;
   allergens?: string[];
   additives?: string[];
@@ -97,7 +102,7 @@ interface AddonItem {
   name: string;
   price: number;
   isActive: boolean;
-  dietaryType: 'veg' | 'non-veg';
+  dietaryType: 'veg' | 'non-veg' | 'vegan' | 'none';
 }
 
 interface AddonGroup {
@@ -202,6 +207,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
     isActive: true,
     variants: [] as VariantOption[],
     assignedAddonGroups: [] as string[],
+    isCombo: false,
   });
   const [newGroup, setNewGroup] = useState({
     name: '',
@@ -213,11 +219,11 @@ export function MenuConfigPage({ user }: { user?: any }) {
   const [newAddonItem, setNewAddonItem] = useState({
     name: '',
     price: '',
-    dietaryType: 'veg' as 'veg' | 'non-veg',
+    dietaryType: 'veg' as 'veg' | 'non-veg' | 'vegan' | 'none',
     isActive: true,
   });
   const [itemSettings, setItemSettings] = useState({
-    dietaryType: 'veg' as 'veg' | 'non-veg' | 'vegan',
+    dietaryType: 'veg' as 'veg' | 'non-veg' | 'vegan' | 'none',
     dietaryTags: [] as string[],
     ingredients: '',
     allergens: [] as string[],
@@ -260,8 +266,15 @@ export function MenuConfigPage({ user }: { user?: any }) {
               pricingType: item.pricingType || 'per_person',
               isActive: item.isActive,
               variants: item.variants || [],
-              dietaryType: item.isVegan ? 'vegan' : item.isVegetarian ? 'veg' : 'non-veg',
-              dietaryTags: [],
+              dietaryType: (cat.name === 'Beverages' || cat.name === 'Drinks') ? 'none' :
+                item.isVegan ? 'vegan' : item.isVegetarian ? 'veg' : 'non-veg',
+              isGlutenFree: item.isGlutenFree || false,
+              dietaryTags: item.isGlutenFree ? ['Gluten Free'] : [],
+              ingredients: item.ingredients || '',
+              allergens: item.allergens || [],
+              additives: item.additives || [],
+              nutritionalInfo: item.nutritionalInfo || {},
+              isCombo: item.isCombo || false,
               assignedAddonGroups: (data.itemAddonGroups || []).filter((a: any) => a.itemId === item.id).map((a: any) => a.addonGroupId),
             })) || [],
             assignedAddonGroups: (data.categoryAddonGroups || []).filter((a: any) => a.categoryId === cat.id).map((a: any) => a.addonGroupId),
@@ -497,33 +510,54 @@ export function MenuConfigPage({ user }: { user?: any }) {
     }
   };
 
-  const handleSaveItemSettings = () => {
+  const handleSaveItemSettings = async () => {
     if (!settingsMenuItemId || !activeCategoryId) return;
 
-    setCategories(categories.map(cat =>
-      cat.id === activeCategoryId
-        ? {
-          ...cat,
-          items: cat.items.map(item =>
-            item.id === settingsMenuItemId
-              ? {
-                ...item,
-                dietaryType: itemSettings.dietaryType,
-                dietaryTags: itemSettings.dietaryTags,
-                ingredients: itemSettings.ingredients,
-                allergens: itemSettings.allergens,
-                additives: itemSettings.additives,
-                nutritionalInfo: itemSettings.nutritionalInfo,
-              }
-              : item
-          ),
-        }
-        : cat
-    ));
+    try {
+      // Actually save to backend
+      const result = await updateMenuItem(settingsMenuItemId, {
+        isVegetarian: itemSettings.dietaryType === 'veg',
+        isVegan: itemSettings.dietaryType === 'vegan',
+        isGlutenFree: itemSettings.dietaryTags?.includes('gluten-free') || false,
+      });
 
-    setIsItemSettingsModalOpen(false);
-    setSettingsMenuItemId(null);
-    setActiveCategoryId(null);
+      if (!result.success) {
+        console.error('Failed to save settings:', result.error);
+        alert(result.error || 'Failed to save settings');
+        return; // Early return on failure so we keep the modal open or don't update local state
+      }
+
+      setCategories(categories.map(cat =>
+        cat.id === activeCategoryId
+          ? {
+            ...cat,
+            items: cat.items.map(item =>
+              item.id === settingsMenuItemId
+                ? {
+                  ...item,
+                  dietaryType: itemSettings.dietaryType,
+                  dietaryTags: itemSettings.dietaryTags,
+                  isVegetarian: itemSettings.dietaryType === 'veg',
+                  isVegan: itemSettings.dietaryType === 'vegan',
+                  isGlutenFree: itemSettings.dietaryTags.includes('gluten-free') || itemSettings.dietaryTags.includes('Gluten Free'),
+                  ingredients: itemSettings.ingredients,
+                  allergens: itemSettings.allergens,
+                  additives: itemSettings.additives,
+                  nutritionalInfo: itemSettings.nutritionalInfo,
+                }
+                : item
+            ),
+          }
+          : cat
+      ));
+
+      setIsItemSettingsModalOpen(false);
+      setSettingsMenuItemId(null);
+      setActiveCategoryId(null);
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      alert('Failed to save settings');
+    }
   };
 
   const addVariant = () => {
@@ -704,14 +738,14 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                         {category.items.length} {category.items.length === 1 ? 'item' : 'items'}
                                       </span>
                                     )}
-                                    {category.guestCount && (
+                                    {/* {category.guestCount && (
                                       <Tooltip title="Manual guest count enabled" position="top">
                                         <span className="px-2 py-0.5 bg-green-500/10 text-green-600 dark:text-green-400 rounded-full flex items-center gap-1" style={{ fontSize: 'var(--text-small)' }}>
                                           <Users className="w-3 h-3" />
                                           Manual
                                         </span>
                                       </Tooltip>
-                                    )}
+                                    )} */}
                                   </div>
                                   <p className="text-muted-foreground line-clamp-1" style={{ fontSize: 'var(--text-small)' }}>
                                     {category.description}
@@ -756,6 +790,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                             isActive: true,
                                             variants: [],
                                             assignedAddonGroups: [],
+                                            isCombo: false,
                                           });
                                           setIsAddMenuItemModalOpen(true);
                                         }}
@@ -859,7 +894,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                               </button>
                                             )}
 
-                                            {canEditCategory && (
+                                            {/* {canEditCategory && (
                                               <button
                                                 onClick={() => {
                                                   toggleGuestCount(category.id);
@@ -872,7 +907,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                                   {category.guestCount ? 'Auto guest count' : 'Manual guest count'}
                                                 </span>
                                               </button>
-                                            )}
+                                            )} */}
 
                                             {canDeleteCategory && (
                                               <button
@@ -928,8 +963,29 @@ export function MenuConfigPage({ user }: { user?: any }) {
 
                                       {/* Content */}
                                       <div className="flex-1 min-w-0">
-                                        <h5 className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                                          {item.name}
+                                        <h5 className="text-foreground flex items-center gap-2 flex-wrap mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                                          {item.dietaryType && (
+                                            <DietaryIcon
+                                              type={item.dietaryType === 'veg' ? 'vegetarian' : item.dietaryType === 'non-veg' ? 'non-vegetarian' : item.dietaryType as any}
+                                              size="sm"
+                                              isGlutenFree={item.isGlutenFree}
+                                            />
+                                          )}
+                                          <span>{item.name}</span>
+                                          {item.isCombo && (
+                                            <span
+                                              className="px-2 py-0.5 rounded text-xs uppercase inline-block ml-1"
+                                              style={{
+                                                backgroundColor: 'rgba(var(--primary-rgb), 0.1)',
+                                                color: 'var(--primary)',
+                                                fontSize: '10px',
+                                                fontWeight: 'var(--font-weight-semibold)',
+                                                letterSpacing: '0.5px'
+                                              }}
+                                            >
+                                              Combo Item
+                                            </span>
+                                          )}
                                         </h5>
                                         <p className="text-muted-foreground line-clamp-1" style={{ fontSize: 'var(--text-small)' }}>
                                           {item.description}
@@ -974,6 +1030,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                                   isActive: item.isActive,
                                                   variants: item.variants || [],
                                                   assignedAddonGroups: item.assignedAddonGroups || [],
+                                                  isCombo: item.isCombo || false,
                                                 });
                                                 setIsAddMenuItemModalOpen(true);
                                               }}
@@ -1083,6 +1140,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                           isActive: true,
                                           variants: [],
                                           assignedAddonGroups: [],
+                                          isCombo: false,
                                         });
                                         setIsAddMenuItemModalOpen(true);
                                       }}
@@ -1670,6 +1728,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                       image: newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl,
                                       isActive: newMenuItem.isActive,
                                       variants: newMenuItem.variants,
+                                      isCombo: newMenuItem.isCombo,
                                       assignedAddonGroups: newMenuItem.assignedAddonGroups,
                                     }
                                     : item
@@ -1688,6 +1747,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             isActive: true,
                             variants: [],
                             assignedAddonGroups: [],
+                            isCombo: false,
                           });
                           setActiveCategoryId(null);
                           setEditingMenuItemId(null);
@@ -1707,6 +1767,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           pricingType: newMenuItem.pricingType,
                           imageUrl: newMenuItem.imageUrl || newMenuItem.image?.name || '',
                           variants: newMenuItem.variants,
+                          isCombo: newMenuItem.isCombo,
                         });
                         console.log('Create item result:', result);
 
@@ -1740,6 +1801,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             isActive: true,
                             variants: [],
                             assignedAddonGroups: [],
+                            isCombo: false,
                           });
                           setActiveCategoryId(null);
                           setEditingMenuItemId(null);
@@ -1806,6 +1868,64 @@ export function MenuConfigPage({ user }: { user?: any }) {
                 </div>
 
                 <div>
+                  <label className="block text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                    Pricing Type
+                  </label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {/* Per Person */}
+                    <div
+                      onClick={() => setNewMenuItem({ ...newMenuItem, pricingType: 'per_person' })}
+                      className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${newMenuItem.pricingType === 'per_person' ? 'border-[#9DAE91] bg-[#9DAE91]/5 shadow-sm' : 'border-border bg-card hover:border-primary/30'}`}
+                      style={{ borderRadius: 'var(--radius-card)' }}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center mt-0.5 transition-colors ${newMenuItem.pricingType === 'per_person' ? 'border-[#9DAE91] bg-white' : 'border-border bg-white'}`}>
+                          {newMenuItem.pricingType === 'per_person' && <div className="w-3 h-3 rounded-full bg-[#9DAE91]" />}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground leading-tight" style={{ fontSize: 'var(--text-base)' }}>Per Person</p>
+                          <p className="text-muted-foreground mt-1 leading-snug" style={{ fontSize: '11px' }}>Price multiplies by guest count</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Flat Rate */}
+                    <div
+                      onClick={() => setNewMenuItem({ ...newMenuItem, pricingType: 'flat_fee' })}
+                      className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${newMenuItem.pricingType === 'flat_fee' ? 'border-[#9DAE91] bg-[#9DAE91]/5 shadow-sm' : 'border-border bg-card hover:border-primary/30'}`}
+                      style={{ borderRadius: 'var(--radius-card)' }}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center mt-0.5 transition-colors ${newMenuItem.pricingType === 'flat_fee' ? 'border-[#9DAE91] bg-white' : 'border-border bg-white'}`}>
+                          {newMenuItem.pricingType === 'flat_fee' && <div className="w-3 h-3 rounded-full bg-[#9DAE91]" />}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground leading-tight" style={{ fontSize: 'var(--text-base)' }}>Flat Rate</p>
+                          <p className="text-muted-foreground mt-1 leading-snug" style={{ fontSize: '11px' }}>Fixed price regardless of guests</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Billed by Consumption */}
+                    <div
+                      onClick={() => setNewMenuItem({ ...newMenuItem, pricingType: 'billed_by_consumption' })}
+                      className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${newMenuItem.pricingType === 'billed_by_consumption' ? 'border-[#9DAE91] bg-[#9DAE91]/5 shadow-sm' : 'border-border bg-card hover:border-primary/30'}`}
+                      style={{ borderRadius: 'var(--radius-card)' }}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center mt-0.5 transition-colors ${newMenuItem.pricingType === 'billed_by_consumption' ? 'border-[#9DAE91] bg-white' : 'border-border bg-white'}`}>
+                          {newMenuItem.pricingType === 'billed_by_consumption' && <div className="w-3 h-3 rounded-full bg-[#9DAE91]" />}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground leading-tight" style={{ fontSize: 'var(--text-base)' }}>Billed by Consumption</p>
+                          <p className="text-muted-foreground mt-1 leading-snug" style={{ fontSize: '11px' }}>Based on actual usage</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
                   <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                     Price *
                   </label>
@@ -1824,25 +1944,27 @@ export function MenuConfigPage({ user }: { user?: any }) {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                    Pricing Type *
-                  </label>
-                  <select
-                    value={newMenuItem.pricingType}
-                    onChange={(e) => setNewMenuItem({ ...newMenuItem, pricingType: e.target.value as 'per_person' | 'flat_fee' | 'billed_by_consumption' })}
-                    className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-                    style={{ fontSize: 'var(--text-base)' }}
+                <div className="flex items-center gap-3 p-4 bg-muted/20 rounded-lg border border-border">
+                  <div
+                    className="flex-shrink-0 cursor-pointer"
+                    onClick={() => setNewMenuItem({ ...newMenuItem, isCombo: !newMenuItem.isCombo })}
                   >
-                    <option value="per_person">Per Person (multiplied by guest count)</option>
-                    <option value="flat_fee">Flat Fee (one-time charge)</option>
-                    <option value="billed_by_consumption">Billed by Consumption (based on actual usage)</option>
-                  </select>
-                  <p className="text-muted-foreground mt-1" style={{ fontSize: 'var(--text-small)' }}>
-                    {newMenuItem.pricingType === 'per_person' && 'This price will be multiplied by the number of guests'}
-                    {newMenuItem.pricingType === 'flat_fee' && 'This is a one-time flat fee (e.g., equipment rental, setup fees)'}
-                    {newMenuItem.pricingType === 'billed_by_consumption' && 'This will be billed based on actual consumption (e.g., beverages, buffet items)'}
-                  </p>
+                    <div className={`w-6 h-6 rounded border-2 transition-colors flex items-center justify-center ${newMenuItem.isCombo ? 'bg-primary border-primary' : 'border-border'}`}>
+                      {newMenuItem.isCombo && <Check className="w-4 h-4 text-white" />}
+                    </div>
+                  </div>
+                  <div>
+                    <label
+                      className="block text-foreground cursor-pointer"
+                      style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+                      onClick={() => setNewMenuItem({ ...newMenuItem, isCombo: !newMenuItem.isCombo })}
+                    >
+                      Is Combo Item
+                    </label>
+                    <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                      Mark this as a combo pack to group it separately in the menu
+                    </p>
+                  </div>
                 </div>
 
                 <div>

@@ -78,11 +78,24 @@ export async function POST(request: NextRequest) {
 
     const sentAt = new Date();
 
+    // Log the send action to the database
+    const messageId = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    await db.insert(kitchenPdfLogs).values({
+      id: messageId,
+      bookingId,
+      documentName,
+      sentAt,
+      sentBy: body.sentBy || 'Admin',
+      recipientEmail: recipientEmails.join(', '),
+      status: 'sent',
+      idempotencyKey: idempotencyKey,
+    });
+
     return NextResponse.json({
       success: true,
       documentName,
       sentAt,
-      messageId: "sent",
+      messageId,
       kitchenEmail: recipientEmails.join(', '),
     });
 

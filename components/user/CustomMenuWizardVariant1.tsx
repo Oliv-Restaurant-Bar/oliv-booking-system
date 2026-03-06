@@ -10,6 +10,7 @@ import { ThankYouScreen } from './ThankYouScreen';
 import { WizardHeader } from './WizardHeader';
 import { submitWizardForm, requestBookingUnlock } from '@/lib/actions/wizard';
 import { NativeRadio } from '@/components/ui/NativeRadio';
+import { NativeCheckbox } from '@/components/ui/NativeCheckbox';
 
 interface EventDetails {
   name: string;
@@ -50,7 +51,7 @@ export function CustomMenuWizard() {
     guestCount: '',
     occasion: '',
     specialRequests: '',
-    paymentMethod: '',
+    paymentMethod: 'on_bill',
     useSameAddressForBilling: true,
     billingStreet: '',
     billingPlz: '',
@@ -97,6 +98,11 @@ export function CustomMenuWizard() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
+  const [categoryFilterMode, setCategoryFilterMode] = useState<Record<string, 'combo' | 'individual'>>({});
+
+  const categoryHasCombo = useMemo(() => {
+    return menuItems.some(item => item.category === selectedCategory && item.isCombo);
+  }, [menuItems, selectedCategory]);
   const [isUnlockRequested, setIsUnlockRequested] = useState(false);
   const [isRequestingUnlock, setIsRequestingUnlock] = useState(false);
   const [includeBeveragePrices, setIncludeBeveragePrices] = useState(false);
@@ -217,10 +223,14 @@ export function CustomMenuWizard() {
                 price: Number(item.pricePerPerson) || 0,
                 pricingType: item.pricingType || 'per_person',
                 image: item.imageUrl || 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=400&fit=crop',
-                // If no dietary flags are set, treat as 'none' (beverages, non-food items)
-                // Otherwise: vegan > vegetarian > non-vegetarian
-                dietaryType: (!item.isVegan && !item.isVegetarian && !item.isGlutenFree) ? 'none' : item.isVegan ? 'vegan' : item.isVegetarian ? 'vegetarian' : 'non-vegetarian',
+                // Mapping logic:
+                // 1. If it's a beverage category, default to 'none'
+                // 2. Otherwise: vegan > vegetarian > non-vegetarian
+                dietaryType: (category?.name === 'Beverages' || category?.name === 'Drinks') ? 'none' :
+                  item.isVegan ? 'vegan' :
+                    item.isVegetarian ? 'vegetarian' : 'non-vegetarian',
                 isGlutenFree: item.isGlutenFree || false,
+                isCombo: item.isCombo || false,
                 variants: item.variants || [],
                 addOns: (() => {
                   const catAddonGroupIds = (data.categoryAddonGroups || [])
@@ -420,6 +430,22 @@ export function CustomMenuWizard() {
       if (selectedDateTime < twentyFourHoursFromNow) {
         newErrors.eventDate = 'Booking must be at least 24 hours in advance';
       }
+    }
+
+    if (!eventDetails.street?.trim()) {
+      newErrors.street = 'Street is required';
+    }
+
+    if (!eventDetails.plz?.trim()) {
+      newErrors.plz = 'PLZ is required';
+    }
+
+    if (!eventDetails.location?.trim()) {
+      newErrors.location = 'Location is required';
+    }
+
+    if (!eventDetails.eventTime) {
+      newErrors.eventTime = 'Event time is required';
     }
 
     if (!eventDetails.guestCount) {
@@ -722,6 +748,9 @@ export function CustomMenuWizard() {
 
   // Helper functions for pricing types
   const isPerPerson = (item: MenuItem) => item.pricingType === 'per-person' || item.pricingType === 'per_person';
+  const isPerPersonItem = (item: MenuItem | null): boolean => {
+    return item?.pricingType === 'per_person' || item?.pricingType === 'per-person';
+  };
   const isFlatFee = (item: MenuItem) => item.pricingType === 'flat-rate' || item.pricingType === 'flat_fee';
   const isConsumption = (item: MenuItem) => item.pricingType === 'billed_by_consumption';
   const isNonPerPerson = (item: MenuItem) => isFlatFee(item) || isConsumption(item);
@@ -729,7 +758,6 @@ export function CustomMenuWizard() {
   const openDetailsModal = (item: MenuItem) => {
     const isAlreadySelected = selectedItems.includes(item.id);
     setDetailsModalItem(item);
-    setTempQuantity(isAlreadySelected ? (itemQuantities[item.id] || 1) : 1);
 
     let defaultAddOns = isAlreadySelected ? (itemAddOns[item.id] || []) : [];
     if (!isAlreadySelected && item.addonGroups) {
@@ -747,12 +775,15 @@ export function CustomMenuWizard() {
     setTempVariant(isAlreadySelected ? (itemVariants[item.id] || defaultVariantId) : defaultVariantId);
     setTempComment(isAlreadySelected ? (itemComments[item.id] || '') : '');
 
-    // Set guest count - if category has guestCount enabled, use existing or total guest count
-    const categoryHasGuestCount = categoryData[item.category]?.guestCount || false;
-    if (categoryHasGuestCount) {
+    // Initialize quantity and guest count based on pricing type
+    if (isPerPerson(item)) {
+      // Per-person: Use guest count, quantity always 1
       const totalGuestCount = parseInt(eventDetails.guestCount) || 1;
       setTempGuestCount(isAlreadySelected ? (itemGuestCounts[item.id] || totalGuestCount) : totalGuestCount);
+      setTempQuantity(1); // Always 1 for per-person
     } else {
+      // Flat-rate: Use quantity
+      setTempQuantity(isAlreadySelected ? (itemQuantities[item.id] || 1) : 1);
       setTempGuestCount(null);
     }
   };
@@ -812,12 +843,20 @@ export function CustomMenuWizard() {
       setSelectedItems(prev => [...prev, itemId]);
     }
 
-    // Update quantity
-    setItemQuantities(prev => ({ ...prev, [itemId]: tempQuantity }));
-
-    // Update guest count if category has guestCount enabled
-    if (categoryData[detailsModalItem.category]?.guestCount && tempGuestCount !== null) {
-      setItemGuestCounts(prev => ({ ...prev, [itemId]: tempGuestCount }));
+    // Set quantity and guest count based on pricing type
+    if (isPerPerson(detailsModalItem)) {
+      // Per-person items: Always quantity=1, use guest count
+      setItemQuantities(prev => ({ ...prev, [itemId]: 1 }));
+      setItemGuestCounts(prev => ({ ...prev, [itemId]: tempGuestCount || parseInt(eventDetails.guestCount) || 1 }));
+    } else {
+      // Flat-rate items: Use quantity, remove guest count if exists
+      setItemQuantities(prev => ({ ...prev, [itemId]: tempQuantity }));
+      // Remove guest count for flat-rate items
+      setItemGuestCounts(prev => {
+        const updated = { ...prev };
+        delete updated[itemId];
+        return updated;
+      });
     }
 
     // Update add-ons
@@ -907,13 +946,20 @@ export function CustomMenuWizard() {
     return (basePrice + addOnsPrice) * quantity;
   };
 
-  // Per-person subtotal (items that are per_person)
+  // Per-person subtotal (average per person calculation)
   const getPerPersonSubtotal = () => {
-    return selectedItems.reduce((total, itemId) => {
+    const totalGuestCount = parseInt(eventDetails.guestCount) || 1;
+    const totalCost = selectedItems.reduce((total, itemId) => {
       const item = menuItems.find(i => i.id === itemId);
       if (!item || !isPerPerson(item)) return total;
-      return total + getItemPerPersonPrice(item);
+
+      const unitPrice = getItemPerPersonPrice(item);
+      const itemGuestCount = itemGuestCounts[itemId] || totalGuestCount;
+
+      return total + (unitPrice * itemGuestCount);
     }, 0);
+
+    return totalCost / totalGuestCount;
   };
 
   // Flat-rate subtotal (items like Technology, Decoration etc. that have a fixed price)
@@ -1042,53 +1088,49 @@ export function CustomMenuWizard() {
                   const isCompleted = currentStep > step.number;
 
                   return (
-                    <div key={step.number} className="relative">
-                      <div className="flex items-start gap-3">
-                        {/* Step Circle with connecting line */}
-                        <div className="relative flex flex-col items-center flex-shrink-0">
-                          <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 relative z-10 ${isCompleted
-                              ? 'bg-secondary text-secondary-foreground'
-                              : isActive
-                                ? 'bg-secondary text-secondary-foreground ring-4 ring-secondary/20'
-                                : 'bg-transparent text-primary-foreground border-2 border-primary-foreground/30'
-                              }`}
-                          >
-                            {isCompleted ? (
-                              <Check className="w-5 h-5" />
-                            ) : (
-                              <Icon className="w-4 h-4" />
-                            )}
-                          </div>
-                          {/* Connecting Line */}
-                          {index < steps.length - 1 && (
-                            <div
-                              className="absolute top-10 w-0.5 transition-all duration-500"
-                              style={{
-                                backgroundColor: isCompleted
-                                  ? 'var(--color-secondary)'
-                                  : 'rgba(255, 255, 255, 0.2)',
-                                height: 'calc(100% + 1.5rem)'
-                              }}
-                            />
-                          )}
-                        </div>
+                    <div key={step.number} className="relative flex items-start gap-3">
+                      {/* Connecting Line */}
+                      {index < steps.length - 1 && (
+                        <div
+                          className="absolute left-5 top-10 -bottom-6 w-0.5 -translate-x-1/2 transition-all duration-500"
+                          style={{
+                            backgroundColor: isCompleted
+                              ? 'var(--color-secondary)'
+                              : 'rgba(255, 255, 255, 0.2)'
+                          }}
+                        />
+                      )}
 
-                        {/* Step Content */}
-                        <div className="flex-1 pt-0.5">
-                          <p
-                            className={`mb-1 text-primary-foreground ${isActive || isCompleted ? 'opacity-100' : 'opacity-60'}`}
-                            style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}
-                          >
-                            {step.title}
-                          </p>
-                          <p
-                            className="text-primary-foreground opacity-80"
-                            style={{ fontSize: 'var(--text-small)' }}
-                          >
-                            {step.subtitle}
-                          </p>
-                        </div>
+                      {/* Step Circle */}
+                      <div
+                        className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center transition-all duration-300 relative z-10 ${isCompleted
+                          ? 'bg-secondary text-secondary-foreground'
+                          : isActive
+                            ? 'bg-secondary text-secondary-foreground ring-4 ring-secondary/20'
+                            : 'bg-transparent text-primary-foreground border-2 border-primary-foreground/30'
+                          }`}
+                      >
+                        {isCompleted ? (
+                          <Check className="w-5 h-5" />
+                        ) : (
+                          <Icon className="w-4 h-4" />
+                        )}
+                      </div>
+
+                      {/* Step Content */}
+                      <div className="flex-1 pt-1.5">
+                        <p
+                          className={`mb-1 text-primary-foreground ${isActive || isCompleted ? 'opacity-100' : 'opacity-60'}`}
+                          style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}
+                        >
+                          {step.title}
+                        </p>
+                        <p
+                          className="text-primary-foreground opacity-80"
+                          style={{ fontSize: 'var(--text-small)' }}
+                        >
+                          {step.subtitle}
+                        </p>
                       </div>
                     </div>
                   );
@@ -1234,45 +1276,60 @@ export function CustomMenuWizard() {
                         <div className="space-y-4">
                           <div>
                             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                              Strasse & Nr.
+                              Strasse & Nr. *
                             </label>
                             <input
                               type="text"
                               value={eventDetails.street}
                               onChange={(e) => setEventDetails({ ...eventDetails, street: e.target.value })}
-                              className="w-full px-4 py-2.5 bg-background border border-border rounded-lg transition-colors focus:border-primary"
+                              className={`w-full px-4 py-2.5 bg-background border rounded-lg transition-colors ${errors.street ? 'border-destructive' : 'border-border focus:border-primary'}`}
                               placeholder="Musterstrasse 123"
                               style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
                             />
+                            {errors.street && (
+                              <p className="text-destructive mt-1" style={{ fontSize: 'var(--text-small)' }}>
+                                {errors.street}
+                              </p>
+                            )}
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                                PLZ
+                                PLZ *
                               </label>
                               <input
                                 type="text"
                                 value={eventDetails.plz}
                                 onChange={(e) => setEventDetails({ ...eventDetails, plz: e.target.value })}
-                                className="w-full px-4 py-2.5 bg-background border border-border rounded-lg transition-colors focus:border-primary"
+                                className={`w-full px-4 py-2.5 bg-background border rounded-lg transition-colors ${errors.plz ? 'border-destructive' : 'border-border focus:border-primary'}`}
                                 placeholder="3000"
                                 style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
                               />
+                              {errors.plz && (
+                                <p className="text-destructive mt-1" style={{ fontSize: 'var(--text-small)' }}>
+                                  {errors.plz}
+                                </p>
+                              )}
                             </div>
 
                             <div>
                               <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                                Location
+                                Location *
                               </label>
                               <input
                                 type="text"
                                 value={eventDetails.location}
                                 onChange={(e) => setEventDetails({ ...eventDetails, location: e.target.value })}
-                                className="w-full px-4 py-2.5 bg-background border border-border rounded-lg transition-colors focus:border-primary"
+                                className={`w-full px-4 py-2.5 bg-background border rounded-lg transition-colors ${errors.location ? 'border-destructive' : 'border-border focus:border-primary'}`}
                                 placeholder="Bern"
                                 style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
                               />
+                              {errors.location && (
+                                <p className="text-destructive mt-1" style={{ fontSize: 'var(--text-small)' }}>
+                                  {errors.location}
+                                </p>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1307,15 +1364,20 @@ export function CustomMenuWizard() {
 
                           <div>
                             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                              Time
+                              Time *
                             </label>
                             <input
                               type="time"
                               value={eventDetails.eventTime}
                               onChange={(e) => setEventDetails({ ...eventDetails, eventTime: e.target.value })}
-                              className="w-full px-4 py-2.5 bg-background border border-border rounded-lg transition-colors focus:border-primary"
+                              className={`w-full px-4 py-2.5 bg-background border rounded-lg transition-colors ${errors.eventTime ? 'border-destructive' : 'border-border focus:border-primary'}`}
                               style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
                             />
+                            {errors.eventTime && (
+                              <p className="text-destructive mt-1" style={{ fontSize: 'var(--text-small)' }}>
+                                {errors.eventTime}
+                              </p>
+                            )}
                           </div>
 
                           <div>
@@ -1386,13 +1448,13 @@ export function CustomMenuWizard() {
                         <p className="text-muted-foreground mb-4" style={{ fontSize: 'var(--text-base)' }}>
                           Choose your preferred payment method
                         </p>
-                        <div className="bg-background/50 border border-border rounded-lg p-4 space-y-3" style={{ borderRadius: 'var(--radius)' }}>
-                          <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-muted/50 rounded-md transition-colors">
-                            <input
-                              type="radio"
+                        <div className="space-y-3">
+                          <label
+                            className={`flex items-center gap-3 cursor-pointer p-4 rounded-lg border-2 transition-all ${eventDetails.paymentMethod === 'on_bill' ? 'border-primary bg-primary/5' : 'border-border hover:border-border/80'}`}
+                            style={{ borderRadius: 'var(--radius)' }}
+                          >
+                            <NativeRadio
                               name="paymentMethod"
-                              className="w-5 h-5 text-primary border-border focus:ring-primary focus:ring-offset-background cursor-pointer"
-                              style={{ accentColor: 'var(--color-primary)' }}
                               checked={eventDetails.paymentMethod === 'on_bill'}
                               onChange={() => setEventDetails({ ...eventDetails, paymentMethod: 'on_bill' })}
                             />
@@ -1403,12 +1465,12 @@ export function CustomMenuWizard() {
                             </div>
                           </label>
 
-                          <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-muted/50 rounded-md transition-colors">
-                            <input
-                              type="radio"
+                          <label
+                            className={`flex items-center gap-3 cursor-pointer p-4 rounded-lg border-2 transition-all ${eventDetails.paymentMethod === 'cash_card' ? 'border-primary bg-primary/5' : 'border-border hover:border-border/80'}`}
+                            style={{ borderRadius: 'var(--radius)' }}
+                          >
+                            <NativeRadio
                               name="paymentMethod"
-                              className="w-5 h-5 text-primary border-border focus:ring-primary focus:ring-offset-background cursor-pointer"
-                              style={{ accentColor: 'var(--color-primary)' }}
                               checked={eventDetails.paymentMethod === 'cash_card'}
                               onChange={() => setEventDetails({ ...eventDetails, paymentMethod: 'cash_card' })}
                             />
@@ -1432,12 +1494,9 @@ export function CustomMenuWizard() {
                         </p>
                         <div className="bg-background/50 border border-border rounded-lg p-4 space-y-4" style={{ borderRadius: 'var(--radius)' }}>
                           <label className="flex items-center gap-3 cursor-pointer">
-                            <input
-                              type="checkbox"
+                            <NativeCheckbox
                               checked={eventDetails.useSameAddressForBilling}
                               onChange={(e) => setEventDetails({ ...eventDetails, useSameAddressForBilling: e.target.checked })}
-                              className="w-5 h-5 rounded border-border text-primary focus:ring-2 focus:ring-primary/20 flex-shrink-0"
-                              style={{ accentColor: 'var(--color-primary)' }}
                             />
                             <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
                               Use same address for billing
@@ -1623,10 +1682,44 @@ export function CustomMenuWizard() {
                               </div>
                             </div>
 
+                            {categoryHasCombo && (
+                              <div className="mb-6 flex items-center justify-center">
+                                <div className="bg-muted/30 p-1 rounded-xl border border-border flex justify-center gap-1 shadow-sm w-full">
+                                  <button
+                                    onClick={() => setCategoryFilterMode({ ...categoryFilterMode, [selectedCategory]: 'combo' })}
+                                    className={`px-6 py-2 rounded-lg transition-all text-sm font-medium flex justify-center gap-2 w-full ${(categoryFilterMode[selectedCategory] || 'combo') === 'combo'
+                                      ? 'bg-primary text-primary-foreground shadow-md'
+                                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                                      }`}
+                                  >
+                                    {/* <Sparkles className={`w-4 h-4 ${(categoryFilterMode[selectedCategory] || 'combo') === 'combo' ? 'text-white' : 'text-primary'}`} /> */}
+                                    Combo Pack
+                                  </button>
+                                  <button
+                                    onClick={() => setCategoryFilterMode({ ...categoryFilterMode, [selectedCategory]: 'individual' })}
+                                    className={`px-6 py-2 rounded-lg transition-all text-sm font-medium flex justify-center gap-2 w-full ${(categoryFilterMode[selectedCategory] === 'individual')
+                                      ? 'bg-primary text-primary-foreground shadow-md'
+                                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                                      }`}
+                                  >
+                                    {/* <ClipboardList className={`w-4 h-4 ${categoryFilterMode[selectedCategory] === 'individual' ? 'text-white' : 'text-primary'}`} /> */}
+                                    Single Items
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
                             {/* Menu Items Grid - Vertical card layout */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                               {menuItems
-                                .filter(item => item.category === selectedCategory)
+                                .filter(item => {
+                                  if (item.category !== selectedCategory) return false;
+                                  if (categoryHasCombo) {
+                                    const mode = categoryFilterMode[selectedCategory] || 'combo';
+                                    return mode === 'combo' ? item.isCombo : !item.isCombo;
+                                  }
+                                  return true;
+                                })
                                 .map((item) => {
                                   const isSelected = selectedItems.includes(item.id);
 
@@ -1830,6 +1923,9 @@ export function CustomMenuWizard() {
                                                 <div className="flex items-start justify-between gap-2 mb-1.5">
                                                   <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-2 flex-wrap">
+                                                      {item.dietaryType !== 'none' && (
+                                                        <DietaryIcon type={item.dietaryType} size="sm" isGlutenFree={item.isGlutenFree} />
+                                                      )}
                                                       <h6 className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
                                                         {item.name}
                                                       </h6>
@@ -1929,24 +2025,17 @@ export function CustomMenuWizard() {
                                                     <div className="flex items-center gap-1.5">
                                                       {isPerPerson(item) && (
                                                         <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-xs" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
-                                                          {categoryData[item.category]?.guestCount
-                                                            ? `${quantity} × ${itemGuestCounts[itemId] || parseInt(eventDetails.guestCount) || 1} guests`
-                                                            : `${quantity} × pp`
-                                                          }
+                                                          {itemGuestCounts[itemId] || parseInt(eventDetails.guestCount) || 1} guests × CHF {getItemPerPersonPrice(item).toFixed(2)}
                                                         </span>
                                                       )}
                                                       {!isPerPerson(item) && (
                                                         <span className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-xs" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
-                                                          {quantity > 1 ? `${quantity}×` : 'Flat rate'}
+                                                          Qty: {quantity}
                                                         </span>
                                                       )}
                                                     </div>
                                                     <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                                      CHF {getItemPerPersonPrice(item).toFixed(2)}
-                                                      {isPerPerson(item) && !categoryData[item.category]?.guestCount && <span className="text-muted-foreground text-sm">/person</span>}
-                                                      {isPerPerson(item) && categoryData[item.category]?.guestCount && (
-                                                        <span className="text-muted-foreground text-sm">/guest</span>
-                                                      )}
+                                                      CHF {(getItemPerPersonPrice(item) * (isPerPerson(item) ? (itemGuestCounts[itemId] || parseInt(eventDetails.guestCount) || 1) : quantity)).toFixed(2)}
                                                     </p>
                                                   </div>
                                                 )}
@@ -2444,25 +2533,14 @@ export function CustomMenuWizard() {
                                                 <p className="text-primary font-semibold text-sm">
                                                   {isConsumption(item)
                                                     ? `CHF ${item.price.toFixed(2)}/unit`
-                                                    : `CHF ${getItemPerPersonPrice(item).toFixed(2)}`}
-                                                  {isPerPerson(item) && !categoryData[item.category]?.guestCount && (
-                                                    <span className="text-muted-foreground text-xs ml-1">/person</span>
-                                                  )}
-                                                  {isPerPerson(item) && categoryData[item.category]?.guestCount && (
-                                                    <span className="text-muted-foreground text-xs ml-1">/guest</span>
-                                                  )}
+                                                    : `CHF ${(getItemPerPersonPrice(item) * (isPerPerson(item) ? (itemGuestCounts[itemId] || parseInt(eventDetails.guestCount) || 1) : quantity)).toFixed(2)}`}
                                                 </p>
                                                 <p className="text-muted-foreground text-xs">
                                                   {isConsumption(item)
                                                     ? 'billed by consumption'
                                                     : isPerPerson(item)
-                                                      ? (categoryData[item.category]?.guestCount
-                                                        ? `${quantity} × ${itemGuestCounts[itemId] || parseInt(eventDetails.guestCount) || 1} guests`
-                                                        : `${parseInt(eventDetails.guestCount) || 0}×`
-                                                      )
-                                                      : quantity > 1
-                                                        ? `${quantity}×`
-                                                        : 'flat'}
+                                                      ? `${itemGuestCounts[itemId] || parseInt(eventDetails.guestCount) || 1} guests × CHF ${getItemPerPersonPrice(item).toFixed(2)}`
+                                                      : `Qty: ${quantity} × CHF ${getItemPerPersonPrice(item).toFixed(2)}`}
                                                 </p>
                                               </div>
                                             </div>
@@ -2818,13 +2896,11 @@ export function CustomMenuWizard() {
                                         borderColor: 'var(--consumption-alert-border)',
                                         borderRadius: 'var(--radius)'
                                       }}>
-                                      <input
-                                        type="checkbox"
+                                      <NativeCheckbox
                                         id="include-drinks"
                                         checked={includeBeveragePrices}
                                         onChange={(e) => setIncludeBeveragePrices(e.target.checked)}
-                                        className="mt-1 w-5 h-5 rounded border-gray-300 focus:ring-amber-500/20 flex-shrink-0 cursor-pointer"
-                                        style={{ accentColor: 'var(--consumption-checkbox-accent)' }}
+                                        className="mt-1"
                                       />
                                       <label htmlFor="include-drinks" className="cursor-pointer">
                                         <span className="block text-gray-800 font-medium mb-1">Include consumption-based prices in the estimate</span>
@@ -3098,12 +3174,9 @@ export function CustomMenuWizard() {
                       {/* Terms and Conditions */}
                       <div className="bg-card border border-border rounded-lg p-5" style={{ borderRadius: 'var(--radius-card)' }}>
                         <label className="flex items-center gap-3 cursor-pointer group">
-                          <input
-                            type="checkbox"
+                          <NativeCheckbox
                             checked={termsAccepted}
                             onChange={(e) => setTermsAccepted(e.target.checked)}
-                            className="w-5 h-5 rounded border-border text-primary focus:ring-2 focus:ring-primary/20 flex-shrink-0"
-                            style={{ accentColor: 'var(--color-primary)' }}
                           />
                           <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
                             I agree to the{' '}
@@ -3272,12 +3345,10 @@ export function CustomMenuWizard() {
                             >
                               <div className="flex items-center gap-3 flex-1">
                                 <div className="relative flex items-center justify-center">
-                                  <input
-                                    type="radio"
+                                  <NativeRadio
                                     name="variant"
                                     checked={isSelected}
                                     onChange={() => setTempVariant(variant.id)}
-                                    className="w-5 h-5 appearance-none border-2 border-border rounded-full checked:border-primary checked:border-[6px] transition-all cursor-pointer"
                                   />
                                 </div>
                                 <div className="flex-1">
@@ -3349,16 +3420,11 @@ export function CustomMenuWizard() {
                                         >
                                           <div className="flex items-center gap-3 flex-1">
                                             <div className="relative flex items-center justify-center">
-                                              <input
-                                                type="radio"
+                                              <NativeRadio
                                                 name={`choice-${group.id}`}
                                                 checked={isChecked}
                                                 onChange={() => toggleTempAddOn(addOn.id, group.id, group.maxSelect)}
-                                                className={`appearance-none border-2 border-border transition-all w-5 h-5 rounded-full checked:border-primary checked:border-[6px] cursor-pointer`}
                                               />
-                                              {isChecked && (
-                                                <Check className="w-3 h-3 text-white absolute pointer-events-none" style={{ strokeWidth: 3 }} />
-                                              )}
                                             </div>
                                             <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                                               {addOn.name}
@@ -3403,15 +3469,10 @@ export function CustomMenuWizard() {
                                         >
                                           <div className="flex items-center gap-3 flex-1">
                                             <div className="relative flex items-center justify-center">
-                                              <input
-                                                type="checkbox"
+                                              <NativeCheckbox
                                                 checked={isChecked}
                                                 onChange={() => toggleTempAddOn(addOn.id, group.id, group.maxSelect)}
-                                                className={`appearance-none border-2 border-border transition-all cursor-pointer w-5 h-5 rounded checked:bg-primary checked:border-primary`}
                                               />
-                                              {isChecked && (
-                                                <Check className="w-3 h-3 text-white absolute pointer-events-none" style={{ strokeWidth: 3 }} />
-                                              )}
                                             </div>
                                             <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                                               {addOn.name}
@@ -3452,15 +3513,10 @@ export function CustomMenuWizard() {
                               >
                                 <div className="flex items-center gap-3 flex-1">
                                   <div className="relative flex items-center justify-center">
-                                    <input
-                                      type="checkbox"
+                                    <NativeCheckbox
                                       checked={isChecked}
                                       onChange={() => toggleTempAddOn(addOn.id)}
-                                      className="w-5 h-5 appearance-none border-2 border-border rounded checked:bg-primary checked:border-primary transition-all cursor-pointer"
                                     />
-                                    {isChecked && (
-                                      <Check className="w-3 h-3 text-white absolute pointer-events-none" style={{ strokeWidth: 3 }} />
-                                    )}
                                   </div>
                                   <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                                     {addOn.name}
@@ -3504,52 +3560,22 @@ export function CustomMenuWizard() {
                   <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-4">
                     {/* Left: Quantity and Guest Count Selectors */}
                     <div className="flex items-center gap-6">
-                      {/* Quantity Selector */}
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setTempQuantity(Math.max(1, tempQuantity - 1))}
-                          className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-foreground bg-card"
-                          style={{ borderRadius: 'var(--radius)' }}
-                          disabled={tempQuantity <= 1}
-                        >
-                          <Minus className="w-5 h-5" />
-                        </button>
-                        <span className="text-foreground min-w-[2rem] text-center" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                          {tempQuantity}
-                        </span>
-                        <button
-                          onClick={() => setTempQuantity(tempQuantity + 1)}
-                          className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors bg-card"
-                          style={{ borderRadius: 'var(--radius)' }}
-                        >
-                          <Plus className="w-5 h-5" />
-                        </button>
-                      </div>
-
-                      {/* Guest Count Selector - only show if category has guestCount enabled */}
-                      {detailsModalItem && categoryData[detailsModalItem.category]?.guestCount && (
+                      {/* Per-person items: Only guest count stepper */}
+                      {detailsModalItem && isPerPerson(detailsModalItem) ? (
                         <div className="flex items-center gap-3">
-                          <span className="text-muted-foreground pl-2" style={{ fontSize: 'var(--text-small)' }}>Guests:</span>
+                          <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Guests:</span>
                           <div className="flex items-center gap-2">
                             <input
                               type="number"
-                              min={0}
-                              max={parseInt(eventDetails.guestCount) || 1}
+                              min={1}
                               value={tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1)}
                               onChange={(e) => {
                                 const val = parseInt(e.target.value);
-                                if (!isNaN(val)) {
-                                  setTempGuestCount(Math.min(parseInt(eventDetails.guestCount) || 1, Math.max(0, val)));
-                                } else if (e.target.value === '') {
-                                  setTempGuestCount(null); // allow empty string temporarily
+                                if (!isNaN(val) && val >= 1) {
+                                  setTempGuestCount(val);
                                 }
                               }}
-                              onBlur={(e) => {
-                                if (e.target.value === '') {
-                                  setTempGuestCount(1);
-                                }
-                              }}
-                              className="w-14 h-10 text-center border-2 border-border text-foreground rounded-lg focus:border-primary focus:outline-none transition-colors bg-card"
+                              className="w-20 h-10 text-center border-2 border-border text-foreground rounded-lg focus:border-primary focus:outline-none transition-colors bg-card"
                               style={{
                                 borderRadius: 'var(--radius)',
                                 fontSize: 'var(--text-base)',
@@ -3558,11 +3584,32 @@ export function CustomMenuWizard() {
                                 MozAppearance: 'textfield'
                               }}
                             />
-                            <span className="text-muted-foreground whitespace-nowrap" style={{ fontSize: 'var(--text-small)' }}>
-                              / {eventDetails.guestCount || '1'}
-                            </span>
                           </div>
                         </div>
+                      ) : (
+                        <>
+                          {/* Flat-rate items: Quantity selector */}
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setTempQuantity(Math.max(1, tempQuantity - 1))}
+                              className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-foreground bg-card"
+                              style={{ borderRadius: 'var(--radius)' }}
+                              disabled={tempQuantity <= 1}
+                            >
+                              <Minus className="w-5 h-5" />
+                            </button>
+                            <span className="text-foreground min-w-[2rem] text-center" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                              {tempQuantity}
+                            </span>
+                            <button
+                              onClick={() => setTempQuantity(tempQuantity + 1)}
+                              className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors bg-card"
+                              style={{ borderRadius: 'var(--radius)' }}
+                            >
+                              <Plus className="w-5 h-5" />
+                            </button>
+                          </div>
+                        </>
                       )}
                     </div>
 
@@ -3602,8 +3649,9 @@ export function CustomMenuWizard() {
                             });
                           }
 
-                          // Just multiply by quantity as requested, ignoring guest count for this display
-                          return ((basePrice + addOnsTotal) * tempQuantity).toFixed(2);
+                          // Calculate total based on pricing type
+                          const multiplier = isPerPerson(detailsModalItem) ? (tempGuestCount || parseInt(eventDetails.guestCount) || 1) : tempQuantity;
+                          return ((basePrice + addOnsTotal) * multiplier).toFixed(2);
                         })()}
                       </span>
                     </button>
@@ -3685,12 +3733,15 @@ export function CustomMenuWizard() {
                       if (!item) return null;
                       const quantity = itemQuantities[itemId] || 1;
                       const isBeverage = item.category === 'Beverages';
-                      const isPerPerson = item.pricingType === 'per_person';
+                      const isPerPersonItemValue = isPerPerson(item);
                       return (
                         <div key={itemId} className="bg-card border border-border rounded-lg p-2.5" style={{ borderRadius: 'var(--radius)' }}>
                           <div className="flex items-start justify-between gap-2 mb-1.5">
                             <div className="flex-1 min-w-0">
                               <h6 className="text-foreground flex items-center gap-2 flex-wrap" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
+                                {item.dietaryType !== 'none' && (
+                                  <DietaryIcon type={item.dietaryType} size="sm" isGlutenFree={item.isGlutenFree} />
+                                )}
                                 <span>{item.name}</span>
                                 {isConsumption(item) && (
                                   <span
@@ -3769,18 +3820,13 @@ export function CustomMenuWizard() {
                           ) : (
                             <div className="flex items-center justify-between pt-1.5 border-t border-border">
                               <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-xs">
-                                {isPerPerson
-                                  ? (categoryData[item.category]?.guestCount
-                                    ? `${quantity} × ${itemGuestCounts[itemId] || parseInt(eventDetails.guestCount) || 1} guests`
-                                    : `${quantity}× pp`
-                                  )
-                                  : (quantity > 1 ? `${quantity}×` : 'Flat rate')
+                                {isPerPersonItemValue
+                                  ? `${itemGuestCounts[itemId] || parseInt(eventDetails.guestCount) || 1} guests × CHF ${getItemPerPersonPrice(item).toFixed(2)}`
+                                  : (quantity > 1 ? `Qty: ${quantity} × CHF ${getItemPerPersonPrice(item).toFixed(2)}` : `CHF ${getItemPerPersonPrice(item).toFixed(2)}`)
                                 }
                               </span>
                               <p className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                CHF {getItemPerPersonPrice(item).toFixed(2)}
-                                {isPerPerson && !categoryData[item.category]?.guestCount && <span className="text-muted-foreground text-xs">/person</span>}
-                                {isPerPerson && categoryData[item.category]?.guestCount && <span className="text-muted-foreground text-xs">/guest</span>}
+                                CHF {(getItemPerPersonPrice(item) * (isPerPersonItemValue ? (itemGuestCounts[itemId] || parseInt(eventDetails.guestCount) || 1) : quantity)).toFixed(2)}
                               </p>
                             </div>
                           )}

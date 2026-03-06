@@ -29,4 +29,6 @@ export interface MenuItem {
   dietaryType: 'vegetarian' | 'non-vegetarian' | 'vegan' | 'none';
   /** Additional dietary flag from database for gluten-free items */
   isGlutenFree?: boolean;
+  /** Indicates if this item is a combo pack */
+  isCombo?: boolean;
 }

@@ -50,6 +50,7 @@ export async function submitWizardForm(data: WizardFormData) {
         name: menuItems.name,
         categoryId: menuItems.categoryId,
         pricePerPerson: menuItems.pricePerPerson,
+        pricingType: menuItems.pricingType,
       })
       .from(menuItems)
       .where(eq(menuItems.isActive, true));
@@ -79,20 +80,28 @@ export async function submitWizardForm(data: WizardFormData) {
 
       if (dbItem) {
         const unitPrice = Number(dbItem.pricePerPerson);
-        const categoryHasGuestCount = categoryMap.get(dbItem.categoryId || '') || false;
 
-        // Use per-item guest count if category has guestCount enabled, otherwise use total guest count
-        const effectiveGuestCount = categoryHasGuestCount
-          ? (data.itemGuestCounts?.[itemId] || data.guestCount)
-          : data.guestCount;
+        // Calculate effective guest count and quantity based on pricing type
+        let effectiveGuestCount = 1;
+        let effectiveQuantity = quantity;
 
-        const itemTotal = unitPrice * quantity * effectiveGuestCount;
+        if (dbItem.pricingType === 'per_person') {
+          // Per-person items: Always quantity=1, use per-item guest count or total guest count
+          effectiveQuantity = 1;
+          effectiveGuestCount = data.itemGuestCounts?.[itemId] || data.guestCount;
+        } else {
+          // Flat-fee or consumption: quantity is used directly, guest count is always 1
+          effectiveQuantity = quantity;
+          effectiveGuestCount = 1;
+        }
+
+        const itemTotal = unitPrice * effectiveQuantity * effectiveGuestCount;
         estimatedTotal += itemTotal;
 
         itemsToCreate.push({
           itemType: "menu_item",
           itemId: dbItem.id,
-          quantity,
+          quantity: effectiveQuantity,
           unitPrice: dbItem.pricePerPerson,
         });
       }

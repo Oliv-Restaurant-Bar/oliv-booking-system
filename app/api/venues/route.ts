@@ -32,7 +32,7 @@ export async function GET() {
 // POST /api/venues - Create a new venue
 const createVenueSchema = z.object({
   name: z.string().min(1, 'Venue name is required'),
-  description: z.string().optional(),
+  description: z.string().nullable().optional(),
 });
 
 export async function POST(request: NextRequest) {

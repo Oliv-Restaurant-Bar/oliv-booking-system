@@ -120,6 +120,7 @@ export async function createMenuItem(input: {
   isVegetarian?: boolean;
   isVegan?: boolean;
   isGlutenFree?: boolean;
+  isCombo?: boolean;
   sortOrder?: number;
   variants?: any[];
 }) {
