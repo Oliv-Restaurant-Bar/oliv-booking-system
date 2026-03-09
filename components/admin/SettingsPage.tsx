@@ -7,6 +7,7 @@ import { VenueModal } from './VenueModal';
 import { Permission, hasPermission } from '@/lib/auth/rbac';
 import { VenueService } from '@/services/venue.service';
 import type { Venue } from '@/services/venue.service';
+import { toast } from 'sonner';
 
 export function SettingsPage({ user }: { user?: any }) {
   const userRole = user?.role;
@@ -90,7 +91,7 @@ export function SettingsPage({ user }: { user?: any }) {
           await loadVenues();
           setShowVenueModal(false);
         } else {
-          alert('Failed to update venue. A venue with this name may already exist.');
+          toast.error('Failed to update venue. A venue with this name may already exist.');
         }
       } else {
         // Add new venue
@@ -99,7 +100,7 @@ export function SettingsPage({ user }: { user?: any }) {
           await loadVenues();
           setShowVenueModal(false);
         } else {
-          alert('Failed to add venue. A venue with this name may already exist.');
+          toast.error('Failed to add venue. A venue with this name may already exist.');
         }
       }
     } finally {
@@ -115,13 +116,14 @@ export function SettingsPage({ user }: { user?: any }) {
     const success = await VenueService.deleteLocation(venue.id);
     if (success) {
       await loadVenues();
+      toast.success('Venue deleted successfully');
     } else {
-      alert('Failed to delete venue');
+      toast.error('Failed to delete venue');
     }
   };
 
   return (
-    <div className="min-h-full bg-background px-4 md:px-8 pt-6 pb-1 flex flex-col">
+    <div className="min-h-full bg-background flex flex-col">
       <div className="w-full flex-1">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Venue Management Card */}
@@ -149,7 +151,7 @@ export function SettingsPage({ user }: { user?: any }) {
                 </button>
               </div>
             </div>
-             {/* Venues List */}
+            {/* Venues List */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {isLoadingVenues ? (
                 <div className="col-span-full flex items-center justify-center py-12">

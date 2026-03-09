@@ -11,7 +11,7 @@ const sendSchema = z.object({
   bookingId: z.string().uuid(),
   documentName: z.string(),
   sentBy: z.string(),
-  pdfBase64: z.string(),
+  pdfBase64: z.string(), // Now expects clean base64 (without data URI prefix)
   emails: z.array(z.string().email()),
 });
 

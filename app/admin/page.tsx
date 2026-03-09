@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/server";
 import { KPICard } from "@/components/admin/KPICard";
 import { DashboardCharts } from "@/components/admin/DashboardCharts";
+import { AdminPageLayout } from "@/components/admin/AdminPageLayout";
 import { getDashboardStats, getDailyBookingsData, getDailyRevenueData, getBookingStatusDistribution } from "@/lib/actions/stats";
 import { Permission, hasPermission } from "@/lib/auth/rbac";
 
@@ -16,9 +17,6 @@ export default async function AdminDashboardPage() {
 
   const userRole = session.user.role as any;
   if (!hasPermission(userRole, Permission.VIEW_DASHBOARD)) {
-    // If they can't see the dashboard, they probably can't see anything, 
-    // but let's redirect to a safe place or logout if needed.
-    // For now, redirect to login if no permissions at all.
     redirect("/admin/login");
   }
 
@@ -31,7 +29,7 @@ export default async function AdminDashboardPage() {
   ]);
 
   return (
-    <div className="px-4 md:px-8 pt-3 pb-8 space-y-4 md:space-y-6">
+    <AdminPageLayout className="space-y-4 md:space-y-6">
       {/* KPI Cards - Compact Version */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
         <KPICard
@@ -63,6 +61,6 @@ export default async function AdminDashboardPage() {
           © 2026 Restaurant Oliv Restaurant & Bar
         </p>
       </div>
-    </div>
+    </AdminPageLayout>
   );
 }

@@ -541,7 +541,42 @@ export async function sendKitchenPdfEmail(params: {
   try {
     const useTemplates = process.env.USE_ZEPTOMAIL_TEMPLATES === "true";
     const subject = `Kitchen Sheet: ${params.customerName} - ${params.eventDate}`;
-    const base64Content = params.pdfBase64.replace(/^data:application\/pdf;base64,/, "");
+
+    // Clean and validate base64 content
+    let base64Content = params.pdfBase64;
+
+    // Remove data URI prefix if present (for backward compatibility)
+    if (base64Content.startsWith('data:application/pdf;base64,')) {
+      base64Content = base64Content.replace(/^data:application\/pdf;base64,/, "");
+    }
+
+    // Remove ALL whitespace (this is critical!)
+    base64Content = base64Content.replace(/\s/g, '');
+
+    // Verify base64 is valid
+    if (!base64Content || base64Content.length === 0) {
+      throw new Error("PDF base64 content is empty after processing");
+    }
+
+    // Validate that it's actually a PDF by checking magic bytes
+    try {
+      const pdfHeader = atob(base64Content.substring(0, 20));
+      if (!pdfHeader.includes('%PDF-')) {
+        console.error('❌ Invalid PDF header in email attachment!');
+        console.error('   Expected: %PDF-, Got:', pdfHeader.substring(0, 20));
+        throw new Error("Invalid PDF file - missing PDF header");
+      }
+    } catch (decodeError) {
+      console.error('❌ Failed to decode base64 to validate PDF header:', decodeError);
+      throw new Error("Base64 content is not valid PDF data");
+    }
+
+    // Log for debugging
+    console.log('📄 PDF Attachment Debug:');
+    console.log(`   - Original length: ${params.pdfBase64.length}`);
+    console.log(`   - Cleaned length: ${base64Content.length}`);
+    console.log(`   - PDF header valid: ✅`);
+    console.log(`   - Filename: ${params.documentName}.pdf`);
 
     if (useTemplates) {
       const templateName = getTemplateName("kitchen_pdf" as any);
@@ -582,6 +617,8 @@ export async function sendKitchenPdfEmail(params: {
           }
         ]
       });
+
+      console.log('📧 Template email sent, result:', result);
 
       if (!result.success) {
         await db.update(emailLogs).set({ status: "failed" }).where(eq(emailLogs.id, emailLogId));
@@ -650,6 +687,8 @@ export async function sendKitchenPdfEmail(params: {
           }
         ]
       });
+
+      console.log('📧 HTML email sent, result:', result);
 
       if (!result.success) {
         await db.update(emailLogs).set({ status: "failed" }).where(eq(emailLogs.id, emailLogId));

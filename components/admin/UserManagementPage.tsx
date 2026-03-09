@@ -6,7 +6,10 @@ import { Modal } from '../user/Modal';
 import { ConfirmationModal } from '../user/ConfirmationModal';
 import { Button } from '../user/Button';
 import { StatusDropdown } from './StatusDropdown';
+import { Input } from '@/components/ui/input';
 import * as XLSX from 'xlsx';
+import { toast } from 'sonner';
+import { canModifyUser } from '@/lib/auth/rbac';
 
 interface User {
   id: string;
@@ -23,6 +26,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
   // Robust check for super_admin role - handle both direct user object and session object
   const user = currentUser?.user || currentUser;
   const isSuperAdmin = user?.role === 'super_admin' || user?.metadata?.role === 'super_admin';
+  const currentUserId = user?.id; // Get current user ID for comparison
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
@@ -115,11 +119,12 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
       }
 
       await fetchUsers();
+      toast.success('User added successfully');
       setIsAddUserModalOpen(false);
       resetForm();
     } catch (err: any) {
       console.error('Error adding user:', err);
-      setError(err.message || 'Failed to add user');
+      toast.error(err.message || 'Failed to add user');
     } finally {
       setIsSubmitting(false);
     }
@@ -132,6 +137,12 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
     setFormEmail(user.email);
     setFormRole(user.role);
     setFormStatus(user.status);
+
+    // Show helpful message for self-edit
+    if (user.id === currentUserId) {
+      toast.info('You can edit your profile information, but cannot change your role or status.');
+    }
+
     setIsEditUserModalOpen(true);
   };
 
@@ -158,12 +169,13 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
       }
 
       await fetchUsers();
+      toast.success('User updated successfully');
       setIsEditUserModalOpen(false);
       resetForm();
       setSelectedUser(null);
     } catch (err: any) {
       console.error('Error updating user:', err);
-      setError(err.message || 'Failed to update user');
+      toast.error(err.message || 'Failed to update user');
     } finally {
       setIsSubmitting(false);
     }
@@ -191,11 +203,12 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
       }
 
       await fetchUsers();
+      toast.success('User deleted successfully');
       setIsDeleteModalOpen(false);
       setSelectedUser(null);
     } catch (err: any) {
       console.error('Error deleting user:', err);
-      setError(err.message || 'Failed to delete user');
+      toast.error(err.message || 'Failed to delete user');
     } finally {
       setIsSubmitting(false);
     }
@@ -238,7 +251,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
   };
 
   return (
-    <div className="min-h-full bg-background px-4 md:px-8 pt-6 pb-1 flex flex-col">
+    <div className="min-h-full bg-background flex flex-col">
       <div className="w-full flex-1">
         {/* Error Message */}
         {error && (
@@ -402,23 +415,29 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
                             day: 'numeric'
                           })}
                         </td>
-                        {isSuperAdmin && (
+                        {/* Actions column - show edit/delete based on permissions */}
+                        {(isSuperAdmin || user.id === currentUserId) && (
                           <td className="px-6 py-4">
                             <div className="flex items-center justify-end gap-2">
+                              {/* Edit button - always show for own profile */}
                               <button
                                 onClick={() => handleEditClick(user)}
                                 className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
-                                title="Edit user"
+                                title={user.id === currentUserId ? "Edit my profile" : "Edit user"}
                               >
                                 <Edit2 className="w-4 h-4" />
                               </button>
-                              <button
-                                onClick={() => handleDeleteClick(user)}
-                                className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-muted-foreground hover:text-destructive"
-                                title="Delete user"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+
+                              {/* Delete button - never show for own profile, only for super_admins on other users */}
+                              {isSuperAdmin && user.id !== currentUserId && (
+                                <button
+                                  onClick={() => handleDeleteClick(user)}
+                                  className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-muted-foreground hover:text-destructive"
+                                  title="Delete user"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
                             </div>
                           </td>
                         )}
@@ -475,12 +494,12 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
               Name *
             </label>
-            <input
+            <Input
               type="text"
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
               placeholder="Enter full name"
-              className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+              maxLength={50}
             />
           </div>
 
@@ -488,12 +507,12 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
               Email *
             </label>
-            <input
+            <Input
               type="email"
               value={formEmail}
               onChange={(e) => setFormEmail(e.target.value)}
               placeholder="user@restaurant.com"
-              className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+              maxLength={255}
             />
           </div>
 
@@ -501,12 +520,12 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
               Password (optional - will use default if empty)
             </label>
-            <input
+            <Input
               type="password"
               value={formPassword}
               onChange={(e) => setFormPassword(e.target.value)}
               placeholder="Enter password"
-              className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+              maxLength={100}
             />
           </div>
 
@@ -548,7 +567,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
           setError(null);
         }}
         icon={Edit2}
-        title="Edit User"
+        title={selectedUser?.id === currentUserId ? "Edit My Profile" : "Edit User"}
         maxWidth="md"
         footer={
           <>
@@ -576,12 +595,12 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
               Name *
             </label>
-            <input
+            <Input
               type="text"
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
               placeholder="Enter full name"
-              className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+              maxLength={50}
             />
           </div>
 
@@ -589,12 +608,12 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
               Email *
             </label>
-            <input
+            <Input
               type="email"
               value={formEmail}
               onChange={(e) => setFormEmail(e.target.value)}
               placeholder="user@restaurant.com"
-              className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+              maxLength={255}
             />
           </div>
 
@@ -608,7 +627,11 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
               onChange={(value) => setFormRole(value as User['role'])}
               placeholder="Select role"
               className="w-full"
+              disabled={selectedUser?.id === currentUserId} // Disable role change for own profile
             />
+            {selectedUser?.id === currentUserId && (
+              <p className="text-xs text-muted-foreground mt-1">You cannot change your own role</p>
+            )}
           </div>
 
           <div>
@@ -621,7 +644,11 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
               onChange={(value) => setFormStatus(value as User['status'])}
               placeholder="Select status"
               className="w-full"
+              disabled={selectedUser?.id === currentUserId} // Disable status change for own profile
             />
+            {selectedUser?.id === currentUserId && (
+              <p className="text-xs text-muted-foreground mt-1">You cannot deactivate your own account</p>
+            )}
           </div>
         </div>
       </Modal>

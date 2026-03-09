@@ -94,38 +94,54 @@ function CenteredVariant({
 }: Omit<ThankYouScreenProps, 'variant'>) {
   return (
     <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: 'var(--background)' }}>
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="w-full max-w-xl rounded-2xl p-12 text-center"
-        style={{ 
+        style={{
           backgroundColor: 'var(--surface)',
           border: '1px solid var(--border)'
         }}
       >
-        {/* Animated Checkmark Icon */}
-        <motion.div 
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ 
-            type: "spring",
-            stiffness: 260,
-            damping: 20,
-            delay: 0.2 
-          }}
-          className="flex justify-center mb-6"
+        {/* Logo and Success Icon in one line */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="flex items-center justify-center gap-4 mb-6"
         >
-          <div 
-            className="w-24 h-24 rounded-full flex items-center justify-center"
-            style={{ backgroundColor: 'var(--primary)' }}
-          >
-            <CheckCircle 
-              className="w-14 h-14"
-              style={{ color: 'var(--primary-foreground)' }}
-              strokeWidth={2}
+          {/* Logo */}
+          <div className="bg-white p-3 rounded-lg shadow-md">
+            <img
+              src="/assets/59e4409f00962b160c922c848df8eb1ebce3a245.png"
+              alt="OLIV Logo"
+              className="h-12 w-auto object-contain"
             />
           </div>
+
+          {/* Success Icon */}
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{
+              type: "spring",
+              stiffness: 260,
+              damping: 20,
+              delay: 0.2
+            }}
+          >
+            <div
+              className="w-20 h-20 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: 'var(--primary)' }}
+            >
+              <CheckCircle
+                className="w-12 h-12"
+                style={{ color: 'var(--primary-foreground)' }}
+                strokeWidth={2}
+              />
+            </div>
+          </motion.div>
         </motion.div>
 
         {/* Heading */}
@@ -298,16 +314,16 @@ function CenteredVariant({
 }
 
 // Variant 2: Split Layout
-function SplitVariant({ 
-  inquiryNumber, 
-  onCreateNew, 
+function SplitVariant({
+  inquiryNumber,
+  onCreateNew,
   onEditOrder,
-  onGoHome 
+  onGoHome
 }: Omit<ThankYouScreenProps, 'variant'>) {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row" style={{ backgroundColor: 'var(--background)' }}>
       {/* Left Side - Success Message */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.5 }}
@@ -315,27 +331,44 @@ function SplitVariant({
         style={{ backgroundColor: 'var(--primary)' }}
       >
         <div className="max-w-md text-center lg:text-left">
-          <motion.div 
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ 
-              type: "spring",
-              stiffness: 260,
-              damping: 20,
-              delay: 0.2 
-            }}
-            className="flex justify-center lg:justify-start mb-6"
+          {/* Logo and Success Icon in one line */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="flex items-center justify-center lg:justify-start gap-4 mb-6"
           >
-            <div 
-              className="w-20 h-20 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: 'var(--background)' }}
-            >
-              <CheckCircle 
-                className="w-12 h-12"
-                style={{ color: 'var(--primary)' }}
-                strokeWidth={2}
+            {/* Logo */}
+            <div className="bg-white p-3 rounded-lg shadow-md">
+              <img
+                src="/assets/59e4409f00962b160c922c848df8eb1ebce3a245.png"
+                alt="OLIV Logo"
+                className="h-12 w-auto object-contain"
               />
             </div>
+
+            {/* Success Icon */}
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{
+                type: "spring",
+                stiffness: 260,
+                damping: 20,
+                delay: 0.2
+              }}
+            >
+              <div
+                className="w-20 h-20 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: 'var(--background)' }}
+              >
+                <CheckCircle
+                  className="w-12 h-12"
+                  style={{ color: 'var(--primary)' }}
+                  strokeWidth={2}
+                />
+              </div>
+            </motion.div>
           </motion.div>
 
           <h1 
@@ -637,45 +670,61 @@ function SplitVariant({
 }
 
 // Variant 3: Minimal Clean Layout
-function MinimalVariant({ 
-  inquiryNumber, 
-  onCreateNew, 
+function MinimalVariant({
+  inquiryNumber,
+  onCreateNew,
   onEditOrder,
-  onGoHome 
+  onGoHome
 }: Omit<ThankYouScreenProps, 'variant'>) {
   return (
     <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: 'var(--background)' }}>
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         className="w-full max-w-2xl"
       >
-        {/* Success Icon */}
-        <motion.div 
-          initial={{ scale: 0, rotate: -180 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ 
-            type: "spring",
-            stiffness: 200,
-            damping: 15,
-            delay: 0.2 
-          }}
-          className="flex justify-center mb-8"
+        {/* Logo and Success Icon in one line */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="flex items-center justify-center gap-4 mb-8"
         >
-          <div 
-            className="w-28 h-28 rounded-full flex items-center justify-center"
-            style={{ 
-              backgroundColor: 'var(--primary)',
-              boxShadow: '0 10px 40px rgba(157, 174, 145, 0.3)'
-            }}
-          >
-            <CheckCircle 
-              className="w-16 h-16"
-              style={{ color: 'var(--primary-foreground)' }}
-              strokeWidth={2.5}
+          {/* Logo */}
+          <div className="bg-white p-3 rounded-lg shadow-md">
+            <img
+              src="/assets/59e4409f00962b160c922c848df8eb1ebce3a245.png"
+              alt="OLIV Logo"
+              className="h-12 w-auto object-contain"
             />
           </div>
+
+          {/* Success Icon */}
+          <motion.div
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{
+              type: "spring",
+              stiffness: 200,
+              damping: 15,
+              delay: 0.2
+            }}
+          >
+            <div
+              className="w-20 h-20 rounded-full flex items-center justify-center"
+              style={{
+                backgroundColor: 'var(--primary)',
+                boxShadow: '0 10px 40px rgba(157, 174, 145, 0.3)'
+              }}
+            >
+              <CheckCircle
+                className="w-12 h-12"
+                style={{ color: 'var(--primary-foreground)' }}
+                strokeWidth={2.5}
+              />
+            </div>
+          </motion.div>
         </motion.div>
 
         {/* Heading */}

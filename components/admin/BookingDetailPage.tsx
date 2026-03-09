@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Send, User, CalendarDays, UtensilsCrossed, MessageSquare, Link, Lock, Unlock, History, FileText, RefreshCw, UserPlus } from 'lucide-react';
+import { ArrowLeft, Send, User, CalendarDays, UtensilsCrossed, MessageSquare, Link, Lock, Unlock, History, FileText, RefreshCw, UserPlus, CheckCircle2, Info } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { StatusDropdown } from './StatusDropdown';
 import { KitchenPdfStatusBadge } from './KitchenPdfStatusBadge';
 import { KitchenPdfActionModal } from './KitchenPdfActionModal';
@@ -36,7 +37,7 @@ export interface Booking {
     status: string;
     notes?: string;
     allergies?: string | string[];
-    contactHistory?: Array<{ by: string; time: string; date: string; action: string }>;
+    contactHistory?: Array<{ by: string; time: string; date: string; action: string; type?: 'system' | 'manual' }>;
     isLocked?: boolean;
     kitchenPdf?: KitchenPdfStatus;
     menuItems?: Array<{ item: string; category: string; quantity: string; price: string }>;
@@ -69,7 +70,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     const router = useRouter();
     const [booking, setBooking] = useState<Booking | null>(initialBooking || null);
     const [loading, setLoading] = useState(!initialBooking);
-    const [comments, setComments] = useState<Array<{ by: string; time: string; date: string; action: string }>>(
+    const [comments, setComments] = useState<Array<{ by: string; time: string; date: string; action: string; type?: 'system' | 'manual' }>>(
         initialBooking?.contactHistory || []
     );
     const [newComment, setNewComment] = useState('');
@@ -329,17 +330,36 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         { value: 'declined', label: 'Declined', dotColor: '#ef4444' },
     ];
 
-    const handleAddComment = () => {
+    const handleAddComment = async () => {
         if (!newComment.trim()) return;
-        const now = new Date();
-        const newCommentObj = {
-            by: 'Admin',
-            time: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
-            date: now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-            action: newComment
-        };
-        setComments([...comments, newCommentObj]);
-        setNewComment('');
+
+        try {
+            const response = await fetch(`/api/bookings/${booking?.id}/comments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: newComment }),
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                const now = new Date();
+                const newCommentObj = {
+                    by: user?.name || 'Admin',
+                    time: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+                    date: now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+                    action: newComment,
+                    type: 'manual' as const
+                };
+                setComments([...comments, newCommentObj]);
+                setNewComment('');
+                toast.success('Comment added');
+            } else {
+                toast.error('Failed to save comment');
+            }
+        } catch (error) {
+            console.error('Error saving comment:', error);
+            toast.error('Failed to save comment');
+        }
     };
 
     const handleStatusChange = async (value: string) => {
@@ -362,16 +382,10 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         if (!booking) return;
         setIsSaving(true);
         try {
-            const allergyDetails = typeof allergies === 'string'
-                ? (allergies ? allergies.split(',').map((a: string) => a.trim()).filter(Boolean) : [])
-                : (Array.isArray(allergies) ? allergies : []);
-
             const response = await fetch(`/api/bookings/${booking.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    allergyDetails,
-                    specialRequests: notes,
                     kitchenNotes: kitchenNotes,
                     location: selectedVenue,
                     assignedTo: assignedTo || null
@@ -391,7 +405,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         }
     };
 
-    const handlePdfActionComplete = (action: 'email' | 'download', data?: { emails?: string[]; notes?: string }) => {
+    const handlePdfActionComplete = async (action: 'email' | 'download', data?: { emails?: string[]; notes?: string }) => {
+        setIsPdfActionModalOpen(false);
         const documentName = KitchenPdfService.getDocumentName(bookingId);
         const now = new Date();
         const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -401,7 +416,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         if (action === 'download') {
             actionText = `Downloaded kitchen sheet PDF: ${documentName}`;
 
-            // Persist the download action
+            // Persist the download action in kitchen logs
             KitchenPdfService.logAction({
                 bookingId,
                 documentName,
@@ -418,10 +433,11 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                 sentBy: user?.name || 'Admin',
                 sendAttempts: (kitchenPdfStatus?.sendAttempts || 0) + 1,
             });
-        } else if (action === 'email') {
+        } else {
             const recipients = data?.emails?.join(', ') || '';
             actionText = `Kitchen sheet PDF sent to ${recipients || 'kitchen'}: ${documentName}`;
 
+            // Update UI status immediately
             setKitchenPdfStatus({
                 documentName,
                 sentStatus: 'sent',
@@ -431,16 +447,38 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             });
         }
 
-        const newCommentObj = {
-            by: user?.name || 'Admin',
-            time: timeStr,
-            date: dateStr,
-            action: actionText,
-        };
-        setComments([...comments, newCommentObj]);
+        try {
+            // Persist the action as a general contact history comment
+            await fetch(`/api/bookings/${bookingId}/comments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: actionText, type: 'system' }),
+            });
 
-        toast.success('Action completed successfully');
+            const newCommentObj = {
+                by: user?.name || 'Admin',
+                time: timeStr,
+                date: dateStr,
+                action: actionText,
+                type: 'system' as const
+            };
+            setComments([...comments, newCommentObj]);
+            toast.success(action === 'email' ? 'PDF sent successfully' : 'PDF downloaded successfully');
+        } catch (error) {
+            console.error('Error logging PDF action to history:', error);
+            // Still update local UI so user sees the immediate action
+            const newCommentObj = {
+                by: user?.name || 'Admin',
+                time: timeStr,
+                date: dateStr,
+                action: actionText,
+                type: 'system' as const
+            };
+            setComments([...comments, newCommentObj]);
+            toast.success(action === 'email' ? 'PDF sent' : 'PDF downloaded');
+        }
     };
+
 
     if (loading) {
         return (
@@ -469,8 +507,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     return (
         <div className="min-h-screen bg-background">
             {/* Detail Header */}
-            <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md px-4 md:px-8 py-4">
-                <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-4">
+            <div className="">
+                <div className="max-w-full mx-auto flex items-center justify-between flex-wrap gap-4">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={onBack || (() => router.back())}
@@ -539,14 +577,14 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                         {canEditBooking && (
                             <button
                                 onClick={handleToggleLock}
-                                disabled={lockLoading}
+                                disabled={lockLoading || isLocked}
                                 className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 cursor-pointer ${isLocked
-                                    ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                                    ? 'bg-amber-500/50 text-white opacity-60 cursor-not-allowed'
                                     : 'bg-primary hover:bg-primary/90 text-primary-foreground '
                                     }`}
                                 style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
                             >
-                                {lockLoading ? 'Loading...' : isLocked ? <><Unlock className="w-4 h-4" />Unlock</> : <><Lock className="w-4 h-4" />Lock</>}
+                                {lockLoading ? 'Loading...' : isLocked ? <><Lock className="w-4 h-4" />Locked</> : <><Lock className="w-4 h-4" />Lock</>}
                             </button>
                         )}
                     </div>
@@ -554,7 +592,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             </div>
 
             {/* Main Content Container */}
-            <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
+            <div className="max-w-full mx-auto py-8">
                 {isLocked && (
                     <div className="mb-6 p-4 bg-booking-locked/10 border border-booking-locked rounded-lg flex items-center gap-3">
                         <Lock className="w-5 h-5 text-booking-locked-lock dark:text-booking-locked-lock flex-shrink-0" />
@@ -732,39 +770,71 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                         <div className="space-y-4">
                             <div>
                                 <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Allergies</label>
-                                <textarea value={allergies} onChange={(e) => setAllergies(e.target.value)} rows={2} disabled={!canEditBooking} className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-75" style={{ fontSize: 'var(--text-base)' }} placeholder="Enter allergies separated by commas..." />
+                                <div
+                                    className="w-full px-4 py-2.5 bg-muted/30 border border-border rounded-lg text-foreground min-h-[60px] whitespace-pre-wrap"
+                                    style={{ fontSize: 'var(--text-base)' }}
+                                >
+                                    {allergies || <span className="text-muted-foreground italic">No allergies specified</span>}
+                                </div>
+                                <p className="text-muted-foreground text-xs mt-1">This field is filled by the client during booking</p>
                             </div>
                             <div>
                                 <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Notes</label>
-                                <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} disabled={!canEditBooking} className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-75" style={{ fontSize: 'var(--text-base)' }} placeholder="Enter special requests or notes..." />
+                                <div
+                                    className="w-full px-4 py-2.5 bg-muted/30 border border-border rounded-lg text-foreground min-h-[60px] whitespace-pre-wrap"
+                                    style={{ fontSize: 'var(--text-base)' }}
+                                >
+                                    {notes || <span className="text-muted-foreground italic">No notes specified</span>}
+                                </div>
+                                <p className="text-muted-foreground text-xs mt-1">This field is filled by the client during booking</p>
                             </div>
                         </div>
                     </div>
 
                     {/* Comments Section */}
                     <div className="bg-card border border-border rounded-xl p-6">
-                        <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                            <MessageSquare className="w-5 h-5 text-primary" /> Comments
-                        </h3>
-                        <div className="space-y-3">
-                            {comments.map((contact, index) => (
-                                <div key={index} className="bg-background border border-border rounded-lg p-4 flex items-start gap-3">
-                                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white flex-shrink-0 bg-[#9DAE91]" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>{contact.by.charAt(0)}</div>
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="text-foreground font-semibold" style={{ fontSize: 'var(--text-base)' }}>{contact.by}</span>
-                                            <span className="text-muted-foreground text-sm">• {contact.time} • {contact.date}</span>
-                                        </div>
-                                        <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>{contact.action}</p>
+                        <div className="flex items-center justify-between mb-5">
+                            <h3 className="text-foreground flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                <MessageSquare className="w-5 h-5 text-primary" /> Comments & Activity
+                            </h3>
+                            <span className="px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-xs font-medium border border-border">
+                                {comments.length} items
+                            </span>
+                        </div>
+                        <div className="space-y-4">
+                            <div className="max-h-[500px] overflow-y-auto pr-2 space-y-4 -mr-2 scrollbar-thin">
+                                {comments.length === 0 ? (
+                                    <div className="text-center py-8 bg-muted/20 rounded-lg border border-dashed border-border">
+                                        <MessageSquare className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                                        <p className="text-muted-foreground text-sm">No comments or activity yet</p>
                                     </div>
-                                </div>
-                            ))}
+                                ) : (
+                                    comments.map((contact, index) => (
+                                        <CommentItem key={index} contact={contact} />
+                                    ))
+                                )}
+                            </div>
+
                             {canEditBooking && (
-                                <div className="space-y-3 pt-2">
-                                    <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Add a comment..." rows={3} className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20" style={{ fontSize: 'var(--text-base)' }} />
-                                    <button onClick={handleAddComment} className="w-full px-4 py-3 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex items-center justify-center gap-2 cursor-pointer" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                                        <Send className="w-4 h-4" /> Add Comment
-                                    </button>
+                                <div className="space-y-3 pt-4 border-t border-border/50">
+                                    <textarea
+                                        value={newComment}
+                                        onChange={(e) => setNewComment(e.target.value)}
+                                        placeholder="Add a comment or internal note..."
+                                        rows={3}
+                                        className="w-full px-4 py-3 bg-input-background border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+                                        style={{ fontSize: 'var(--text-base)' }}
+                                    />
+                                    <div className="flex justify-end">
+                                        <button
+                                            onClick={handleAddComment}
+                                            disabled={!newComment.trim()}
+                                            className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                                            style={{ fontSize: 'var(--text-base)' }}
+                                        >
+                                            <Send className="w-4 h-4" /> Add Comment
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -859,7 +929,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                     <AssignUserModal
                         isOpen={isAssignModalOpen}
                         onClose={() => setIsAssignModalOpen(false)}
-                        adminUsers={adminUsers}
+                        users={adminUsers}
                         assignedTo={assignedTo}
                         onAssign={async (userId) => {
                             setAssignedTo(userId);
@@ -882,9 +952,74 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                 toast.error('Failed to update assignment');
                             }
                         }}
-                        isLoadingUsers={isAdminUsersLoading}
+                        isLoading={isAdminUsersLoading}
                     />
                 )}
+            </div>
+        </div>
+    );
+}
+
+function CommentItem({ contact }: { contact: any }) {
+    const isSystem = contact.type === 'system';
+
+    // Helper to generate consistent color from name
+    const getAvatarColor = (name: string) => {
+        const colors = [
+            '#9DAE91', // Sage
+            '#E8B4B8', // Dusty Rose
+            '#B8D4E8', // Sky Blue
+            '#F5E6A3', // Pale Gold
+            '#C9B8E8', // Lavender
+            '#E8B8D4'  // Soft Pink
+        ];
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) {
+            hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return colors[Math.abs(hash) % colors.length];
+    };
+
+    return (
+        <div className={cn(
+            "group relative flex items-start gap-4 p-4 rounded-xl border transition-all duration-200",
+            isSystem
+                ? "bg-muted/30 border-border/50"
+                : "bg-background border-border hover:border-primary/30 hover:shadow-sm"
+        )}>
+            <div
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white flex-shrink-0 shadow-sm"
+                style={{
+                    backgroundColor: isSystem ? '#64748b' : getAvatarColor(contact.by),
+                    fontSize: 'var(--text-base)',
+                    fontWeight: 'var(--font-weight-semibold)'
+                }}
+            >
+                {isSystem ? <Info className="w-5 h-5" /> : contact.by.charAt(0).toUpperCase()}
+            </div>
+
+            <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-1.5">
+                    <span className="text-foreground font-bold" style={{ fontSize: 'var(--text-base)' }}>
+                        {contact.by}
+                    </span>
+                    {isSystem && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">
+                            <CheckCircle2 className="w-2.5 h-2.5" />
+                            System
+                        </span>
+                    )}
+                    <span className="text-muted-foreground text-xs flex items-center gap-1.5 ml-auto sm:ml-0">
+                        <span className="hidden sm:inline">•</span>
+                        {contact.date} at {contact.time}
+                    </span>
+                </div>
+                <p className={cn(
+                    "text-foreground leading-relaxed",
+                    isSystem ? "text-muted-foreground italic" : "text-foreground font-medium"
+                )} style={{ fontSize: 'var(--text-base)' }}>
+                    {contact.action}
+                </p>
             </div>
         </div>
     );

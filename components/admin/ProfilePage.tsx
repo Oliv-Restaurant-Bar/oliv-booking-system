@@ -5,6 +5,7 @@ import { User, Mail, Phone, Shield, Camera, Lock, Check, X, Eye, EyeOff } from '
 import { Modal } from '../user/Modal';
 import { Button } from '../user/Button';
 import { changePassword } from '@/lib/actions/auth';
+import { toast } from 'sonner';
 import type { Session } from '@/lib/auth';
 
 interface SessionWithRole extends Session {
@@ -61,6 +62,12 @@ export function ProfilePage({ session }: ProfilePageProps) {
     phone: profileData.phone,
   });
 
+  // Track if form has been modified
+  const [hasChanges, setHasChanges] = useState(false);
+
+  // Loading state for profile save
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
   // Password form state
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
@@ -78,6 +85,21 @@ export function ProfilePage({ session }: ProfilePageProps) {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Check if form values differ from original profile data
+  const hasFormChanged = () => {
+    return (
+      editForm.firstName !== profileData.firstName ||
+      editForm.lastName !== profileData.lastName ||
+      editForm.email !== profileData.email ||
+      editForm.phone !== profileData.phone
+    );
+  };
+
+  // Update hasChanges when editForm or profileData changes
+  useEffect(() => {
+    setHasChanges(hasFormChanged());
+  }, [editForm, profileData]);
+
   // Format role for display
   const formatRole = (role: string) => {
     return role
@@ -93,20 +115,52 @@ export function ProfilePage({ session }: ProfilePageProps) {
       email: profileData.email,
       phone: profileData.phone,
     });
+    setHasChanges(false);
     setIsEditProfileModalOpen(true);
   };
 
   const handleSaveProfile = async () => {
-    // TODO: Call API to update profile
-    // For now, just update local state
-    setProfileData({
-      ...profileData,
-      firstName: editForm.firstName,
-      lastName: editForm.lastName,
-      email: editForm.email,
-      phone: editForm.phone,
-    });
-    setIsEditProfileModalOpen(false);
+    setIsSavingProfile(true);
+
+    try {
+      // Call API to update profile
+      const response = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: editForm.firstName.trim(),
+          lastName: editForm.lastName.trim(),
+          email: editForm.email.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to update profile');
+      }
+
+      const result = await response.json();
+
+      // Update local state with saved data
+      setProfileData({
+        ...profileData,
+        firstName: editForm.firstName,
+        lastName: editForm.lastName,
+        email: editForm.email,
+        phone: editForm.phone,
+      });
+
+      // Update session user name as well
+      sessionWithRole.user.name = `${editForm.firstName.trim()} ${editForm.lastName.trim()}`.trim();
+
+      setIsEditProfileModalOpen(false);
+      toast.success(result.message || 'Profile updated successfully!');
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update profile');
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
   const handleChangePassword = async () => {
@@ -116,19 +170,19 @@ export function ProfilePage({ session }: ProfilePageProps) {
 
     // Validate passwords not empty
     if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-      setPasswordError('All password fields are required');
+      toast.error('All password fields are required');
       return;
     }
 
     // Validate passwords match
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordError('New passwords do not match');
+      toast.error('New passwords do not match');
       return;
     }
 
     // Validate new password length
     if (passwordForm.newPassword.length < 8) {
-      setPasswordError('New password must be at least 8 characters long');
+      toast.error('New password must be at least 8 characters long');
       return;
     }
 
@@ -141,19 +195,17 @@ export function ProfilePage({ session }: ProfilePageProps) {
       });
 
       if (result.success) {
-        setPasswordSuccess(true);
+        toast.success('Password changed successfully!');
         setPasswordForm({
           currentPassword: '',
           newPassword: '',
           confirmPassword: '',
         });
-        // Clear success message after 3 seconds
-        setTimeout(() => setPasswordSuccess(false), 3000);
       } else {
-        setPasswordError(result.error || 'Failed to change password');
+        toast.error(result.error || 'Failed to change password');
       }
     } catch (error) {
-      setPasswordError('An error occurred while changing password');
+      toast.error('An error occurred while changing password');
       console.error('Password change error:', error);
     } finally {
       setIsChangingPassword(false);
@@ -298,20 +350,7 @@ export function ProfilePage({ session }: ProfilePageProps) {
               </div>
 
               <div className="space-y-4">
-                {/* Error Message */}
-                {passwordError && (
-                  <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
-                    {passwordError}
-                  </div>
-                )}
-
-                {/* Success Message */}
-                {passwordSuccess && (
-                  <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg text-primary text-sm flex items-center gap-2">
-                    <Check className="w-4 h-4" />
-                    Password changed successfully!
-                  </div>
-                )}
+                {/* Error and Success states are now handled via toasters */}
 
                 <div>
                   <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
@@ -417,6 +456,7 @@ export function ProfilePage({ session }: ProfilePageProps) {
         </div>
       </div>
 
+
       {/* Copyright Footer */}
       <div className="text-center pt-8 pb-1 mt-auto">
         <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
@@ -435,8 +475,14 @@ export function ProfilePage({ session }: ProfilePageProps) {
             <Button variant="secondary" icon={X} onClick={() => setIsEditProfileModalOpen(false)}>
               Cancel
             </Button>
-            <Button variant="primary" icon={Check} onClick={handleSaveProfile}>
-              Save Changes
+            <Button
+              variant="primary"
+              icon={isSavingProfile ? undefined : Check}
+              onClick={handleSaveProfile}
+              disabled={!hasChanges || isSavingProfile}
+              className={!hasChanges || isSavingProfile ? 'opacity-50 cursor-not-allowed' : ''}
+            >
+              {isSavingProfile ? 'Saving...' : 'Save Changes'}
             </Button>
           </>
         }
@@ -496,6 +542,6 @@ export function ProfilePage({ session }: ProfilePageProps) {
           </div>
         </div>
       </Modal>
-    </div>
+    </div >
   );
 }

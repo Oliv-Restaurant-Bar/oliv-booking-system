@@ -1,19 +1,7 @@
 import { Mail, Calendar, Users, Phone, Clock, User } from 'lucide-react';
 import { KitchenPdfStatusBadge } from './KitchenPdfStatusBadge';
+import { BookingStatusBadge } from './BookingStatusBadge';
 import type { KitchenPdfStatus } from '@/services/kitchen-pdf.service';
-
-// Status color configuration (matching BookingsPage)
-const statusColors: Record<string, { bg: string; text: string; border: string; dotColor: string }> = {
-  'confirmed': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dotColor: '#10b981' },
-  'touchbase': { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20', dotColor: '#9DAE91' },
-  'new': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', dotColor: '#8b5cf6' },
-  'pending': { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200', dotColor: '#eab308' },
-  'declined': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dotColor: '#ef4444' },
-  'completed': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dotColor: '#3b82f6' },
-};
-
-// Normalize status key for lookup
-const getStatusKey = (status: string) => status.toLowerCase();
 
 interface GridViewProps {
   bookings: Array<{
@@ -97,18 +85,7 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
                     lastSentAt={booking.kitchenPdf.lastSentAt}
                   />
                 )}
-                <span
-                  className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 ${statusColors[getStatusKey(booking.status)]?.bg
-                    } ${statusColors[getStatusKey(booking.status)]?.text} ${statusColors[getStatusKey(booking.status)]?.border
-                    }`}
-                  style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                >
-                  <div
-                    className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: statusColors[getStatusKey(booking.status)]?.dotColor }}
-                  />
-                  {booking.status}
-                </span>
+                <BookingStatusBadge status={booking.status} />
               </div>
             </div>
           </div>
@@ -146,7 +123,7 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
               </div>
             </div>
 
-            {/* Row 3: Contacted + Amount */}
+            {/* Row 3: Assigned + Location/Amount */}
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <User className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />

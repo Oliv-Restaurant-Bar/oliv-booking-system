@@ -10,6 +10,7 @@ import { ItemSettingsModal } from '../user/ItemSettingsModal';
 import { Button } from '../user/Button';
 import { Tooltip } from '../user/Tooltip';
 import { NativeRadio } from '../ui/NativeRadio';
+import { toast } from 'sonner';
 import {
   DndContext,
   closestCenter,
@@ -468,7 +469,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
         setCategories(categories.map(cat =>
           cat.id === categoryId ? { ...cat, isActive: category.isActive } : cat
         ));
-        alert(result.error || 'Failed to update category');
+        toast.error(result.error || 'Failed to update category');
         return;
       }
       // Refresh data from server
@@ -500,6 +501,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
           assignedAddonGroups: (data.categoryAddonGroups || []).filter((a: any) => a.categoryId === cat.id).map((a: any) => a.addonGroupId),
         }));
         setCategories(mappedCategories);
+        toast.success('Category visibility updated successfully');
       }
     }
   };
@@ -514,7 +516,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
       console.log('Update result:', result);
       if (!result.success) {
         console.error('Failed to update category:', result.error);
-        alert(result.error || 'Failed to update category');
+        toast.error(result.error || 'Failed to update category');
         return;
       }
 
@@ -522,6 +524,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
       setCategories(categories.map(cat =>
         cat.id === categoryId ? { ...cat, guestCount: newValue } : cat
       ));
+      toast.success('Guest count setting updated successfully');
     }
   };
 
@@ -560,7 +563,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
           }
           : cat
       ));
-      alert(result.error || 'Failed to update item');
+      toast.error(result.error || 'Failed to update item');
     }
   };
 
@@ -580,7 +583,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
 
       if (!result.success) {
         console.error('Failed to save settings:', result.error);
-        alert(result.error || 'Failed to save settings');
+        toast.error(result.error || 'Failed to save settings');
         return;
       }
 
@@ -608,9 +611,10 @@ export function MenuConfigPage({ user }: { user?: any }) {
       setIsItemSettingsModalOpen(false);
       setSettingsMenuItemId(null);
       setActiveCategoryId(null);
+      toast.success('Item settings saved successfully');
     } catch (error) {
       console.error('Failed to save settings:', error);
-      alert('Failed to save settings');
+      toast.error('Failed to save settings');
     }
   };
 
@@ -671,7 +675,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
   );
 
   return (
-    <div className="px-8 pt-6 pb-1 flex flex-col min-h-full">
+    <div className="flex flex-col min-h-full">
       <div className="flex-1">
         {/* Loading State */}
         {loading && (
@@ -1661,8 +1665,9 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           setIsAddCategoryModalOpen(false);
                           setNewCategory({ name: '', description: '', image: null, imageUrl: '' });
                           setEditingCategoryId(null);
+                          toast.success('Category updated successfully');
                         } else {
-                          alert(result.error || 'Failed to update category');
+                          toast.error(result.error || 'Failed to update category');
                         }
                       } else {
                         // Create new category
@@ -1689,8 +1694,9 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           setIsAddCategoryModalOpen(false);
                           setNewCategory({ name: '', description: '', image: null, imageUrl: '' });
                           setEditingCategoryId(null);
+                          toast.success('Category created successfully');
                         } else {
-                          alert(result.error || 'Failed to create category');
+                          toast.error(result.error || 'Failed to create category');
                         }
                       }
                     }}
@@ -1911,8 +1917,9 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           setShowItemSettings(false);
                           setShowAddons(false);
                           setShowChoices(false);
+                          toast.success('Menu item updated successfully');
                         } else {
-                          alert(result.error || 'Failed to update menu item');
+                          toast.error(result.error || 'Failed to update menu item');
                         }
                       } else {
                         // Add new item
@@ -1995,8 +2002,9 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           setShowItemSettings(false);
                           setShowAddons(false);
                           setShowChoices(false);
+                          toast.success('Menu item created successfully');
                         } else {
-                          alert(result.error || 'Failed to create menu item');
+                          toast.error(result.error || 'Failed to create menu item');
                         }
                       }
                     }}
@@ -2861,6 +2869,9 @@ export function MenuConfigPage({ user }: { user?: any }) {
                               }
                               : group
                           ));
+                          toast.success('Addon group updated successfully');
+                        } else {
+                          toast.error(result.error || 'Failed to update addon group');
                         }
                       } else {
                         // Add new group - save to database
@@ -2887,6 +2898,9 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           };
 
                           setAddonGroups([...addonGroups, newAddonGroup]);
+                          toast.success('Addon group created successfully');
+                        } else {
+                          toast.error(result.error || 'Failed to create addon group');
                         }
                       }
 
@@ -3071,6 +3085,9 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             return group;
                           });
                           setAddonGroups(updatedGroups);
+                          toast.success('Addon item updated successfully');
+                        } else {
+                          toast.error(result.error || 'Failed to update addon item');
                         }
                       } else {
                         // Add new item - save to database
@@ -3101,6 +3118,9 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             return group;
                           });
                           setAddonGroups(updatedGroups);
+                          toast.success('Addon item created successfully');
+                        } else {
+                          toast.error(result.error || 'Failed to create addon item');
                         }
                       }
 
@@ -3251,8 +3271,9 @@ export function MenuConfigPage({ user }: { user?: any }) {
                   console.log('Delete category result:', result);
                   if (result.success) {
                     setCategories(categories.filter(cat => cat.id !== deleteCategoryId));
+                    toast.success('Category deleted successfully');
                   } else {
-                    alert(result.error || 'Failed to delete category');
+                    toast.error(result.error || 'Failed to delete category');
                   }
                 }
                 setDeleteCategoryId(null);
@@ -3284,8 +3305,9 @@ export function MenuConfigPage({ user }: { user?: any }) {
                       }
                       return cat;
                     }));
+                    toast.success('Menu item deleted successfully');
                   } else {
-                    alert(result.error || 'Failed to delete menu item');
+                    toast.error(result.error || 'Failed to delete menu item');
                   }
                 }
                 setDeleteMenuItemId(null);

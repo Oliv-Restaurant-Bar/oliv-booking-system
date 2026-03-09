@@ -76,6 +76,50 @@ export async function sendEmail(params: EmailParams): Promise<{ success: boolean
 
     const fromEmail = params.from?.address || process.env.ZEPTOMAIL_FROM_EMAIL || "bookings@oliv-restaurant.ch";
     const fromName = params.from?.name || process.env.ZEPTOMAIL_FROM_NAME || "Oliv Restaurant";
+    const recipients = Array.isArray(params.to) ? params.to.join(', ') : params.to;
+
+    console.log('');
+    console.log('📬 ======== ZEPTOMAIL SEND START ========');
+    console.log(`   To       : ${recipients}`);
+    console.log(`   From     : ${fromEmail}`);
+    console.log(`   Subject  : ${params.subject}`);
+
+    // Log attachment info if present
+    if (params.attachments && params.attachments.length > 0) {
+      console.log(`   Attachments: ${params.attachments.length} file(s)`);
+      params.attachments.forEach((att, idx) => {
+        console.log(`     [${idx + 1}] ${att.name} (${att.mime_type})`);
+        console.log(`         Base64 length: ${att.content?.length || 0} chars`);
+
+        // Validate base64 content more thoroughly
+        if (!att.content || att.content.length === 0) {
+          console.error(`         ❌ ERROR: Attachment ${idx + 1} has empty base64 content!`);
+        } else {
+          // Check if base64 is valid (no whitespace, proper padding)
+          const hasWhitespace = /\s/.test(att.content);
+          if (hasWhitespace) {
+            console.error(`         ❌ ERROR: Attachment ${idx + 1} contains whitespace!`);
+          } else {
+            console.log(`         ✅ No whitespace in base64`);
+          }
+
+          // Try to decode first few bytes to validate
+          try {
+            const decoded = atob(att.content.substring(0, 100));
+            const header = decoded.substring(0, 5);
+            if (header === '%PDF-') {
+              console.log(`         ✅ Valid PDF header detected`);
+            } else {
+              console.error(`         ❌ ERROR: Invalid PDF header! Got: ${header}`);
+            }
+          } catch (decodeError) {
+            console.error(`         ❌ ERROR: Base64 decode failed!`, decodeError);
+          }
+        }
+      });
+    }
+
+    console.log('   Sending...');
 
     const mailOptions = {
       from: {
@@ -91,12 +135,16 @@ export async function sendEmail(params: EmailParams): Promise<{ success: boolean
     // @ts-ignore - ZeptoMail types may not match exactly
     const response = await zcClient.sendMail(mailOptions);
 
+    console.log('   ✅ SUCCESS');
+    console.log('📬 ======== ZEPTOMAIL SEND END ========');
+
     return {
       success: true,
       messageId: (response as any).message_id || "sent",
     };
   } catch (error: any) {
-    console.error("Error sending email via ZeptoMail:", error);
+    console.error("   ❌ ERROR sending email via ZeptoMail:", error);
+    console.error('📬 ======== ZEPTOMAIL SEND END ========');
     return {
       success: false,
       error: error.message || "Failed to send email",
@@ -141,6 +189,16 @@ export async function sendTemplateEmail(params: TemplateEmailParams): Promise<{ 
     console.log(`   To       : ${recipients}`);
     console.log(`   From     : ${fromEmail}`);
     console.log(`   Endpoint : ${templateUrl}`);
+
+    // Log attachment info if present
+    if (params.attachments && params.attachments.length > 0) {
+      console.log(`   Attachments: ${params.attachments.length} file(s)`);
+      params.attachments.forEach((att, idx) => {
+        console.log(`     [${idx + 1}] ${att.name} (${att.mime_type})`);
+        console.log(`         Base64 length: ${att.content?.length || 0} chars`);
+      });
+    }
+
     console.log('   Sending...');
 
     const body = {

@@ -11,6 +11,8 @@ import { WizardHeader } from './WizardHeader';
 import { submitWizardForm, requestBookingUnlock } from '@/lib/actions/wizard';
 import { NativeRadio } from '@/components/ui/NativeRadio';
 import { NativeCheckbox } from '@/components/ui/NativeCheckbox';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 interface EventDetails {
   name: string;
@@ -1194,7 +1196,7 @@ export function CustomMenuWizard() {
                             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
                               Name *
                             </label>
-                            <input
+                            <Input
                               type="text"
                               value={eventDetails.name}
                               onChange={(e) => setEventDetails({ ...eventDetails, name: e.target.value })}
@@ -1215,7 +1217,7 @@ export function CustomMenuWizard() {
                             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
                               Business
                             </label>
-                            <input
+                            <Input
                               type="text"
                               value={eventDetails.business}
                               onChange={(e) => setEventDetails({ ...eventDetails, business: e.target.value })}
@@ -1230,7 +1232,7 @@ export function CustomMenuWizard() {
                             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
                               Email *
                             </label>
-                            <input
+                            <Input
                               type="email"
                               value={eventDetails.email}
                               onChange={(e) => setEventDetails({ ...eventDetails, email: e.target.value })}
@@ -1251,7 +1253,7 @@ export function CustomMenuWizard() {
                             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
                               Telephone *
                             </label>
-                            <input
+                            <Input
                               type="tel"
                               value={eventDetails.telephone}
                               onChange={(e) => setEventDetails({ ...eventDetails, telephone: e.target.value })}
@@ -1280,7 +1282,7 @@ export function CustomMenuWizard() {
                             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
                               Strasse & Nr. *
                             </label>
-                            <input
+                            <Input
                               type="text"
                               value={eventDetails.street}
                               onChange={(e) => setEventDetails({ ...eventDetails, street: e.target.value })}
@@ -1300,7 +1302,7 @@ export function CustomMenuWizard() {
                               <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
                                 PLZ *
                               </label>
-                              <input
+                              <Input
                                 type="text"
                                 value={eventDetails.plz}
                                 onChange={(e) => setEventDetails({ ...eventDetails, plz: e.target.value })}
@@ -1319,7 +1321,7 @@ export function CustomMenuWizard() {
                               <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
                                 Location *
                               </label>
-                              <input
+                              <Input
                                 type="text"
                                 value={eventDetails.location}
                                 onChange={(e) => setEventDetails({ ...eventDetails, location: e.target.value })}
@@ -1348,7 +1350,7 @@ export function CustomMenuWizard() {
                             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
                               Datum *
                             </label>
-                            <input
+                            <Input
                               type="date"
                               value={eventDetails.eventDate}
                               onChange={(e) => setEventDetails({ ...eventDetails, eventDate: e.target.value })}
@@ -1368,7 +1370,7 @@ export function CustomMenuWizard() {
                             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
                               Time *
                             </label>
-                            <input
+                            <Input
                               type="time"
                               value={eventDetails.eventTime}
                               onChange={(e) => setEventDetails({ ...eventDetails, eventTime: e.target.value })}
@@ -1386,7 +1388,7 @@ export function CustomMenuWizard() {
                             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
                               Number of guests *
                             </label>
-                            <input
+                            <Input
                               type="number"
                               value={eventDetails.guestCount}
                               onChange={(e) => setEventDetails({ ...eventDetails, guestCount: e.target.value })}
@@ -1408,7 +1410,7 @@ export function CustomMenuWizard() {
                             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
                               Occasion
                             </label>
-                            <input
+                            <Input
                               type="text"
                               value={eventDetails.occasion}
                               onChange={(e) => setEventDetails({ ...eventDetails, occasion: e.target.value })}
@@ -1430,7 +1432,7 @@ export function CustomMenuWizard() {
                           <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
                             Allergies, dietary requirements or other comments
                           </label>
-                          <textarea
+                          <Textarea
                             value={eventDetails.specialRequests}
                             onChange={(e) => setEventDetails({ ...eventDetails, specialRequests: e.target.value })}
                             className="w-full px-4 py-2.5 bg-background border border-border rounded-lg transition-colors focus:border-primary resize-none"
@@ -1511,7 +1513,7 @@ export function CustomMenuWizard() {
                                 <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
                                   Billing Street & Nr.
                                 </label>
-                                <input
+                                <Input
                                   type="text"
                                   value={eventDetails.billingStreet}
                                   onChange={(e) => setEventDetails({ ...eventDetails, billingStreet: e.target.value })}
@@ -1526,7 +1528,7 @@ export function CustomMenuWizard() {
                                   <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
                                     PLZ
                                   </label>
-                                  <input
+                                  <Input
                                     type="text"
                                     value={eventDetails.billingPlz}
                                     onChange={(e) => setEventDetails({ ...eventDetails, billingPlz: e.target.value })}
@@ -1540,7 +1542,7 @@ export function CustomMenuWizard() {
                                   <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
                                     Location
                                   </label>
-                                  <input
+                                  <Input
                                     type="text"
                                     value={eventDetails.billingLocation}
                                     onChange={(e) => setEventDetails({ ...eventDetails, billingLocation: e.target.value })}
@@ -1808,30 +1810,33 @@ export function CustomMenuWizard() {
                                         </div>
 
                                         {!isSelected ? (
-                                          <button
+                                          <Button
                                             onClick={() => openDetailsModal(item)}
-                                            className="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-secondary hover:text-secondary-foreground transition-colors w-full"
-                                            style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                            variant="primary"
+                                            size="sm"
+                                            icon={Plus}
+                                            className="w-full"
                                           >
-                                            <Plus className="w-4 h-4" />
                                             Add
-                                          </button>
+                                          </Button>
                                         ) : (
                                           <div className="flex items-center gap-2">
-                                            <button
+                                            <Button
                                               onClick={() => openDetailsModal(item)}
-                                              className="flex-1 px-3 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors"
-                                              style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                              variant="outline"
+                                              size="sm"
+                                              className="flex-1"
                                             >
                                               Edit
-                                            </button>
-                                            <button
+                                            </Button>
+                                            <Button
                                               onClick={() => removeFromCart(item.id)}
-                                              className="w-10 h-10 flex items-center justify-center bg-destructive/10 text-destructive rounded-lg hover:bg-destructive/20 transition-colors flex-shrink-0"
-                                              style={{ borderRadius: 'var(--radius)' }}
+                                              variant="outline"
+                                              size="sm"
+                                              className="w-10 h-10 p-0 bg-destructive/10 text-destructive border-none hover:bg-destructive/20 flex-shrink-0"
                                             >
                                               <X className="w-4 h-4" />
-                                            </button>
+                                            </Button>
                                           </div>
                                         )}
                                       </div>
@@ -3190,10 +3195,11 @@ export function CustomMenuWizard() {
 
                       {/* Terms and Conditions */}
                       <div className="bg-card border border-border rounded-lg p-5" style={{ borderRadius: 'var(--radius-card)' }}>
-                        <label className="flex items-center gap-3 cursor-pointer group">
+                        <label className={`flex items-center gap-3 ${isLocked ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} group`}>
                           <NativeCheckbox
                             checked={termsAccepted}
                             onChange={(e) => setTermsAccepted(e.target.checked)}
+                            disabled={isLocked}
                           />
                           <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
                             I agree to the{' '}
@@ -3585,7 +3591,7 @@ export function CustomMenuWizard() {
                         (Optional)
                       </span>
                     </h4>
-                    <textarea
+                    <Textarea
                       value={tempComment}
                       onChange={(e) => setTempComment(e.target.value)}
                       placeholder="Any special instructions or dietary requirements..."
@@ -3621,7 +3627,7 @@ export function CustomMenuWizard() {
                               >
                                 <Minus className="w-5 h-5" />
                               </button>
-                              <input
+                              <Input
                                 type="number"
                                 min={1}
                                 value={tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1)}
@@ -3950,14 +3956,16 @@ export function CustomMenuWizard() {
                       CHF {getPerPersonSubtotal().toFixed(2)}<span className="text-sm font-normal text-muted-foreground">/person</span>
                     </p>
                   </div>
-                  <button
+                  <Button
                     onClick={() => { setIsMobileDrawerOpen(false); handleNext(); }}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-secondary hover:text-secondary-foreground transition-colors"
-                    style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}
+                    variant="primary"
+                    size="md"
+                    icon={ChevronRight}
+                    iconPosition="right"
+                    fullWidth
                   >
-                    <ChevronRight className="w-5 h-5" />
                     Continue to Review
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

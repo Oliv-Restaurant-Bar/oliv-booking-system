@@ -135,7 +135,7 @@ export function BookingsPage({ user }: { user?: any }) {
   };
 
   return (
-    <div className="min-h-full bg-background px-4 md:px-8 pt-6 pb-1 flex flex-col">
+    <div className="min-h-full bg-background flex flex-col">
       {/* List View */}
       {currentPage === 'list' && (
         <div className="w-full flex-1">
@@ -153,16 +153,31 @@ export function BookingsPage({ user }: { user?: any }) {
                 ref={searchInputRef}
               />
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
               <ViewSwitcher currentView={viewMode} onViewChange={setViewMode} />
-              <StatusDropdown options={statusOptions} value={selectedStatus} onChange={setSelectedStatus} />
-              <Button variant="primary" icon={Download} onClick={handleExport}>
-                Export
-              </Button>
+              <div className="flex-1 sm:flex-none min-w-[140px]">
+                <StatusDropdown
+                  options={statusOptions}
+                  value={selectedStatus}
+                  onChange={setSelectedStatus}
+                  className="w-full"
+                />
+              </div>
+              <div className="flex-1 sm:flex-none">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  icon={Download}
+                  onClick={handleExport}
+                  className="whitespace-nowrap w-full"
+                >
+                  Export
+                </Button>
+              </div>
               <button
                 onClick={fetchBookings}
                 disabled={loading}
-                className="p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer"
+                className="p-2.5 border border-border bg-background hover:bg-accent rounded-lg transition-colors cursor-pointer flex-shrink-0"
                 title="Refresh"
               >
                 <RefreshCw className={`w-5 h-5 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />

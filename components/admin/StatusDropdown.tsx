@@ -52,7 +52,7 @@ export function StatusDropdown({
       <button
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`w-full px-4 py-2 bg-background border border-border text-foreground rounded-lg transition-colors flex items-center gap-2 justify-between ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-accent cursor-pointer'}`}
+        className={`w-full px-4 py-2.5 bg-background border border-border text-foreground rounded-lg transition-colors flex items-center gap-2 justify-between whitespace-nowrap ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-accent cursor-pointer'}`}
         style={{ fontSize: 'var(--text-base)' }}
       >
         <div className="flex items-center gap-2">

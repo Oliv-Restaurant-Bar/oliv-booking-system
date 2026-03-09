@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { MapPin, X, Check, Loader2 } from 'lucide-react';
 import type { Venue } from '@/services/venue.service';
+import { toast } from 'sonner';
 
 interface VenueModalProps {
   isOpen: boolean;
@@ -45,11 +46,13 @@ export function VenueModal({
     setIsSaving(true);
     try {
       await onSave({ name: name.trim(), description: description.trim() });
+      toast.success(venue ? 'Venue updated successfully' : 'Venue added successfully');
       // Reset form on success
       setName('');
       setDescription('');
     } catch (error) {
       console.error('Error saving venue:', error);
+      toast.error('Failed to save venue');
     } finally {
       setIsSaving(false);
     }

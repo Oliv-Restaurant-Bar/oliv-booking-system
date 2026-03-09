@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "OLIV Restaurant & Bar - Group Bookings",
@@ -15,6 +16,7 @@ export default function RootLayout({
     <html lang="de">
       <body className="antialiased">
         {children}
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   );

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/server";
 import { SettingsPage } from "@/components/admin/SettingsPage";
+import { AdminPageLayout } from "@/components/admin/AdminPageLayout";
 import { Permission, hasPermission } from "@/lib/auth/rbac";
 
 export const dynamic = 'force-dynamic';
@@ -18,8 +19,8 @@ export default async function AdminSettingsPage() {
   }
 
   return (
-    <div className="px-4 md:px-8 pt-3 pb-8">
+    <AdminPageLayout>
       <SettingsPage user={session.user} />
-    </div>
+    </AdminPageLayout>
   );
 }

@@ -109,6 +109,34 @@ export async function GET(
     // Combine notes with menu selection for display
     const displayNotes = [booking.special_requests || '', menuSelectionStr].filter(Boolean).join('\n');
 
+    // Fetch contact history
+    let contactHistory: any[] = [];
+    try {
+      const historyResult = await db.execute(sql`
+        SELECT
+          h.admin_user_id,
+          h.subject,
+          h.content,
+          h.created_at,
+          a.name as admin_name
+        FROM booking_contact_history h
+        LEFT JOIN admin_user a ON h.admin_user_id = a.id
+        WHERE h.booking_id = ${id}
+        ORDER BY h.created_at ASC
+      `);
+
+      const historyRows = 'rows' in historyResult ? historyResult.rows : historyResult;
+      contactHistory = (historyRows as any[]).map((log: any) => ({
+        by: log.admin_name || (log.subject.includes("Manual Comment") ? "Admin" : "System"),
+        time: new Date(log.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+        date: new Date(log.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+        action: log.content,
+        type: log.subject.includes("Manual Comment") ? "manual" : "system"
+      }));
+    } catch (e) {
+      console.error('Error fetching contact history:', e);
+    }
+
     return NextResponse.json({
       id: booking.id,
       assignedTo: booking.assigned_to ? {
@@ -154,7 +182,7 @@ export async function GET(
       kitchenNotes: booking.kitchen_notes || '',
       isLocked: booking.is_locked || false,
       menuItems: menuItems,
-      contactHistory: [],
+      contactHistory: contactHistory,
     });
   } catch (error) {
     console.error("Error in GET /api/bookings/[id]:", error);

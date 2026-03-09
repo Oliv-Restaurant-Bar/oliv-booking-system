@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Mail, Download, Users, X, Loader2, CheckSquare, ChevronLeft, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { jsPDF } from 'jspdf';
+import { toast } from 'sonner';
 
 interface KitchenPdfActionModalProps {
   isOpen: boolean;
@@ -276,15 +277,37 @@ export function KitchenPdfActionModal({
     setIsProcessing(true);
     try {
       const doc = generatePdf();
+
+      // Verify PDF is valid by checking if we can get its data
+      const pdfData = doc.output('arraybuffer');
+      if (!pdfData || pdfData.byteLength < 100) {
+        throw new Error('Generated PDF is too small or invalid');
+      }
+
+      // Convert to Uint8Array to check PDF header
+      const pdfBytes = new Uint8Array(pdfData);
+      const header = String.fromCharCode(...pdfBytes.slice(0, 5));
+      if (header !== '%PDF-') {
+        console.error('Invalid PDF header:', header);
+        throw new Error('Generated file is not a valid PDF');
+      }
+
+      console.log('✅ Download PDF validation:', {
+        size: pdfData.byteLength,
+        header: header,
+        filename: `${documentName}.pdf`
+      });
+
       doc.save(`${documentName}.pdf`);
 
+      toast.success('Kitchen PDF downloaded successfully');
       onActionComplete('download');
       setTimeout(() => {
         onClose();
       }, 500);
     } catch (error) {
       console.error('Error:', error);
-      alert('An error occurred. Please try again.');
+      toast.error('Failed to download PDF. Please try again.');
     } finally {
       setIsProcessing(false);
     }
@@ -295,20 +318,81 @@ export function KitchenPdfActionModal({
     try {
       let emails: string[] = [];
       if (!externalEmails.trim()) {
-        alert('Please enter at least one email address');
+        toast.error('Please enter at least one email address');
         setIsProcessing(false);
         return;
       }
       emails = externalEmails.split(',').map(e => e.trim()).filter(e => e);
       if (emails.length === 0) {
-        alert('Please enter a valid email address');
+        toast.error('Please enter a valid email address');
         setIsProcessing(false);
         return;
       }
 
       // Generate PDF as Base64 for sending
       const doc = generatePdf();
-      const pdfBase64 = doc.output('datauristring');
+
+      // Debug: Log what we got
+      console.log('📄 PDF Generation Debug:');
+      console.log(`   - Document: ${documentName}`);
+
+      let base64Content: string;
+
+      try {
+        // Try using arraybuffer instead of datauristring (more reliable)
+        const arrayBuffer = doc.output('arraybuffer');
+
+        // Convert ArrayBuffer to base64
+        const uint8Array = new Uint8Array(arrayBuffer);
+        let binary = '';
+        for (let i = 0; i < uint8Array.length; i++) {
+          binary += String.fromCharCode(uint8Array[i]);
+        }
+        base64Content = btoa(binary);
+
+        console.log(`   - Output type: arraybuffer → base64`);
+        console.log(`   - ArrayBuffer size: ${arrayBuffer.byteLength} bytes`);
+        console.log(`   - Base64 length: ${base64Content.length}`);
+
+        // Verify PDF header
+        const pdfHeader = String.fromCharCode(...uint8Array.slice(0, 5));
+        if (pdfHeader !== '%PDF-') {
+          console.error('❌ Invalid PDF header in ArrayBuffer:', pdfHeader);
+          throw new Error('Generated PDF has invalid header');
+        }
+        console.log(`   - PDF header: ${pdfHeader} ✅`);
+
+      } catch (error) {
+        console.error('❌ Error generating PDF as arraybuffer:', error);
+        throw new Error('Failed to generate PDF - arraybuffer method failed');
+      }
+
+      // Validate base64 content
+      if (!base64Content || base64Content.length < 100) {
+        throw new Error('PDF base64 content is empty or too short');
+      }
+
+      // Remove any whitespace that might have been introduced
+      base64Content = base64Content.replace(/\s/g, '');
+
+      // FINAL TEST: Try to decode the base64 back to verify it's valid
+      try {
+        const testDecoded = atob(base64Content.substring(0, 100));
+        const testHeader = testDecoded.substring(0, 5);
+        if (testHeader !== '%PDF-') {
+          throw new Error(`Decoded base64 does not contain valid PDF header. Got: ${testHeader}`);
+        }
+        console.log('   ✅ Base64 decode test passed');
+      } catch (testError) {
+        console.error('❌ Base64 validation failed:', testError);
+        const errorMessage = testError instanceof Error ? testError.message : String(testError);
+        throw new Error(`Generated base64 is invalid: ${errorMessage}`);
+      }
+
+      console.log('✅ PDF Validation Complete:');
+      console.log(`   - Final base64 length: ${base64Content.length}`);
+      console.log(`   - Sending to: ${emails.join(', ')}`);
+      console.log(`   - Filename: ${documentName}.pdf`);
 
       // Persist the send log and trigger email via API
       const response = await fetch('/api/kitchen-pdf/send', {
@@ -319,10 +403,10 @@ export function KitchenPdfActionModal({
         },
         body: JSON.stringify({
           bookingId: booking.id,
-          documentName,
+          documentName: documentName.replace(/[^\w\s-]/gi, ''), // Remove special chars
           sentBy: 'Admin',
           emails,
-          pdfBase64,
+          pdfBase64: base64Content, // Send clean base64 without data URI prefix
         }),
       });
 
@@ -330,13 +414,14 @@ export function KitchenPdfActionModal({
         throw new Error('Failed to send kitchen PDF');
       }
 
+      toast.success(`Kitchen PDF sent to ${emails.length} recipient${emails.length > 1 ? 's' : ''} successfully`);
       onActionComplete('email', { emails });
       setTimeout(() => {
         onClose();
       }, 500);
     } catch (error) {
       console.error('Error:', error);
-      alert('An error occurred. Please try again.');
+      toast.error('Failed to send kitchen PDF. Please try again.');
     } finally {
       setIsProcessing(false);
     }
