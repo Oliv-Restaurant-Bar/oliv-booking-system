@@ -26,9 +26,13 @@ export interface MenuItem {
   }[];
   variants?: MenuItemVariant[];
   /** 'none' is used for non-food service items (tech, furniture, etc.) from the database */
-  dietaryType: 'vegetarian' | 'non-vegetarian' | 'vegan' | 'none';
+  dietaryType: 'veg' | 'non-veg' | 'vegan' | 'none';
+  /** Additional dietary tags from database */
+  dietaryTags?: string[];
   /** Additional dietary flag from database for gluten-free items */
   isGlutenFree?: boolean;
   /** Indicates if this item is a combo pack */
   isCombo?: boolean;
+  additives?: string[];
+  ingredients?: string;
 }

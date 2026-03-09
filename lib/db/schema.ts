@@ -242,12 +242,24 @@ export const menuItems = pgTable(
     }).notNull(),
     pricingType: text("pricing_type", { enum: pricingTypeEnum }).notNull().default("per_person"),
     imageUrl: text("image_url"),
-    isVegetarian: boolean("is_vegetarian").notNull().default(false),
-    isVegan: boolean("is_vegan").notNull().default(false),
-    isGlutenFree: boolean("is_gluten_free").notNull().default(false),
     isActive: boolean("is_active").notNull().default(true),
     variants: jsonb("variants"),
     isCombo: boolean("is_combo").notNull().default(false),
+    dietaryType: text("dietary_type", { enum: ["veg", "non-veg", "vegan", "none"] }).notNull().default("none"),
+    dietaryTags: jsonb("dietary_tags").$type<string[]>().default([]),
+    ingredients: text("ingredients"),
+    allergens: jsonb("allergens").$type<string[]>().default([]),
+    additives: jsonb("additives").$type<string[]>().default([]),
+    nutritionalInfo: jsonb("nutritional_info").$type<{
+      servingSize: string;
+      calories: string;
+      protein: string;
+      carbs: string;
+      fat: string;
+      fiber: string;
+      sugar: string;
+      sodium: string;
+    }>(),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),

@@ -80,6 +80,13 @@
   /* The default color for focus rings, outlines, and other focus indicators in sidebars and navigation menus. */
   --sidebar-ring: rgba(157, 174, 145, 1.00);
 
+  --booking-locked: rgb(255, 191, 0);
+  --booking-locked-foreground: rgb(255, 255, 255);
+  --booking-locked-border: rgb(255, 191, 0);
+
+  --booking-locked-text: rgb(146, 64, 14);
+  --booking-locked-lock: rgb(217, 119, 6);
+
   /* Subtle section background for alternating sections */
   --section-subtle: rgba(247, 249, 248, 1.00);
 
@@ -159,6 +166,11 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-section-subtle: var(--section-subtle);
+  --color-booking-locked: var(--booking-locked);
+  --color-booking-locked-foreground: var(--booking-locked-foreground);
+  --color-booking-locked-border: var(--booking-locked-border);
+  --color-booking-locked-text: var(--booking-locked-text);
+  --color-booking-locked-lock: var(--booking-locked-lock);
   --shadow-sm: var(--elevation-sm);
 }
 

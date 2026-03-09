@@ -57,24 +57,21 @@ interface MenuItemData {
   pricingType?: 'per_person' | 'flat_fee' | 'billed_by_consumption';
   isActive: boolean;
   variants: VariantOption[];
-  dietaryType?: 'veg' | 'non-veg' | 'vegan' | 'none';
-  dietaryTags?: string[];
-  isGlutenFree?: boolean;
-  isVegetarian?: boolean;
-  isVegan?: boolean;
+  dietaryType: 'veg' | 'non-veg' | 'vegan' | 'none';
+  dietaryTags: string[];
   isCombo?: boolean;
-  ingredients?: string;
-  allergens?: string[];
-  additives?: string[];
-  nutritionalInfo?: {
-    servingSize?: string;
-    calories?: string;
-    protein?: string;
-    carbs?: string;
-    fat?: string;
-    fiber?: string;
-    sugar?: string;
-    sodium?: string;
+  ingredients: string;
+  allergens: string[];
+  additives: string[];
+  nutritionalInfo: {
+    servingSize: string;
+    calories: string;
+    protein: string;
+    carbs: string;
+    fat: string;
+    fiber: string;
+    sugar: string;
+    sodium: string;
   };
   assignedAddonGroups?: string[];
 }
@@ -250,7 +247,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
     assignedAddonGroups: [] as string[],
     isCombo: false,
     // Item settings for expandable section
-    dietaryType: 'veg' as 'veg' | 'non-veg' | 'vegan' | 'none',
+    dietaryType: 'none' as 'veg' | 'non-veg' | 'vegan' | 'none',
     dietaryTags: [] as string[],
     ingredients: '',
     allergens: [] as string[],
@@ -276,11 +273,11 @@ export function MenuConfigPage({ user }: { user?: any }) {
   const [newAddonItem, setNewAddonItem] = useState({
     name: '',
     price: '',
-    dietaryType: 'veg' as 'veg' | 'non-veg' | 'vegan' | 'none',
+    dietaryType: 'none' as 'veg' | 'non-veg' | 'vegan' | 'none',
     isActive: true,
   });
   const [itemSettings, setItemSettings] = useState({
-    dietaryType: 'veg' as 'veg' | 'non-veg' | 'vegan' | 'none',
+    dietaryType: 'none' as 'veg' | 'non-veg' | 'vegan' | 'none',
     dietaryTags: [] as string[],
     ingredients: '',
     allergens: [] as string[],
@@ -323,10 +320,9 @@ export function MenuConfigPage({ user }: { user?: any }) {
               pricingType: item.pricingType || 'per_person',
               isActive: item.isActive,
               variants: item.variants || [],
-              dietaryType: (cat.name === 'Beverages' || cat.name === 'Drinks') ? 'none' :
-                item.isVegan ? 'vegan' : item.isVegetarian ? 'veg' : 'non-veg',
-              isGlutenFree: item.isGlutenFree || false,
-              dietaryTags: item.isGlutenFree ? ['Gluten Free'] : [],
+              dietaryType: (cat.name === 'Beverages' || cat.name === 'Drinks') ? 'none' : (item.dietaryType || 'none'),
+              dietaryTags: item.dietaryTags || [],
+              isGlutenFree: item.dietaryTags?.includes('Gluten Free') || item.dietaryTags?.includes('gluten-free') || false,
               ingredients: item.ingredients || '',
               allergens: item.allergens || [],
               additives: item.additives || [],
@@ -348,7 +344,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
               id: item.id,
               name: item.name,
               price: Number(item.price) || 0,
-              dietaryType: (item.dietaryType === 'veg' || item.dietaryType === 'non-veg' || item.dietaryType === 'vegan') ? item.dietaryType : 'veg',
+              dietaryType: item.dietaryType || 'none',
               isActive: item.isActive,
             })),
             isExpanded: false,
@@ -496,8 +492,9 @@ export function MenuConfigPage({ user }: { user?: any }) {
             pricingType: item.pricingType || 'per_person',
             isActive: item.isActive,
             variants: [],
-            dietaryType: item.isVegan ? 'vegan' : item.isVegetarian ? 'veg' : 'non-veg',
-            dietaryTags: [],
+            dietaryType: item.dietaryType || 'none',
+            dietaryTags: item.dietaryTags || [],
+            isGlutenFree: item.dietaryTags?.includes('Gluten Free') || item.dietaryTags?.includes('gluten-free') || false,
             assignedAddonGroups: (data.itemAddonGroups || []).filter((a: any) => a.itemId === item.id).map((a: any) => a.addonGroupId),
           })) || [],
           assignedAddonGroups: (data.categoryAddonGroups || []).filter((a: any) => a.categoryId === cat.id).map((a: any) => a.addonGroupId),
@@ -573,15 +570,18 @@ export function MenuConfigPage({ user }: { user?: any }) {
     try {
       // Actually save to backend
       const result = await updateMenuItem(settingsMenuItemId, {
-        isVegetarian: itemSettings.dietaryType === 'veg',
-        isVegan: itemSettings.dietaryType === 'vegan',
-        isGlutenFree: itemSettings.dietaryTags?.includes('gluten-free') || false,
+        dietaryType: itemSettings.dietaryType as any,
+        dietaryTags: itemSettings.dietaryTags,
+        ingredients: itemSettings.ingredients,
+        allergens: itemSettings.allergens,
+        additives: itemSettings.additives,
+        nutritionalInfo: itemSettings.nutritionalInfo,
       });
 
       if (!result.success) {
         console.error('Failed to save settings:', result.error);
         alert(result.error || 'Failed to save settings');
-        return; // Early return on failure so we keep the modal open or don't update local state
+        return;
       }
 
       setCategories(categories.map(cat =>
@@ -592,11 +592,8 @@ export function MenuConfigPage({ user }: { user?: any }) {
               item.id === settingsMenuItemId
                 ? {
                   ...item,
-                  dietaryType: itemSettings.dietaryType,
+                  dietaryType: itemSettings.dietaryType as any,
                   dietaryTags: itemSettings.dietaryTags,
-                  isVegetarian: itemSettings.dietaryType === 'veg',
-                  isVegan: itemSettings.dietaryType === 'vegan',
-                  isGlutenFree: itemSettings.dietaryTags.includes('gluten-free') || itemSettings.dietaryTags.includes('Gluten Free'),
                   ingredients: itemSettings.ingredients,
                   allergens: itemSettings.allergens,
                   additives: itemSettings.additives,
@@ -1056,11 +1053,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                       <div className="flex-1 min-w-0">
                                         <h5 className="text-foreground flex items-center gap-2 flex-wrap mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                                           {item.dietaryType && (
-                                            <DietaryIcon
-                                              type={item.dietaryType === 'veg' ? 'vegetarian' : item.dietaryType === 'non-veg' ? 'non-vegetarian' : item.dietaryType as any}
-                                              size="sm"
-                                              isGlutenFree={item.isGlutenFree}
-                                            />
+                                            <DietaryIcon type={item.dietaryType as any} size="sm" />
                                           )}
                                           <span>{item.name}</span>
                                           {item.isCombo && (
@@ -1122,7 +1115,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                                   variants: item.variants || [],
                                                   assignedAddonGroups: item.assignedAddonGroups || [],
                                                   isCombo: item.isCombo || false,
-                                                  dietaryType: item.dietaryType || 'veg',
+                                                  dietaryType: item.dietaryType || 'none',
                                                   dietaryTags: item.dietaryTags || [],
                                                   ingredients: item.ingredients || '',
                                                   allergens: item.allergens || [],
@@ -1156,7 +1149,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                                 setActiveCategoryId(category.id);
                                                 setSettingsMenuItemId(item.id);
                                                 setItemSettings({
-                                                  dietaryType: item.dietaryType || 'veg',
+                                                  dietaryType: item.dietaryType || 'none',
                                                   dietaryTags: item.dietaryTags || [],
                                                   ingredients: item.ingredients || '',
                                                   allergens: item.allergens || [],
@@ -1840,10 +1833,18 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           nameDe: newMenuItem.name,
                           description: newMenuItem.description,
                           descriptionDe: newMenuItem.description,
-                          pricePerPerson: newMenuItem.price || '0',
+                          pricePerPerson: Number(newMenuItem.price || 0).toString(),
+                          pricingType: newMenuItem.pricingType,
                           imageUrl: newMenuItem.imageUrl || newMenuItem.image?.name || '',
                           isActive: newMenuItem.isActive,
                           variants: newMenuItem.variants,
+                          isCombo: newMenuItem.isCombo,
+                          dietaryType: newMenuItem.dietaryType,
+                          dietaryTags: newMenuItem.dietaryTags,
+                          ingredients: newMenuItem.ingredients,
+                          allergens: newMenuItem.allergens,
+                          additives: newMenuItem.additives,
+                          nutritionalInfo: newMenuItem.nutritionalInfo,
                         });
                         console.log('Update item result:', result);
                         if (result.success) {
@@ -1927,6 +1928,12 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           imageUrl: newMenuItem.imageUrl || newMenuItem.image?.name || '',
                           variants: newMenuItem.variants,
                           isCombo: newMenuItem.isCombo,
+                          dietaryType: newMenuItem.dietaryType,
+                          dietaryTags: newMenuItem.dietaryTags,
+                          ingredients: newMenuItem.ingredients,
+                          allergens: newMenuItem.allergens,
+                          additives: newMenuItem.additives,
+                          nutritionalInfo: newMenuItem.nutritionalInfo,
                         });
                         console.log('Create item result:', result);
 
@@ -2142,7 +2149,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                       style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
                       onClick={() => setNewMenuItem({ ...newMenuItem, isCombo: !newMenuItem.isCombo })}
                     >
-                      Is Combo Item
+                      Is this Combo Item
                     </label>
                     <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
                       Mark this as a combo pack to group it separately in the menu
@@ -2288,13 +2295,13 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           type="button"
                           onClick={() => setNewMenuItem({ ...newMenuItem, dietaryType: 'none' })}
                           className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left cursor-pointer ${newMenuItem.dietaryType === 'none'
-                              ? 'border-primary bg-primary/5'
-                              : 'border-border bg-background hover:border-border hover:bg-accent'
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border bg-background hover:border-border hover:bg-accent'
                             }`}
                         >
                           <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${newMenuItem.dietaryType === 'none'
-                              ? 'border-primary'
-                              : 'border-border'
+                            ? 'border-primary'
+                            : 'border-border'
                             }`}>
                             {newMenuItem.dietaryType === 'none' && (
                               <div className="w-3 h-3 rounded-full bg-primary" />
@@ -2313,13 +2320,13 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           type="button"
                           onClick={() => setNewMenuItem({ ...newMenuItem, dietaryType: 'veg' })}
                           className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left cursor-pointer ${newMenuItem.dietaryType === 'veg'
-                              ? 'border-primary bg-primary/5'
-                              : 'border-border bg-background hover:border-border hover:bg-accent'
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border bg-background hover:border-border hover:bg-accent'
                             }`}
                         >
                           <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${newMenuItem.dietaryType === 'veg'
-                              ? 'border-primary'
-                              : 'border-border'
+                            ? 'border-primary'
+                            : 'border-border'
                             }`}>
                             {newMenuItem.dietaryType === 'veg' && (
                               <div className="w-3 h-3 rounded-full bg-primary" />
@@ -2338,13 +2345,13 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           type="button"
                           onClick={() => setNewMenuItem({ ...newMenuItem, dietaryType: 'non-veg' })}
                           className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left cursor-pointer ${newMenuItem.dietaryType === 'non-veg'
-                              ? 'border-primary bg-primary/5'
-                              : 'border-border bg-background hover:border-border hover:bg-accent'
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border bg-background hover:border-border hover:bg-accent'
                             }`}
                         >
                           <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${newMenuItem.dietaryType === 'non-veg'
-                              ? 'border-primary'
-                              : 'border-border'
+                            ? 'border-primary'
+                            : 'border-border'
                             }`}>
                             {newMenuItem.dietaryType === 'non-veg' && (
                               <div className="w-3 h-3 rounded-full bg-primary" />
@@ -2363,13 +2370,13 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           type="button"
                           onClick={() => setNewMenuItem({ ...newMenuItem, dietaryType: 'vegan' })}
                           className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left cursor-pointer ${newMenuItem.dietaryType === 'vegan'
-                              ? 'border-primary bg-primary/5'
-                              : 'border-border bg-background hover:border-border hover:bg-accent'
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border bg-background hover:border-border hover:bg-accent'
                             }`}
                         >
                           <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${newMenuItem.dietaryType === 'vegan'
-                              ? 'border-primary'
-                              : 'border-border'
+                            ? 'border-primary'
+                            : 'border-border'
                             }`}>
                             {newMenuItem.dietaryType === 'vegan' && (
                               <div className="w-3 h-3 rounded-full bg-primary" />
@@ -2399,13 +2406,13 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             type="button"
                             onClick={() => handleToggleTag(tag, 'dietaryTags')}
                             className={`relative flex items-start gap-3 p-3 rounded-lg border-2 transition-all text-left ${newMenuItem.dietaryTags.includes(tag)
-                                ? 'border-primary bg-primary/5'
-                                : 'border-border bg-background hover:border-border hover:bg-accent'
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border bg-background hover:border-border hover:bg-accent'
                               }`}
                           >
                             <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${newMenuItem.dietaryTags.includes(tag)
-                                ? 'border-primary bg-primary'
-                                : 'border-border bg-background'
+                              ? 'border-primary bg-primary'
+                              : 'border-border bg-background'
                               }`}>
                               {newMenuItem.dietaryTags.includes(tag) && (
                                 <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2450,13 +2457,13 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             type="button"
                             onClick={() => handleToggleTag(allergen, 'allergens')}
                             className={`relative flex items-start gap-3 p-3 rounded-lg border-2 transition-all text-left ${newMenuItem.allergens.includes(allergen)
-                                ? 'border-destructive bg-destructive/5'
-                                : 'border-border bg-background hover:border-border hover:bg-accent'
+                              ? 'border-destructive bg-destructive/5'
+                              : 'border-border bg-background hover:border-border hover:bg-accent'
                               }`}
                           >
                             <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${newMenuItem.allergens.includes(allergen)
-                                ? 'border-destructive bg-destructive'
-                                : 'border-border bg-background'
+                              ? 'border-destructive bg-destructive'
+                              : 'border-border bg-background'
                               }`}>
                               {newMenuItem.allergens.includes(allergen) && (
                                 <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2486,13 +2493,13 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             type="button"
                             onClick={() => handleToggleTag(additive, 'additives')}
                             className={`relative flex items-start gap-3 p-3 rounded-lg border-2 transition-all text-left ${newMenuItem.additives.includes(additive)
-                                ? 'border-primary bg-primary/5'
-                                : 'border-border bg-background hover:border-border hover:bg-accent'
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border bg-background hover:border-border hover:bg-accent'
                               }`}
                           >
                             <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${newMenuItem.additives.includes(additive)
-                                ? 'border-primary bg-primary'
-                                : 'border-border bg-background'
+                              ? 'border-primary bg-primary'
+                              : 'border-border bg-background'
                               }`}>
                               {newMenuItem.additives.includes(additive) && (
                                 <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2757,10 +2764,10 @@ export function MenuConfigPage({ user }: { user?: any }) {
                       const parentCategory = categories.find(c => c.id === activeCategoryId);
                       return !parentCategory?.assignedAddonGroups?.includes(group.id);
                     }).length === 0 && (
-                      <p className="text-muted-foreground italic mt-3" style={{ fontSize: 'var(--text-small)' }}>
-                        No separate choice groups available.
-                      </p>
-                    )}
+                        <p className="text-muted-foreground italic mt-3" style={{ fontSize: 'var(--text-small)' }}>
+                          No separate choice groups available.
+                        </p>
+                      )}
 
                     {addonGroups.length === 0 && (
                       <p className="text-muted-foreground text-center py-4" style={{ fontSize: 'var(--text-small)' }}>

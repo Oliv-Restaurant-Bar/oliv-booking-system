@@ -226,10 +226,12 @@ export function CustomMenuWizard() {
                 // Mapping logic:
                 // 1. If it's a beverage category, default to 'none'
                 // 2. Otherwise: vegan > vegetarian > non-vegetarian
-                dietaryType: (category?.name === 'Beverages' || category?.name === 'Drinks') ? 'none' :
-                  item.isVegan ? 'vegan' :
-                    item.isVegetarian ? 'vegetarian' : 'non-vegetarian',
-                isGlutenFree: item.isGlutenFree || false,
+                dietaryType: (category?.name === 'Beverages' || category?.name === 'Drinks') ? 'none' : (item.dietaryType || 'none'),
+                dietaryTags: item.dietaryTags || [],
+                allergens: item.allergens || [],
+                additives: item.additives || [],
+                ingredients: item.ingredients || '',
+                isGlutenFree: item.dietaryTags?.includes('Gluten Free') || item.dietaryTags?.includes('gluten-free') || false,
                 isCombo: item.isCombo || false,
                 variants: item.variants || [],
                 addOns: (() => {
@@ -1749,7 +1751,7 @@ export function CustomMenuWizard() {
                                         <div className="flex items-start gap-2 mb-2">
                                           {item.dietaryType !== 'none' && (
                                             <div className="flex-shrink-0 mt-0.5">
-                                              <DietaryIcon type={item.dietaryType} size="sm" isGlutenFree={item.isGlutenFree} />
+                                              <DietaryIcon type={item.dietaryType} size="sm" />
                                             </div>
                                           )}
                                           <div className="flex-1">
@@ -1773,9 +1775,24 @@ export function CustomMenuWizard() {
                                             </div>
                                           </div>
                                         </div>
-                                        <p className="text-muted-foreground mb-3 flex-1" style={{ fontSize: 'var(--text-small)' }}>
+                                        <p className="text-muted-foreground mb-2 flex-1" style={{ fontSize: 'var(--text-small)' }}>
                                           {item.description}
                                         </p>
+
+                                        {/* Dietary Tags on Card
+                                        {item.dietaryTags && item.dietaryTags.length > 0 && (
+                                          <div className="flex flex-wrap gap-1.5 mb-3">
+                                            {item.dietaryTags.map((tag) => (
+                                              <span
+                                                key={tag}
+                                                className="px-2 py-0.5 rounded-full bg-primary/5 text-primary border border-primary/10"
+                                                style={{ fontSize: '10px', fontWeight: 'var(--font-weight-medium)' }}
+                                              >
+                                                {tag}
+                                              </span>
+                                            ))}
+                                          </div>
+                                        )} */}
                                         <div className="flex flex-col gap-0.5 mb-3">
                                           <p className="text-primary" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
                                             {item.category === 'Beverages'
@@ -1924,7 +1941,7 @@ export function CustomMenuWizard() {
                                                   <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-2 flex-wrap">
                                                       {item.dietaryType !== 'none' && (
-                                                        <DietaryIcon type={item.dietaryType} size="sm" isGlutenFree={item.isGlutenFree} />
+                                                        <DietaryIcon type={item.dietaryType} size="sm" />
                                                       )}
                                                       <h6 className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
                                                         {item.name}
@@ -2480,7 +2497,7 @@ export function CustomMenuWizard() {
                                                 <div className="flex flex-col gap-1">
                                                   <div className="flex items-center gap-2">
                                                     {item.dietaryType !== 'none' && (
-                                                      <DietaryIcon type={item.dietaryType} size="sm" isGlutenFree={item.isGlutenFree} />
+                                                      <DietaryIcon type={item.dietaryType} size="sm" />
                                                     )}
                                                     <h6 className="text-foreground font-medium text-sm">
                                                       {item.name}
@@ -3280,7 +3297,7 @@ export function CustomMenuWizard() {
                 {/* Modal Header */}
                 <div className="sticky top-0 bg-card border-b border-border px-6 py-4 flex items-center justify-between z-10">
                   <div className="flex items-center gap-3">
-                    <DietaryIcon type={detailsModalItem.dietaryType} size="md" isGlutenFree={detailsModalItem.isGlutenFree} />
+                    <DietaryIcon type={detailsModalItem.dietaryType} size="md" />
                     <div>
                       <h3 className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
                         {detailsModalItem.name}
@@ -3372,17 +3389,44 @@ export function CustomMenuWizard() {
                     </div>
                   )}
 
+                  {/* Dietary Information Tags */}
+                  {detailsModalItem.dietaryTags && detailsModalItem.dietaryTags.length > 0 && (
+                    <div className="mb-6">
+                      <h4 className="text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                        Dietary Information
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {detailsModalItem.dietaryTags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20"
+                            style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Allergen Information */}
-                  {detailsModalItem.allergens && detailsModalItem.allergens.length > 0 && (
+                  {((detailsModalItem.allergens && detailsModalItem.allergens.length > 0) || (detailsModalItem.additives && detailsModalItem.additives.length > 0)) && (
                     <div className="mb-6 p-4 bg-destructive/5 border border-destructive/20 rounded-lg flex gap-3" style={{ borderRadius: 'var(--radius)' }}>
                       <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
                       <div>
                         <p className="text-foreground mb-1" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-                          Allergen Information
+                          Allergen & Additive Information
                         </p>
-                        <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                          Contains: {detailsModalItem.allergens.join(', ')}
-                        </p>
+                        {detailsModalItem.allergens && detailsModalItem.allergens.length > 0 && (
+                          <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                            Contains: {detailsModalItem.allergens.join(', ')}
+                          </p>
+                        )}
+                        {detailsModalItem.additives && detailsModalItem.additives.length > 0 && (
+                          <p className="text-muted-foreground mt-1" style={{ fontSize: 'var(--text-small)' }}>
+                            Additives: {detailsModalItem.additives.join(', ')}
+                          </p>
+                        )}
                       </div>
                     </div>
                   )}
@@ -3740,7 +3784,7 @@ export function CustomMenuWizard() {
                             <div className="flex-1 min-w-0">
                               <h6 className="text-foreground flex items-center gap-2 flex-wrap" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
                                 {item.dietaryType !== 'none' && (
-                                  <DietaryIcon type={item.dietaryType} size="sm" isGlutenFree={item.isGlutenFree} />
+                                  <DietaryIcon type={item.dietaryType} size="sm" />
                                 )}
                                 <span>{item.name}</span>
                                 {isConsumption(item) && (

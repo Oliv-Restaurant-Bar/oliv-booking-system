@@ -117,12 +117,24 @@ export async function createMenuItem(input: {
   pricePerPerson: number;
   pricingType?: "per_person" | "flat_fee" | "billed_by_consumption";
   imageUrl?: string;
-  isVegetarian?: boolean;
-  isVegan?: boolean;
-  isGlutenFree?: boolean;
   isCombo?: boolean;
   sortOrder?: number;
   variants?: any[];
+  dietaryType?: "veg" | "non-veg" | "vegan" | "none";
+  dietaryTags?: string[];
+  ingredients?: string;
+  allergens?: string[];
+  additives?: string[];
+  nutritionalInfo?: {
+    servingSize: string;
+    calories: string;
+    protein: string;
+    carbs: string;
+    fat: string;
+    fiber: string;
+    sugar: string;
+    sodium: string;
+  };
 }) {
   try {
     // Require CREATE_MENU_ITEM permission
@@ -136,6 +148,10 @@ export async function createMenuItem(input: {
         pricePerPerson: input.pricePerPerson.toString(),
         pricingType: input.pricingType || "per_person",
         variants: input.variants as any,
+        dietaryTags: input.dietaryTags as any,
+        allergens: input.allergens as any,
+        additives: input.additives as any,
+        nutritionalInfo: input.nutritionalInfo as any,
         isActive: true,
       })
       .returning();
@@ -160,6 +176,10 @@ export async function updateMenuItem(id: string, updates: Partial<typeof menuIte
         ...updates,
         pricePerPerson: updates.pricePerPerson?.toString(),
         variants: (updates as any).variants,
+        dietaryTags: (updates as any).dietaryTags,
+        allergens: (updates as any).allergens,
+        additives: (updates as any).additives,
+        nutritionalInfo: (updates as any).nutritionalInfo,
         updatedAt: new Date(),
       })
       .where(eq(menuItems.id, id))

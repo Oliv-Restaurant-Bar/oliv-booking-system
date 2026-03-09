@@ -556,11 +556,11 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             {/* Main Content Container */}
             <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
                 {isLocked && (
-                    <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center gap-3">
-                        <Lock className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                    <div className="mb-6 p-4 bg-booking-locked/10 border border-booking-locked rounded-lg flex items-center gap-3">
+                        <Lock className="w-5 h-5 text-booking-locked-lock dark:text-booking-locked-lock flex-shrink-0" />
                         <div>
-                            <p className="font-medium text-amber-900 dark:text-amber-100">Booking is Locked</p>
-                            <p className="text-sm text-amber-700 dark:text-amber-300">Clients cannot edit this booking. You can still make changes as an admin.</p>
+                            <p className="font-medium text-booking-locked-text dark:text-booking-locked-text">Booking is Locked</p>
+                            <p className="text-sm text-booking-locked-text dark:text-booking-locked-text">Clients cannot edit this booking. You can still make changes as an admin.</p>
                         </div>
                     </div>
                 )}

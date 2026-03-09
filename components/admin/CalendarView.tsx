@@ -114,15 +114,15 @@ function DayBookingsModal({ isOpen, onClose, date, bookings, onOpenBooking }: Da
           </button>
         </div>
 
-        <div className="p-4 max-h-[60vh] overflow-y-auto space-y-3">
+        <div className="p-4 max-h-[70vh] overflow-y-auto space-y-4">
           {bookings.map((booking) => (
             <div
               key={booking.id}
-              className="group relative p-4 bg-background border border-border rounded-xl hover:border-primary/50 hover:bg-accent/30 transition-all cursor-pointer"
+              className="p-4 bg-background border border-border rounded-xl hover:border-primary/50 hover:bg-accent/30 transition-all cursor-pointer group"
               onClick={() => onOpenBooking(booking)}
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3 min-w-0">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
                   <div
                     className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
                     style={{ backgroundColor: booking.customer.avatarColor || '#9DAE91' }}
@@ -131,40 +131,65 @@ function DayBookingsModal({ isOpen, onClose, date, bookings, onOpenBooking }: Da
                   </div>
                   <div className="min-w-0">
                     <h3 className="font-semibold text-foreground truncate">{booking.customer.name}</h3>
-                    <p className="text-sm text-muted-foreground truncate">{booking.event.occasion}</p>
+                    <p className="text-xs text-muted-foreground truncate">{booking.event.occasion}</p>
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                  <span
-                    className={cn(
-                      "px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border",
-                      getStatusStyle(booking.status).bg,
-                      getStatusStyle(booking.status).text,
-                      getStatusStyle(booking.status).border
+                <div className="flex flex-col items-end gap-1.5">
+                  <div className="flex items-center gap-2">
+                    {booking.kitchenPdf?.sentStatus === 'sent' && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-medium">
+                        <CheckCircle2 className="w-2.5 h-2.5" />
+                        PDF
+                      </span>
                     )}
-                  >
-                    {booking.status}
-                  </span>
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                    <Clock className="w-3.5 h-3.5" />
-                    {booking.event.time}
+                    <span
+                      className={cn(
+                        "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border flex items-center gap-1.5",
+                        getStatusStyle(booking.status).bg,
+                        getStatusStyle(booking.status).text,
+                        getStatusStyle(booking.status).border
+                      )}
+                    >
+                      <div
+                        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: getStatusStyle(booking.status).color }}
+                      />
+                      {booking.status}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground border-t border-border/50 pt-3">
-                <div className="flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5" />
-                  <span>{booking.guests} Guests</span>
-                </div>
-                {booking.event.location && (
-                  <div className="flex items-center gap-1.5 text-primary/80">
-                    <MapPin className="w-3.5 h-3.5" />
-                    <span className="truncate max-w-[150px]">{booking.event.location}</span>
+              <div className="pt-3 border-t border-border/10">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-muted-foreground">
+                    {booking.event.location && (
+                      <div className="flex items-center gap-1.5 text-primary font-bold">
+                        <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span>{booking.event.location}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-1.5 font-medium">
+                      <Clock className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>{booking.event.time}</span>
+                    </div>
+                    <span className="w-1 h-1 rounded-full bg-border" />
+                    <div className="flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>{booking.guests} Guests</span>
+                    </div>
+                    <span className="w-1 h-1 rounded-full bg-border" />
+                    <span className="font-semibold text-foreground">{booking.amount}</span>
                   </div>
-                )}
-                <div className="ml-auto flex items-center gap-1 text-primary font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                  View <ExternalLink className="w-3 h-3" />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenBooking(booking);
+                    }}
+                    className="px-3 py-1.5 border-2 border-border bg-transparent text-foreground hover:bg-secondary hover:text-secondary-foreground hover:border-secondary rounded-lg transition-colors text-xs font-bold flex items-center gap-1.5 opacity-0 group-hover:opacity-100 whitespace-nowrap"
+                  >
+                    View <ExternalLink className="w-3 h-3" />
+                  </button>
                 </div>
               </div>
             </div>
