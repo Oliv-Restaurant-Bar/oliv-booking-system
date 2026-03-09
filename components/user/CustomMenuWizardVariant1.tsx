@@ -2434,7 +2434,7 @@ export function CustomMenuWizard() {
                                           [category]: !prev[category],
                                         }))
                                       }
-                                      className="w-full flex items-center justify-between gap-2 p-4 pb-2 hover:bg-muted/50 transition-colors"
+                                      className="w-full flex items-center justify-between gap-2 p-2 hover:bg-muted/50 transition-colors"
                                     >
                                       <div className="flex items-center gap-2">
                                         {isCollapsed ? (

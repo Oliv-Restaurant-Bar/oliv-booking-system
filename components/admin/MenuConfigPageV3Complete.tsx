@@ -152,6 +152,43 @@ function SortableCategory({
   );
 }
 
+// Constants for Item Settings
+const dietaryTagOptions = [
+  'Gluten Free',
+  'Dairy Free',
+  'Nut Free',
+  'Soy Free',
+  'Sugar Free',
+  'Low Carb',
+  'High Protein',
+  'Organic',
+  'Local',
+  'Seasonal'
+];
+
+const allergenOptions = [
+  'Peanuts',
+  'Tree Nuts',
+  'Milk',
+  'Eggs',
+  'Fish',
+  'Shellfish',
+  'Soy',
+  'Wheat',
+  'Sesame',
+  'Mustard'
+];
+
+const additiveOptions = [
+  'Preservatives',
+  'Artificial Colors',
+  'Artificial Flavors',
+  'MSG',
+  'Nitrates',
+  'Sulfites',
+  'BHA/BHT'
+];
+
 export function MenuConfigPage({ user }: { user?: any }) {
   const userRole = user?.role;
   const canCreateCategory = hasPermission(userRole, Permission.CREATE_MENU_CATEGORY);
@@ -191,6 +228,10 @@ export function MenuConfigPage({ user }: { user?: any }) {
   const [choiceCategoryId, setChoiceCategoryId] = useState<string | null>(null);
   const [choiceItemId, setChoiceItemId] = useState<string | null>(null);
   const [selectedAddonGroups, setSelectedAddonGroups] = useState<string[]>([]);
+  // Expandable sections in Add Menu Item modal
+  const [showItemSettings, setShowItemSettings] = useState(false);
+  const [showAddons, setShowAddons] = useState(false);
+  const [showChoices, setShowChoices] = useState(false);
   const [newCategory, setNewCategory] = useState({
     name: '',
     description: '',
@@ -208,6 +249,22 @@ export function MenuConfigPage({ user }: { user?: any }) {
     variants: [] as VariantOption[],
     assignedAddonGroups: [] as string[],
     isCombo: false,
+    // Item settings for expandable section
+    dietaryType: 'veg' as 'veg' | 'non-veg' | 'vegan' | 'none',
+    dietaryTags: [] as string[],
+    ingredients: '',
+    allergens: [] as string[],
+    additives: [] as string[],
+    nutritionalInfo: {
+      servingSize: '',
+      calories: '',
+      protein: '',
+      carbs: '',
+      fat: '',
+      fiber: '',
+      sugar: '',
+      sodium: '',
+    },
   });
   const [newGroup, setNewGroup] = useState({
     name: '',
@@ -591,6 +648,22 @@ export function MenuConfigPage({ user }: { user?: any }) {
     });
   };
 
+  // Helper function for Item Settings tags
+  const handleToggleTag = (tag: string, field: 'dietaryTags' | 'allergens' | 'additives') => {
+    const currentArray = newMenuItem[field];
+    if (currentArray.includes(tag)) {
+      setNewMenuItem({
+        ...newMenuItem,
+        [field]: currentArray.filter(t => t !== tag),
+      });
+    } else {
+      setNewMenuItem({
+        ...newMenuItem,
+        [field]: [...currentArray, tag],
+      });
+    }
+  };
+
   const filteredCategories = categories.filter(cat =>
     cat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     cat.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -791,7 +864,25 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                             variants: [],
                                             assignedAddonGroups: [],
                                             isCombo: false,
+                                            dietaryType: 'veg',
+                                            dietaryTags: [],
+                                            ingredients: '',
+                                            allergens: [],
+                                            additives: [],
+                                            nutritionalInfo: {
+                                              servingSize: '',
+                                              calories: '',
+                                              protein: '',
+                                              carbs: '',
+                                              fat: '',
+                                              fiber: '',
+                                              sugar: '',
+                                              sodium: '',
+                                            },
                                           });
+                                          setShowItemSettings(false);
+                                          setShowAddons(false);
+                                          setShowChoices(false);
                                           setIsAddMenuItemModalOpen(true);
                                         }}
                                         className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
@@ -1031,7 +1122,25 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                                   variants: item.variants || [],
                                                   assignedAddonGroups: item.assignedAddonGroups || [],
                                                   isCombo: item.isCombo || false,
+                                                  dietaryType: item.dietaryType || 'veg',
+                                                  dietaryTags: item.dietaryTags || [],
+                                                  ingredients: item.ingredients || '',
+                                                  allergens: item.allergens || [],
+                                                  additives: item.additives || [],
+                                                  nutritionalInfo: {
+                                                    servingSize: item.nutritionalInfo?.servingSize || '',
+                                                    calories: item.nutritionalInfo?.calories || '',
+                                                    protein: item.nutritionalInfo?.protein || '',
+                                                    carbs: item.nutritionalInfo?.carbs || '',
+                                                    fat: item.nutritionalInfo?.fat || '',
+                                                    fiber: item.nutritionalInfo?.fiber || '',
+                                                    sugar: item.nutritionalInfo?.sugar || '',
+                                                    sodium: item.nutritionalInfo?.sodium || '',
+                                                  },
                                                 });
+                                                setShowItemSettings(false);
+                                                setShowAddons(false);
+                                                setShowChoices(false);
                                                 setIsAddMenuItemModalOpen(true);
                                               }}
                                               className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
@@ -1141,7 +1250,25 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                           variants: [],
                                           assignedAddonGroups: [],
                                           isCombo: false,
+                                          dietaryType: 'veg',
+                                          dietaryTags: [],
+                                          ingredients: '',
+                                          allergens: [],
+                                          additives: [],
+                                          nutritionalInfo: {
+                                            servingSize: '',
+                                            calories: '',
+                                            protein: '',
+                                            carbs: '',
+                                            fat: '',
+                                            fiber: '',
+                                            sugar: '',
+                                            sodium: '',
+                                          },
                                         });
+                                        setShowItemSettings(false);
+                                        setShowAddons(false);
+                                        setShowChoices(false);
                                         setIsAddMenuItemModalOpen(true);
                                       }}
                                       className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity inline-flex items-center gap-2"
@@ -1676,7 +1803,12 @@ export function MenuConfigPage({ user }: { user?: any }) {
             {/* Add/Edit Menu Item Modal */}
             <Modal
               isOpen={isAddMenuItemModalOpen}
-              onClose={() => setIsAddMenuItemModalOpen(false)}
+              onClose={() => {
+                setIsAddMenuItemModalOpen(false);
+                setShowItemSettings(false);
+                setShowAddons(false);
+                setShowChoices(false);
+              }}
               icon={UtensilsCrossed}
               title={editingMenuItemId ? 'Edit Menu Item' : 'Add New Menu Item'}
               footer={
@@ -1687,6 +1819,9 @@ export function MenuConfigPage({ user }: { user?: any }) {
                     onClick={() => {
                       setIsAddMenuItemModalOpen(false);
                       setActiveCategoryId(null);
+                      setShowItemSettings(false);
+                      setShowAddons(false);
+                      setShowChoices(false);
                     }}
                   >
                     Cancel
@@ -1730,6 +1865,12 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                       variants: newMenuItem.variants,
                                       isCombo: newMenuItem.isCombo,
                                       assignedAddonGroups: newMenuItem.assignedAddonGroups,
+                                      dietaryType: newMenuItem.dietaryType,
+                                      dietaryTags: newMenuItem.dietaryTags,
+                                      ingredients: newMenuItem.ingredients,
+                                      allergens: newMenuItem.allergens,
+                                      additives: newMenuItem.additives,
+                                      nutritionalInfo: newMenuItem.nutritionalInfo,
                                     }
                                     : item
                                 ),
@@ -1748,9 +1889,27 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             variants: [],
                             assignedAddonGroups: [],
                             isCombo: false,
+                            dietaryType: 'veg',
+                            dietaryTags: [],
+                            ingredients: '',
+                            allergens: [],
+                            additives: [],
+                            nutritionalInfo: {
+                              servingSize: '',
+                              calories: '',
+                              protein: '',
+                              carbs: '',
+                              fat: '',
+                              fiber: '',
+                              sugar: '',
+                              sodium: '',
+                            },
                           });
                           setActiveCategoryId(null);
                           setEditingMenuItemId(null);
+                          setShowItemSettings(false);
+                          setShowAddons(false);
+                          setShowChoices(false);
                         } else {
                           alert(result.error || 'Failed to update menu item');
                         }
@@ -1783,6 +1942,12 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             isActive: newMenuItem.isActive,
                             variants: newMenuItem.variants,
                             assignedAddonGroups: newMenuItem.assignedAddonGroups,
+                            dietaryType: newMenuItem.dietaryType,
+                            dietaryTags: newMenuItem.dietaryTags,
+                            ingredients: newMenuItem.ingredients,
+                            allergens: newMenuItem.allergens,
+                            additives: newMenuItem.additives,
+                            nutritionalInfo: newMenuItem.nutritionalInfo,
                           };
 
                           setCategories(categories.map(cat =>
@@ -1802,9 +1967,27 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             variants: [],
                             assignedAddonGroups: [],
                             isCombo: false,
+                            dietaryType: 'veg',
+                            dietaryTags: [],
+                            ingredients: '',
+                            allergens: [],
+                            additives: [],
+                            nutritionalInfo: {
+                              servingSize: '',
+                              calories: '',
+                              protein: '',
+                              carbs: '',
+                              fat: '',
+                              fiber: '',
+                              sugar: '',
+                              sodium: '',
+                            },
                           });
                           setActiveCategoryId(null);
                           setEditingMenuItemId(null);
+                          setShowItemSettings(false);
+                          setShowAddons(false);
+                          setShowChoices(false);
                         } else {
                           alert(result.error || 'Failed to create menu item');
                         }
@@ -2078,6 +2261,528 @@ export function MenuConfigPage({ user }: { user?: any }) {
                     </div>
                   )}
                 </div>
+
+                {/* Item Settings Section */}
+                {showItemSettings ? (
+                  <div className="p-4 bg-muted/30 rounded-lg space-y-6">
+                    <div className="flex items-center justify-between">
+                      <label className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                        Item Settings
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowItemSettings(false)}
+                        className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Dietary Type */}
+                    <div>
+                      <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                        Dietary Type
+                      </label>
+                      <div className="grid grid-cols-4 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setNewMenuItem({ ...newMenuItem, dietaryType: 'none' })}
+                          className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left cursor-pointer ${newMenuItem.dietaryType === 'none'
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border bg-background hover:border-border hover:bg-accent'
+                            }`}
+                        >
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${newMenuItem.dietaryType === 'none'
+                              ? 'border-primary'
+                              : 'border-border'
+                            }`}>
+                            {newMenuItem.dietaryType === 'none' && (
+                              <div className="w-3 h-3 rounded-full bg-primary" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                              No Type
+                            </div>
+                            <div className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                              Non-food items
+                            </div>
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNewMenuItem({ ...newMenuItem, dietaryType: 'veg' })}
+                          className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left cursor-pointer ${newMenuItem.dietaryType === 'veg'
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border bg-background hover:border-border hover:bg-accent'
+                            }`}
+                        >
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${newMenuItem.dietaryType === 'veg'
+                              ? 'border-primary'
+                              : 'border-border'
+                            }`}>
+                            {newMenuItem.dietaryType === 'veg' && (
+                              <div className="w-3 h-3 rounded-full bg-primary" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                              Vegetarian
+                            </div>
+                            <div className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                              No meat or fish
+                            </div>
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNewMenuItem({ ...newMenuItem, dietaryType: 'non-veg' })}
+                          className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left cursor-pointer ${newMenuItem.dietaryType === 'non-veg'
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border bg-background hover:border-border hover:bg-accent'
+                            }`}
+                        >
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${newMenuItem.dietaryType === 'non-veg'
+                              ? 'border-primary'
+                              : 'border-border'
+                            }`}>
+                            {newMenuItem.dietaryType === 'non-veg' && (
+                              <div className="w-3 h-3 rounded-full bg-primary" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                              Non-Vegetarian
+                            </div>
+                            <div className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                              Contains meat or fish
+                            </div>
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNewMenuItem({ ...newMenuItem, dietaryType: 'vegan' })}
+                          className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left cursor-pointer ${newMenuItem.dietaryType === 'vegan'
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border bg-background hover:border-border hover:bg-accent'
+                            }`}
+                        >
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${newMenuItem.dietaryType === 'vegan'
+                              ? 'border-primary'
+                              : 'border-border'
+                            }`}>
+                            {newMenuItem.dietaryType === 'vegan' && (
+                              <div className="w-3 h-3 rounded-full bg-primary" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                              Vegan
+                            </div>
+                            <div className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                              No animal products
+                            </div>
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Dietary Tags */}
+                    <div>
+                      <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                        Dietary Tags
+                      </label>
+                      <div className="grid grid-cols-3 gap-3">
+                        {dietaryTagOptions.map((tag) => (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => handleToggleTag(tag, 'dietaryTags')}
+                            className={`relative flex items-start gap-3 p-3 rounded-lg border-2 transition-all text-left ${newMenuItem.dietaryTags.includes(tag)
+                                ? 'border-primary bg-primary/5'
+                                : 'border-border bg-background hover:border-border hover:bg-accent'
+                              }`}
+                          >
+                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${newMenuItem.dietaryTags.includes(tag)
+                                ? 'border-primary bg-primary'
+                                : 'border-border bg-background'
+                              }`}>
+                              {newMenuItem.dietaryTags.includes(tag) && (
+                                <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <div className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                                {tag}
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Ingredients */}
+                    <div>
+                      <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                        Ingredients
+                      </label>
+                      <textarea
+                        value={newMenuItem.ingredients}
+                        onChange={(e) => setNewMenuItem({ ...newMenuItem, ingredients: e.target.value })}
+                        placeholder="List all ingredients..."
+                        rows={3}
+                        className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        style={{ fontSize: 'var(--text-base)' }}
+                      />
+                    </div>
+
+                    {/* Allergens */}
+                    <div>
+                      <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                        Allergens
+                      </label>
+                      <div className="grid grid-cols-3 gap-3">
+                        {allergenOptions.map((allergen) => (
+                          <button
+                            key={allergen}
+                            type="button"
+                            onClick={() => handleToggleTag(allergen, 'allergens')}
+                            className={`relative flex items-start gap-3 p-3 rounded-lg border-2 transition-all text-left ${newMenuItem.allergens.includes(allergen)
+                                ? 'border-destructive bg-destructive/5'
+                                : 'border-border bg-background hover:border-border hover:bg-accent'
+                              }`}
+                          >
+                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${newMenuItem.allergens.includes(allergen)
+                                ? 'border-destructive bg-destructive'
+                                : 'border-border bg-background'
+                              }`}>
+                              {newMenuItem.allergens.includes(allergen) && (
+                                <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <div className={newMenuItem.allergens.includes(allergen) ? 'text-destructive' : 'text-foreground'} style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                                {allergen}
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Additives */}
+                    <div>
+                      <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                        Additives
+                      </label>
+                      <div className="grid grid-cols-3 gap-3">
+                        {additiveOptions.map((additive) => (
+                          <button
+                            key={additive}
+                            type="button"
+                            onClick={() => handleToggleTag(additive, 'additives')}
+                            className={`relative flex items-start gap-3 p-3 rounded-lg border-2 transition-all text-left ${newMenuItem.additives.includes(additive)
+                                ? 'border-primary bg-primary/5'
+                                : 'border-border bg-background hover:border-border hover:bg-accent'
+                              }`}
+                          >
+                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${newMenuItem.additives.includes(additive)
+                                ? 'border-primary bg-primary'
+                                : 'border-border bg-background'
+                              }`}>
+                              {newMenuItem.additives.includes(additive) && (
+                                <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <div className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                                {additive}
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Nutritional Information */}
+                    <div>
+                      <h4 className="text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                        Nutritional Information
+                      </h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-muted-foreground mb-1.5" style={{ fontSize: 'var(--text-small)' }}>
+                            Serving Size
+                          </label>
+                          <input
+                            type="text"
+                            value={newMenuItem.nutritionalInfo.servingSize}
+                            onChange={(e) => setNewMenuItem({
+                              ...newMenuItem,
+                              nutritionalInfo: { ...newMenuItem.nutritionalInfo, servingSize: e.target.value }
+                            })}
+                            placeholder="e.g., 100g"
+                            className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            style={{ fontSize: 'var(--text-base)' }}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-muted-foreground mb-1.5" style={{ fontSize: 'var(--text-small)' }}>
+                            Calories
+                          </label>
+                          <input
+                            type="text"
+                            value={newMenuItem.nutritionalInfo.calories}
+                            onChange={(e) => setNewMenuItem({
+                              ...newMenuItem,
+                              nutritionalInfo: { ...newMenuItem.nutritionalInfo, calories: e.target.value }
+                            })}
+                            placeholder="e.g., 250 kcal"
+                            className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            style={{ fontSize: 'var(--text-base)' }}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-muted-foreground mb-1.5" style={{ fontSize: 'var(--text-small)' }}>
+                            Protein
+                          </label>
+                          <input
+                            type="text"
+                            value={newMenuItem.nutritionalInfo.protein}
+                            onChange={(e) => setNewMenuItem({
+                              ...newMenuItem,
+                              nutritionalInfo: { ...newMenuItem.nutritionalInfo, protein: e.target.value }
+                            })}
+                            placeholder="e.g., 15g"
+                            className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            style={{ fontSize: 'var(--text-base)' }}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-muted-foreground mb-1.5" style={{ fontSize: 'var(--text-small)' }}>
+                            Carbohydrates
+                          </label>
+                          <input
+                            type="text"
+                            value={newMenuItem.nutritionalInfo.carbs}
+                            onChange={(e) => setNewMenuItem({
+                              ...newMenuItem,
+                              nutritionalInfo: { ...newMenuItem.nutritionalInfo, carbs: e.target.value }
+                            })}
+                            placeholder="e.g., 30g"
+                            className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            style={{ fontSize: 'var(--text-base)' }}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-muted-foreground mb-1.5" style={{ fontSize: 'var(--text-small)' }}>
+                            Fat
+                          </label>
+                          <input
+                            type="text"
+                            value={newMenuItem.nutritionalInfo.fat}
+                            onChange={(e) => setNewMenuItem({
+                              ...newMenuItem,
+                              nutritionalInfo: { ...newMenuItem.nutritionalInfo, fat: e.target.value }
+                            })}
+                            placeholder="e.g., 10g"
+                            className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            style={{ fontSize: 'var(--text-base)' }}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-muted-foreground mb-1.5" style={{ fontSize: 'var(--text-small)' }}>
+                            Fiber
+                          </label>
+                          <input
+                            type="text"
+                            value={newMenuItem.nutritionalInfo.fiber}
+                            onChange={(e) => setNewMenuItem({
+                              ...newMenuItem,
+                              nutritionalInfo: { ...newMenuItem.nutritionalInfo, fiber: e.target.value }
+                            })}
+                            placeholder="e.g., 5g"
+                            className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            style={{ fontSize: 'var(--text-base)' }}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-muted-foreground mb-1.5" style={{ fontSize: 'var(--text-small)' }}>
+                            Sugar
+                          </label>
+                          <input
+                            type="text"
+                            value={newMenuItem.nutritionalInfo.sugar}
+                            onChange={(e) => setNewMenuItem({
+                              ...newMenuItem,
+                              nutritionalInfo: { ...newMenuItem.nutritionalInfo, sugar: e.target.value }
+                            })}
+                            placeholder="e.g., 8g"
+                            className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            style={{ fontSize: 'var(--text-base)' }}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-muted-foreground mb-1.5" style={{ fontSize: 'var(--text-small)' }}>
+                            Sodium
+                          </label>
+                          <input
+                            type="text"
+                            value={newMenuItem.nutritionalInfo.sodium}
+                            onChange={(e) => setNewMenuItem({
+                              ...newMenuItem,
+                              nutritionalInfo: { ...newMenuItem.nutritionalInfo, sodium: e.target.value }
+                            })}
+                            placeholder="e.g., 500mg"
+                            className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            style={{ fontSize: 'var(--text-base)' }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <label className="block text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                      Item Settings (Optional)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowItemSettings(true)}
+                      className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>Add Settings</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Add-ons Section */}
+                {showAddons ? (
+                  <div className="p-4 bg-muted/30 rounded-lg space-y-4">
+                    <div className="flex items-center justify-between">
+                      <label className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                        Add-ons {newMenuItem.assignedAddonGroups.length > 0 && `(${newMenuItem.assignedAddonGroups.length})`}
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowAddons(false)}
+                        className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                      Choose which addon groups should be available for this item
+                    </p>
+
+                    {/* Addon Groups Grid */}
+                    <div className="grid grid-cols-3 gap-3">
+                      {addonGroups.filter(group => {
+                        // Filter out groups already assigned to the parent category
+                        if (activeCategoryId) {
+                          const parentCategory = categories.find(c => c.id === activeCategoryId);
+                          return !parentCategory?.assignedAddonGroups?.includes(group.id);
+                        }
+                        return true;
+                      }).map((group) => {
+                        const isSelected = newMenuItem.assignedAddonGroups.includes(group.id);
+                        return (
+                          <label
+                            key={group.id}
+                            className="cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setNewMenuItem({
+                                    ...newMenuItem,
+                                    assignedAddonGroups: [...newMenuItem.assignedAddonGroups, group.id]
+                                  });
+                                } else {
+                                  setNewMenuItem({
+                                    ...newMenuItem,
+                                    assignedAddonGroups: newMenuItem.assignedAddonGroups.filter(id => id !== group.id)
+                                  });
+                                }
+                              }}
+                              className="sr-only peer"
+                            />
+                            <div
+                              className="px-4 py-3 bg-card border border-border rounded-lg transition-all hover:border-primary/50 peer-checked:border-primary peer-checked:bg-primary/5"
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${isSelected
+                                  ? 'bg-primary border-primary'
+                                  : 'bg-background border-border'
+                                  }`}>
+                                  {isSelected && (
+                                    <Check className="w-3.5 h-3.5 text-primary-foreground" strokeWidth={3} />
+                                  )}
+                                </div>
+                                <div className="flex flex-col flex-1 min-w-0">
+                                  <span
+                                    className="text-foreground truncate"
+                                    style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+                                  >
+                                    {group.name}
+                                  </span>
+                                  <span className="text-muted-foreground" style={{ fontSize: '10px' }}>
+                                    {group.items.length} {group.items.length === 1 ? 'item' : 'items'} • {group.minSelect > 0 || group.maxSelect === 1 ? 'Choice' : 'Addon'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+
+                    {newMenuItem.assignedAddonGroups.length > 0 && (
+                      <p className="text-muted-foreground mt-3" style={{ fontSize: 'var(--text-small)' }}>
+                        {newMenuItem.assignedAddonGroups.length} addon group{newMenuItem.assignedAddonGroups.length !== 1 ? 's' : ''} selected
+                      </p>
+                    )}
+
+                    {activeCategoryId && addonGroups.filter(group => {
+                      const parentCategory = categories.find(c => c.id === activeCategoryId);
+                      return !parentCategory?.assignedAddonGroups?.includes(group.id);
+                    }).length === 0 && (
+                      <p className="text-muted-foreground italic mt-3" style={{ fontSize: 'var(--text-small)' }}>
+                        No separate choice groups available.
+                      </p>
+                    )}
+
+                    {addonGroups.length === 0 && (
+                      <p className="text-muted-foreground text-center py-4" style={{ fontSize: 'var(--text-small)' }}>
+                        No addon groups available. Create addon groups in the "Choices & Addons" tab first.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <label className="block text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                      Add-ons (Optional) {newMenuItem.assignedAddonGroups.length > 0 && <span className="text-muted-foreground ml-2">({newMenuItem.assignedAddonGroups.length} selected)</span>}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddons(true)}
+                      className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>Add Add-ons</span>
+                    </button>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-2 pt-2 border-t border-border mt-2">
                   <input
