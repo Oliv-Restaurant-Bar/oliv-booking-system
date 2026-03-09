@@ -7,6 +7,7 @@ import { ConfirmationModal } from '../user/ConfirmationModal';
 import { Button } from '../user/Button';
 import { StatusDropdown } from './StatusDropdown';
 import { Input } from '@/components/ui/input';
+import { SkeletonTable } from '@/components/ui/skeleton-loaders';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import { canModifyUser } from '@/lib/auth/rbac';
@@ -328,11 +329,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
 
         {/* Loading State */}
         {loading && (
-          <div className="text-center py-16">
-            <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
-              Loading users...
-            </p>
-          </div>
+          <SkeletonTable rows={8} columns={5} hasActions={!!isSuperAdmin} />
         )}
 
         {/* Users Table */}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { SkeletonForm } from '@/components/ui/skeleton-loaders';
 
 interface EditBookingPageProps {
   params: Promise<{
@@ -31,10 +32,13 @@ export default function EditBookingPage({ params }: EditBookingPageProps) {
   }, [params, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-        <p className="text-foreground">Loading your booking...</p>
+    <div className="min-h-screen bg-background p-4 md:p-8">
+      <div className="max-w-2xl mx-auto pt-12">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-semibold mb-2">Loading Your Booking</h1>
+          <p className="text-muted-foreground">Please wait while we fetch your booking details...</p>
+        </div>
+        <SkeletonForm fields={5} />
       </div>
     </div>
   );

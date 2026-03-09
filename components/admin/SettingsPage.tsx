@@ -7,6 +7,7 @@ import { VenueModal } from './VenueModal';
 import { Permission, hasPermission } from '@/lib/auth/rbac';
 import { VenueService } from '@/services/venue.service';
 import type { Venue } from '@/services/venue.service';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 
 export function SettingsPage({ user }: { user?: any }) {
@@ -154,9 +155,25 @@ export function SettingsPage({ user }: { user?: any }) {
             {/* Venues List */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {isLoadingVenues ? (
-                <div className="col-span-full flex items-center justify-center py-12">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                </div>
+                <>
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="bg-background border border-border rounded-xl p-4">
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Skeleton className="w-6 h-6" />
+                        </div>
+                        <Skeleton className="w-8 h-8 rounded" />
+                      </div>
+                      <Skeleton className="h-5 w-32 mb-2" />
+                      <Skeleton className="h-4 w-full mb-1" />
+                      <Skeleton className="h-4 w-3/4 mb-3" />
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-4 w-16 rounded-full" />
+                        <Skeleton className="h-4 w-20 rounded-full" />
+                      </div>
+                    </div>
+                  ))}
+                </>
               ) : venues.length === 0 ? (
                 <div className="col-span-full text-center py-12 border-2 border-dashed border-border rounded-2xl bg-muted/5">
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">

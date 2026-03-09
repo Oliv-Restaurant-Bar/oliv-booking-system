@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Calendar, Clock, Users, FileText, Lock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/user/Button';
+import { SkeletonForm } from '@/components/ui/skeleton-loaders';
 
 interface BookingData {
   id: string;
@@ -140,10 +141,9 @@ export function ClientBookingEditPage() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-foreground">Loading...</p>
+      <div className="min-h-screen bg-background p-4 md:p-8">
+        <div className="max-w-2xl mx-auto">
+          <SkeletonForm fields={6} />
         </div>
       </div>
     );

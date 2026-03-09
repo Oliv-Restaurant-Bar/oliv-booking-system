@@ -10,6 +10,7 @@ import { ItemSettingsModal } from '../user/ItemSettingsModal';
 import { Button } from '../user/Button';
 import { Tooltip } from '../user/Tooltip';
 import { NativeRadio } from '../ui/NativeRadio';
+import { SkeletonMenuCategory } from '@/components/ui/skeleton-loaders';
 import { toast } from 'sonner';
 import {
   DndContext,
@@ -264,6 +265,9 @@ export function MenuConfigPage({ user }: { user?: any }) {
       sodium: '',
     },
   });
+
+  // State to track pricing mode: single price vs variants
+  const [useVariantsMode, setUseVariantsMode] = useState(false);
   const [newGroup, setNewGroup] = useState({
     name: '',
     subtitle: '',
@@ -679,10 +683,10 @@ export function MenuConfigPage({ user }: { user?: any }) {
       <div className="flex-1">
         {/* Loading State */}
         {loading && (
-          <div className="text-center py-16">
-            <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
-              Loading menu data...
-            </p>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <SkeletonMenuCategory key={i} />
+            ))}
           </div>
         )}
 
@@ -1108,6 +1112,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                               onClick={() => {
                                                 setActiveCategoryId(category.id);
                                                 setEditingMenuItemId(item.id);
+                                                const itemVariants = item.variants || [];
                                                 setNewMenuItem({
                                                   name: item.name,
                                                   description: item.description,
@@ -1116,7 +1121,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                                   image: null,
                                                   imageUrl: item.image,
                                                   isActive: item.isActive,
-                                                  variants: item.variants || [],
+                                                  variants: itemVariants,
                                                   assignedAddonGroups: item.assignedAddonGroups || [],
                                                   isCombo: item.isCombo || false,
                                                   dietaryType: item.dietaryType || 'none',
@@ -1135,6 +1140,8 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                                     sodium: item.nutritionalInfo?.sodium || '',
                                                   },
                                                 });
+                                                // Auto-detect mode based on whether item has variants
+                                                setUseVariantsMode(itemVariants.length > 0);
                                                 setShowItemSettings(false);
                                                 setShowAddons(false);
                                                 setShowChoices(false);
@@ -1807,6 +1814,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                 setShowItemSettings(false);
                 setShowAddons(false);
                 setShowChoices(false);
+                setUseVariantsMode(false);
               }}
               icon={UtensilsCrossed}
               title={editingMenuItemId ? 'Edit Menu Item' : 'Add New Menu Item'}
@@ -1821,6 +1829,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                       setShowItemSettings(false);
                       setShowAddons(false);
                       setShowChoices(false);
+                      setUseVariantsMode(false);
                     }}
                   >
                     Cancel
@@ -1829,7 +1838,10 @@ export function MenuConfigPage({ user }: { user?: any }) {
                     variant="primary"
                     icon={editingMenuItemId ? Check : Plus}
                     onClick={async () => {
-                      if (!activeCategoryId || !newMenuItem.name || (!newMenuItem.price && newMenuItem.variants.length === 0)) return;
+                      // Validation: check price OR variants based on mode
+                      const hasPrice = !useVariantsMode && newMenuItem.price !== '';
+                      const hasVariants = useVariantsMode && newMenuItem.variants.length > 0;
+                      if (!activeCategoryId || !newMenuItem.name || (!hasPrice && !hasVariants)) return;
 
                       if (editingMenuItemId) {
                         // Edit existing item
@@ -1917,6 +1929,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           setShowItemSettings(false);
                           setShowAddons(false);
                           setShowChoices(false);
+                          setUseVariantsMode(false);
                           toast.success('Menu item updated successfully');
                         } else {
                           toast.error(result.error || 'Failed to update menu item');
@@ -2002,13 +2015,23 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           setShowItemSettings(false);
                           setShowAddons(false);
                           setShowChoices(false);
+                          setUseVariantsMode(false);
                           toast.success('Menu item created successfully');
                         } else {
                           toast.error(result.error || 'Failed to create menu item');
                         }
                       }
                     }}
-                    disabled={!activeCategoryId || !newMenuItem.name || (!newMenuItem.price && newMenuItem.variants.length === 0) || newMenuItem.name.trim() === '' || newMenuItem.name.length > 100 || newMenuItem.description.length > 500 || (newMenuItem.price !== '' && parseFloat(newMenuItem.price) < 0) || newMenuItem.variants.some(v => !v.name?.trim() || v.name.length > 100 || v.price < 0)}
+                    disabled={
+                      !activeCategoryId ||
+                      !newMenuItem.name ||
+                      newMenuItem.name.trim() === '' ||
+                      newMenuItem.name.length > 100 ||
+                      newMenuItem.description.length > 500 ||
+                      (!useVariantsMode && (!newMenuItem.price || newMenuItem.price === '' || parseFloat(newMenuItem.price) < 0)) ||
+                      (useVariantsMode && newMenuItem.variants.length === 0) ||
+                      newMenuItem.variants.some(v => !v.name?.trim() || v.name.length > 100 || v.price < 0)
+                    }
                   >
                     {editingMenuItemId ? 'Save Changes' : 'Add Item'}
                   </Button>
@@ -2123,24 +2146,73 @@ export function MenuConfigPage({ user }: { user?: any }) {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                    Price *
+                {/* Price Mode Toggle */}
+                <div className="flex items-center justify-between py-2">
+                  <label className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                    Pricing Mode
                   </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>€</span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={newMenuItem.price}
-                      onChange={(e) => setNewMenuItem({ ...newMenuItem, price: e.target.value })}
-                      placeholder="0.00"
-                      className="w-full pl-8 pr-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-                      style={{ fontSize: 'var(--text-base)' }}
-                    />
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`text-sm font-medium transition-colors ${
+                        !useVariantsMode ? 'text-primary' : 'text-muted-foreground'
+                      }`}
+                      style={{ fontSize: 'var(--text-small)' }}
+                    >
+                      Price
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newMode = !useVariantsMode;
+                        setUseVariantsMode(newMode);
+                        if (newMode) {
+                          setNewMenuItem({ ...newMenuItem, price: '' });
+                        } else {
+                          setNewMenuItem({ ...newMenuItem, variants: [] });
+                        }
+                      }}
+                      className={`relative w-14 h-7 rounded-full transition-colors duration-200 ease-in-out ${
+                        useVariantsMode ? 'bg-primary' : 'bg-border'
+                      }`}
+                    >
+                      <span
+                        className={`absolute top-1 left-1 bg-white w-5 h-5 rounded-full shadow-md transition-transform duration-200 ease-in-out ${
+                          useVariantsMode ? 'translate-x-7' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                    <span
+                      className={`text-sm font-medium transition-colors ${
+                        useVariantsMode ? 'text-primary' : 'text-muted-foreground'
+                      }`}
+                      style={{ fontSize: 'var(--text-small)' }}
+                    >
+                      Variants
+                    </span>
                   </div>
                 </div>
+
+                {/* Single Price Input - Show only when not in variants mode */}
+                {!useVariantsMode && (
+                  <div>
+                    <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                      Price *
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>€</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={newMenuItem.price}
+                        onChange={(e) => setNewMenuItem({ ...newMenuItem, price: e.target.value })}
+                        placeholder="0.00"
+                        className="w-full pl-8 pr-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                        style={{ fontSize: 'var(--text-base)' }}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-3 p-4 bg-muted/20 rounded-lg border border-border">
                   <div
@@ -2224,58 +2296,71 @@ export function MenuConfigPage({ user }: { user?: any }) {
                   </div>
                 </div>
 
-                {/* Variants Section */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                      Variants (Optional)
-                    </label>
-                    <button
-                      onClick={addVariant}
-                      className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>Add Variant</span>
-                    </button>
-                  </div>
+                {/* Variants Section - Show only when in variants mode */}
+                {useVariantsMode && (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                        Variants *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={addVariant}
+                        className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>Add Variant</span>
+                      </button>
+                    </div>
 
-                  {newMenuItem.variants.length > 0 && (
-                    <div className="space-y-2 mt-3">
-                      {newMenuItem.variants.map((variant, index) => (
-                        <div key={variant.id} className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                          <input
-                            type="text"
-                            maxLength={100}
-                            value={variant.name}
-                            onChange={(e) => updateVariant(index, 'name', e.target.value)}
-                            placeholder="Variant name (e.g., Small, Medium)"
-                            className="flex-1 px-3 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-                            style={{ fontSize: 'var(--text-base)' }}
-                          />
-                          <div className="relative w-32">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>€</span>
+                    {newMenuItem.variants.length === 0 ? (
+                      <div className="text-center py-8 px-4 border-2 border-dashed border-border rounded-lg bg-muted/20">
+                        <p className="text-muted-foreground mb-2" style={{ fontSize: 'var(--text-base)' }}>
+                          No variants added yet
+                        </p>
+                        <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                          Click "Add Variant" to create different pricing options (e.g., Small, Medium, Large)
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2 mt-3">
+                        {newMenuItem.variants.map((variant, index) => (
+                          <div key={variant.id} className="flex items-center gap-2 p-3 bg-muted rounded-lg">
                             <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              value={variant.price}
-                              onChange={(e) => updateVariant(index, 'price', parseFloat(e.target.value) || 0)}
-                              placeholder="0.00"
-                              className="w-full pl-8 pr-3 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                              type="text"
+                              maxLength={100}
+                              value={variant.name}
+                              onChange={(e) => updateVariant(index, 'name', e.target.value)}
+                              placeholder="Variant name (e.g., Small, Medium)"
+                              className="flex-1 px-3 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                               style={{ fontSize: 'var(--text-base)' }}
                             />
+                            <div className="relative w-32">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>€</span>
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={variant.price}
+                                onChange={(e) => updateVariant(index, 'price', parseFloat(e.target.value) || 0)}
+                                placeholder="0.00"
+                                className="w-full pl-8 pr-3 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                                style={{ fontSize: 'var(--text-base)' }}
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeVariant(index)}
+                              className="p-2 hover:bg-accent rounded-lg transition-colors text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
-                          <button
-                            onClick={() => removeVariant(index)}
-                            className="p-2 hover:bg-accent rounded-lg transition-colors text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Item Settings Section */}
                 {showItemSettings ? (
