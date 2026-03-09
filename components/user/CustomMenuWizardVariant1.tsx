@@ -3606,29 +3606,65 @@ export function CustomMenuWizard() {
                     <div className="flex items-center gap-6">
                       {/* Per-person items: Only guest count stepper */}
                       {detailsModalItem && isPerPerson(detailsModalItem) ? (
-                        <div className="flex items-center gap-3">
-                          <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Guests:</span>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="number"
-                              min={1}
-                              value={tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1)}
-                              onChange={(e) => {
-                                const val = parseInt(e.target.value);
-                                if (!isNaN(val) && val >= 1) {
-                                  setTempGuestCount(val);
-                                }
-                              }}
-                              className="w-20 h-10 text-center border-2 border-border text-foreground rounded-lg focus:border-primary focus:outline-none transition-colors bg-card"
-                              style={{
-                                borderRadius: 'var(--radius)',
-                                fontSize: 'var(--text-base)',
-                                fontWeight: 'var(--font-weight-medium)',
-                                appearance: 'textfield',
-                                MozAppearance: 'textfield'
-                              }}
-                            />
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+                            <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Guests:</span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => {
+                                  const currentVal = tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1);
+                                  setTempGuestCount(Math.max(1, currentVal - 1));
+                                }}
+                                className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-foreground bg-card"
+                                style={{ borderRadius: 'var(--radius)' }}
+                                disabled={(tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1)) <= 1}
+                              >
+                                <Minus className="w-5 h-5" />
+                              </button>
+                              <input
+                                type="number"
+                                min={1}
+                                value={tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1)}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value);
+                                  if (!isNaN(val) && val >= 1) {
+                                    setTempGuestCount(val);
+                                  } else if (e.target.value === '') {
+                                    // Allow empty string temporarily for typing
+                                  }
+                                }}
+                                className="w-16 sm:w-20 h-10 text-center border-2 border-border text-foreground rounded-lg focus:border-primary focus:outline-none transition-colors bg-card"
+                                style={{
+                                  borderRadius: 'var(--radius)',
+                                  fontSize: 'var(--text-base)',
+                                  fontWeight: 'var(--font-weight-medium)',
+                                  appearance: 'textfield',
+                                  MozAppearance: 'textfield'
+                                }}
+                              />
+                              <button
+                                onClick={() => {
+                                  const currentVal = tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1);
+                                  setTempGuestCount(currentVal + 1);
+                                }}
+                                className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors bg-card"
+                                style={{ borderRadius: 'var(--radius)' }}
+                              >
+                                <Plus className="w-5 h-5" />
+                              </button>
+                            </div>
+                            <span className="text-muted-foreground whitespace-nowrap" style={{ fontSize: 'var(--text-small)' }}>
+                              / {parseInt(eventDetails.guestCount) || 1}
+                            </span>
                           </div>
+                          {(tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1)) > (parseInt(eventDetails.guestCount) || 1) && (
+                            <div className="flex items-center gap-2 text-destructive">
+                              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                              <span style={{ fontSize: 'var(--text-small)' }}>
+                                Guests exceed total event guests ({parseInt(eventDetails.guestCount) || 1})
+                              </span>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <>
