@@ -2613,7 +2613,7 @@ export function CustomMenuWizard() {
                               <p className="text-primary mb-1" style={{ fontSize: 'var(--text-h2)', fontWeight: 'var(--font-weight-semibold)' }}>
                                 {selectedItems.filter((itemId) => {
                                   const item = menuItems.find((i) => i.id === itemId);
-                                  return item?.dietaryType === 'non-vegetarian';
+                                  return item?.dietaryType === 'non-veg';
                                 }).length}{' '}
                                 items
                               </p>
@@ -2623,7 +2623,7 @@ export function CustomMenuWizard() {
                                   {selectedItems
                                     .filter((itemId) => {
                                       const item = menuItems.find((i) => i.id === itemId);
-                                      return (item?.dietaryType === 'non-vegetarian' && item?.pricingType === 'per-person') || (item?.dietaryType === 'non-vegetarian' && item?.pricingType === 'flat_fee');
+                                      return (item?.dietaryType === 'non-veg' && item?.pricingType === 'per-person') || (item?.dietaryType === 'non-veg' && item?.pricingType === 'flat_fee');
                                     })
                                     .reduce((total, itemId) => total + (itemQuantities[itemId] || 1), 0) * parseInt(eventDetails.guestCount)}{' '}
                                   portions
@@ -2639,7 +2639,7 @@ export function CustomMenuWizard() {
                               <p className="text-primary mb-1" style={{ fontSize: 'var(--text-h2)', fontWeight: 'var(--font-weight-semibold)' }}>
                                 {selectedItems.filter((itemId) => {
                                   const item = menuItems.find((i) => i.id === itemId);
-                                  return item?.dietaryType === 'vegetarian' || item?.dietaryType === 'vegan';
+                                  return item?.dietaryType === 'veg' || item?.dietaryType === 'vegan';
                                 }).length}{' '}
                                 items
                               </p>
@@ -2649,7 +2649,7 @@ export function CustomMenuWizard() {
                                   {selectedItems
                                     .filter((itemId) => {
                                       const item = menuItems.find((i) => i.id === itemId);
-                                      return ((item?.dietaryType === 'vegetarian' || item?.dietaryType === 'vegan') && item?.pricingType === 'per-person') || ((item?.dietaryType === 'vegetarian' || item?.dietaryType === 'vegan') && item?.pricingType === 'flat_fee');
+                                      return ((item?.dietaryType === 'veg' || item?.dietaryType === 'vegan') && item?.pricingType === 'per-person') || ((item?.dietaryType === 'veg' || item?.dietaryType === 'vegan') && item?.pricingType === 'flat_fee');
                                     })
                                     .reduce((total, itemId) => total + (itemQuantities[itemId] || 1), 0) * parseInt(eventDetails.guestCount)}{' '}
                                   portions
