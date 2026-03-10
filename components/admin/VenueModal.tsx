@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { MapPin, X, Check, Loader2 } from 'lucide-react';
 import type { Venue } from '@/services/venue.service';
 import { toast } from 'sonner';
+import { ValidatedInput } from '@/components/ui/validated-input';
+import { ValidatedTextarea } from '@/components/ui/validated-textarea';
+import { venueNameSchema, venueDescriptionSchema } from '@/lib/validation/schemas';
 
 interface VenueModalProps {
   isOpen: boolean;
@@ -24,6 +27,12 @@ export function VenueModal({
   const [description, setDescription] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
+  // Validation errors
+  const [errors, setErrors] = useState<{
+    name?: string;
+    description?: string;
+  }>({});
+
   // Reset form when modal opens or venue changes
   useEffect(() => {
     if (isOpen) {
@@ -34,12 +43,34 @@ export function VenueModal({
         setName('');
         setDescription('');
       }
+      setErrors({});
     }
   }, [isOpen, venue]);
 
+  // Validate form fields
+  const validateForm = () => {
+    const newErrors: typeof errors = {};
+
+    // Validate name
+    const nameResult = venueNameSchema.safeParse(name);
+    if (!nameResult.success) {
+      newErrors.name = nameResult.error.errors[0].message;
+    }
+
+    // Validate description (optional, but validate if provided)
+    if (description) {
+      const descResult = venueDescriptionSchema.safeParse(description);
+      if (!descResult.success) {
+        newErrors.description = descResult.error.errors[0].message;
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async () => {
-    if (!name.trim()) {
-      alert('Please enter a venue name');
+    if (!validateForm()) {
       return;
     }
 
@@ -50,6 +81,7 @@ export function VenueModal({
       // Reset form on success
       setName('');
       setDescription('');
+      setErrors({});
     } catch (error) {
       console.error('Error saving venue:', error);
       toast.error('Failed to save venue');
@@ -98,42 +130,39 @@ export function VenueModal({
 
           {/* Body */}
           <div className="p-6 space-y-4">
-            {/* Name Field */}
-            <div>
-              <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                Venue Name <span className="text-destructive">*</span>
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                placeholder="e.g., Main Hall, Garden Terrace"
-                className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                style={{ fontSize: 'var(--text-base)' }}
-                autoFocus
-                disabled={isSaving || isLoading}
-              />
-            </div>
+            <ValidatedInput
+              label="Venue Name"
+              type="text"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (errors.name) setErrors({ ...errors, name: undefined });
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+              placeholder="e.g., Main Hall, Garden Terrace"
+              maxLength={100}
+              showCharacterCount
+              error={errors.name}
+              required
+              disabled={isSaving || isLoading}
+              autoFocus
+            />
 
-            {/* Description Field */}
-            <div>
-              <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                Description
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe this venue location..."
-                rows={3}
-                className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
-                style={{ fontSize: 'var(--text-base)' }}
-                disabled={isSaving || isLoading}
-              />
-              <p className="text-muted-foreground text-sm mt-1">
-                Optional: Add details about capacity, ambiance, or features
-              </p>
-            </div>
+            <ValidatedTextarea
+              label="Description"
+              value={description}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                if (errors.description) setErrors({ ...errors, description: undefined });
+              }}
+              placeholder="Describe this venue location..."
+              rows={3}
+              maxLength={500}
+              showCharacterCount
+              error={errors.description}
+              helperText="Optional: Add details about capacity, ambiance, or features"
+              disabled={isSaving || isLoading}
+            />
           </div>
 
           {/* Footer */}

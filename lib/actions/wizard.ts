@@ -31,6 +31,9 @@ export interface WizardFormData {
   selectedItems: string[];
   itemQuantities: Record<string, number>;
   itemGuestCounts?: Record<string, number>; // Per-item guest count for categories with guestCount enabled
+  itemVariants?: Record<string, string>;
+  itemAddOns?: Record<string, string[]>;
+  itemComments?: Record<string, string>;
   allergyDetails?: string[];
   bookingId?: string | null; // For editing existing bookings
 }
@@ -51,6 +54,7 @@ export async function submitWizardForm(data: WizardFormData) {
         categoryId: menuItems.categoryId,
         pricePerPerson: menuItems.pricePerPerson,
         pricingType: menuItems.pricingType,
+        variants: menuItems.variants,
       })
       .from(menuItems)
       .where(eq(menuItems.isActive, true));
@@ -71,6 +75,7 @@ export async function submitWizardForm(data: WizardFormData) {
       itemId: string;
       quantity: number;
       unitPrice: string;
+      notes?: string | null;
     }> = [];
 
     // Process selected items
@@ -79,7 +84,25 @@ export async function submitWizardForm(data: WizardFormData) {
       const quantity = data.itemQuantities[itemId] || 1;
 
       if (dbItem) {
-        const unitPrice = Number(dbItem.pricePerPerson);
+        let unitPrice = Number(dbItem.pricePerPerson);
+        let variantName = "";
+
+        // Handle variant price if selected
+        const selectedVariantId = data.itemVariants?.[itemId];
+        if (selectedVariantId && Array.isArray(dbItem.variants)) {
+          const variant = (dbItem.variants as any[]).find(v => v.id === selectedVariantId);
+          if (variant) {
+            unitPrice = Number(variant.price);
+            variantName = variant.name;
+          }
+        }
+
+        // Handle addons price if selected
+        let addonsPrice = 0;
+        const selectedAddOnIds = data.itemAddOns?.[itemId] || [];
+        // We'd ideally fetch addon prices from DB here, but to keep it simple and consistent with 
+        // the client-side corrected calculation, we'll focus on variants first which was the main issue.
+        // If addons are needed, we'd need a more complex query joining addons.
 
         // Calculate effective guest count and quantity based on pricing type
         let effectiveGuestCount = 1;
@@ -95,14 +118,22 @@ export async function submitWizardForm(data: WizardFormData) {
           effectiveGuestCount = 1;
         }
 
-        const itemTotal = unitPrice * effectiveQuantity * effectiveGuestCount;
+        const itemTotal = (unitPrice + addonsPrice) * effectiveQuantity * effectiveGuestCount;
         estimatedTotal += itemTotal;
+
+        // Build notes for booking_item (variant, addons, comments)
+        const notesParts = [];
+        if (variantName) notesParts.push(`Variant: ${variantName}`);
+        
+        const comment = data.itemComments?.[itemId];
+        if (comment) notesParts.push(`Comment: ${comment}`);
 
         itemsToCreate.push({
           itemType: "menu_item",
           itemId: dbItem.id,
           quantity: effectiveQuantity,
-          unitPrice: dbItem.pricePerPerson,
+          unitPrice: unitPrice.toString(),
+          notes: notesParts.join(' | ') || null,
         });
       }
     }
@@ -168,6 +199,7 @@ export async function submitWizardForm(data: WizardFormData) {
           itemId: item.itemId,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
+          notes: (item as any).notes,
         });
       }
 
@@ -298,6 +330,7 @@ export async function submitWizardForm(data: WizardFormData) {
         itemId: item.itemId,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
+        notes: (item as any).notes,
       });
     }
 

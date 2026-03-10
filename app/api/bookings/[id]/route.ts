@@ -63,8 +63,11 @@ export async function GET(
           bi.item_id,
           bi.quantity,
           bi.unit_price,
+          bi.notes,
           mi.name as item_name,
-          mc.name as category_name
+          mi.pricing_type,
+          mc.name as category_name,
+          mc.guest_count as category_guest_count
         FROM booking_items bi
         LEFT JOIN menu_items mi ON bi.item_id = mi.id
         LEFT JOIN menu_categories mc ON mi.category_id = mc.id
@@ -72,12 +75,24 @@ export async function GET(
       `);
 
       const itemsRows = 'rows' in bookingItemsResult ? bookingItemsResult.rows : bookingItemsResult;
-      menuItems = (itemsRows as any[]).map((item: any) => ({
-        item: item.item_name || 'Unknown Item',
-        category: item.category_name || 'Unknown',
-        quantity: `${item.quantity} x ${Math.round(Number(item.unit_price))} CHF`,
-        price: `CHF ${(Number(item.unit_price) * item.quantity).toFixed(2)}`,
-      }));
+      menuItems = (itemsRows as any[]).map((item: any) => {
+        const isPerPerson = item.pricing_type === 'per_person' || item.category_guest_count === true;
+        const effectiveGuestCount = isPerPerson ? (booking.guest_count || 1) : 1;
+        const unitPrice = Number(item.unit_price);
+        const totalPrice = unitPrice * item.quantity * effectiveGuestCount;
+        
+        // Include notes (variant/comment) in the item name if present
+        const displayName = item.notes ? `${item.item_name} (${item.notes})` : item.item_name;
+
+        return {
+          item: displayName || 'Unknown Item',
+          category: item.category_name || 'Unknown',
+          quantity: isPerPerson 
+            ? `${effectiveGuestCount} guests x ${Math.round(unitPrice)} CHF`
+            : `${item.quantity} x ${Math.round(unitPrice)} CHF`,
+          price: `CHF ${totalPrice.toFixed(2)}`,
+        };
+      });
     } catch (e) {
       console.error('Error fetching booking items:', e);
       // Continue without menu items

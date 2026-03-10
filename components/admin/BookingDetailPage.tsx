@@ -13,6 +13,8 @@ import { toast } from 'sonner';
 import { Permission, hasPermission } from '@/lib/auth/rbac';
 import { AssignUserModal } from './AssignUserModal';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ValidatedTextarea } from '@/components/ui/validated-textarea';
+import { bookingKitchenNotesSchema, bookingCommentSchema } from '@/lib/validation/schemas';
 
 export interface Booking {
     id: string;
@@ -104,6 +106,12 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     const [selectedVenue, setSelectedVenue] = useState<string>(initialBooking?.event?.location || '');
     const [assignedTo, setAssignedTo] = useState<string>((initialBooking as any)?.assignedTo?.id || '');
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+
+    // Validation errors
+    const [errors, setErrors] = useState<{
+        kitchenNotes?: string;
+        comment?: string;
+    }>({});
 
     // Update local state when booking prop changes
     useEffect(() => {
@@ -334,6 +342,15 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     const handleAddComment = async () => {
         if (!newComment.trim()) return;
 
+        // Validate comment
+        const commentResult = bookingCommentSchema.safeParse(newComment.trim());
+        if (!commentResult.success) {
+            const errorMsg = commentResult.error.errors[0].message;
+            setErrors({ ...errors, comment: errorMsg });
+            toast.error(errorMsg);
+            return;
+        }
+
         try {
             const response = await fetch(`/api/bookings/${booking?.id}/comments`, {
                 method: 'POST',
@@ -353,6 +370,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                 };
                 setComments([...comments, newCommentObj]);
                 setNewComment('');
+                setErrors({ ...errors, comment: undefined });
                 toast.success('Comment added');
             } else {
                 toast.error('Failed to save comment');
@@ -835,14 +853,19 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                             <MessageSquare className="w-5 h-5 text-primary" /> Notes for kitchen team
                         </h3>
                         <div>
-                            <textarea
+                            <ValidatedTextarea
                                 value={kitchenNotes}
-                                onChange={(e) => setKitchenNotes(e.target.value)}
+                                onChange={(e) => {
+                                    setKitchenNotes(e.target.value);
+                                    if (errors.kitchenNotes) setErrors({ ...errors, kitchenNotes: undefined });
+                                }}
                                 rows={3}
                                 disabled={!canEditBooking}
-                                className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-75"
-                                style={{ fontSize: 'var(--text-base)' }}
                                 placeholder="Enter notes specifically for the kitchen team (will be included in PDF)..."
+                                maxLength={1000}
+                                showCharacterCount
+                                error={errors.kitchenNotes}
+                                helperText="Optional"
                             />
                         </div>
                     </div>
@@ -902,13 +925,17 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
                             {canEditBooking && (
                                 <div className="space-y-3 pt-4 border-t border-border/50">
-                                    <textarea
+                                    <ValidatedTextarea
                                         value={newComment}
-                                        onChange={(e) => setNewComment(e.target.value)}
+                                        onChange={(e) => {
+                                            setNewComment(e.target.value);
+                                            if (errors.comment) setErrors({ ...errors, comment: undefined });
+                                        }}
                                         placeholder="Add a comment or internal note..."
                                         rows={3}
-                                        className="w-full px-4 py-3 bg-input-background border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
-                                        style={{ fontSize: 'var(--text-base)' }}
+                                        maxLength={500}
+                                        showCharacterCount
+                                        error={errors.comment}
                                     />
                                     <div className="flex justify-end">
                                         <button

@@ -4,9 +4,11 @@ import { useState, useRef, useEffect } from 'react';
 import { User, Mail, Phone, Shield, Camera, Lock, Check, X, Eye, EyeOff } from 'lucide-react';
 import { Modal } from '../user/Modal';
 import { Button } from '../user/Button';
+import { ValidatedInput } from '@/components/ui/validated-input';
 import { changePassword } from '@/lib/actions/auth';
 import { toast } from 'sonner';
 import type { Session } from '@/lib/auth';
+import { userFirstNameSchema, userLastNameSchema, userEmailSchema, userPhoneSchema, userPasswordSchema } from '@/lib/validation/schemas';
 
 interface SessionWithRole extends Session {
   user: Session['user'] & {
@@ -85,6 +87,20 @@ export function ProfilePage({ session }: ProfilePageProps) {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Validation errors
+  const [profileErrors, setProfileErrors] = useState<{
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
+  }>({});
+
+  const [passwordErrors, setPasswordErrors] = useState<{
+    currentPassword?: string;
+    newPassword?: string;
+    confirmPassword?: string;
+  }>({});
+
   // Check if form values differ from original profile data
   const hasFormChanged = () => {
     return (
@@ -115,11 +131,49 @@ export function ProfilePage({ session }: ProfilePageProps) {
       email: profileData.email,
       phone: profileData.phone,
     });
+    setProfileErrors({});
     setHasChanges(false);
     setIsEditProfileModalOpen(true);
   };
 
+  const validateProfileForm = () => {
+    const newErrors: typeof profileErrors = {};
+
+    // Validate first name
+    const firstNameResult = userFirstNameSchema.safeParse(editForm.firstName);
+    if (!firstNameResult.success) {
+      newErrors.firstName = firstNameResult.error.errors[0].message;
+    }
+
+    // Validate last name
+    const lastNameResult = userLastNameSchema.safeParse(editForm.lastName);
+    if (!lastNameResult.success) {
+      newErrors.lastName = lastNameResult.error.errors[0].message;
+    }
+
+    // Validate email
+    const emailResult = userEmailSchema.safeParse(editForm.email);
+    if (!emailResult.success) {
+      newErrors.email = emailResult.error.errors[0].message;
+    }
+
+    // Validate phone (optional)
+    if (editForm.phone) {
+      const phoneResult = userPhoneSchema.safeParse(editForm.phone);
+      if (!phoneResult.success) {
+        newErrors.phone = phoneResult.error.errors[0].message;
+      }
+    }
+
+    setProfileErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSaveProfile = async () => {
+    if (!validateProfileForm()) {
+      return;
+    }
+
     setIsSavingProfile(true);
 
     try {
@@ -165,24 +219,32 @@ export function ProfilePage({ session }: ProfilePageProps) {
 
   const handleChangePassword = async () => {
     // Clear previous messages
-    setPasswordError('');
+    const newErrors: typeof passwordErrors = {};
+    setPasswordErrors(newErrors);
     setPasswordSuccess(false);
 
-    // Validate passwords not empty
-    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-      toast.error('All password fields are required');
-      return;
+    // Validate current password not empty
+    if (!passwordForm.currentPassword) {
+      newErrors.currentPassword = 'Current password is required';
     }
 
-    // Validate passwords match
+    // Validate new password
+    const newPasswordResult = userPasswordSchema.safeParse(passwordForm.newPassword);
+    if (!newPasswordResult.success) {
+      newErrors.newPassword = newPasswordResult.error.errors[0].message;
+    } else if (!passwordForm.newPassword) {
+      newErrors.newPassword = 'New password is required';
+    }
+
+    // Validate confirm password matches
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error('New passwords do not match');
-      return;
+      newErrors.confirmPassword = 'Passwords do not match';
+    } else if (!passwordForm.confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your new password';
     }
 
-    // Validate new password length
-    if (passwordForm.newPassword.length < 8) {
-      toast.error('New password must be at least 8 characters long');
+    if (Object.keys(newErrors).length > 0) {
+      setPasswordErrors(newErrors);
       return;
     }
 
@@ -201,6 +263,7 @@ export function ProfilePage({ session }: ProfilePageProps) {
           newPassword: '',
           confirmPassword: '',
         });
+        setPasswordErrors({});
       } else {
         toast.error(result.error || 'Failed to change password');
       }
@@ -350,90 +413,55 @@ export function ProfilePage({ session }: ProfilePageProps) {
               </div>
 
               <div className="space-y-4">
-                {/* Error and Success states are now handled via toasters */}
+                <ValidatedInput
+                  label="Current Password"
+                  type="password"
+                  value={passwordForm.currentPassword}
+                  onChange={(e) => {
+                    setPasswordForm({ ...passwordForm, currentPassword: e.target.value });
+                    if (passwordErrors.currentPassword) setPasswordErrors({ ...passwordErrors, currentPassword: undefined });
+                  }}
+                  placeholder="Enter current password"
+                  error={passwordErrors.currentPassword}
+                  showPasswordToggle
+                  required
+                />
 
-                <div>
-                  <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                    Current Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showCurrentPassword ? 'text' : 'password'}
-                      value={passwordForm.currentPassword}
-                      onChange={(e) => {
-                        setPasswordForm({ ...passwordForm, currentPassword: e.target.value });
-                        setPasswordError('');
-                      }}
-                      className="w-full px-4 py-2.5 pr-12 bg-input-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-                      style={{ fontSize: 'var(--text-base)' }}
-                      placeholder="Enter current password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
-                </div>
+                <ValidatedInput
+                  label="New Password"
+                  type="password"
+                  value={passwordForm.newPassword}
+                  onChange={(e) => {
+                    setPasswordForm({ ...passwordForm, newPassword: e.target.value });
+                    if (passwordErrors.newPassword) setPasswordErrors({ ...passwordErrors, newPassword: undefined });
+                  }}
+                  placeholder="Enter new password"
+                  maxLength={100}
+                  showCharacterCount
+                  error={passwordErrors.newPassword}
+                  helperText="Min. 8 characters"
+                  showPasswordToggle
+                  required
+                />
 
-                <div>
-                  <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                    New Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showNewPassword ? 'text' : 'password'}
-                      value={passwordForm.newPassword}
-                      onChange={(e) => {
-                        setPasswordForm({ ...passwordForm, newPassword: e.target.value });
-                        setPasswordError('');
-                      }}
-                      className="w-full px-4 py-2.5 pr-12 bg-input-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-                      style={{ fontSize: 'var(--text-base)' }}
-                      placeholder="Enter new password (min. 8 characters)"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                    Confirm New Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      value={passwordForm.confirmPassword}
-                      onChange={(e) => {
-                        setPasswordForm({ ...passwordForm, confirmPassword: e.target.value });
-                        setPasswordError('');
-                      }}
-                      className="w-full px-4 py-2.5 pr-12 bg-input-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-                      style={{ fontSize: 'var(--text-base)' }}
-                      placeholder="Confirm new password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
-                </div>
+                <ValidatedInput
+                  label="Confirm New Password"
+                  type="password"
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) => {
+                    setPasswordForm({ ...passwordForm, confirmPassword: e.target.value });
+                    if (passwordErrors.confirmPassword) setPasswordErrors({ ...passwordErrors, confirmPassword: undefined });
+                  }}
+                  placeholder="Confirm new password"
+                  error={passwordErrors.confirmPassword}
+                  showPasswordToggle
+                  required
+                />
 
                 <div className="flex justify-end pt-2">
                   <button
                     onClick={handleChangePassword}
-                    disabled={isChangingPassword || !passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword}
+                    disabled={isChangingPassword}
                     className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
                   >
@@ -489,57 +517,67 @@ export function ProfilePage({ session }: ProfilePageProps) {
       >
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                First Name
-              </label>
-              <input
-                type="text"
-                value={editForm.firstName}
-                onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
-                className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-                style={{ fontSize: 'var(--text-base)' }}
-              />
-            </div>
-            <div>
-              <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                Last Name
-              </label>
-              <input
-                type="text"
-                value={editForm.lastName}
-                onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
-                className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-                style={{ fontSize: 'var(--text-base)' }}
-              />
-            </div>
-          </div>
+            <ValidatedInput
+              label="First Name"
+              type="text"
+              value={editForm.firstName}
+              onChange={(e) => {
+                setEditForm({ ...editForm, firstName: e.target.value });
+                if (profileErrors.firstName) setProfileErrors({ ...profileErrors, firstName: undefined });
+              }}
+              placeholder="Enter first name"
+              maxLength={30}
+              showCharacterCount
+              error={profileErrors.firstName}
+              required
+            />
 
-          <div>
-            <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-              Email
-            </label>
-            <input
-              type="email"
-              value={editForm.email}
-              onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-              className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-              style={{ fontSize: 'var(--text-base)' }}
+            <ValidatedInput
+              label="Last Name"
+              type="text"
+              value={editForm.lastName}
+              onChange={(e) => {
+                setEditForm({ ...editForm, lastName: e.target.value });
+                if (profileErrors.lastName) setProfileErrors({ ...profileErrors, lastName: undefined });
+              }}
+              placeholder="Enter last name"
+              maxLength={30}
+              showCharacterCount
+              error={profileErrors.lastName}
+              required
             />
           </div>
 
-          <div>
-            <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-              Phone
-            </label>
-            <input
-              type="tel"
-              value={editForm.phone}
-              onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-              className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-              style={{ fontSize: 'var(--text-base)' }}
-            />
-          </div>
+          <ValidatedInput
+            label="Email"
+            type="email"
+            value={editForm.email}
+            onChange={(e) => {
+              setEditForm({ ...editForm, email: e.target.value });
+              if (profileErrors.email) setProfileErrors({ ...profileErrors, email: undefined });
+            }}
+            placeholder="Enter email address"
+            maxLength={255}
+            showCharacterCount
+            error={profileErrors.email}
+            helperText="Must be a valid email address"
+            required
+          />
+
+          <ValidatedInput
+            label="Phone"
+            type="tel"
+            value={editForm.phone}
+            onChange={(e) => {
+              setEditForm({ ...editForm, phone: e.target.value });
+              if (profileErrors.phone) setProfileErrors({ ...profileErrors, phone: undefined });
+            }}
+            placeholder="Enter phone number"
+            maxLength={20}
+            showCharacterCount
+            error={profileErrors.phone}
+            helperText="Optional"
+          />
         </div>
       </Modal>
     </div >

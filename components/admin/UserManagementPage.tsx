@@ -7,10 +7,12 @@ import { ConfirmationModal } from '../user/ConfirmationModal';
 import { Button } from '../user/Button';
 import { StatusDropdown } from './StatusDropdown';
 import { Input } from '@/components/ui/input';
+import { ValidatedInput } from '@/components/ui/validated-input';
 import { SkeletonTable } from '@/components/ui/skeleton-loaders';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import { canModifyUser } from '@/lib/auth/rbac';
+import { userNameSchema, userEmailSchema, userPasswordSchema } from '@/lib/validation/schemas';
 
 interface User {
   id: string;
@@ -43,6 +45,13 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
   const [formRole, setFormRole] = useState<User['role']>('read_only');
   const [formStatus, setFormStatus] = useState<User['status']>('Active');
   const [formPassword, setFormPassword] = useState('');
+
+  // Validation errors
+  const [errors, setErrors] = useState<{
+    name?: string;
+    email?: string;
+    password?: string;
+  }>({});
 
   // Role options for dropdown (matching schema roles)
   const roleOptions = [
@@ -96,10 +105,43 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
     setFormRole('read_only');
     setFormStatus('Active');
     setFormPassword('');
+    setErrors({});
+  };
+
+  // Validate form fields
+  const validateForm = () => {
+    const newErrors: typeof errors = {};
+
+    // Validate name
+    const nameResult = userNameSchema.safeParse(formName);
+    if (!nameResult.success) {
+      newErrors.name = nameResult.error.errors[0].message;
+    }
+
+    // Validate email
+    const emailResult = userEmailSchema.safeParse(formEmail);
+    if (!emailResult.success) {
+      newErrors.email = emailResult.error.errors[0].message;
+    }
+
+    // Validate password only if provided
+    if (formPassword) {
+      const passwordResult = userPasswordSchema.safeParse(formPassword);
+      if (!passwordResult.success) {
+        newErrors.password = passwordResult.error.errors[0].message;
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   // Add user
   const handleAddUser = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
     try {
@@ -107,8 +149,8 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: formName,
-          email: formEmail,
+          name: formName.trim(),
+          email: formEmail.trim(),
           role: formRole,
           password: formPassword || 'defaultPassword123',
         }),
@@ -148,6 +190,10 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
   };
 
   const handleSaveEdit = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
     if (!selectedUser) return;
 
     setIsSubmitting(true);
@@ -157,8 +203,8 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: formName,
-          email: formEmail,
+          name: formName.trim(),
+          email: formEmail.trim(),
           role: formRole,
           emailVerified: formStatus === 'Active',
         }),
@@ -461,7 +507,6 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
         onClose={() => {
           setIsAddUserModalOpen(false);
           resetForm();
-          setError(null);
         }}
         icon={Users}
         title="Add New User"
@@ -487,44 +532,52 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
         }
       >
         <div className="space-y-4">
-          <div>
-            <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-              Name *
-            </label>
-            <Input
-              type="text"
-              value={formName}
-              onChange={(e) => setFormName(e.target.value)}
-              placeholder="Enter full name"
-              maxLength={50}
-            />
-          </div>
+          <ValidatedInput
+            label="Name"
+            type="text"
+            value={formName}
+            onChange={(e) => {
+              setFormName(e.target.value);
+              if (errors.name) setErrors({ ...errors, name: undefined });
+            }}
+            placeholder="Enter full name"
+            maxLength={50}
+            showCharacterCount
+            error={errors.name}
+            required
+          />
 
-          <div>
-            <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-              Email *
-            </label>
-            <Input
-              type="email"
-              value={formEmail}
-              onChange={(e) => setFormEmail(e.target.value)}
-              placeholder="user@restaurant.com"
-              maxLength={255}
-            />
-          </div>
+          <ValidatedInput
+            label="Email"
+            type="email"
+            value={formEmail}
+            onChange={(e) => {
+              setFormEmail(e.target.value);
+              if (errors.email) setErrors({ ...errors, email: undefined });
+            }}
+            placeholder="user@restaurant.com"
+            maxLength={255}
+            showCharacterCount
+            error={errors.email}
+            helperText="Must be a valid email address"
+            required
+          />
 
-          <div>
-            <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-              Password (optional - will use default if empty)
-            </label>
-            <Input
-              type="password"
-              value={formPassword}
-              onChange={(e) => setFormPassword(e.target.value)}
-              placeholder="Enter password"
-              maxLength={100}
-            />
-          </div>
+          <ValidatedInput
+            label="Password (optional - will use default if empty)"
+            type="password"
+            value={formPassword}
+            onChange={(e) => {
+              setFormPassword(e.target.value);
+              if (errors.password) setErrors({ ...errors, password: undefined });
+            }}
+            placeholder="Enter password"
+            maxLength={100}
+            showCharacterCount
+            error={errors.password}
+            helperText="Min. 8 characters"
+            showPasswordToggle
+          />
 
           <div>
             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
@@ -561,7 +614,6 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
           setIsEditUserModalOpen(false);
           resetForm();
           setSelectedUser(null);
-          setError(null);
         }}
         icon={Edit2}
         title={selectedUser?.id === currentUserId ? "Edit My Profile" : "Edit User"}
@@ -588,31 +640,36 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
         }
       >
         <div className="space-y-4">
-          <div>
-            <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-              Name *
-            </label>
-            <Input
-              type="text"
-              value={formName}
-              onChange={(e) => setFormName(e.target.value)}
-              placeholder="Enter full name"
-              maxLength={50}
-            />
-          </div>
+          <ValidatedInput
+            label="Name"
+            type="text"
+            value={formName}
+            onChange={(e) => {
+              setFormName(e.target.value);
+              if (errors.name) setErrors({ ...errors, name: undefined });
+            }}
+            placeholder="Enter full name"
+            maxLength={50}
+            showCharacterCount
+            error={errors.name}
+            required
+          />
 
-          <div>
-            <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-              Email *
-            </label>
-            <Input
-              type="email"
-              value={formEmail}
-              onChange={(e) => setFormEmail(e.target.value)}
-              placeholder="user@restaurant.com"
-              maxLength={255}
-            />
-          </div>
+          <ValidatedInput
+            label="Email"
+            type="email"
+            value={formEmail}
+            onChange={(e) => {
+              setFormEmail(e.target.value);
+              if (errors.email) setErrors({ ...errors, email: undefined });
+            }}
+            placeholder="user@restaurant.com"
+            maxLength={255}
+            showCharacterCount
+            error={errors.email}
+            helperText="Must be a valid email address"
+            required
+          />
 
           <div>
             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>

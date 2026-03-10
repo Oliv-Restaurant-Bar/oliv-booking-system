@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Home, Search } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/user/Button';
 
 export default function NotFound() {
   return (
@@ -33,11 +33,8 @@ export default function NotFound() {
 
         {/* Action Buttons */}
         <div className="flex justify-center">
-          <Button asChild size="lg">
-            <Link href="/">
-              <Home className="w-4 h-4" />
-              Go Home
-            </Link>
+          <Button to="/" size="lg" icon={Home}>
+            Go Home
           </Button>
         </div>
 

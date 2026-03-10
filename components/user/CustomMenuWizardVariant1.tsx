@@ -14,6 +14,9 @@ import { NativeCheckbox } from '@/components/ui/NativeCheckbox';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ValidatedInput } from '@/components/ui/validated-input';
+import { ValidatedTextarea } from '@/components/ui/validated-textarea';
+import { customerNameSchema, customerBusinessSchema, customerPhoneSchema, customerStreetSchema, customerPlzSchema, customerLocationSchema, customerOccasionSchema, customerSpecialRequestsSchema, userEmailSchema } from '@/lib/validation/schemas';
 
 interface EventDetails {
   name: string;
@@ -412,18 +415,22 @@ export function CustomMenuWizard() {
   const validateStep1 = () => {
     const newErrors: Partial<EventDetails> = {};
 
-    if (!eventDetails.name.trim()) {
-      newErrors.name = 'Name is required';
+    // Validate name
+    const nameResult = customerNameSchema.safeParse(eventDetails.name);
+    if (!nameResult.success) {
+      newErrors.name = nameResult.error.errors[0].message;
     }
 
-    if (!eventDetails.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(eventDetails.email)) {
-      newErrors.email = 'Please enter a valid email';
+    // Validate email
+    const emailResult = userEmailSchema.safeParse(eventDetails.email);
+    if (!emailResult.success) {
+      newErrors.email = emailResult.error.errors[0].message;
     }
 
-    if (!eventDetails.telephone.trim()) {
-      newErrors.telephone = 'Phone number is required';
+    // Validate phone
+    const phoneResult = customerPhoneSchema.safeParse(eventDetails.telephone);
+    if (!phoneResult.success) {
+      newErrors.telephone = phoneResult.error.errors[0].message;
     }
 
     if (!eventDetails.eventDate) {
@@ -437,16 +444,22 @@ export function CustomMenuWizard() {
       }
     }
 
-    if (!eventDetails.street?.trim()) {
-      newErrors.street = 'Street is required';
+    // Validate street
+    const streetResult = customerStreetSchema.safeParse(eventDetails.street);
+    if (!streetResult.success) {
+      newErrors.street = streetResult.error.errors[0].message;
     }
 
-    if (!eventDetails.plz?.trim()) {
-      newErrors.plz = 'PLZ is required';
+    // Validate PLZ
+    const plzResult = customerPlzSchema.safeParse(eventDetails.plz);
+    if (!plzResult.success) {
+      newErrors.plz = plzResult.error.errors[0].message;
     }
 
-    if (!eventDetails.location?.trim()) {
-      newErrors.location = 'Location is required';
+    // Validate location
+    const locationResult = customerLocationSchema.safeParse(eventDetails.location);
+    if (!locationResult.success) {
+      newErrors.location = locationResult.error.errors[0].message;
     }
 
     if (!eventDetails.eventTime) {
@@ -459,6 +472,22 @@ export function CustomMenuWizard() {
       newErrors.guestCount = 'Must have at least 1 guest';
     } else if (parseInt(eventDetails.guestCount) > 10000) {
       newErrors.guestCount = 'Number of guests cannot exceed 10,000';
+    }
+
+    // Validate occasion (optional)
+    if (eventDetails.occasion) {
+      const occasionResult = customerOccasionSchema.safeParse(eventDetails.occasion);
+      if (!occasionResult.success) {
+        newErrors.occasion = occasionResult.error.errors[0].message;
+      }
+    }
+
+    // Validate special requests (optional)
+    if (eventDetails.specialRequests) {
+      const specialRequestsResult = customerSpecialRequestsSchema.safeParse(eventDetails.specialRequests);
+      if (!specialRequestsResult.success) {
+        newErrors.specialRequests = specialRequestsResult.error.errors[0].message;
+      }
     }
 
     setErrors(newErrors);
@@ -659,6 +688,9 @@ export function CustomMenuWizard() {
       selectedItems,
       itemQuantities,
       itemGuestCounts, // Pass per-item guest counts
+      itemVariants,
+      itemAddOns,
+      itemComments,
       allergyDetails: [],
       bookingId, // Pass bookingId if editing
     });
@@ -1200,83 +1232,71 @@ export function CustomMenuWizard() {
                           Contact Information
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {/* Name */}
-                          <div>
-                            <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                              Name *
-                            </label>
-                            <Input
-                              type="text"
-                              value={eventDetails.name}
-                              onChange={(e) => setEventDetails({ ...eventDetails, name: e.target.value })}
-                              className={`w-full px-4 py-2.5 bg-background border rounded-lg transition-colors ${errors.name ? 'border-destructive' : 'border-border focus:border-primary'
-                                }`}
-                              placeholder="Max Mustermann"
-                              style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
-                            />
-                            {errors.name && (
-                              <p className="text-destructive mt-1" style={{ fontSize: 'var(--text-small)' }}>
-                                {errors.name}
-                              </p>
-                            )}
-                          </div>
+                          <ValidatedInput
+                            label="Name"
+                            type="text"
+                            value={eventDetails.name}
+                            onChange={(e) => {
+                              setEventDetails({ ...eventDetails, name: e.target.value });
+                              if (errors.name) setErrors({ ...errors, name: undefined });
+                            }}
+                            placeholder="Max Mustermann"
+                            maxLength={100}
+                            showCharacterCount
+                            error={errors.name}
+                            required
+                            className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
+                          />
 
-                          {/* Business */}
-                          <div>
-                            <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                              Business
-                            </label>
-                            <Input
-                              type="text"
-                              value={eventDetails.business}
-                              onChange={(e) => setEventDetails({ ...eventDetails, business: e.target.value })}
-                              className="w-full px-4 py-2.5 bg-background border border-border rounded-lg transition-colors focus:border-primary"
-                              placeholder="Musterfirma AG"
-                              style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
-                            />
-                          </div>
+                          <ValidatedInput
+                            label="Business"
+                            type="text"
+                            value={eventDetails.business}
+                            onChange={(e) => {
+                              setEventDetails({ ...eventDetails, business: e.target.value });
+                              if (errors.business) setErrors({ ...errors, business: undefined });
+                            }}
+                            placeholder="Musterfirma AG"
+                            maxLength={100}
+                            showCharacterCount
+                            error={errors.business}
+                            helperText="Optional"
+                            className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
+                          />
 
-                          {/* Email */}
-                          <div>
-                            <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                              Email *
-                            </label>
-                            <Input
-                              type="email"
-                              value={eventDetails.email}
-                              onChange={(e) => setEventDetails({ ...eventDetails, email: e.target.value })}
-                              className={`w-full px-4 py-2.5 bg-background border rounded-lg transition-colors ${errors.email ? 'border-destructive' : 'border-border focus:border-primary'
-                                }`}
-                              placeholder="max@firma.ch"
-                              style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
-                            />
-                            {errors.email && (
-                              <p className="text-destructive mt-1" style={{ fontSize: 'var(--text-small)' }}>
-                                {errors.email}
-                              </p>
-                            )}
-                          </div>
+                          <ValidatedInput
+                            label="Email"
+                            type="email"
+                            value={eventDetails.email}
+                            onChange={(e) => {
+                              setEventDetails({ ...eventDetails, email: e.target.value });
+                              if (errors.email) setErrors({ ...errors, email: undefined });
+                            }}
+                            placeholder="max@firma.ch"
+                            maxLength={255}
+                            showCharacterCount
+                            error={errors.email}
+                            helperText="Must be a valid email address"
+                            required
+                            className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
+                          />
 
-                          {/* Telephone */}
-                          <div>
-                            <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                              Telephone *
-                            </label>
-                            <Input
-                              type="tel"
-                              value={eventDetails.telephone}
-                              onChange={(e) => setEventDetails({ ...eventDetails, telephone: e.target.value })}
-                              className={`w-full px-4 py-2.5 bg-background border rounded-lg transition-colors ${errors.telephone ? 'border-destructive' : 'border-border focus:border-primary'
-                                }`}
-                              placeholder="+41 31 123 45 67"
-                              style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
-                            />
-                            {errors.telephone && (
-                              <p className="text-destructive mt-1" style={{ fontSize: 'var(--text-small)' }}>
-                                {errors.telephone}
-                              </p>
-                            )}
-                          </div>
+                          <ValidatedInput
+                            label="Telephone"
+                            type="tel"
+                            value={eventDetails.telephone}
+                            onChange={(e) => {
+                              setEventDetails({ ...eventDetails, telephone: e.target.value });
+                              if (errors.telephone) setErrors({ ...errors, telephone: undefined });
+                            }}
+                            placeholder="+41 31 123 45 67"
+                            maxLength={20}
+                            showCharacterCount
+                            error={errors.telephone}
+                            helperText="Min. 10 characters"
+                            required
+                            className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
+                          />
                         </div>
                       </div>
 
@@ -1287,63 +1307,57 @@ export function CustomMenuWizard() {
                           Address
                         </h4>
                         <div className="space-y-4">
-                          <div>
-                            <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                              Strasse & Nr. *
-                            </label>
-                            <Input
-                              type="text"
-                              value={eventDetails.street}
-                              onChange={(e) => setEventDetails({ ...eventDetails, street: e.target.value })}
-                              className={`w-full px-4 py-2.5 bg-background border rounded-lg transition-colors ${errors.street ? 'border-destructive' : 'border-border focus:border-primary'}`}
-                              placeholder="Musterstrasse 123"
-                              style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
-                            />
-                            {errors.street && (
-                              <p className="text-destructive mt-1" style={{ fontSize: 'var(--text-small)' }}>
-                                {errors.street}
-                              </p>
-                            )}
-                          </div>
+                          <ValidatedInput
+                            label="Strasse & Nr."
+                            type="text"
+                            value={eventDetails.street}
+                            onChange={(e) => {
+                              setEventDetails({ ...eventDetails, street: e.target.value });
+                              if (errors.street) setErrors({ ...errors, street: undefined });
+                            }}
+                            placeholder="Musterstrasse 123"
+                            maxLength={100}
+                            showCharacterCount
+                            error={errors.street}
+                            helperText="Min. 5 characters"
+                            required
+                            className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
+                          />
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                                PLZ *
-                              </label>
-                              <Input
-                                type="text"
-                                value={eventDetails.plz}
-                                onChange={(e) => setEventDetails({ ...eventDetails, plz: e.target.value })}
-                                className={`w-full px-4 py-2.5 bg-background border rounded-lg transition-colors ${errors.plz ? 'border-destructive' : 'border-border focus:border-primary'}`}
-                                placeholder="3000"
-                                style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
-                              />
-                              {errors.plz && (
-                                <p className="text-destructive mt-1" style={{ fontSize: 'var(--text-small)' }}>
-                                  {errors.plz}
-                                </p>
-                              )}
-                            </div>
+                            <ValidatedInput
+                              label="PLZ"
+                              type="text"
+                              value={eventDetails.plz}
+                              onChange={(e) => {
+                                setEventDetails({ ...eventDetails, plz: e.target.value });
+                                if (errors.plz) setErrors({ ...errors, plz: undefined });
+                              }}
+                              placeholder="3000"
+                              maxLength={10}
+                              showCharacterCount
+                              error={errors.plz}
+                              helperText="Min. 4 characters"
+                              required
+                              className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
+                            />
 
-                            <div>
-                              <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                                Location *
-                              </label>
-                              <Input
-                                type="text"
-                                value={eventDetails.location}
-                                onChange={(e) => setEventDetails({ ...eventDetails, location: e.target.value })}
-                                className={`w-full px-4 py-2.5 bg-background border rounded-lg transition-colors ${errors.location ? 'border-destructive' : 'border-border focus:border-primary'}`}
-                                placeholder="Bern"
-                                style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
-                              />
-                              {errors.location && (
-                                <p className="text-destructive mt-1" style={{ fontSize: 'var(--text-small)' }}>
-                                  {errors.location}
-                                </p>
-                              )}
-                            </div>
+                            <ValidatedInput
+                              label="Location"
+                              type="text"
+                              value={eventDetails.location}
+                              onChange={(e) => {
+                                setEventDetails({ ...eventDetails, location: e.target.value });
+                                if (errors.location) setErrors({ ...errors, location: undefined });
+                              }}
+                              placeholder="Bern"
+                              maxLength={50}
+                              showCharacterCount
+                              error={errors.location}
+                              helperText="Min. 2 characters"
+                              required
+                              className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
+                            />
                           </div>
                         </div>
                       </div>
@@ -1415,19 +1429,20 @@ export function CustomMenuWizard() {
                             )}
                           </div>
 
-                          <div>
-                            <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                              Occasion
-                            </label>
-                            <Input
-                              type="text"
-                              value={eventDetails.occasion}
-                              onChange={(e) => setEventDetails({ ...eventDetails, occasion: e.target.value })}
-                              className="w-full px-4 py-2.5 bg-background border border-border rounded-lg transition-colors focus:border-primary"
-                              placeholder="e.g. company party"
-                              style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
-                            />
-                          </div>
+                          <ValidatedInput
+                            label="Occasion"
+                            type="text"
+                            value={eventDetails.occasion}
+                            onChange={(e) => {
+                              setEventDetails({ ...eventDetails, occasion: e.target.value });
+                              if (errors.occasion) setErrors({ ...errors, occasion: undefined });
+                            }}
+                            placeholder="e.g. company party"
+                            maxLength={100}
+                            showCharacterCount
+                            error={errors.occasion}
+                            helperText="Optional"
+                          />
                         </div>
                       </div>
 
@@ -1437,19 +1452,21 @@ export function CustomMenuWizard() {
                           <ClipboardList className="w-4 h-4 text-primary" />
                           Special Requests
                         </h4>
-                        <div>
-                          <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                            Allergies, dietary requirements or other comments
-                          </label>
-                          <Textarea
-                            value={eventDetails.specialRequests}
-                            onChange={(e) => setEventDetails({ ...eventDetails, specialRequests: e.target.value })}
-                            className="w-full px-4 py-2.5 bg-background border border-border rounded-lg transition-colors focus:border-primary resize-none"
-                            placeholder="e.g. 2 people vegetarian, 1 person gluten-free..."
-                            rows={4}
-                            style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
-                          />
-                        </div>
+                        <ValidatedTextarea
+                          label="Allergies, dietary requirements or other comments"
+                          value={eventDetails.specialRequests}
+                          onChange={(e) => {
+                            setEventDetails({ ...eventDetails, specialRequests: e.target.value });
+                            if (errors.specialRequests) setErrors({ ...errors, specialRequests: undefined });
+                          }}
+                          placeholder="e.g. 2 people vegetarian, 1 person gluten-free..."
+                          rows={4}
+                          maxLength={1000}
+                          showCharacterCount
+                          error={errors.specialRequests}
+                          helperText="Optional"
+                          className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
+                        />
                       </div>
 
                       {/* Payment Options Section */}
@@ -1518,48 +1535,39 @@ export function CustomMenuWizard() {
 
                           {!eventDetails.useSameAddressForBilling && (
                             <div className="space-y-4 mt-4 pt-4 border-t border-border">
-                              <div>
-                                <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
-                                  Billing Street & Nr.
-                                </label>
-                                <Input
-                                  type="text"
-                                  value={eventDetails.billingStreet}
-                                  onChange={(e) => setEventDetails({ ...eventDetails, billingStreet: e.target.value })}
-                                  className="w-full px-4 py-2.5 bg-background border border-border rounded-lg transition-colors focus:border-primary"
-                                  placeholder="Street and house number"
-                                  style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
-                                />
-                              </div>
+                              <ValidatedInput
+                                label="Billing Street & Nr."
+                                type="text"
+                                value={eventDetails.billingStreet}
+                                onChange={(e) => setEventDetails({ ...eventDetails, billingStreet: e.target.value })}
+                                placeholder="Street and house number"
+                                maxLength={100}
+                                showCharacterCount
+                                helperText="Optional"
+                              />
 
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                  <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
-                                    PLZ
-                                  </label>
-                                  <Input
-                                    type="text"
-                                    value={eventDetails.billingPlz}
-                                    onChange={(e) => setEventDetails({ ...eventDetails, billingPlz: e.target.value })}
-                                    className="w-full px-4 py-2.5 bg-background border border-border rounded-lg transition-colors focus:border-primary"
-                                    placeholder="3000"
-                                    style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
-                                  />
-                                </div>
+                                <ValidatedInput
+                                  label="PLZ"
+                                  type="text"
+                                  value={eventDetails.billingPlz}
+                                  onChange={(e) => setEventDetails({ ...eventDetails, billingPlz: e.target.value })}
+                                  placeholder="3000"
+                                  maxLength={10}
+                                  showCharacterCount
+                                  helperText="Optional"
+                                />
 
-                                <div>
-                                  <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
-                                    Location
-                                  </label>
-                                  <Input
-                                    type="text"
-                                    value={eventDetails.billingLocation}
-                                    onChange={(e) => setEventDetails({ ...eventDetails, billingLocation: e.target.value })}
-                                    className="w-full px-4 py-2.5 bg-background border border-border rounded-lg transition-colors focus:border-primary"
-                                    placeholder="Bern"
-                                    style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
-                                  />
-                                </div>
+                                <ValidatedInput
+                                  label="Location"
+                                  type="text"
+                                  value={eventDetails.billingLocation}
+                                  onChange={(e) => setEventDetails({ ...eventDetails, billingLocation: e.target.value })}
+                                  placeholder="Bern"
+                                  maxLength={50}
+                                  showCharacterCount
+                                  helperText="Optional"
+                                />
                               </div>
                             </div>
                           )}
@@ -3624,16 +3632,14 @@ export function CustomMenuWizard() {
                         (Optional)
                       </span>
                     </h4>
-                    <Textarea
+                    <ValidatedTextarea
                       value={tempComment}
                       onChange={(e) => setTempComment(e.target.value)}
                       placeholder="Any special instructions or dietary requirements..."
                       rows={3}
-                      className="w-full px-4 py-3 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
-                      style={{
-                        borderRadius: 'var(--radius)',
-                        fontSize: 'var(--text-base)'
-                      }}
+                      maxLength={500}
+                      showCharacterCount
+                      helperText="Optional"
                     />
                   </div>
                 </div>

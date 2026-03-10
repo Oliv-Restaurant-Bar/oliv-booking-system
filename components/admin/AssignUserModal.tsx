@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, UserPlus, Check, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '../user/Button';
 import { toast } from 'sonner';
 
 interface User {
@@ -178,28 +178,19 @@ export function AssignUserModal({
                     <div className="border-t border-border px-6 py-4 bg-muted/20 flex items-center justify-end gap-3">
                         <Button
                             variant="secondary"
+                            icon={X}
                             onClick={onClose}
                             disabled={isSaving || isLoading}
                         >
-                            <X className="w-4 h-4" />
                             Cancel
                         </Button>
                         <Button
-                            variant="default"
+                            variant="primary"
+                            icon={isSaving ? undefined : Check}
                             onClick={handleSave}
                             disabled={isSaving || isLoading}
                         >
-                            {isSaving ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                    Saving...
-                                </>
-                            ) : (
-                                <>
-                                    <Check className="w-4 h-4" />
-                                    {buttonText}
-                                </>
-                            )}
+                            {isSaving ? 'Saving...' : buttonText}
                         </Button>
                     </div>
                 </div>

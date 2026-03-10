@@ -42,7 +42,9 @@
       "Bash(npx drizzle-kit migrate:*)",
       "Bash(cd D:\\\\Oliv-Booking-System\\\\lib\\\\email\\\\templates:*)",
       "Bash(rm:*)",
-      "Bash(npx drizzle-kit:*)"
+      "Bash(npx drizzle-kit:*)",
+      "Bash(grep:*)",
+      "Bash(wc -l \"D:/internships/EnactOn/oliv/New folder \\(2\\)/components/user/CustomMenuWizardVariant1.tsx\")"
     ]
   }
 }

@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { Calendar, Clock, Users, FileText, Lock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/user/Button';
 import { SkeletonForm } from '@/components/ui/skeleton-loaders';
+import { ValidatedTextarea } from '@/components/ui/validated-textarea';
+import { bookingAllergiesSchema, bookingSpecialRequestsSchema, bookingGuestCountSchema } from '@/lib/validation/schemas';
 
 interface BookingData {
   id: string;
@@ -41,6 +43,12 @@ export function ClientBookingEditPage() {
     allergyDetails: [] as string[],
     specialRequests: '',
   });
+
+  // Validation errors
+  const [errors, setErrors] = useState<{
+    allergyDetails?: string;
+    specialRequests?: string;
+  }>({});
 
   // Contact info for locked bookings
   const contactEmail = 'info@oliv-restaurant.ch';
@@ -96,6 +104,31 @@ export function ClientBookingEditPage() {
     e.preventDefault();
     if (!booking) return;
 
+    // Validate form
+    const newErrors: typeof errors = {};
+
+    // Validate allergies
+    const allergiesString = formData.allergyDetails.join(', ');
+    if (allergiesString) {
+      const allergiesResult = bookingAllergiesSchema.safeParse(allergiesString);
+      if (!allergiesResult.success) {
+        newErrors.allergyDetails = allergiesResult.error.errors[0].message;
+      }
+    }
+
+    // Validate special requests
+    if (formData.specialRequests) {
+      const specialRequestsResult = bookingSpecialRequestsSchema.safeParse(formData.specialRequests);
+      if (!specialRequestsResult.success) {
+        newErrors.specialRequests = specialRequestsResult.error.errors[0].message;
+      }
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     setSaving(true);
     setSaveSuccess(false);
 
@@ -122,6 +155,7 @@ export function ClientBookingEditPage() {
 
       setSaveSuccess(true);
       setBooking(result.data || booking);
+      setErrors({});
 
       // Clear success message after 3 seconds
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -303,31 +337,40 @@ export function ClientBookingEditPage() {
 
           {/* Allergies/Dietary Requirements */}
           <div className="bg-card border border-border rounded-lg p-6">
-            <label className="block text-foreground font-medium mb-3">
-              Allergies & Dietary Requirements
-            </label>
-            <textarea
+            <ValidatedTextarea
+              label="Allergies & Dietary Requirements"
               value={formData.allergyDetails.join(', ')}
-              onChange={(e) => setFormData(prev => ({
-                ...prev,
-                allergyDetails: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
-              }))}
+              onChange={(e) => {
+                setFormData(prev => ({
+                  ...prev,
+                  allergyDetails: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
+                }));
+                if (errors.allergyDetails) setErrors({ ...errors, allergyDetails: undefined });
+              }}
               placeholder="Please list any allergies or dietary requirements (e.g., vegetarian, gluten-free, nut allergy)"
-              className="w-full px-4 py-3 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary min-h-[100px] resize-none"
+              rows={4}
+              maxLength={500}
+              showCharacterCount
+              error={errors.allergyDetails}
+              helperText="Optional: Separate multiple items with commas"
             />
           </div>
 
           {/* Special Requests */}
           <div className="bg-card border border-border rounded-lg p-6">
-            <label className="flex items-center gap-2 text-foreground font-medium mb-3">
-              <FileText className="w-5 h-5 text-primary" />
-              Special Requests
-            </label>
-            <textarea
+            <ValidatedTextarea
+              label="Special Requests"
               value={formData.specialRequests}
-              onChange={(e) => setFormData(prev => ({ ...prev, specialRequests: e.target.value }))}
+              onChange={(e) => {
+                setFormData(prev => ({ ...prev, specialRequests: e.target.value }));
+                if (errors.specialRequests) setErrors({ ...errors, specialRequests: undefined });
+              }}
               placeholder="Any special requests for your event (e.g., window seat, birthday celebration)"
-              className="w-full px-4 py-3 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary min-h-[100px] resize-none"
+              rows={4}
+              maxLength={1000}
+              showCharacterCount
+              error={errors.specialRequests}
+              helperText="Optional"
             />
           </div>
 

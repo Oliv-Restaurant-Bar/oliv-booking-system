@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, TrendingUp, TrendingDown } from 'lucide-react';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
-import { CategoryPill } from './CategoryPill';
+import { CategoryPill } from '../user/CategoryPill';
 import { SkeletonList } from '@/components/ui/skeleton-loaders';
 
 interface TrendingItem {
