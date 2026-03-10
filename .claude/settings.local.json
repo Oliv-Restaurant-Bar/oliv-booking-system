@@ -44,7 +44,12 @@
       "Bash(rm:*)",
       "Bash(npx drizzle-kit:*)",
       "Bash(grep:*)",
-      "Bash(wc -l \"D:/internships/EnactOn/oliv/New folder \\(2\\)/components/user/CustomMenuWizardVariant1.tsx\")"
+      "Bash(wc -l \"D:/internships/EnactOn/oliv/New folder \\(2\\)/components/user/CustomMenuWizardVariant1.tsx\")",
+      "Bash(cd \"D:\\\\internships\\\\EnactOn\\\\oliv\\\\New folder \\(2\\)\" && mv components/ui/tooltip.tsx components/ui/Tooltip.tsx)",
+      "Bash(cd \"D:/internships/EnactOn/oliv/New folder \\(2\\)\" && ren components\\\\\\\\ui\\\\\\\\tooltip.tsx Tooltip.tsx && ren components\\\\\\\\ui\\\\\\\\nativeradio.tsx NativeRadio.tsx && ren components\\\\\\\\ui\\\\\\\\nativecheckbox.tsx NativeCheckbox.tsx && ren components\\\\\\\\user\\\\\\\\dietaryicon.tsx DietaryIcon.tsx && ren components\\\\\\\\user\\\\\\\\thankyouscreen.tsx ThankYouScreen.tsx && ren components\\\\\\\\user\\\\\\\\wizardheader.tsx WizardHeader.tsx)",
+      "Bash(cd \"/d/internships/EnactOn/oliv/New folder \\(2\\)\" && mv \"components/ui/tooltip.tsx\" \"components/ui/Tooltip.tsx\")",
+      "Bash(powershell.exe -Command \"cd 'D:\\\\internships\\\\EnactOn\\\\oliv\\\\New folder \\(2\\)'; Rename-Item 'components\\\\ui\\\\tooltip.tsx' 'Tooltip.tsx'; Rename-Item 'components\\\\ui\\\\nativeradio.tsx' 'NativeRadio.tsx'; Rename-Item 'components\\\\ui\\\\nativecheckbox.tsx' 'NativeCheckbox.tsx'; Rename-Item 'components\\\\user\\\\dietaryicon.tsx' 'DietaryIcon.tsx'; Rename-Item 'components\\\\user\\\\thankyouscreen.tsx' 'ThankYouScreen.tsx'; Rename-Item 'components\\\\user\\\\wizardheader.tsx' 'WizardHeader.tsx'\")",
+      "Bash(python -c \"import os; os.rename\\(r'D:\\\\internships\\\\EnactOn\\\\oliv\\\\New folder \\(2\\)\\\\components\\\\user\\\\categorypill.tsx', r'D:\\\\internships\\\\EnactOn\\\\oliv\\\\New folder \\(2\\)\\\\components\\\\user\\\\CategoryPill.tsx'\\)\")"
     ]
   }
 }
