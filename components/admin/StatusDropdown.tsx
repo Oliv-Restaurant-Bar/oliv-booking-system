@@ -29,6 +29,7 @@ export function StatusDropdown({
 }: StatusDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -41,6 +42,20 @@ export function StatusDropdown({
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isOpen]);
+
+  // Auto-scroll dropdown menu into view when opened
+  useEffect(() => {
+    if (isOpen && menuRef.current) {
+      // Small delay to ensure the dropdown is rendered
+      setTimeout(() => {
+        menuRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'nearest'
+        });
+      }, 50);
     }
   }, [isOpen]);
 
@@ -70,7 +85,7 @@ export function StatusDropdown({
 
       {/* Dropdown Menu - Matching admin dropdown style */}
       {isOpen && (
-        <div className="absolute left-0 right-0 mt-2 bg-card rounded-lg shadow-lg border border-border overflow-hidden z-50">
+        <div ref={menuRef} className="absolute left-0 right-0 mt-2 bg-card rounded-lg shadow-lg border border-border overflow-hidden z-50">
           {options.map((option, index) => (
             <button
               key={option.value}

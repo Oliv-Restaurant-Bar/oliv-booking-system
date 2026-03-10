@@ -154,6 +154,7 @@ export const customerBusinessSchema = z.string()
 export const customerPhoneSchema = z.string()
   .min(10, 'Phone number must be at least 10 characters')
   .max(20, 'Phone number cannot exceed 20 characters')
+  .regex(/^[0-9+\s]+$/, 'Phone number can only contain numbers, spaces, and +')
   .trim();
 
 export const customerStreetSchema = z.string()
@@ -164,6 +165,7 @@ export const customerStreetSchema = z.string()
 export const customerPlzSchema = z.string()
   .min(4, 'Postal code must be at least 4 characters')
   .max(10, 'Postal code cannot exceed 10 characters')
+  .regex(/^\d+$/, 'Postal code must contain only numbers')
   .trim();
 
 export const customerLocationSchema = z.string()

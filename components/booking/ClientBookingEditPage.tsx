@@ -175,10 +175,13 @@ export function ClientBookingEditPage() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-foreground">Loading...</p>
+      <div className="min-h-screen bg-background py-12 px-4">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-8">
+            <div className="h-8 w-64 bg-muted rounded mx-auto mb-2 animate-pulse" />
+            <div className="h-4 w-48 bg-muted rounded mx-auto animate-pulse" />
+          </div>
+          <SkeletonForm fields={5} />
         </div>
       </div>
     );

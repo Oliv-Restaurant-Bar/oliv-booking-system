@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { Permission, hasPermission } from '@/lib/auth/rbac';
 import { AssignUserModal } from './AssignUserModal';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SkeletonPage } from '@/components/ui/skeleton-loaders';
 import { ValidatedTextarea } from '@/components/ui/validated-textarea';
 import { bookingKitchenNotesSchema, bookingCommentSchema } from '@/lib/validation/schemas';
 
@@ -501,11 +502,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="text-center">
-                    <RefreshCw className="w-8 h-8 text-primary animate-spin mx-auto mb-4" />
-                    <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>Loading booking details...</p>
-                </div>
+            <div className="min-h-screen bg-background p-8">
+                <SkeletonPage content="custom" hasHeader hasKPI={false} />
             </div>
         );
     }
@@ -596,14 +594,14 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                         {canEditBooking && (
                             <button
                                 onClick={handleToggleLock}
-                                disabled={lockLoading || isLocked}
+                                // disabled={lockLoading || isLocked}
                                 className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 cursor-pointer ${isLocked
-                                    ? 'bg-amber-500/50 text-white opacity-60 cursor-not-allowed'
+                                    ? 'bg-amber-500 text-white cursor-not-allowed'
                                     : 'bg-primary hover:bg-primary/90 text-primary-foreground '
                                     }`}
                                 style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
                             >
-                                {lockLoading ? 'Loading...' : isLocked ? <><Lock className="w-4 h-4" />Locked</> : <><Lock className="w-4 h-4" />Lock</>}
+                                {lockLoading ? 'Loading...' : isLocked ? <><Lock className="w-4 h-4" />UnLock</> : <><Lock className="w-4 h-4" />Lock</>}
                             </button>
                         )}
                     </div>

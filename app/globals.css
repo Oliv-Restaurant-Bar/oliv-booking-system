@@ -296,3 +296,72 @@ html {
 .animate-slide-up {
   animation: slide-up 0.3s ease-out;
 }
+/* Sonner Toast Customization */
+[data-sonner-toast] {
+  background-color: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  font-family: var(--font-family);
+  font-size: var(--text-base);
+  box-shadow: var(--elevation-sm), 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+[data-sonner-toast][data-type="success"] {
+  border-color: var(--primary);
+}
+
+[data-sonner-toast][data-type="error"] {
+  border-color: var(--destructive);
+}
+
+[data-sonner-toast][data-type="warning"] {
+  border-color: var(--booking-locked);
+}
+
+[data-sonner-toast] [data-description] {
+  color: var(--muted-foreground);
+  font-size: var(--text-small);
+}
+
+[data-sonner-toast] [data-title] {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--text-base);
+}
+
+[data-sonner-toast] [data-button] {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border-radius: var(--radius-button);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--text-label);
+  padding: 8px 16px;
+  transition: opacity 0.2s ease;
+}
+
+[data-sonner-toast] [data-button]:hover {
+  opacity: 0.9;
+}
+
+[data-sonner-toast] [data-close-button] {
+  color: var(--muted-foreground);
+  transition: color 0.2s ease;
+}
+
+[data-sonner-toast] [data-close-button]:hover {
+  color: var(--foreground);
+}
+
+/* Sonner Toaster positioning */
+[data-sonner-toaster] {
+  font-family: var(--font-family);
+}
+
+[data-sonner-toaster] [data-y="bottom"] {
+  bottom: 24px;
+}
+
+/* Loading spinner in toasts */
+[data-sonner-toast] [data-icon="loading"] {
+  color: var(--primary);
+}

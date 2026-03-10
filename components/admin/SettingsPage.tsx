@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Globe, DollarSign, Check, MapPin, Plus, X, Edit2, Trash2, Loader2 } from 'lucide-react';
+import { Globe, DollarSign, Check, MapPin, Plus, X, Edit2, Trash2 } from 'lucide-react';
+import { SkeletonGrid, SkeletonKPI } from '@/components/ui/skeleton-loaders';
 import { StatusDropdown } from './StatusDropdown';
 import { VenueModal } from './VenueModal';
 import { Permission, hasPermission } from '@/lib/auth/rbac';
@@ -154,8 +155,14 @@ export function SettingsPage({ user }: { user?: any }) {
             {/* Venues List */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {isLoadingVenues ? (
-                <div className="col-span-full flex items-center justify-center py-12">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                <div className="col-span-full">
+                  <SkeletonGrid items={3} cols={3} skeleton={() => (
+                    <div className="bg-background border border-border rounded-xl p-4 space-y-3">
+                      <div className="flex justify-between">
+                        <SkeletonKPI variant="compact" />
+                      </div>
+                    </div>
+                  )} />
                 </div>
               ) : venues.length === 0 ? (
                 <div className="col-span-full text-center py-12 border-2 border-dashed border-border rounded-2xl bg-muted/5">

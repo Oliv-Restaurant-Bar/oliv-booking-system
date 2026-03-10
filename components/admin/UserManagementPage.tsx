@@ -373,14 +373,12 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
           </div>
         </div>
 
-        {/* Loading State */}
-        {loading && (
-          <div className="text-center py-16">
-            <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
-              Loading users...
-            </p>
-          </div>
-        )}
+          {/* Loading State */}
+          {loading && (
+            <div className="flex-1">
+              <SkeletonTable rows={10} columns={5} hasActions />
+            </div>
+          )}
 
         {/* Users Table */}
         {!loading && (
@@ -592,19 +590,6 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
               value={formRole}
               onChange={(value) => setFormRole(value as User['role'])}
               placeholder="Select role"
-              className="w-full"
-            />
-          </div>
-
-          <div>
-            <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-              Status
-            </label>
-            <StatusDropdown
-              options={statusOptions}
-              value={formStatus}
-              onChange={(value) => setFormStatus(value as User['status'])}
-              placeholder="Select status"
               className="w-full"
             />
           </div>

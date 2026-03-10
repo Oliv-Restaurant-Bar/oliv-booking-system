@@ -13,10 +13,11 @@ import { NativeRadio } from '@/components/ui/NativeRadio';
 import { NativeCheckbox } from '@/components/ui/NativeCheckbox';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Skeleton } from '@/components/ui/skeleton';
+import { SkeletonKPI, SkeletonPage } from '@/components/ui/skeleton-loaders';
 import { ValidatedInput } from '@/components/ui/validated-input';
 import { ValidatedTextarea } from '@/components/ui/validated-textarea';
 import { customerNameSchema, customerBusinessSchema, customerPhoneSchema, customerStreetSchema, customerPlzSchema, customerLocationSchema, customerOccasionSchema, customerSpecialRequestsSchema, userEmailSchema } from '@/lib/validation/schemas';
+import { toast } from 'sonner';
 
 interface EventDetails {
   name: string;
@@ -470,8 +471,8 @@ export function CustomMenuWizard() {
       newErrors.guestCount = 'Number of guests is required';
     } else if (parseInt(eventDetails.guestCount) < 1) {
       newErrors.guestCount = 'Must have at least 1 guest';
-    } else if (parseInt(eventDetails.guestCount) > 10000) {
-      newErrors.guestCount = 'Number of guests cannot exceed 10,000';
+    } else if (parseInt(eventDetails.guestCount) > 1000) {
+      newErrors.guestCount = 'Number of guests cannot exceed 1,000';
     }
 
     // Validate occasion (optional)
@@ -528,7 +529,7 @@ export function CustomMenuWizard() {
       isDateValid &&
       eventDetails.guestCount !== '' &&
       parseInt(eventDetails.guestCount) >= 1 &&
-      parseInt(eventDetails.guestCount) <= 10000
+      parseInt(eventDetails.guestCount) <= 1000
     );
   }, [eventDetails.name, eventDetails.email, eventDetails.telephone, eventDetails.eventDate, eventDetails.eventTime, eventDetails.guestCount]);
 
@@ -849,14 +850,24 @@ export function CustomMenuWizard() {
         // Look up group dynamically
         let isSingleSelect = false;
         let groupItemIds: string[] = [];
+        let maxSelectLimit = 1;
 
         if (groupId && detailsModalItem?.addonGroups) {
           const group = detailsModalItem.addonGroups.find(g => g.id === groupId);
           if (group) {
-            // Treat as single select if requested from the button (1) or if not required (optional addons forced to single choice)
-            if (maxSelect === 1 || !group.isRequired) {
+            maxSelectLimit = group.maxSelect || 1;
+            if (maxSelectLimit === 1) {
               isSingleSelect = true;
               groupItemIds = group.items.map(i => i.id);
+            } else {
+              // Multi-select group: Check if we've reached maxSelect limit
+              const alreadySelectedInGroup = prev.filter(id =>
+                group.items.some((item: any) => item.id === id)
+              );
+              if (alreadySelectedInGroup.length >= maxSelectLimit) {
+                toast.error(`You can select maximum ${maxSelectLimit} option${maxSelectLimit > 1 ? 's' : ''} from ${group.name}`);
+                return prev;
+              }
             }
           }
         }
@@ -1057,10 +1068,10 @@ export function CustomMenuWizard() {
 
   if (isLoadingEdit) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-foreground">Loading your booking details...</p>
+      <div className="min-h-screen bg-background">
+        <WizardHeader />
+        <div className="p-8">
+          <SkeletonPage content="custom" hasHeader hasKPI={false} />
         </div>
       </div>
     );
@@ -1278,7 +1289,8 @@ export function CustomMenuWizard() {
                             type="tel"
                             value={eventDetails.telephone}
                             onChange={(e) => {
-                              setEventDetails({ ...eventDetails, telephone: e.target.value });
+                              const value = e.target.value.replace(/[^0-9+\s]/g, '');
+                              setEventDetails({ ...eventDetails, telephone: value });
                               if (errors.telephone) setErrors({ ...errors, telephone: undefined });
                             }}
                             placeholder="+41 31 123 45 67"
@@ -1322,7 +1334,8 @@ export function CustomMenuWizard() {
                               type="text"
                               value={eventDetails.plz}
                               onChange={(e) => {
-                                setEventDetails({ ...eventDetails, plz: e.target.value });
+                                const value = e.target.value.replace(/[^0-9]/g, '');
+                                setEventDetails({ ...eventDetails, plz: value });
                                 if (errors.plz) setErrors({ ...errors, plz: undefined });
                               }}
                               placeholder="3000"
@@ -1411,7 +1424,7 @@ export function CustomMenuWizard() {
                                 }`}
                               placeholder="10"
                               min="1"
-                              max="10000"
+                              max="1000"
                               style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
                             />
                             {errors.guestCount && (
@@ -1544,7 +1557,10 @@ export function CustomMenuWizard() {
                                   label="PLZ"
                                   type="text"
                                   value={eventDetails.billingPlz}
-                                  onChange={(e) => setEventDetails({ ...eventDetails, billingPlz: e.target.value })}
+                                  onChange={(e) => {
+                                    const value = e.target.value.replace(/[^0-9]/g, '');
+                                    setEventDetails({ ...eventDetails, billingPlz: value });
+                                  }}
                                   placeholder="3000"
                                   maxLength={10}
                                   showCharacterCount
@@ -3480,11 +3496,18 @@ export function CustomMenuWizard() {
                                         >
                                           <div className="flex items-center gap-3 flex-1">
                                             <div className="relative flex items-center justify-center">
-                                              <NativeRadio
-                                                name={`choice-${group.id}`}
-                                                checked={isChecked}
-                                                onChange={() => toggleTempAddOn(addOn.id, group.id, group.maxSelect)}
-                                              />
+                                              {group.maxSelect > 1 ? (
+                                                <NativeCheckbox
+                                                  checked={isChecked}
+                                                  onChange={() => toggleTempAddOn(addOn.id, group.id, group.maxSelect)}
+                                                />
+                                              ) : (
+                                                <NativeRadio
+                                                  name={`choice-${group.id}`}
+                                                  checked={isChecked}
+                                                  onChange={() => toggleTempAddOn(addOn.id, group.id, group.maxSelect)}
+                                                />
+                                              )}
                                             </div>
                                             <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                                               {addOn.name}
@@ -3529,10 +3552,18 @@ export function CustomMenuWizard() {
                                         >
                                           <div className="flex items-center gap-3 flex-1">
                                             <div className="relative flex items-center justify-center">
-                                              <NativeCheckbox
-                                                checked={isChecked}
-                                                onChange={() => toggleTempAddOn(addOn.id, group.id, group.maxSelect)}
-                                              />
+                                              {group.maxSelect > 1 ? (
+                                                <NativeCheckbox
+                                                  checked={isChecked}
+                                                  onChange={() => toggleTempAddOn(addOn.id, group.id, group.maxSelect)}
+                                                />
+                                              ) : (
+                                                <NativeRadio
+                                                  name={`choice-${group.id}`}
+                                                  checked={isChecked}
+                                                  onChange={() => toggleTempAddOn(addOn.id, group.id, group.maxSelect)}
+                                                />
+                                              )}
                                             </div>
                                             <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                                               {addOn.name}

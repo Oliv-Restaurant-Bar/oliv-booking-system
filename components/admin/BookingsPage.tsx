@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Download, Search, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { StatusDropdown } from './StatusDropdown';
 import { Button } from '../user/Button';
+import { SkeletonTable, SkeletonCalendar, SkeletonGrid } from '@/components/ui/skeleton-loaders';
 import { ViewSwitcher, ViewMode } from './ViewSwitcher';
 import { GridView } from './GridView';
 import { CalendarView } from './CalendarView';
@@ -187,8 +188,12 @@ export function BookingsPage({ user }: { user?: any }) {
 
           {/* Loading State */}
           {loading && (
-            <div className="text-center py-16">
-              <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>Loading bookings...</p>
+            <div className="flex-1">
+              {viewMode === 'grid' ? (
+                <SkeletonGrid items={pageSize} cols={2} />
+              ) : (
+                <SkeletonCalendar />
+              )}
             </div>
           )}
 
