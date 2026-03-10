@@ -73,6 +73,7 @@ export function ValidatedTextarea({
             'focus-visible:ring-[3px]',
             'disabled:cursor-not-allowed disabled:opacity-50',
             'md:text-sm',
+            "w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary",
             error && 'border-destructive focus-visible:ring-destructive/20',
             resize === 'none' && 'resize-none',
             resize === 'both' && 'resize',

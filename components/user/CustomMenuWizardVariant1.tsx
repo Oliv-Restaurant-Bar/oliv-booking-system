@@ -1331,7 +1331,7 @@ export function CustomMenuWizard() {
                               error={errors.plz}
                               helperText="Min. 4 characters"
                               required
-                              className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
+                            // className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                             />
 
                             <ValidatedInput
@@ -1348,7 +1348,7 @@ export function CustomMenuWizard() {
                               error={errors.location}
                               helperText="Min. 2 characters"
                               required
-                              className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
+                            // className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                             />
                           </div>
                         </div>
@@ -1434,6 +1434,7 @@ export function CustomMenuWizard() {
                             showCharacterCount
                             error={errors.occasion}
                             helperText="Optional"
+                          // className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                           />
                         </div>
                       </div>

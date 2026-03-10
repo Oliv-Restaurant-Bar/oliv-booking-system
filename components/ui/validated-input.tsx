@@ -78,6 +78,7 @@ export function ValidatedInput({
             'disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
             'md:text-sm',
             'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
+            "w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary",
             // Error state styles
             error && 'border-destructive focus-visible:ring-destructive/20',
             // Password toggle padding
