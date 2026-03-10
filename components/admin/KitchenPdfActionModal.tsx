@@ -48,7 +48,7 @@ export function KitchenPdfActionModal({
 
   // Use last 8 characters of UUID for a shorter ID
   const shortId = booking.id.slice(-8);
-  const documentName = `Booking #${shortId} – Kitchen Sheet`;
+  const documentName = `Booking – Kitchen Sheet`; // Removed ID from title as per client preference
 
   const toggleSection = (section: 'email') => {
     setExpandedSection(prev => prev === section ? null : section);
@@ -70,27 +70,27 @@ export function KitchenPdfActionModal({
       doc.setFillColor(157, 174, 145); //(System Primary)
       doc.rect(0, 0, pageWidth, 45, 'F');
 
-      // Add Logo (if possible, using try-catch for robustness)
+      // Add Logo (if possible)
       try {
-        // Note: For production, converting to base64 or pre-loading is better
-        // For now we add a place-holder for the logo space
-        doc.addImage(logoUrl, 'PNG', margin, 10, 25, 10);
+        doc.addImage(logoUrl, 'PNG', margin, 12, 22, 9);
       } catch (e) {
         console.error("Logo failed to load for PDF");
       }
 
-      doc.setFontSize(20);
+      doc.setFontSize(22);
       doc.setTextColor(255, 255, 255);
       doc.setFont("helvetica", "bold");
-      doc.text("KITCHEN SHEET", margin, 32);
+      doc.text("KITCHEN SHEET", margin, 34);
 
-      doc.setFontSize(10);
+      doc.setFontSize(11);
       doc.setTextColor(255, 255, 255);
-      doc.text("FOR INTERNAL KITCHEN USE", pageWidth - margin, 20, { align: 'right' });
+      doc.setFont("helvetica", "bold");
+      doc.text("INTERNAL USE ONLY", pageWidth - margin, 20, { align: 'right' });
 
       doc.setFontSize(9);
-      doc.setTextColor(148, 163, 184); // slate-400
-      doc.text(`Generated: ${new Date().toLocaleDateString('de-CH')}`, pageWidth - margin, 32, { align: 'right' });
+      doc.setTextColor(230, 230, 230);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Generated: ${new Date().toLocaleDateString('de-CH')}`, pageWidth - margin, 34, { align: 'right' });
 
       yPos = 60;
     };
@@ -112,7 +112,7 @@ export function KitchenPdfActionModal({
     doc.text(`Guests: ${booking.guests}`, margin + 5, yPos);
 
     // Right Column: Event (Reset yPos for same row)
-    const rightColX = pageWidth / 2 + 5;
+    const rightColX = pageWidth / 2 + 10;
     let eventYPos = yPos - 14;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
@@ -146,11 +146,11 @@ export function KitchenPdfActionModal({
     doc.setTextColor(71, 85, 105); // slate-600
     doc.setFont("helvetica", "bold");
     doc.text("ITEM NAME", margin + 2, yPos);
-    doc.text("CATEGORY", margin + 75, yPos);
-    doc.text("GUESTS", margin + 125, yPos);
-    doc.text("STATUS", margin + 155, yPos);
+    doc.text("CATEGORY", margin + 85, yPos);
+    doc.text("GUESTS", margin + 135, yPos);
+    doc.text("DONE", margin + 165, yPos);
 
-    yPos += 8;
+    yPos += 10;
     doc.setTextColor(15, 23, 42);
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
@@ -163,16 +163,15 @@ export function KitchenPdfActionModal({
           doc.addPage();
           drawHeader();
           yPos += 10;
-          // Re-draw table header on new page
           doc.setFillColor(241, 245, 249);
           doc.rect(margin, yPos - 6, contentWidth, 10, 'F');
           doc.setFontSize(9);
           doc.setTextColor(71, 85, 105);
           doc.setFont("helvetica", "bold");
           doc.text("ITEM NAME", margin + 2, yPos);
-          doc.text("CATEGORY", margin + 75, yPos);
-          doc.text("GUESTS", margin + 125, yPos);
-          doc.text("STATUS", margin + 155, yPos);
+          doc.text("CATEGORY", margin + 85, yPos);
+          doc.text("GUESTS", margin + 135, yPos);
+          doc.text("DONE", margin + 165, yPos);
           yPos += 10;
           doc.setTextColor(15, 23, 42);
           doc.setFontSize(10);
@@ -180,18 +179,18 @@ export function KitchenPdfActionModal({
         }
 
         doc.text(item.item, margin + 2, yPos);
-        doc.text(item.category, margin + 75, yPos);
-        doc.text(String(booking.guests), margin + 130, yPos);
+        doc.text(item.category, margin + 85, yPos);
+        doc.text(String(booking.guests), margin + 140, yPos);
 
-        // Checkbox box (Now at the end)
+        // Checkbox box (Better alignment)
         doc.setDrawColor(203, 213, 225); // slate-300
-        doc.rect(margin + 158, yPos - 4, 4, 4);
+        doc.rect(margin + 168, yPos - 3.5, 4, 4);
 
         // Row separator
         doc.setDrawColor(241, 245, 249);
-        doc.line(margin, yPos + 2, margin + contentWidth, yPos + 2);
+        doc.line(margin, yPos + 3, margin + contentWidth, yPos + 3);
 
-        yPos += 8;
+        yPos += 10;
       });
     } else {
       doc.setFont("helvetica", "italic");
@@ -199,56 +198,62 @@ export function KitchenPdfActionModal({
       yPos += 8;
     }
 
-    yPos += 12;
+    yPos += 5;
 
-    // --- Allergies Section ---
-    if (yPos > 240) { doc.addPage(); drawHeader(); yPos += 10; }
+    // --- Allergies Section (Conditional) ---
+    if (booking.allergies && booking.allergies.trim().toLowerCase() !== 'none' && booking.allergies.trim()) {
+      if (yPos > 230) { doc.addPage(); drawHeader(); yPos += 10; }
+      yPos += 5;
+      
+      doc.setFillColor(254, 242, 242); // red-50
+      const allergyLines = doc.splitTextToSize(booking.allergies, contentWidth - 10);
+      const allergyBoxHeight = (allergyLines.length * 6) + 16;
 
-    // Warning background for allergies
-    doc.setFillColor(254, 242, 242); // red-50
-    const allergyLines = doc.splitTextToSize(booking.allergies || 'None specified', contentWidth - 10);
-    const allergyBoxHeight = (allergyLines.length * 6) + 15;
+      doc.setDrawColor(252, 165, 165); // red-300
+      doc.rect(margin, yPos - 6, contentWidth, allergyBoxHeight, 'F');
+      doc.rect(margin, yPos - 6, contentWidth, allergyBoxHeight, 'S');
 
-    doc.setDrawColor(252, 165, 165); // red-300
-    doc.rect(margin, yPos - 6, contentWidth, allergyBoxHeight, 'F');
-    doc.rect(margin, yPos - 6, contentWidth, allergyBoxHeight, 'S');
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(185, 28, 28); // red-700
+      doc.text("ALLERGIES & DIETARY NOTES", margin + 5, yPos + 2);
 
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(185, 28, 28); // red-700
-    doc.text("ALLERGIES & DIETARY NOTES", margin + 5, yPos + 2);
+      yPos += 10;
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(153, 27, 27); // red-800
+      doc.text(allergyLines, margin + 8, yPos);
 
-    yPos += 10;
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(153, 27, 27); // red-800
-    doc.text(allergyLines, margin + 8, yPos);
+      yPos += allergyBoxHeight - 5;
+    }
 
-    yPos += allergyBoxHeight - 5;
+    // --- Customer Additional Notes (Conditional) ---
+    if (booking.notes && booking.notes.trim()) {
+      yPos += 10;
+      if (yPos > 240) { doc.addPage(); drawHeader(); yPos += 10; }
+      
+      doc.setFontSize(13);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(15, 23, 42);
+      doc.text("ADDITIONAL CUSTOMER NOTES", margin, yPos);
 
-    // --- Additional Notes ---
-    if (yPos > 240) { doc.addPage(); drawHeader(); yPos += 10; }
-    yPos += 10;
-    doc.setFontSize(13);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(15, 23, 42);
-    doc.text("ADDITIONAL NOTES", margin, yPos);
+      yPos += 8;
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      const noteLines = doc.splitTextToSize(booking.notes, contentWidth - margin);
+      doc.text(noteLines, margin + 5, yPos);
+      yPos += (noteLines.length * 6) + 4;
+    }
 
-    yPos += 8;
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    const noteLines = doc.splitTextToSize(booking.notes || 'None', contentWidth - margin);
-    doc.text(noteLines, margin + 5, yPos);
-
-    // --- Kitchen Notes Section ---
-    if (booking.kitchenNotes) {
-      yPos += (noteLines.length * 6) + 10;
+    // --- Internal Kitchen Notes Section (Conditional) ---
+    if (booking.kitchenNotes && booking.kitchenNotes.trim()) {
+      yPos += 8;
       if (yPos > 240) { doc.addPage(); drawHeader(); yPos += 10; }
 
       doc.setFontSize(13);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(15, 23, 42);
-      doc.text("NOTES FOR KITCHEN TEAM", margin, yPos);
+      doc.text("INTERNAL STAFF NOTES", margin, yPos);
 
       yPos += 8;
       doc.setFontSize(10);
@@ -257,7 +262,9 @@ export function KitchenPdfActionModal({
 
       // Highlight background for kitchen notes
       doc.setFillColor(248, 250, 252); // slate-50
-      doc.rect(margin, yPos - 4, contentWidth, (kitchenNoteLines.length * 6) + 8, 'F');
+      doc.rect(margin, yPos - 5, contentWidth, (kitchenNoteLines.length * 6) + 10, 'F');
+      doc.setDrawColor(226, 232, 240); // slate-200
+      doc.rect(margin, yPos - 5, contentWidth, (kitchenNoteLines.length * 6) + 10, 'S');
 
       doc.setTextColor(51, 65, 85); // slate-700
       doc.text(kitchenNoteLines, margin + 5, yPos + 2);

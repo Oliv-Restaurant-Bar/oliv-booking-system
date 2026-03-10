@@ -337,12 +337,6 @@ export function SettingsPage({ user }: { user?: any }) {
         </div>
       </div>
 
-      {/* Copyright Footer */}
-      <div className="text-center pt-8 pb-1 mt-auto">
-        <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-          © 2026 Restaurant Oliv Restaurant & Bar
-        </p>
-      </div>
 
       {/* Venue Modal */}
       <VenueModal

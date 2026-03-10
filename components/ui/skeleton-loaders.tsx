@@ -421,8 +421,7 @@ export function SkeletonDashboard() {
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <SkeletonKPI variant="compact" />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
         <SkeletonKPI variant="compact" />
         <SkeletonKPI variant="compact" />
         <SkeletonKPI variant="compact" />
@@ -438,6 +437,200 @@ export function SkeletonDashboard() {
 
       {/* Revenue Chart */}
       <SkeletonChart type="line" />
+    </div>
+  );
+}
+
+/**
+ * Trending Items Skeleton
+ */
+export function SkeletonTrendingItems() {
+  return (
+    <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
+      <div className="flex items-center justify-between mb-6">
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-10 w-40 rounded-lg" />
+      </div>
+      <div className="space-y-4">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-4 py-3 border-b border-border last:border-0">
+            <Skeleton className="h-5 w-4" />
+            <Skeleton className="h-12 w-12 rounded-lg" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-3/4" />
+              <div className="flex gap-2">
+                <Skeleton className="h-3 w-12" />
+                <Skeleton className="h-3 w-20 rounded-full" />
+              </div>
+            </div>
+            <div className="space-y-2 text-right">
+              <Skeleton className="h-4 w-8 ml-auto" />
+              <Skeleton className="h-3 w-16 ml-auto" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Monthly Report Skeleton - Grid card style
+ */
+export function SkeletonMonthlyReport() {
+  return (
+    <div className="bg-card border border-border rounded-xl p-6">
+      <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
+        <Skeleton className="h-6 w-48" />
+        <div className="flex gap-3">
+          <Skeleton className="h-10 w-24 rounded-lg" />
+          <Skeleton className="h-10 w-24 rounded-lg" />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="border border-border rounded-lg p-4 space-y-4">
+            <div className="flex justify-between items-center">
+              <Skeleton className="h-5 w-24" />
+              <Skeleton className="h-8 w-8 rounded md:hidden" />
+            </div>
+            <div className="flex justify-between items-center pb-4 border-b border-border">
+              <div className="space-y-1">
+                <Skeleton className="h-3 w-12" />
+                <Skeleton className="h-6 w-10" />
+              </div>
+              <div className="space-y-1 text-right">
+                <Skeleton className="h-3 w-12 ml-auto" />
+                <Skeleton className="h-4 w-20 ml-auto" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              {Array.from({ length: 4 }).map((_, j) => (
+                <div key={j} className="flex justify-between">
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-3 w-12" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Booking Detail Skeleton
+ */
+export function SkeletonBookingDetail() {
+  return (
+    <div className="space-y-6">
+      {/* Header Actions */}
+      <div className="flex justify-between items-center flex-wrap gap-4">
+        <Skeleton className="h-10 w-40 rounded-lg" />
+        <div className="flex gap-3">
+          <Skeleton className="h-10 w-32 rounded-lg" />
+          <Skeleton className="h-10 w-32 rounded-lg" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column: Booking Info */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-card border border-border rounded-xl p-6 space-y-6">
+            <div className="flex justify-between items-start">
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-64" />
+                <Skeleton className="h-4 w-48" />
+              </div>
+              <Skeleton className="h-8 w-24 rounded-full" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <Skeleton className="h-5 w-32" />
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex gap-3">
+                    <Skeleton className="h-10 w-10 rounded-lg" />
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="h-3 w-16" />
+                      <Skeleton className="h-4 w-full" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="space-y-4">
+                <Skeleton className="h-5 w-32" />
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex gap-3">
+                    <Skeleton className="h-10 w-10 rounded-lg" />
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="h-3 w-16" />
+                      <Skeleton className="h-4 w-full" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+            <Skeleton className="h-6 w-40" />
+            <Skeleton className="h-24 w-full rounded-lg" />
+          </div>
+
+          <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+            <Skeleton className="h-6 w-40" />
+            <SkeletonTable rows={3} columns={4} hasActions={false} />
+          </div>
+        </div>
+
+        {/* Right Column: Interaction */}
+        <div className="space-y-6">
+          <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+            <Skeleton className="h-6 w-32" />
+            <div className="space-y-3">
+              <Skeleton className="h-10 w-full rounded-lg" />
+              <Skeleton className="h-10 w-full rounded-lg" />
+              <Skeleton className="h-10 w-full rounded-lg" />
+            </div>
+          </div>
+
+          <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+            <Skeleton className="h-6 w-32" />
+            <div className="space-y-4">
+              <Skeleton className="h-32 w-full rounded-lg" />
+              <Skeleton className="h-10 w-24 ml-auto rounded-lg" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Menu Config Skeleton
+ */
+export function SkeletonMenuConfig() {
+  return (
+    <div className="space-y-6">
+      <div className="flex gap-1">
+        <Skeleton className="h-12 w-40 rounded-lg" />
+        <Skeleton className="h-12 w-40 rounded-lg" />
+      </div>
+
+      <div className="bg-card border border-border rounded-xl">
+        <div className="p-4 border-b border-border flex gap-3">
+          <Skeleton className="h-10 flex-1 rounded-lg" />
+          <Skeleton className="h-10 w-40 rounded-lg" />
+        </div>
+        <div className="p-4 space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <SkeletonMenuCategory key={i} />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

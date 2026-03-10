@@ -37,6 +37,9 @@ interface EventDetails {
   billingStreet: string;
   billingPlz: string;
   billingLocation: string;
+  billingStreetError?: string;
+  billingPlzError?: string;
+  billingLocationError?: string;
 }
 
 export function CustomMenuWizard() {
@@ -63,6 +66,9 @@ export function CustomMenuWizard() {
     billingStreet: '',
     billingPlz: '',
     billingLocation: '',
+    billingStreetError: undefined,
+    billingPlzError: undefined,
+    billingLocationError: undefined,
   });
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
@@ -163,6 +169,9 @@ export function CustomMenuWizard() {
                   billingStreet: booking.billingStreet || '',
                   billingPlz: booking.billingPlz || '',
                   billingLocation: booking.billingLocation || '',
+                  billingStreetError: undefined,
+                  billingPlzError: undefined,
+                  billingLocationError: undefined,
                 });
 
                 // Load menu items from booking_items
@@ -209,19 +218,26 @@ export function CustomMenuWizard() {
         if (response.ok) {
           const data = await response.json();
 
-          // Filter to only include ACTIVE categories
+          // Filter to only include ACTIVE categories that have at least ONE active item
           const activeCategories = data.categories.filter((cat: any) => cat.isActive);
 
-          // Transform database data to MenuItem format - only include items from active categories
-          const items: MenuItem[] = data.items
-            .filter((item: any) => item.isActive)
+          // Get all active items first
+          const activeItems = data.items.filter((item: any) => item.isActive);
+
+          // Filter categories to only include those that have at least one active item
+          const categoriesWithActiveItems = activeCategories.filter((cat: any) => {
+            return activeItems.some((item: any) => item.categoryId === cat.id);
+          });
+
+          // Transform database data to MenuItem format - only include items from active categories with active items
+          const items: MenuItem[] = activeItems
             .filter((item: any) => {
-              // Only include items whose category is active
-              const category = activeCategories.find((cat: any) => cat.id === item.categoryId);
+              // Only include items whose category is active AND has active items
+              const category = categoriesWithActiveItems.find((cat: any) => cat.id === item.categoryId);
               return category !== undefined;
             })
             .map((item: any) => {
-              const category = activeCategories.find((cat: any) => cat.id === item.categoryId);
+              const category = categoriesWithActiveItems.find((cat: any) => cat.id === item.categoryId);
               return {
                 id: item.id,
                 name: item.name,
@@ -300,12 +316,12 @@ export function CustomMenuWizard() {
               };
             });
 
-          // Get unique category names from active categories
-          const categoryNames = activeCategories.map((cat: any) => cat.name);
+          // Get unique category names from active categories with active items
+          const categoryNames = categoriesWithActiveItems.map((cat: any) => cat.name);
 
           // Store category data including guestCount flag
           const categoryDataMap: Record<string, { guestCount: boolean }> = {};
-          activeCategories.forEach((cat: any) => {
+          categoriesWithActiveItems.forEach((cat: any) => {
             categoryDataMap[cat.name] = {
               guestCount: cat.guestCount || false,
             };
@@ -1545,11 +1561,12 @@ export function CustomMenuWizard() {
                                 label="Billing Street & Nr."
                                 type="text"
                                 value={eventDetails.billingStreet}
-                                onChange={(e) => setEventDetails({ ...eventDetails, billingStreet: e.target.value })}
+                                onChange={(e) => setEventDetails({ ...eventDetails, billingStreet: e.target.value, billingStreetError: undefined })}
                                 placeholder="Street and house number"
                                 maxLength={100}
                                 showCharacterCount
                                 helperText="Optional"
+                                error={eventDetails.billingStreetError}
                               />
 
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1559,23 +1576,25 @@ export function CustomMenuWizard() {
                                   value={eventDetails.billingPlz}
                                   onChange={(e) => {
                                     const value = e.target.value.replace(/[^0-9]/g, '');
-                                    setEventDetails({ ...eventDetails, billingPlz: value });
+                                    setEventDetails({ ...eventDetails, billingPlz: value, billingPlzError: undefined });
                                   }}
                                   placeholder="3000"
                                   maxLength={10}
                                   showCharacterCount
                                   helperText="Optional"
+                                  error={eventDetails.billingPlzError}
                                 />
 
                                 <ValidatedInput
                                   label="Location"
                                   type="text"
                                   value={eventDetails.billingLocation}
-                                  onChange={(e) => setEventDetails({ ...eventDetails, billingLocation: e.target.value })}
+                                  onChange={(e) => setEventDetails({ ...eventDetails, billingLocation: e.target.value, billingLocationError: undefined })}
                                   placeholder="Bern"
                                   maxLength={50}
                                   showCharacterCount
                                   helperText="Optional"
+                                  error={eventDetails.billingLocationError}
                                 />
                               </div>
                             </div>

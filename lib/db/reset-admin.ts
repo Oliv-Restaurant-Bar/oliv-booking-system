@@ -2,8 +2,8 @@ import { config } from "dotenv";
 config({ path: ".env" });
 
 import { db } from "@/lib/db";
-import { adminUser, account } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { adminUser, account, bookingAuditLog, bookingContactHistory, bookings } from "@/lib/db/schema";
+import { eq, or } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { scryptAsync } from "@noble/hashes/scrypt.js";
 import { hex } from "@better-auth/utils/hex";
@@ -31,50 +31,73 @@ async function resetAdmin() {
   console.log("🔄 Resetting admin user...");
 
   try {
+    const adminEmail = "admin@oliv-restaurant.ch";
+
     // Delete existing admin account
-    await db.delete(account).where(eq(account.accountId, "admin@oliv-restaurant.ch"));
-    console.log("✅ Deleted existing account");
+    const existingAdmin = await db.query.adminUser.findFirst({
+      where: eq(adminUser.email, adminEmail),
+    });
 
-    // Delete existing admin user
-    await db.delete(adminUser).where(eq(adminUser.email, "admin@oliv-restaurant.ch"));
-    console.log("✅ Deleted existing admin user");
+    if (existingAdmin) {
+      // Delete booking audit logs first (foreign key constraint)
+      await db.delete(bookingAuditLog).where(eq(bookingAuditLog.adminUserId, existingAdmin.id));
+      console.log("✅ Deleted booking audit logs");
 
-    // Hash the password using scrypt (compatible with Better Auth)
+      // Delete booking contact history (foreign key constraint)
+      await db.delete(bookingContactHistory).where(eq(bookingContactHistory.adminUserId, existingAdmin.id));
+      console.log("✅ Deleted booking contact history");
+
+      // Remove admin references from bookings (foreign key constraints)
+      await db.update(bookings)
+        .set({ lockedBy: null, assignedTo: null })
+        .where(or(eq(bookings.assignedTo, existingAdmin.id), eq(bookings.lockedBy, existingAdmin.id)));
+      console.log("✅ Cleared admin references from bookings");
+
+      // Delete account first (foreign key constraint)
+      await db.delete(account).where(eq(account.userId, existingAdmin.id));
+      console.log("✅ Deleted existing admin account");
+
+      // Delete admin user
+      await db.delete(adminUser).where(eq(adminUser.id, existingAdmin.id));
+      console.log("✅ Deleted existing admin user");
+    }
+
+    // Hash the new password
     const hashedPassword = await hashPassword("admin123");
 
-    // Create admin user
+    // Create new admin user
     const adminId = randomUUID();
     await db.insert(adminUser).values({
       id: adminId,
       name: "Super Admin",
-      email: "admin@oliv-restaurant.ch",
+      email: adminEmail,
       emailVerified: true,
       role: "super_admin",
       createdAt: new Date(),
       updatedAt: new Date(),
     });
+    console.log("✅ Created new admin user");
 
     // Create credential account with password
     await db.insert(account).values({
       id: randomUUID(),
       userId: adminId,
-      accountId: "admin@oliv-restaurant.ch",
+      accountId: adminEmail,
       providerId: "credential",
       password: hashedPassword,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
+    console.log("✅ Created new admin account");
 
-    console.log("✅ Admin user recreated: admin@oliv-restaurant.ch / admin123");
-    console.log("\n📝 Login credentials:");
-    console.log("   Email: admin@oliv-restaurant.ch");
+    console.log("\n🎉 Admin user reset successfully!");
+    console.log("\n📝 New login credentials:");
+    console.log("   Email: " + adminEmail);
     console.log("   Password: admin123");
   } catch (error) {
     console.error("❌ Reset failed:", error);
     process.exit(1);
   }
-
-  process.exit(0);
 }
 
-resetAdmin();
+resetAdmin().then(() => process.exit(0));

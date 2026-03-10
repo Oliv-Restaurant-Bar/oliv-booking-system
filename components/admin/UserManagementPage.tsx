@@ -496,12 +496,6 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
         )}
       </div>
 
-      {/* Copyright Footer */}
-      <div className="text-center pt-8 pb-1 mt-auto">
-        <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-          © 2026 Restaurant Oliv Restaurant & Bar
-        </p>
-      </div>
 
       {/* Add User Modal */}
       <Modal

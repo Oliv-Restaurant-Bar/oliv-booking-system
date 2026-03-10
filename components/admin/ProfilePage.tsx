@@ -107,7 +107,8 @@ export function ProfilePage({ session }: ProfilePageProps) {
       editForm.firstName !== profileData.firstName ||
       editForm.lastName !== profileData.lastName ||
       editForm.email !== profileData.email ||
-      editForm.phone !== profileData.phone
+      editForm.phone !== profileData.phone ||
+      profileData.avatar !== sessionWithRole.user.image
     );
   };
 
@@ -185,6 +186,7 @@ export function ProfilePage({ session }: ProfilePageProps) {
           firstName: editForm.firstName.trim(),
           lastName: editForm.lastName.trim(),
           email: editForm.email.trim(),
+          avatar: profileData.avatar,
         }),
       });
 
@@ -195,6 +197,14 @@ export function ProfilePage({ session }: ProfilePageProps) {
 
       const result = await response.json();
 
+      // Update session with the returned user data from database
+      if (result.user) {
+        sessionWithRole.user.name = result.user.name;
+        sessionWithRole.user.email = result.user.email;
+        sessionWithRole.user.image = result.user.image;
+        sessionWithRole.user.role = result.user.role;
+      }
+
       // Update local state with saved data
       setProfileData({
         ...profileData,
@@ -203,9 +213,6 @@ export function ProfilePage({ session }: ProfilePageProps) {
         email: editForm.email,
         phone: editForm.phone,
       });
-
-      // Update session user name as well
-      sessionWithRole.user.name = `${editForm.firstName.trim()} ${editForm.lastName.trim()}`.trim();
 
       setIsEditProfileModalOpen(false);
       toast.success(result.message || 'Profile updated successfully!');
@@ -275,49 +282,50 @@ export function ProfilePage({ session }: ProfilePageProps) {
     }
   };
 
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();
-  };
+  // Profile picture upload disabled due to session cookie size issues
+  // const handleAvatarClick = () => {
+  //   fileInputRef.current?.click();
+  // };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        alert('Please select an image file');
-        return;
-      }
+  // const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const file = e.target.files?.[0];
+  //   if (file) {
+  //     // Validate file type
+  //     if (!file.type.startsWith('image/')) {
+  //       alert('Please select an image file');
+  //       return;
+  //     }
 
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('File size must be less than 5MB');
-        return;
-      }
+  //     // Validate file size (max 5MB)
+  //     if (file.size > 5 * 1024 * 1024) {
+  //       alert('File size must be less than 5MB');
+  //       return;
+  //     }
 
-      // Create a preview URL
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfileData({
-          ...profileData,
-          avatar: reader.result as string,
-        });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  //     // Create a preview URL
+  //     const reader = new FileReader();
+  //     reader.onloadend = () => {
+  //       setProfileData({
+  //         ...profileData,
+  //         avatar: reader.result as string,
+  //       });
+  //     };
+  //     reader.readAsDataURL(file);
+  //   }
+  // };
 
   const getInitials = (firstName: string, lastName: string) => {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
 
   return (
-    <div className="min-h-full bg-background px-4 md:px-8 pt-4 md:pt-6 pb-1 flex flex-col">
+    <div className="min-h-full bg-background px-4 md:px-8 pt-4 md:pt-6 pb-6 flex flex-col">
       <div className="w-full flex-1">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Left Column - Profile Card */}
           <div className="lg:col-span-1">
             <div className="bg-card border border-border rounded-xl p-4 md:p-6 flex flex-col items-center">
-              {/* Avatar */}
+              {/* Avatar - Profile picture upload disabled */}
               <div className="relative mb-4">
                 <div className="w-32 h-32 rounded-full bg-primary flex items-center justify-center text-white overflow-hidden" style={{ fontSize: '48px', fontWeight: 'var(--font-weight-semibold)' }}>
                   {profileData.avatar ? (
@@ -330,12 +338,15 @@ export function ProfilePage({ session }: ProfilePageProps) {
                     getInitials(profileData.firstName, profileData.lastName)
                   )}
                 </div>
+                {/* Camera button disabled
                 <button
                   onClick={handleAvatarClick}
                   className="absolute bottom-0 right-0 w-10 h-10 bg-secondary rounded-full flex items-center justify-center border-4 border-card hover:bg-primary transition-colors"
                 >
                   <Camera className="w-5 h-5 text-white" />
                 </button>
+                */}
+                {/* File input disabled
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -343,6 +354,7 @@ export function ProfilePage({ session }: ProfilePageProps) {
                   onChange={handleFileChange}
                   className="hidden"
                 />
+                */}
               </div>
 
               {/* Name and Role */}
@@ -482,14 +494,6 @@ export function ProfilePage({ session }: ProfilePageProps) {
             </div>
           </div>
         </div>
-      </div>
-
-
-      {/* Copyright Footer */}
-      <div className="text-center pt-8 pb-1 mt-auto">
-        <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-          © 2026 Restaurant Oliv Restaurant & Bar
-        </p>
       </div>
 
       {/* Edit Profile Modal */}

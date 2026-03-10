@@ -55,12 +55,6 @@ export default async function AdminDashboardPage() {
       {/* Main Content Grid */}
       <DashboardCharts bookingsData={bookingsData} revenueData={revenueData} statusData={statusData} />
 
-      {/* Copyright Footer */}
-      <div className="text-center pt-4 pb-1">
-        <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-          © 2026 Restaurant Oliv Restaurant & Bar
-        </p>
-      </div>
     </AdminPageLayout>
   );
 }

@@ -2,6 +2,7 @@ import { Mail, Calendar, Users, Phone, Clock, User } from 'lucide-react';
 import { KitchenPdfStatusBadge } from './KitchenPdfStatusBadge';
 import { BookingStatusBadge } from './BookingStatusBadge';
 import type { KitchenPdfStatus } from '@/services/kitchen-pdf.service';
+import { formatDistanceToNow } from 'date-fns';
 
 interface GridViewProps {
   bookings: Array<{
@@ -31,6 +32,7 @@ interface GridViewProps {
       name: string;
       email: string;
     } | null;
+    createdAt?: string;
   }>;
   onOpenModal: (booking: any) => void;
 }
@@ -129,6 +131,11 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
                 <User className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
                 <span className="text-muted-foreground truncate" style={{ fontSize: 'var(--text-small)' }}>
                   {booking.assignedTo ? booking.assignedTo.name : 'Unassigned'}
+                  {booking.createdAt && (
+                    <span className="ml-1 opacity-60 font-normal">
+                      • {formatDistanceToNow(new Date(booking.createdAt), { addSuffix: true })}
+                    </span>
+                  )}
                 </span>
               </div>
               {booking.event.location && (

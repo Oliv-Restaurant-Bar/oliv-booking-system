@@ -6,7 +6,7 @@ import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 import { TrendingItems } from './TrendingItems';
 import { MonthlyReportLayout2 } from './MonthlyReportLayout2';
-import { SkeletonPage, SkeletonKPI, SkeletonList, SkeletonChart } from '@/components/ui/skeleton-loaders';
+import { SkeletonPage, SkeletonKPI, SkeletonList, SkeletonChart, SkeletonTrendingItems, SkeletonMonthlyReport } from '@/components/ui/skeleton-loaders';
 import { Permission, hasPermission } from '@/lib/auth/rbac';
 
 export function ReportsPage({ user }: { user?: any }) {
@@ -58,13 +58,10 @@ export function ReportsPage({ user }: { user?: any }) {
         {loading && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-card border border-border rounded-xl p-6">
-                <div className="h-5 w-48 bg-muted rounded mb-6 animate-pulse" />
-                <SkeletonList items={5} />
-              </div>
-              <SkeletonChart type="pie" />
+              <SkeletonList items={5} />
+              <SkeletonTrendingItems />
             </div>
-            <SkeletonChart type="bar" />
+            <SkeletonMonthlyReport />
           </div>
         )}
 
@@ -139,12 +136,6 @@ export function ReportsPage({ user }: { user?: any }) {
           </>
         )}
 
-        {/* Copyright Footer */}
-        <div className="text-center pt-4 pb-1 mt-auto">
-          <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-            © 2026 Restaurant Oliv Restaurant & Bar
-          </p>
-        </div>
       </div>
     </div>
   );

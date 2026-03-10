@@ -226,6 +226,7 @@ export async function fetchBookings(options: {
           email: booking.assigned_to_email || '',
         } : null,
         kitchenPdf: kitchenPdfByBooking[booking.id] || undefined,
+        createdAt: booking.created_at,
       };
     });
 

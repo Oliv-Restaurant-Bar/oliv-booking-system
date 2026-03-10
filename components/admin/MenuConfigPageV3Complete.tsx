@@ -11,7 +11,7 @@ import { Button } from '../user/Button';
 import { Tooltip } from '../user/Tooltip';
 import { NativeRadio } from '../ui/NativeRadio';
 import { toast } from 'sonner';
-import { SkeletonMenuCategory } from '@/components/ui/skeleton-loaders';
+import { SkeletonMenuConfig } from '@/components/ui/skeleton-loaders';
 import {
   DndContext,
   closestCenter,
@@ -680,14 +680,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
   return (
     <div className="flex flex-col min-h-full">
       <div className="flex-1">
-        {/* Loading State */}
-        {loading && (
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <SkeletonMenuCategory key={i} />
-            ))}
-          </div>
-        )}
+        {loading && <SkeletonMenuConfig />}
 
         {!loading && (
           <>
@@ -1625,12 +1618,6 @@ export function MenuConfigPage({ user }: { user?: any }) {
               </div>
             )}
 
-            {/* Copyright Footer */}
-            <div className="text-center pt-8 pb-1 mt-auto">
-              <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                © 2026 Restaurant Oliv Restaurant & Bar
-              </p>
-            </div>
 
             {/* Add/Edit Category Modal */}
             <Modal

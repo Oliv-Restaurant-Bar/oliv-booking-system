@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { Permission, hasPermission } from '@/lib/auth/rbac';
 import { AssignUserModal } from './AssignUserModal';
 import { Skeleton } from '@/components/ui/skeleton';
-import { SkeletonPage } from '@/components/ui/skeleton-loaders';
+import { SkeletonBookingDetail } from '@/components/ui/skeleton-loaders';
 import { ValidatedTextarea } from '@/components/ui/validated-textarea';
 import { bookingKitchenNotesSchema, bookingCommentSchema } from '@/lib/validation/schemas';
 
@@ -47,6 +47,7 @@ export interface Booking {
     menuItems?: Array<{ item: string; category: string; quantity: string; price: string }>;
     assignedTo?: { id: string; name: string; email: string } | null;
     kitchenNotes?: string;
+    createdAt?: string;
 }
 
 interface AuditLog {
@@ -503,7 +504,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     if (loading) {
         return (
             <div className="min-h-screen bg-background p-8">
-                <SkeletonPage content="custom" hasHeader hasKPI={false} />
+                <SkeletonBookingDetail />
             </div>
         );
     }
@@ -650,25 +651,25 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                             Customer Information
                         </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Name</label>
-                                <input type="text" value={booking.customer.name} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
+                            <div className="space-y-1">
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Name</label>
+                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.name}</p>
                             </div>
-                            <div>
-                                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Business</label>
-                                <input type="text" value={booking.customer.business || '-'} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
+                            <div className="space-y-1">
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Business</label>
+                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.business || '-'}</p>
                             </div>
-                            <div>
-                                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Email</label>
-                                <input type="email" value={booking.customer.email} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
+                            <div className="space-y-1">
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Email</label>
+                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.email}</p>
                             </div>
-                            <div>
-                                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Phone Number</label>
-                                <input type="tel" value={booking.customer.phone} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
+                            <div className="space-y-1">
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Phone Number</label>
+                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.phone}</p>
                             </div>
-                            <div className="sm:col-span-2">
-                                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Address</label>
-                                <input type="text" value={booking.customer.address || '-'} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
+                            <div className="sm:col-span-2 space-y-1">
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Address</label>
+                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.address || '-'}</p>
                             </div>
                         </div>
                     </div>
@@ -687,40 +688,43 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                             )}
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Event Date</label>
-                                <input type="text" value={booking.event.date} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
+                            <div className="space-y-1">
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Event Date</label>
+                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.event.date}</p>
                             </div>
-                            <div>
-                                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Time</label>
-                                <input type="text" value={booking.event.time} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
+                            <div className="space-y-1">
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Time</label>
+                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.event.time}</p>
                             </div>
-                            <div>
-                                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Guests</label>
-                                <input type="text" value={booking.guests} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
+                            <div className="space-y-1">
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Guests</label>
+                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.guests}</p>
                             </div>
-                            <div>
-                                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Occasion</label>
-                                <input type="text" value={booking.event.occasion} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
+                            <div className="space-y-1">
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Occasion</label>
+                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.event.occasion}</p>
                             </div>
-                            <div>
-                                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Amount (CHF)</label>
-                                <input type="text" value={booking.amount} readOnly className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground" style={{ fontSize: 'var(--text-base)' }} />
+                            <div className="space-y-1">
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Amount (CHF)</label>
+                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.amount}</p>
                             </div>
-                            <div>
-                                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Venue Location</label>
-                                <select
-                                    value={selectedVenue}
-                                    onChange={(e) => setSelectedVenue(e.target.value)}
-                                    disabled={!canEditBooking}
-                                    className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
-                                    style={{ fontSize: 'var(--text-base)' }}
-                                >
-                                    <option value="">Not Assigned</option>
-                                    {venueLocations.map((loc: string) => (
-                                        <option key={loc} value={loc}>{loc}</option>
-                                    ))}
-                                </select>
+                            <div className="space-y-1">
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Venue Location</label>
+                                {canEditBooking ? (
+                                    <select
+                                        value={selectedVenue}
+                                        onChange={(e) => setSelectedVenue(e.target.value)}
+                                        className="w-full px-4 py-2 bg-input-background border border-border rounded-lg text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                        style={{ fontSize: 'var(--text-base)' }}
+                                    >
+                                        <option value="">Not Assigned</option>
+                                        {venueLocations.map((loc: string) => (
+                                            <option key={loc} value={loc}>{loc}</option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{selectedVenue || 'Not Assigned'}</p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -764,50 +768,74 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                         </div>
 
                         <h3 className="text-foreground mt-10 mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                            <MessageSquare className="w-5 h-5 text-primary" /> Notes for kitchen team
+                            <MessageSquare className="w-5 h-5 text-primary" /> Notes for Kitchen Staff
                         </h3>
-                        <div>
-                            <ValidatedTextarea
-                                value={kitchenNotes}
-                                onChange={(e) => {
-                                    setKitchenNotes(e.target.value);
-                                    if (errors.kitchenNotes) setErrors({ ...errors, kitchenNotes: undefined });
-                                }}
-                                rows={3}
-                                disabled={!canEditBooking}
-                                placeholder="Enter notes specifically for the kitchen team (will be included in PDF)..."
-                                maxLength={1000}
-                                showCharacterCount
-                                error={errors.kitchenNotes}
-                                helperText="Optional"
-                            />
+                        <div className="space-y-4">
+                            <div className="space-y-1">
+                                {canEditBooking ? (
+                                    <ValidatedTextarea
+                                        value={kitchenNotes}
+                                        onChange={(e) => {
+                                            setKitchenNotes(e.target.value);
+                                            if (errors.kitchenNotes) setErrors({ ...errors, kitchenNotes: undefined });
+                                        }}
+                                        rows={3}
+                                        placeholder="Enter notes specifically for the kitchen staff (will be included in PDF)..."
+                                        maxLength={1000}
+                                        showCharacterCount
+                                        error={errors.kitchenNotes}
+                                        helperText="Optional"
+                                    />
+                                ) : (
+                                    <div className="p-4 bg-muted/20 border border-border/50 rounded-lg text-foreground min-h-[80px] whitespace-pre-wrap" style={{ fontSize: 'var(--text-base)' }}>
+                                        {kitchenNotes || <span className="text-muted-foreground italic">No kitchen notes specified</span>}
+                                    </div>
+                                )}
+                            </div>
+
+                            {canEditBooking && (
+                                <div className="flex justify-end pt-2">
+                                    <button
+                                        onClick={handleSaveChanges}
+                                        disabled={isSaving}
+                                        className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm hover:shadow-md"
+                                        style={{ fontSize: 'var(--text-base)' }}
+                                    >
+                                        {isSaving ? (
+                                            <>
+                                                <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-transparent rounded-full animate-spin" />
+                                                Saving...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <CheckCircle2 className="w-4 h-4" />
+                                                Save Changes
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
 
                     {/* Additional Information */}
                     <div className="bg-card border border-border rounded-xl p-6">
                         <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                            <MessageSquare className="w-5 h-5 text-primary" /> Additional Information
+                            <MessageSquare className="w-5 h-5 text-primary" /> Additional Information From Customer
                         </h3>
                         <div className="space-y-4">
-                            <div>
-                                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Allergies</label>
-                                <div
-                                    className="w-full px-4 py-2.5 bg-muted/30 border border-border rounded-lg text-foreground min-h-[60px] whitespace-pre-wrap"
-                                    style={{ fontSize: 'var(--text-base)' }}
-                                >
-                                    {allergies || <span className="text-muted-foreground italic">No allergies specified</span>}
-                                </div>
+                            <div className="space-y-1">
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Allergies</label>
+                                <p className="text-foreground font-medium whitespace-pre-wrap" style={{ fontSize: 'var(--text-base)' }}>
+                                    {allergies || <span className="text-muted-foreground italic font-normal">No allergies specified</span>}
+                                </p>
                                 <p className="text-muted-foreground text-xs mt-1">This field is filled by the client during booking</p>
                             </div>
-                            <div>
-                                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>Notes</label>
-                                <div
-                                    className="w-full px-4 py-2.5 bg-muted/30 border border-border rounded-lg text-foreground min-h-[60px] whitespace-pre-wrap"
-                                    style={{ fontSize: 'var(--text-base)' }}
-                                >
-                                    {notes || <span className="text-muted-foreground italic">No notes specified</span>}
-                                </div>
+                            <div className="space-y-1 text-pt-2">
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Notes</label>
+                                <p className="text-foreground font-medium whitespace-pre-wrap" style={{ fontSize: 'var(--text-base)' }}>
+                                    {notes || <span className="text-muted-foreground italic font-normal">No notes specified</span>}
+                                </p>
                                 <p className="text-muted-foreground text-xs mt-1">This field is filled by the client during booking</p>
                             </div>
                         </div>
@@ -923,12 +951,6 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                         </div>
                     )}
 
-                    {/* Copyright Footer */}
-                    <div className="text-center pt-4 pb-1">
-                        <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                            © 2026 Restaurant Oliv Restaurant & Bar
-                        </p>
-                    </div>
                 </div>
 
                 {/* Kitchen PDF Action Modal */}

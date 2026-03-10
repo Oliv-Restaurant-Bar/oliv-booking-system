@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { DashboardSidebar } from '@/components/admin/DashboardSidebar';
 import { DashboardHeader } from '@/components/admin/DashboardHeader';
+import { DashboardFooter } from '@/components/admin/DashboardFooter';
 
 export default function AdminLayout({
   children,
@@ -105,9 +106,12 @@ export default function AdminLayout({
           </div>
 
           {/* Main Content */}
-          <main ref={mainRef} className="flex-1 flex flex-col">
+          <main key={pathname} ref={mainRef} className="flex-1 flex flex-col">
             {children}
           </main>
+
+          {/* Sticky Footer */}
+          <DashboardFooter />
         </div>
       </div>
     </div>

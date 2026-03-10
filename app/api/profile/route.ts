@@ -51,7 +51,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { firstName, lastName, email } = body;
+    const { firstName, lastName, email, avatar } = body;
 
     // Validate required fields
     if (!firstName?.trim() || !lastName?.trim() || !email?.trim()) {
@@ -105,6 +105,7 @@ export async function PUT(request: NextRequest) {
       .set({
         name: fullName,
         email: email.trim(),
+        image: avatar || null,
         updatedAt: new Date(),
       })
       .where(eq(adminUser.id, userId))
@@ -118,6 +119,7 @@ export async function PUT(request: NextRequest) {
         name: updatedUser.name,
         email: updatedUser.email,
         role: updatedUser.role,
+        image: updatedUser.image,
       },
     });
   } catch (error) {

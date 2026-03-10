@@ -250,7 +250,7 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
     return grouped;
   }, [bookings]);
 
-  // Get upcoming bookings (next 5, sorted by date)
+  // Get upcoming bookings (next 10, sorted by date)
   const upcomingBookings = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -259,7 +259,7 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
       .map(b => ({ ...b, parsedDate: parseEventDate(b.event.date) }))
       .filter(b => b.parsedDate >= today)
       .sort((a, b) => a.parsedDate.getTime() - b.parsedDate.getTime())
-      .slice(0, 5)
+      .slice(0, 10)
       .map(({ parsedDate, ...rest }) => rest);
   }, [bookings]);
 
@@ -424,7 +424,7 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
                   ))}
                   {dayBookings.length > 2 && (
                     <div className="text-xs text-muted-foreground px-1.5 py-0.5">
-                      +{dayBookings.length - 2} more
+                      +{dayBookings.length - 2} show more
                     </div>
                   )}
                 </div>
@@ -438,7 +438,7 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
       <div className="lg:col-span-1">
         <div className="bg-card border border-border rounded-xl p-4 sticky top-4">
           <h3 className="text-lg font-semibold text-foreground mb-4">
-            Upcoming Bookings
+            10 Upcoming Bookings
           </h3>
 
           {upcomingBookings.length === 0 ? (
@@ -446,7 +446,7 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
               <div className="text-muted-foreground text-sm">No upcoming bookings</div>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 overflow-y-auto max-h-170 pr-1">
               {upcomingBookings.map(booking => (
                 <BookingMiniCard
                   key={booking.id}
