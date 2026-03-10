@@ -1057,18 +1057,10 @@ export function CustomMenuWizard() {
 
   if (isLoadingEdit) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <div className="max-w-md w-full space-y-4">
-          <Skeleton className="h-8 w-48 mx-auto" />
-          <div className="space-y-3">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="space-y-2">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-10 w-full" />
-              </div>
-            ))}
-          </div>
-          <Skeleton className="h-12 w-full" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-foreground">Loading your booking details...</p>
         </div>
       </div>
     );
@@ -1622,32 +1614,8 @@ export function CustomMenuWizard() {
                     )}
 
                     {loadingMenu ? (
-                      <div className="space-y-4 py-8">
-                        {/* Category pills skeleton */}
-                        <div className="flex gap-2 overflow-hidden">
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <Skeleton key={i} className="h-10 w-24 flex-shrink-0 rounded-full" />
-                          ))}
-                        </div>
-                        {/* Menu items skeleton */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {Array.from({ length: 4 }).map((_, i) => (
-                            <div key={i} className="bg-card border border-border rounded-xl p-4">
-                              <div className="flex gap-4">
-                                <Skeleton className="w-20 h-20 rounded-lg flex-shrink-0" />
-                                <div className="flex-1 space-y-2">
-                                  <Skeleton className="h-5 w-32" />
-                                  <Skeleton className="h-4 w-full" />
-                                  <Skeleton className="h-4 w-3/4" />
-                                  <div className="flex items-center gap-2 pt-2">
-                                    <Skeleton className="h-6 w-16 rounded-full" />
-                                    <Skeleton className="h-6 w-20 rounded-full" />
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                      <div className="text-center py-16">
+                        <p className="text-muted-foreground">Loading menu...</p>
                       </div>
                     ) : menuItems.length === 0 ? (
                       <div className="text-center py-16">

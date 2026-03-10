@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, TrendingUp, TrendingDown } from 'lucide-react';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
-import { CategoryPill } from '../user/CategoryPill';
+import { CategoryPill } from '../user/categorypill';
 import { SkeletonList } from '@/components/ui/skeleton-loaders';
 
 interface TrendingItem {
@@ -133,7 +133,11 @@ export function TrendingItems({ trendingData: propTrendingData }: TrendingItemsP
       {/* Trending Items List - Compact View */}
       <div>
         {loading ? (
-          <SkeletonList items={5} />
+          <div className="text-center py-8">
+            <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
+              Loading trending items...
+            </p>
+          </div>
         ) : filteredData.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>

@@ -7,7 +7,6 @@ import HighchartsReact from 'highcharts-react-official';
 import { TrendingItems } from './TrendingItems';
 import { MonthlyReportLayout2 } from './MonthlyReportLayout2';
 import { Permission, hasPermission } from '@/lib/auth/rbac';
-import { SkeletonList, SkeletonChart } from '@/components/ui/skeleton-loaders';
 
 export function ReportsPage({ user }: { user?: any }) {
   const [selectedYear] = useState(String(new Date().getFullYear()));
@@ -56,14 +55,10 @@ export function ReportsPage({ user }: { user?: any }) {
       <div className="w-full space-y-6 flex-1">
         {/* Loading State */}
         {loading && (
-          <div className="space-y-6">
-            {/* Top Customers and Trending Items Skeleton */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <SkeletonList items={5} />
-              <SkeletonChart type="pie" />
-            </div>
-            {/* Monthly Report Skeleton */}
-            <SkeletonChart type="bar" />
+          <div className="text-center py-16">
+            <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
+              Loading reports data...
+            </p>
           </div>
         )}
 

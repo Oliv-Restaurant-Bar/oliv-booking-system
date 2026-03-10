@@ -9,7 +9,6 @@ import { ViewSwitcher, ViewMode } from './ViewSwitcher';
 import { GridView } from './GridView';
 import { CalendarView } from './CalendarView';
 import { BookingDetailPage, type Booking } from './BookingDetailPage';
-import { SkeletonGrid, SkeletonCalendar } from '@/components/ui/skeleton-loaders';
 import * as XLSX from 'xlsx';
 
 const allStatuses = [
@@ -188,13 +187,9 @@ export function BookingsPage({ user }: { user?: any }) {
 
           {/* Loading State */}
           {loading && (
-            <>
-              {viewMode === 'grid' ? (
-                <SkeletonGrid items={10} cols={2} />
-              ) : (
-                <SkeletonCalendar />
-              )}
-            </>
+            <div className="text-center py-16">
+              <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>Loading bookings...</p>
+            </div>
           )}
 
           {/* Empty State

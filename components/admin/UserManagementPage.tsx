@@ -375,7 +375,11 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
 
         {/* Loading State */}
         {loading && (
-          <SkeletonTable rows={8} columns={5} hasActions={!!isSuperAdmin} />
+          <div className="text-center py-16">
+            <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
+              Loading users...
+            </p>
+          </div>
         )}
 
         {/* Users Table */}

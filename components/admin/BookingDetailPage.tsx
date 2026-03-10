@@ -501,94 +501,10 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-background p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
-                {/* Header Skeleton */}
-                <div className="flex items-center gap-4">
-                    <Skeleton className="w-10 h-10 rounded-lg" />
-                    <Skeleton className="h-6 w-40" />
-                </div>
-
-                {/* Main Grid Skeleton */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Left Column - Customer & Event Details */}
-                    <div className="lg:col-span-2 space-y-6">
-                        {/* Customer Info Card */}
-                        <div className="bg-card border border-border rounded-xl p-6">
-                            <Skeleton className="h-5 w-32 mb-4" />
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-4">
-                                    <Skeleton className="w-12 h-12 rounded-full" />
-                                    <div className="space-y-2">
-                                        <Skeleton className="h-4 w-48" />
-                                        <Skeleton className="h-3 w-36" />
-                                    </div>
-                                </div>
-                                <Skeleton className="h-4 w-full" />
-                                <Skeleton className="h-4 w-3/4" />
-                            </div>
-                        </div>
-
-                        {/* Event Info Card */}
-                        <div className="bg-card border border-border rounded-xl p-6">
-                            <Skeleton className="h-5 w-32 mb-4" />
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <Skeleton className="h-4 w-full" />
-                                <Skeleton className="h-4 w-full" />
-                                <Skeleton className="h-4 w-full" />
-                                <Skeleton className="h-4 w-full" />
-                            </div>
-                        </div>
-
-                        {/* Menu Items Card */}
-                        <div className="bg-card border border-border rounded-xl p-6">
-                            <Skeleton className="h-5 w-32 mb-4" />
-                            <div className="space-y-3">
-                                {[1, 2, 3].map((i) => (
-                                    <div key={i} className="flex items-center gap-3 p-3 border border-border rounded-lg">
-                                        <Skeleton className="w-12 h-12 rounded-lg" />
-                                        <div className="flex-1 space-y-2">
-                                            <Skeleton className="h-4 w-40" />
-                                            <Skeleton className="h-3 w-24" />
-                                        </div>
-                                        <Skeleton className="h-4 w-16" />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Right Column - Status & Actions */}
-                    <div className="space-y-6">
-                        {/* Status Card */}
-                        <div className="bg-card border border-border rounded-xl p-6">
-                            <Skeleton className="h-5 w-24 mb-4" />
-                            <Skeleton className="h-10 w-full mb-3" />
-                            <Skeleton className="h-4 w-full" />
-                            <Skeleton className="h-4 w-3/4" />
-                        </div>
-
-                        {/* Actions Card */}
-                        <div className="bg-card border border-border rounded-xl p-6">
-                            <Skeleton className="h-5 w-24 mb-4" />
-                            <div className="space-y-3">
-                                <Skeleton className="h-10 w-full" />
-                                <Skeleton className="h-10 w-full" />
-                            </div>
-                        </div>
-
-                        {/* Contact History Card */}
-                        <div className="bg-card border border-border rounded-xl p-6">
-                            <Skeleton className="h-5 w-32 mb-4" />
-                            <div className="space-y-3">
-                                {[1, 2, 3].map((i) => (
-                                    <div key={i} className="p-3 border border-border rounded-lg">
-                                        <Skeleton className="h-4 w-full mb-2" />
-                                        <Skeleton className="h-3 w-3/4" />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="text-center">
+                    <RefreshCw className="w-8 h-8 text-primary animate-spin mx-auto mb-4" />
+                    <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>Loading booking details...</p>
                 </div>
             </div>
         );
@@ -959,23 +875,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                 <History className="w-5 h-5 text-primary" /> Audit History
                             </h3>
                             {auditLoading ? (
-                                <div className="space-y-3">
-                                    {[1, 2, 3].map((i) => (
-                                        <div key={i} className="bg-background border border-border rounded-lg p-4">
-                                            <div className="flex items-start justify-between mb-3">
-                                                <div className="flex items-center gap-2">
-                                                    <Skeleton className="w-8 h-8 rounded-full" />
-                                                    <Skeleton className="h-4 w-32" />
-                                                </div>
-                                                <Skeleton className="h-3 w-24" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Skeleton className="h-4 w-full" />
-                                                <Skeleton className="h-4 w-3/4" />
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+                                <div className="text-center py-8 text-muted-foreground">Loading audit history...</div>
                             ) : auditLogs.length === 0 ? (
                                 <div className="text-center py-8 text-muted-foreground">No changes recorded yet</div>
                             ) : (
