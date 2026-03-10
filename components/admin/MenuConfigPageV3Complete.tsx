@@ -1355,7 +1355,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             <h4 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
                               {group.name}
                             </h4>
-                            <span className={`px-2 py-0.5 rounded-full ${group.isRequired ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'}`} style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
+                            <span className={`px-2 py-0.5 rounded-full ${group.isRequired ? 'bg-primary/10 text-primary' : 'bg-primary/10 text-primary'}`} style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
                               {group.isRequired ? 'Choice' : 'Addon'}
                             </span>
                             {group.isRequired && (

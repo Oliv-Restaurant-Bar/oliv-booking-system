@@ -61,29 +61,38 @@ export function KitchenPdfActionModal({
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 20;
     const contentWidth = pageWidth - (margin * 2);
+    const logoUrl = "https://img.enacton.com/ShareX/2026/02/chrome_PHT9Ca0HbK.png";
     let yPos = 0;
 
     // --- Helper for Rects and Backgrounds ---
     const drawHeader = () => {
       // Primary Header Bar
-      doc.setFillColor(15, 23, 42); // slate-900
-      doc.rect(0, 0, pageWidth, 40, 'F');
+      doc.setFillColor(157, 174, 145); //(System Primary)
+      doc.rect(0, 0, pageWidth, 45, 'F');
 
-      doc.setFontSize(24);
+      // Add Logo (if possible, using try-catch for robustness)
+      try {
+        // Note: For production, converting to base64 or pre-loading is better
+        // For now we add a place-holder for the logo space
+        doc.addImage(logoUrl, 'PNG', margin, 10, 25, 10);
+      } catch (e) {
+        console.error("Logo failed to load for PDF");
+      }
+
+      doc.setFontSize(20);
       doc.setTextColor(255, 255, 255);
       doc.setFont("helvetica", "bold");
-      doc.text("KITCHEN SHEET", margin, 20);
-
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(148, 163, 184); // slate-400
-      doc.text(`Document: ${documentName}`, margin, 32);
+      doc.text("KITCHEN SHEET", margin, 32);
 
       doc.setFontSize(10);
       doc.setTextColor(255, 255, 255);
-      doc.text("FOR INTERNAL KITCHEN USE", pageWidth - margin, 18, { align: 'right' });
+      doc.text("FOR INTERNAL KITCHEN USE", pageWidth - margin, 20, { align: 'right' });
 
-      yPos = 55;
+      doc.setFontSize(9);
+      doc.setTextColor(148, 163, 184); // slate-400
+      doc.text(`Generated: ${new Date().toLocaleDateString('de-CH')}`, pageWidth - margin, 32, { align: 'right' });
+
+      yPos = 60;
     };
 
     drawHeader();
@@ -117,12 +126,10 @@ export function KitchenPdfActionModal({
     doc.text(`Time: ${booking.event.time}`, rightColX + 5, eventYPos);
     eventYPos += 6;
     doc.text(`Occasion: ${booking.event.occasion}`, rightColX + 5, eventYPos);
-    if (booking.event.location) {
-      eventYPos += 6;
-      doc.text(`Location: ${booking.event.location}`, rightColX + 5, eventYPos);
-    }
+    eventYPos += 6;
+    doc.text(`Venue: ${booking.event.location || 'Restaurant Oliv'}`, rightColX + 5, eventYPos);
 
-    yPos = Math.max(yPos, eventYPos) + 15;
+    yPos = Math.max(yPos, eventYPos + 6) + 15;
 
     // --- Menu Selection Table ---
     doc.setFontSize(14);
@@ -139,8 +146,8 @@ export function KitchenPdfActionModal({
     doc.setTextColor(71, 85, 105); // slate-600
     doc.setFont("helvetica", "bold");
     doc.text("ITEM NAME", margin + 2, yPos);
-    doc.text("CATEGORY", margin + 85, yPos);
-    doc.text("QTY", margin + 135, yPos);
+    doc.text("CATEGORY", margin + 75, yPos);
+    doc.text("GUESTS", margin + 125, yPos);
     doc.text("STATUS", margin + 155, yPos);
 
     yPos += 8;
@@ -163,8 +170,8 @@ export function KitchenPdfActionModal({
           doc.setTextColor(71, 85, 105);
           doc.setFont("helvetica", "bold");
           doc.text("ITEM NAME", margin + 2, yPos);
-          doc.text("CATEGORY", margin + 85, yPos);
-          doc.text("QTY", margin + 135, yPos);
+          doc.text("CATEGORY", margin + 75, yPos);
+          doc.text("GUESTS", margin + 125, yPos);
           doc.text("STATUS", margin + 155, yPos);
           yPos += 10;
           doc.setTextColor(15, 23, 42);
@@ -173,8 +180,8 @@ export function KitchenPdfActionModal({
         }
 
         doc.text(item.item, margin + 2, yPos);
-        doc.text(item.category, margin + 85, yPos);
-        doc.text(String(item.quantity), margin + 135, yPos);
+        doc.text(item.category, margin + 75, yPos);
+        doc.text(String(booking.guests), margin + 130, yPos);
 
         // Checkbox box (Now at the end)
         doc.setDrawColor(203, 213, 225); // slate-300

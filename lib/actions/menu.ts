@@ -359,8 +359,8 @@ export async function getCompleteMenuData() {
     const categoriesResult = await getMenuCategories();
     const itemsResult = await getMenuItems();
     const addonsResult = await getAddons();
-    const addonGroupsResult = await getAllAddonGroups();
-    const addonItemsResult = await getAllAddonItems();
+    const addonGroupsResult = await getAddonGroups();
+    const addonItemsResult = await getAddonItems();
 
     // Fetch active assignments
     const categoryAddons = await db.select().from(categoryAddonGroups);
