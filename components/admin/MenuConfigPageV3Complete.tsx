@@ -1355,6 +1355,9 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             <h4 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
                               {group.name}
                             </h4>
+                            <span className={`px-2 py-0.5 rounded-full ${group.isRequired ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'}`} style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
+                              {group.isRequired ? 'Choice' : 'Addon'}
+                            </span>
                             {group.isRequired && (
                               <span className="px-2 py-0.5 bg-destructive/10 text-destructive rounded-full" style={{ fontSize: 'var(--text-small)' }}>
                                 Required
@@ -3008,10 +3011,10 @@ export function MenuConfigPage({ user }: { user?: any }) {
                   <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                     Type
                   </label>
-                  <p className="text-muted-foreground mb-3" style={{ fontSize: 'var(--text-small)' }}>
+                  {/* <p className="text-muted-foreground mb-3" style={{ fontSize: 'var(--text-small)' }}>
                     Addons: customers can choose but aren't required.<br />
                     Choices: customers must select.
-                  </p>
+                  </p> */}
                   <div className="flex gap-3">
                     <label className="flex-1 cursor-pointer">
                       <div className={`px-4 py-3 border-2 rounded-lg transition-all flex flex-col items-start gap-2 hover:border-primary/50 ${newGroup.type === 'optional' ? 'border-primary bg-primary/10' : 'border-border'}`}>
