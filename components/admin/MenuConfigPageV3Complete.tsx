@@ -3402,8 +3402,16 @@ export function MenuConfigPage({ user }: { user?: any }) {
             <ConfirmationModal
               isOpen={!!deleteGroupId}
               onClose={() => setDeleteGroupId(null)}
-              onConfirm={() => {
-                setAddonGroups(addonGroups.filter(group => group.id !== deleteGroupId));
+              onConfirm={async () => {
+                if (deleteGroupId) {
+                  const result = await deleteAddonGroup(deleteGroupId);
+                  if (result.success) {
+                    setAddonGroups(addonGroups.filter(group => group.id !== deleteGroupId));
+                    toast.success('Group deleted successfully');
+                  } else {
+                    toast.error(result.error || 'Failed to delete group');
+                  }
+                }
                 setDeleteGroupId(null);
               }}
               title="Delete Group"
@@ -3417,17 +3425,25 @@ export function MenuConfigPage({ user }: { user?: any }) {
                 setDeleteAddonItemId(null);
                 setCurrentGroupId(null);
               }}
-              onConfirm={() => {
-                const updatedGroups = addonGroups.map(group => {
-                  if (group.id === currentGroupId) {
-                    return {
-                      ...group,
-                      items: group.items.filter(item => item.id !== deleteAddonItemId),
-                    };
+              onConfirm={async () => {
+                if (deleteAddonItemId) {
+                  const result = await deleteAddonItem(deleteAddonItemId);
+                  if (result.success) {
+                    const updatedGroups = addonGroups.map(group => {
+                      if (group.id === currentGroupId) {
+                        return {
+                          ...group,
+                          items: group.items.filter(item => item.id !== deleteAddonItemId),
+                        };
+                      }
+                      return group;
+                    });
+                    setAddonGroups(updatedGroups);
+                    toast.success('Item deleted successfully');
+                  } else {
+                    toast.error(result.error || 'Failed to delete item');
                   }
-                  return group;
-                });
-                setAddonGroups(updatedGroups);
+                }
                 setDeleteAddonItemId(null);
                 setCurrentGroupId(null);
               }}
