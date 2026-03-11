@@ -61,7 +61,7 @@ export function KitchenPdfActionModal({
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 20;
     const contentWidth = pageWidth - (margin * 2);
-    const logoUrl = "https://img.enacton.com/ShareX/2026/02/chrome_PHT9Ca0HbK.png";
+    const logoUrl = "/assets/oliv-logo.png";
     let yPos = 0;
 
     // --- Helper for Rects and Backgrounds ---
@@ -72,7 +72,7 @@ export function KitchenPdfActionModal({
 
       // Add Logo (if possible)
       try {
-        doc.addImage(logoUrl, 'PNG', margin, 12, 22, 9);
+        doc.addImage(logoUrl, 'PNG', margin, 10, 35, 12);
       } catch (e) {
         console.error("Logo failed to load for PDF");
       }
@@ -314,7 +314,6 @@ export function KitchenPdfActionModal({
 
       doc.save(`${documentName}.pdf`);
 
-      toast.success('Kitchen PDF downloaded successfully');
       onActionComplete('download');
       setTimeout(() => {
         onClose();
@@ -428,7 +427,6 @@ export function KitchenPdfActionModal({
         throw new Error('Failed to send kitchen PDF');
       }
 
-      toast.success(`Kitchen PDF sent to ${emails.length} recipient${emails.length > 1 ? 's' : ''} successfully`);
       onActionComplete('email', { emails });
       setTimeout(() => {
         onClose();

@@ -1351,11 +1351,11 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             <span className={`px-2 py-0.5 rounded-full ${group.isRequired ? 'bg-primary/10 text-primary' : 'bg-primary/10 text-primary'}`} style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
                               {group.isRequired ? 'Choice' : 'Addon'}
                             </span>
-                            {group.isRequired && (
+                            {/* {group.isRequired && (
                               <span className="px-2 py-0.5 bg-destructive/10 text-destructive rounded-full" style={{ fontSize: 'var(--text-small)' }}>
                                 Required
                               </span>
-                            )}
+                            )} */}
                             {group.items.length > 0 && (
                               <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full" style={{ fontSize: 'var(--text-small)' }}>
                                 {group.items.length} {group.items.length === 1 ? 'item' : 'items'}

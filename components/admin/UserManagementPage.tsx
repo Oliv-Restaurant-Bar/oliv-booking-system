@@ -12,7 +12,7 @@ import { SkeletonTable } from '@/components/ui/skeleton-loaders';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import { canModifyUser } from '@/lib/auth/rbac';
-import { userNameSchema, userEmailSchema, userPasswordSchema } from '@/lib/validation/schemas';
+import { userFirstNameSchema, userLastNameSchema, userEmailSchema, userPasswordSchema } from '@/lib/validation/schemas';
 
 interface User {
   id: string;
@@ -40,7 +40,8 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form states
-  const [formName, setFormName] = useState('');
+  const [formFirstName, setFormFirstName] = useState('');
+  const [formLastName, setFormLastName] = useState('');
   const [formEmail, setFormEmail] = useState('');
   const [formRole, setFormRole] = useState<User['role']>('read_only');
   const [formStatus, setFormStatus] = useState<User['status']>('Active');
@@ -48,7 +49,8 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
 
   // Validation errors
   const [errors, setErrors] = useState<{
-    name?: string;
+    firstName?: string;
+    lastName?: string;
     email?: string;
     password?: string;
   }>({});
@@ -100,7 +102,8 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
 
   // Reset form
   const resetForm = () => {
-    setFormName('');
+    setFormFirstName('');
+    setFormLastName('');
     setFormEmail('');
     setFormRole('read_only');
     setFormStatus('Active');
@@ -112,10 +115,16 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
   const validateForm = () => {
     const newErrors: typeof errors = {};
 
-    // Validate name
-    const nameResult = userNameSchema.safeParse(formName);
-    if (!nameResult.success) {
-      newErrors.name = nameResult.error.errors[0].message;
+    // Validate first name
+    const firstNameResult = userFirstNameSchema.safeParse(formFirstName);
+    if (!firstNameResult.success) {
+      newErrors.firstName = firstNameResult.error.errors[0].message;
+    }
+
+    // Validate last name
+    const lastNameResult = userLastNameSchema.safeParse(formLastName);
+    if (!lastNameResult.success) {
+      newErrors.lastName = lastNameResult.error.errors[0].message;
     }
 
     // Validate email
@@ -145,11 +154,12 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
     setIsSubmitting(true);
     setError(null);
     try {
+      const fullName = `${formFirstName.trim()} ${formLastName.trim()}`;
       const response = await fetch('/api/admin/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: formName.trim(),
+          name: fullName.trim(),
           email: formEmail.trim(),
           role: formRole,
           password: formPassword || 'defaultPassword123',
@@ -176,7 +186,12 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
   // Edit user
   const handleEditClick = (user: User) => {
     setSelectedUser(user);
-    setFormName(user.name);
+
+    // Split name into first and last name
+    const nameParts = user.name.split(' ');
+    setFormFirstName(nameParts[0] || '');
+    setFormLastName(nameParts.slice(1).join(' ') || '');
+
     setFormEmail(user.email);
     setFormRole(user.role);
     setFormStatus(user.status);
@@ -199,11 +214,12 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
     setIsSubmitting(true);
     setError(null);
     try {
+      const fullName = `${formFirstName.trim()} ${formLastName.trim()}`;
       const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: formName.trim(),
+          name: fullName.trim(),
           email: formEmail.trim(),
           role: formRole,
           emailVerified: formStatus === 'Active',
@@ -373,12 +389,12 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
           </div>
         </div>
 
-          {/* Loading State */}
-          {loading && (
-            <div className="flex-1">
-              <SkeletonTable rows={10} columns={5} hasActions />
-            </div>
-          )}
+        {/* Loading State */}
+        {loading && (
+          <div className="flex-1">
+            <SkeletonTable rows={10} columns={5} hasActions />
+          </div>
+        )}
 
         {/* Users Table */}
         {!loading && (
@@ -520,7 +536,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
               variant="primary"
               icon={Plus}
               onClick={handleAddUser}
-              disabled={!formName.trim() || !formEmail.trim() || isSubmitting}
+              disabled={!formFirstName.trim() || !formLastName.trim() || !formEmail.trim() || isSubmitting}
             >
               {isSubmitting ? 'Adding...' : 'Add User'}
             </Button>
@@ -528,20 +544,39 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
         }
       >
         <div className="space-y-4">
-          <ValidatedInput
-            label="Name"
-            type="text"
-            value={formName}
-            onChange={(e) => {
-              setFormName(e.target.value);
-              if (errors.name) setErrors({ ...errors, name: undefined });
-            }}
-            placeholder="Enter full name"
-            maxLength={50}
-            showCharacterCount
-            error={errors.name}
-            required
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <ValidatedInput
+              label="First Name"
+              type="text"
+              value={formFirstName}
+              onChange={(e) => {
+                setFormFirstName(e.target.value);
+                if (errors.firstName) setErrors({ ...errors, firstName: undefined });
+              }}
+              placeholder="Enter first name"
+              maxLength={20}
+              showCharacterCount
+              error={errors.firstName}
+              helperText="2-20 characters"
+              required
+            />
+
+            <ValidatedInput
+              label="Last Name"
+              type="text"
+              value={formLastName}
+              onChange={(e) => {
+                setFormLastName(e.target.value);
+                if (errors.lastName) setErrors({ ...errors, lastName: undefined });
+              }}
+              placeholder="Enter last name"
+              maxLength={20}
+              showCharacterCount
+              error={errors.lastName}
+              helperText="2-20 characters"
+              required
+            />
+          </div>
 
           <ValidatedInput
             label="Email"
@@ -555,7 +590,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
             maxLength={255}
             showCharacterCount
             error={errors.email}
-            helperText="Must be a valid email address"
+            helperText="Must be a valid email address (max 255 characters)"
             required
           />
 
@@ -571,7 +606,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
             maxLength={100}
             showCharacterCount
             error={errors.password}
-            helperText="Min. 8 characters"
+            helperText="Min. 8 characters, max. 100 characters"
             showPasswordToggle
           />
 
@@ -615,7 +650,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
               variant="primary"
               icon={Check}
               onClick={handleSaveEdit}
-              disabled={!formName.trim() || !formEmail.trim() || isSubmitting}
+              disabled={!formFirstName.trim() || !formLastName.trim() || !formEmail.trim() || isSubmitting}
             >
               {isSubmitting ? 'Saving...' : 'Save Changes'}
             </Button>
@@ -623,20 +658,39 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
         }
       >
         <div className="space-y-4">
-          <ValidatedInput
-            label="Name"
-            type="text"
-            value={formName}
-            onChange={(e) => {
-              setFormName(e.target.value);
-              if (errors.name) setErrors({ ...errors, name: undefined });
-            }}
-            placeholder="Enter full name"
-            maxLength={50}
-            showCharacterCount
-            error={errors.name}
-            required
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <ValidatedInput
+              label="First Name"
+              type="text"
+              value={formFirstName}
+              onChange={(e) => {
+                setFormFirstName(e.target.value);
+                if (errors.firstName) setErrors({ ...errors, firstName: undefined });
+              }}
+              placeholder="Enter first name"
+              maxLength={20}
+              showCharacterCount
+              error={errors.firstName}
+              helperText="2-20 characters"
+              required
+            />
+
+            <ValidatedInput
+              label="Last Name"
+              type="text"
+              value={formLastName}
+              onChange={(e) => {
+                setFormLastName(e.target.value);
+                if (errors.lastName) setErrors({ ...errors, lastName: undefined });
+              }}
+              placeholder="Enter last name"
+              maxLength={20}
+              showCharacterCount
+              error={errors.lastName}
+              helperText="2-20 characters"
+              required
+            />
+          </div>
 
           <ValidatedInput
             label="Email"
@@ -650,7 +704,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
             maxLength={255}
             showCharacterCount
             error={errors.email}
-            helperText="Must be a valid email address"
+            helperText="Must be a valid email address (max 255 characters)"
             required
           />
 

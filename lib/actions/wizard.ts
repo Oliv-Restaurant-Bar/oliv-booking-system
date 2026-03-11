@@ -109,11 +109,11 @@ export async function submitWizardForm(data: WizardFormData) {
         let effectiveQuantity = quantity;
 
         if (dbItem.pricingType === 'per_person') {
-          // Per-person items: Always quantity=1, use per-item guest count or total guest count
-          effectiveQuantity = 1;
-          effectiveGuestCount = data.itemGuestCounts?.[itemId] || data.guestCount;
+          // Per-person items: quantity records the guest count
+          effectiveQuantity = data.itemGuestCounts?.[itemId] || data.guestCount;
+          effectiveGuestCount = 1; // Already accounted for in quantity
         } else {
-          // Flat-fee or consumption: quantity is used directly, guest count is always 1
+          // Flat-fee or consumption: quantity is used directly
           effectiveQuantity = quantity;
           effectiveGuestCount = 1;
         }
@@ -124,7 +124,7 @@ export async function submitWizardForm(data: WizardFormData) {
         // Build notes for booking_item (variant, addons, comments)
         const notesParts = [];
         if (variantName) notesParts.push(`Variant: ${variantName}`);
-        
+
         const comment = data.itemComments?.[itemId];
         if (comment) notesParts.push(`Comment: ${comment}`);
 
@@ -132,7 +132,7 @@ export async function submitWizardForm(data: WizardFormData) {
           itemType: "menu_item",
           itemId: dbItem.id,
           quantity: effectiveQuantity,
-          unitPrice: unitPrice.toString(),
+          unitPrice: (unitPrice + addonsPrice).toString(), // Store price including addons if we had them
           notes: notesParts.join(' | ') || null,
         });
       }
@@ -155,6 +155,15 @@ export async function submitWizardForm(data: WizardFormData) {
         };
       }
 
+      // Build internal notes (Address, Business, Occasion)
+      const addressParts = [data.street, data.plz, data.location].filter(Boolean);
+      const fullAddress = addressParts.length > 0 ? addressParts.join(', ') : '';
+      const internalNotesParts = [
+        `Business: ${data.business || 'N/A'}`,
+        `Occasion: ${data.occasion || 'N/A'}`,
+        `Address: ${fullAddress || 'N/A'}`,
+      ];
+
       // Update booking details
       const updateData: any = {
         eventDate: data.eventDate,
@@ -164,6 +173,7 @@ export async function submitWizardForm(data: WizardFormData) {
         specialRequests: data.specialRequests || null,
         estimatedTotal: estimatedTotal.toString(),
         requiresDeposit: estimatedTotal > 1000,
+        internalNotes: internalNotesParts.join('\n'),
         updatedAt: new Date(),
       };
 
@@ -260,6 +270,10 @@ export async function submitWizardForm(data: WizardFormData) {
         estimatedTotal: estimatedTotal,
         bookingEditUrl: bookingEditUrl,
       }).catch(err => console.error("Error sending wizard update email:", err));
+
+      revalidatePath("/admin/bookings");
+      revalidatePath("/admin/leads");
+      revalidatePath(`/admin/bookings/${data.bookingId}`);
 
       return {
         success: true,

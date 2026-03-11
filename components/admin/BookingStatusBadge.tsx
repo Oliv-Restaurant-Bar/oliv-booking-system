@@ -15,7 +15,7 @@ export function BookingStatusBadge({ status, className }: BookingStatusBadgeProp
     return (
         <Badge
             className={cn(
-                'flex items-center gap-1.5 border capitalize',
+                'flex items-center gap-1.5 border px-1.5 py-0.5 capitalize',
                 config.bg,
                 config.text,
                 config.border,

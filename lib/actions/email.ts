@@ -703,3 +703,149 @@ export async function sendKitchenPdfEmail(params: {
     return { success: false, error: error.message || "Failed to send kitchen PDF email" };
   }
 }
+
+/**
+ * Send user creation/welcome email
+ */
+export async function sendUserCreatedEmail(params: {
+  userName: string;
+  userEmail: string;
+  userRole: string;
+  createdBy?: string;
+  tempPassword: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const useTemplates = process.env.USE_ZEPTOMAIL_TEMPLATES === "true";
+
+    if (!process.env.ZEPTOMAIL_API_TOKEN) {
+      console.log('📧 Email skipped (ZEPTOMAIL_API_TOKEN not configured): user_created');
+      console.log('   Would send to:', params.userEmail);
+      return { success: true };
+    }
+
+    const subject = "Welcome to Oliv Booking System - Your Account is Ready";
+
+    if (useTemplates) {
+      const templateName = process.env.ZEPTOMAIL_TEMPLATE_USER_CREATED || "user-created";
+
+      // Map role to display name
+      const roleDisplayNames: Record<string, string> = {
+        super_admin: "Super Administrator",
+        admin: "Administrator",
+        moderator: "Moderator",
+        read_only: "Read Only",
+      };
+      const displayRole = roleDisplayNames[params.userRole] || params.userRole;
+
+      const templateData = {
+        user_name: params.userName,
+        user_email: params.userEmail,
+        user_role: displayRole,
+        created_by: params.createdBy || "System Administrator",
+        login_url: `${process.env.NEXT_PUBLIC_APP_URL}/admin/login`,
+        temp_password: params.tempPassword,
+      };
+
+      // Create email log entry with pending status
+      const emailLogId = randomUUID();
+      await db.insert(emailLogs).values({
+        id: emailLogId,
+        bookingId: null, // No booking associated with user creation emails
+        emailType: "user_created",
+        recipient: params.userEmail,
+        subject,
+        status: "pending",
+      });
+
+      const result = await sendTemplateEmail({
+        to: params.userEmail,
+        subject,
+        templateName,
+        templateData,
+      });
+
+      if (!result.success) {
+        await db.update(emailLogs).set({ status: "failed" }).where(eq(emailLogs.id, emailLogId));
+        return result;
+      }
+
+      await db.update(emailLogs).set({ status: "sent", sentAt: new Date() }).where(eq(emailLogs.id, emailLogId));
+      return result;
+    } else {
+      // Fallback: Generate HTML email
+      const roleDisplayNames: Record<string, string> = {
+        super_admin: "Super Administrator",
+        admin: "Administrator",
+        moderator: "Moderator",
+        read_only: "Read Only",
+      };
+      const displayRole = roleDisplayNames[params.userRole] || params.userRole;
+
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 40px 20px;">
+          <div style="background-color: white; border-radius: 8px; padding: 40px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h2 style="color: #9DAE91; margin: 0 0 20px 0; font-size: 24px;">Welcome to Oliv Booking System</h2>
+            <p style="font-size: 16px; line-height: 1.5; color: #334155; margin-bottom: 20px;">
+              Hello <strong>${params.userName}</strong>,
+            </p>
+            <p style="font-size: 16px; line-height: 1.5; color: #334155; margin-bottom: 20px;">
+              Your account has been successfully created in the Oliv Booking System. You can now access the admin panel to manage bookings, menus, and more.
+            </p>
+
+            <div style="background-color: #f1f5f9; border-left: 4px solid #9DAE91; padding: 15px 20px; margin: 25px 0;">
+              <p style="margin: 0 0 10px 0; font-size: 15px;"><strong>Email:</strong> ${params.userEmail}</p>
+              <p style="margin: 0; font-size: 15px;"><strong>Role:</strong> ${displayRole}</p>
+            </div>
+
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.NEXT_PUBLIC_APP_URL}/admin/login" style="display: inline-block; background-color: #9DAE91; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">
+                Login to Admin Panel
+              </a>
+            </div>
+
+            <p style="font-size: 14px; line-height: 1.5; color: #64748b; margin-bottom: 10px;">
+              Your temporary password is: <strong>${params.tempPassword}</strong>
+            </p>
+            <p style="font-size: 14px; line-height: 1.5; color: #64748b; margin-bottom: 20px;">
+              Please change your password after your first login for security.
+            </p>
+
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;" />
+
+            <p style="font-size: 13px; color: #64748b; margin: 0; text-align: center;">
+              This is an automated message from the Oliv Booking System.
+            </p>
+          </div>
+        </div>
+      `;
+
+      // Create email log entry with pending status
+      const emailLogId = randomUUID();
+      await db.insert(emailLogs).values({
+        id: emailLogId,
+        bookingId: null, // No booking associated with user creation emails
+        emailType: "user_created",
+        recipient: params.userEmail,
+        subject,
+        status: "pending",
+      });
+
+      const result = await sendEmail({
+        to: params.userEmail,
+        subject,
+        html,
+      });
+
+      if (!result.success) {
+        await db.update(emailLogs).set({ status: "failed" }).where(eq(emailLogs.id, emailLogId));
+        return result;
+      }
+
+      await db.update(emailLogs).set({ status: "sent", sentAt: new Date() }).where(eq(emailLogs.id, emailLogId));
+      return result;
+    }
+  } catch (error: any) {
+    console.error("Error sending user creation email:", error);
+    return { success: false, error: error.message || "Failed to send user creation email" };
+  }
+}

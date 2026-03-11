@@ -72,10 +72,10 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
                   className="text-foreground"
                   style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}
                 >
-                  {booking.customer.name}
+                  {booking.customer.name.slice(0, 20)} {booking.customer.name.length > 20 ? '...' : ''}
                 </h4>
                 <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                  {booking.event.occasion}
+                  {booking.event.occasion.slice(0, 20)} {booking.event.occasion.length > 20 ? '...' : ''}
                 </p>
               </div>
             </div>

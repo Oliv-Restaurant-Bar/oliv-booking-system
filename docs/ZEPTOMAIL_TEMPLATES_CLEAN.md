@@ -1145,6 +1145,89 @@ This document contains **clean ZeptoMail templates** with **ZERO conditional log
 
 ---
 
+## Template 14: `user-created`
+
+**When to use:** New admin user account is created
+
+**Subject:** `Welcome to Oliv Booking System - Your Account is Ready`
+
+**HTML:**
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #9DAE91; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+    .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+    .details { background-color: white; padding: 20px; border-radius: 5px; margin: 20px 0; }
+    .details h3 { color: #2c3e50; margin-top: 0; }
+    .details p { margin: 10px 0; }
+    .details strong { color: #2c3e50; }
+    .info-box { background-color: #f1f5f9; border-left: 4px solid #9DAE91; padding: 20px; margin: 20px 0; border-radius: 4px; }
+    .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 14px; }
+    .button { display: inline-block; background-color: #9DAE91; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; }
+    .warning { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px 20px; margin: 20px 0; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0; font-size: 28px;">🎉 Welcome to Oliv Booking System</h1>
+      <p style="margin: 10px 0 0 0;">Your Account is Ready</p>
+    </div>
+
+    <div class="content">
+      <p>Hello <strong>{{user_name}}</strong>,</p>
+      <p>Your account has been successfully created in the Oliv Booking System. You can now access the admin panel to manage bookings, menus, and more.</p>
+
+      <div class="info-box">
+        <h3 style="margin: 0 0 10px 0; color: #2c3e50;">👤 Account Details</h3>
+        <p style="margin: 0 0 5px 0; color: #2c3e50;"><strong>Email:</strong> {{user_email}}</p>
+        <p style="margin: 0; color: #2c3e50;"><strong>Role:</strong> {{user_role}}</p>
+      </div>
+
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="{{login_url}}" class="button">
+          Login to Admin Panel
+        </a>
+      </div>
+
+      <div class="warning">
+        <p style="margin: 0; font-size: 14px; color: #856404;">
+          <strong>Important:</strong> Your temporary password is: <code>{{temp_password}}</code><br/>
+          Please change your password after your first login for security.
+        </p>
+      </div>
+
+      <p style="margin-top: 20px;">If you have any questions, please contact your system administrator.</p>
+      <p>Best regards,<br/>Oliv Booking System Team</p>
+    </div>
+
+    <div class="footer">
+      <p>Oliv Restaurant Booking System</p>
+      <p><a href="https://oliv-restaurant.ch" style="color: #2c3e50;">www.oliv-restaurant.ch</a></p>
+    </div>
+  </div>
+</body>
+</html>
+```
+
+**Variables:**
+- `user_name` - The new user's full name
+- `user_email` - The new user's email address
+- `user_role` - Display role name (Super Administrator/Administrator/Moderator/Read Only)
+- `login_url` - Link to admin login page (https://oliv-restaurant.ch/admin/login)
+- `temp_password` - The temporary password for the new user
+- `created_by` - Name of admin who created the account
+
+**Note:** This email is sent immediately after a new admin user is created through the user management panel.
+
+---
+
 ## IMPORTANT: Backend Logic Handles ALL Conditionals
 
 The backend code decides:
@@ -1158,7 +1241,7 @@ All variables are **always sent** - empty strings if not applicable. No `{{#if}}
 
 ## Summary
 
-✅ **12 templates total**
+✅ **14 templates total**
 ✅ **ZERO conditionals** in templates
 ✅ **Only simple variable substitution** like `{{customer_name}}`
 ✅ **All logic in backend code**

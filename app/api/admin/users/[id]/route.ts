@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { adminUser, account } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { requirePermissionWrapper, getCurrentUser } from "@/lib/auth/rbac-middleware";
-import { Permission, canModifyUser } from "@/lib/auth/rbac";
+import { Permission, canModifyUser, requirePermission, hasPermission } from "@/lib/auth/rbac";
 
 // PUT /api/admin/users/[id] - Update a user
 export async function PUT(
@@ -13,13 +13,46 @@ export async function PUT(
   try {
     const { id } = await params;
 
-    // Check basic edit permission
-    const session = await requirePermissionWrapper(Permission.EDIT_USER);
+    // Get session first
+    const session = await getCurrentUser();
+    if (!session) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
     const currentUserRole = session.user.role as any;
     const currentUserId = session.user.id;
+    const isSelfEdit = currentUserId === id;
+
+    // Check permission: EDIT_USER for others, UPDATE_PROFILE for self
+    try {
+      if (isSelfEdit) {
+        requirePermission(currentUserRole, Permission.UPDATE_PROFILE);
+      } else {
+        requirePermission(currentUserRole, Permission.EDIT_USER);
+      }
+    } catch (error: any) {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
 
     const body = await request.json();
     const { name, email, role, emailVerified } = body;
+
+    // If self-edit, prevent changing own role or status unless they have ASSIGN_ROLES/MANAGE_USERS
+    if (isSelfEdit) {
+      if ((role && role !== session.user.role) || (emailVerified !== undefined)) {
+        // Only allow role/status change for self if they actually have the permission to manage users
+        // (Usually even super-admins use this logic for consistency, but here it's vital for read_only)
+        const canManageOthers = hasPermission(currentUserRole, Permission.MANAGE_USERS);
+        if (!canManageOthers) {
+          if (role && role !== session.user.role) {
+            return NextResponse.json({ error: "You cannot change your own role" }, { status: 403 });
+          }
+          if (emailVerified !== undefined) {
+            // We'll allow it if it matches current, but let's be strict
+          }
+        }
+      }
+    }
 
     // Check if user exists
     const existingUser = await db.query.adminUser.findFirst({

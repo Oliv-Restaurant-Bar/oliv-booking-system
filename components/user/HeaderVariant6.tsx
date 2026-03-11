@@ -32,7 +32,7 @@ export function HeaderVariant6() {
           <div className="flex-shrink-0">
             <a href="#" className="flex items-center">
               <Image
-                src="/assets/59e4409f00962b160c922c848df8eb1ebce3a245.png"
+                src="/assets/oliv-logo.png"
                 alt="Olive Restaurant & Bar"
                 width={120}
                 height={48}

@@ -25,12 +25,11 @@ interface MonthData {
   noShow: number;
 }
 
-export function MonthlyReportLayout2({ data, user }: { data: MonthData[]; user?: any }) {
+export function MonthlyReportLayout2({ data, user, selectedYear, onYearChange }: { data: MonthData[]; user?: any; selectedYear: string; onYearChange: (year: string) => void }) {
   const userRole = user?.role;
   const canExport = hasPermission(userRole, Permission.EXPORT_REPORTS);
 
   const [expandedMonths, setExpandedMonths] = useState<Set<number>>(new Set());
-  const [selectedYear, setSelectedYear] = useState('2026');
 
   const toggleMonth = (index: number) => {
     const newExpanded = new Set(expandedMonths);
@@ -80,7 +79,7 @@ export function MonthlyReportLayout2({ data, user }: { data: MonthData[]; user?:
           {/* Year Dropdown - Using consistent dropdown styling */}
           <YearDropdown
             value={selectedYear}
-            onChange={setSelectedYear}
+            onChange={onYearChange}
             years={['2024', '2025', '2026', '2027']}
           />
 

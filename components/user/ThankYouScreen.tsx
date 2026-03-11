@@ -14,14 +14,14 @@ interface ThankYouScreenProps {
   variant?: 'centered' | 'split' | 'minimal';
 }
 
-export function ThankYouScreen({ 
-  inquiryNumber, 
-  onCreateNew, 
+export function ThankYouScreen({
+  inquiryNumber,
+  onCreateNew,
   onEditOrder,
   onGoHome,
   variant = 'centered'
 }: ThankYouScreenProps) {
-  
+
   // Trigger confetti on mount
   useEffect(() => {
     const duration = 3000;
@@ -32,7 +32,7 @@ export function ThankYouScreen({
       return Math.random() * (max - min) + min;
     }
 
-    const interval = setInterval(function() {
+    const interval = setInterval(function () {
       const timeLeft = animationEnd - Date.now();
 
       if (timeLeft <= 0) {
@@ -40,7 +40,7 @@ export function ThankYouScreen({
       }
 
       const particleCount = 50 * (timeLeft / duration);
-      
+
       // Fire confetti from two points
       confetti({
         ...defaults,
@@ -60,7 +60,7 @@ export function ThankYouScreen({
   }, []);
 
   if (variant === 'centered') {
-    return <CenteredVariant 
+    return <CenteredVariant
       inquiryNumber={inquiryNumber}
       onCreateNew={onCreateNew}
       onEditOrder={onEditOrder}
@@ -69,7 +69,7 @@ export function ThankYouScreen({
   }
 
   if (variant === 'split') {
-    return <SplitVariant 
+    return <SplitVariant
       inquiryNumber={inquiryNumber}
       onCreateNew={onCreateNew}
       onEditOrder={onEditOrder}
@@ -77,7 +77,7 @@ export function ThankYouScreen({
     />;
   }
 
-  return <MinimalVariant 
+  return <MinimalVariant
     inquiryNumber={inquiryNumber}
     onCreateNew={onCreateNew}
     onEditOrder={onEditOrder}
@@ -86,11 +86,11 @@ export function ThankYouScreen({
 }
 
 // Variant 1: Centered Card (Original)
-function CenteredVariant({ 
-  inquiryNumber, 
-  onCreateNew, 
+function CenteredVariant({
+  inquiryNumber,
+  onCreateNew,
   onEditOrder,
-  onGoHome 
+  onGoHome
 }: Omit<ThankYouScreenProps, 'variant'>) {
   return (
     <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: 'var(--background)' }}>
@@ -114,7 +114,7 @@ function CenteredVariant({
           {/* Logo */}
           <div className="bg-white p-3 rounded-lg shadow-md">
             <img
-              src="/assets/59e4409f00962b160c922c848df8eb1ebce3a245.png"
+              src="/assets/oliv-logo.png"
               alt="OLIV Logo"
               className="h-12 w-auto object-contain"
             />
@@ -145,7 +145,7 @@ function CenteredVariant({
         </motion.div>
 
         {/* Heading */}
-        <motion.h1 
+        <motion.h1
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
@@ -161,7 +161,7 @@ function CenteredVariant({
         </motion.h1>
 
         {/* Congratulations Subheading */}
-        <motion.p 
+        <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.45 }}
@@ -177,7 +177,7 @@ function CenteredVariant({
         </motion.p>
 
         {/* Description */}
-        <motion.p 
+        <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
@@ -195,7 +195,7 @@ function CenteredVariant({
         </motion.p>
 
         {/* Inquiry Number */}
-        <motion.p 
+        <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
@@ -210,7 +210,7 @@ function CenteredVariant({
         </motion.p>
 
         {/* Action Buttons */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}
@@ -261,14 +261,14 @@ function CenteredVariant({
         </motion.button>
 
         {/* Contact Section */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.9 }}
           className="pt-6"
           style={{ borderTop: '1px solid var(--border)' }}
         >
-          <p 
+          <p
             className="mb-3"
             style={{
               fontSize: 'var(--text-sm)',
@@ -341,7 +341,7 @@ function SplitVariant({
             {/* Logo */}
             <div className="bg-white p-3 rounded-lg shadow-md">
               <img
-                src="/assets/59e4409f00962b160c922c848df8eb1ebce3a245.png"
+                src="/assets/oliv-logo.png"
                 alt="OLIV Logo"
                 className="h-12 w-auto object-contain"
               />
@@ -371,7 +371,7 @@ function SplitVariant({
             </motion.div>
           </motion.div>
 
-          <h1 
+          <h1
             className="mb-4"
             style={{
               fontSize: 'var(--text-3xl)',
@@ -384,7 +384,7 @@ function SplitVariant({
           </h1>
 
           {/* Congratulations Subheading */}
-          <p 
+          <p
             className="mb-6"
             style={{
               fontSize: 'var(--text-lg)',
@@ -397,7 +397,7 @@ function SplitVariant({
             Congratulations on taking the first step!
           </p>
 
-          <p 
+          <p
             className="mb-6"
             style={{
               fontSize: 'var(--text-lg)',
@@ -410,9 +410,9 @@ function SplitVariant({
             Your custom menu inquiry has been received. Our team will review your request and get back to you shortly.
           </p>
 
-          <div 
+          <div
             className="inline-block px-4 py-2 rounded-lg mb-6"
-            style={{ 
+            style={{
               backgroundColor: 'var(--background)',
               color: 'var(--primary)'
             }}
@@ -429,7 +429,7 @@ function SplitVariant({
       </motion.div>
 
       {/* Right Side - Actions & Details */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
@@ -437,7 +437,7 @@ function SplitVariant({
         style={{ backgroundColor: 'var(--surface)' }}
       >
         <div className="max-w-md w-full">
-          <h2 
+          <h2
             className="mb-6"
             style={{
               fontSize: 'var(--text-xl)',
@@ -450,26 +450,26 @@ function SplitVariant({
           </h2>
 
           <div className="space-y-4 mb-8">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.4 }}
               className="p-5 rounded-xl relative overflow-hidden group hover:shadow-md transition-all"
-              style={{ 
+              style={{
                 backgroundColor: 'var(--background)',
                 border: '2px solid var(--primary)',
                 borderLeftWidth: '6px'
               }}
             >
               <div className="flex items-start gap-4">
-                <div 
+                <div
                   className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ backgroundColor: 'var(--primary)' }}
                 >
                   <Clock className="w-6 h-6" style={{ color: 'var(--primary-foreground)' }} />
                 </div>
                 <div className="flex-1">
-                  <h3 
+                  <h3
                     style={{
                       fontSize: 'var(--text-base)',
                       fontWeight: 'var(--font-weight-semibold)',
@@ -492,26 +492,26 @@ function SplitVariant({
               </div>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5 }}
               className="p-5 rounded-xl relative overflow-hidden group hover:shadow-md transition-all"
-              style={{ 
+              style={{
                 backgroundColor: 'var(--background)',
                 border: '2px solid var(--primary)',
                 borderLeftWidth: '6px'
               }}
             >
               <div className="flex items-start gap-4">
-                <div 
+                <div
                   className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ backgroundColor: 'var(--primary)' }}
                 >
                   <FileCheck className="w-6 h-6" style={{ color: 'var(--primary-foreground)' }} />
                 </div>
                 <div className="flex-1">
-                  <h3 
+                  <h3
                     style={{
                       fontSize: 'var(--text-base)',
                       fontWeight: 'var(--font-weight-semibold)',
@@ -534,26 +534,26 @@ function SplitVariant({
               </div>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.6 }}
               className="p-5 rounded-xl relative overflow-hidden group hover:shadow-md transition-all"
-              style={{ 
+              style={{
                 backgroundColor: 'var(--background)',
                 border: '2px solid var(--primary)',
                 borderLeftWidth: '6px'
               }}
             >
               <div className="flex items-start gap-4">
-                <div 
+                <div
                   className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ backgroundColor: 'var(--primary)' }}
                 >
                   <Utensils className="w-6 h-6" style={{ color: 'var(--primary-foreground)' }} />
                 </div>
                 <div className="flex-1">
-                  <h3 
+                  <h3
                     style={{
                       fontSize: 'var(--text-base)',
                       fontWeight: 'var(--font-weight-semibold)',
@@ -619,11 +619,11 @@ function SplitVariant({
           </button>
 
           {/* Contact Section */}
-          <div 
+          <div
             className="mt-8 pt-6"
             style={{ borderTop: '1px solid var(--border)' }}
           >
-            <p 
+            <p
               className="mb-3 text-center"
               style={{
                 fontSize: 'var(--text-sm)',
@@ -694,7 +694,7 @@ function MinimalVariant({
           {/* Logo */}
           <div className="bg-white p-3 rounded-lg shadow-md">
             <img
-              src="/assets/59e4409f00962b160c922c848df8eb1ebce3a245.png"
+              src="/assets/oliv-logo.png"
               alt="OLIV Logo"
               className="h-12 w-auto object-contain"
             />
@@ -728,7 +728,7 @@ function MinimalVariant({
         </motion.div>
 
         {/* Heading */}
-        <motion.h1 
+        <motion.h1
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
@@ -744,7 +744,7 @@ function MinimalVariant({
         </motion.h1>
 
         {/* Congratulations Subheading */}
-        <motion.p 
+        <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.45 }}
@@ -760,15 +760,15 @@ function MinimalVariant({
         </motion.p>
 
         {/* Inquiry Number Badge */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.5 }}
           className="flex justify-center mb-6"
         >
-          <div 
+          <div
             className="px-6 py-3 rounded-full"
-            style={{ 
+            style={{
               backgroundColor: 'var(--surface)',
               border: '2px solid var(--primary)'
             }}
@@ -785,7 +785,7 @@ function MinimalVariant({
         </motion.div>
 
         {/* Description */}
-        <motion.p 
+        <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
@@ -801,7 +801,7 @@ function MinimalVariant({
         </motion.p>
 
         {/* Action Cards */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}
@@ -816,11 +816,11 @@ function MinimalVariant({
               cursor: 'pointer'
             }}
           >
-            <Plus 
+            <Plus
               className="w-8 h-8 mb-3"
               style={{ color: 'var(--primary)' }}
             />
-            <h3 
+            <h3
               style={{
                 fontSize: 'var(--text-base)',
                 fontWeight: 'var(--font-weight-semibold)',
@@ -849,11 +849,11 @@ function MinimalVariant({
               cursor: 'pointer'
             }}
           >
-            <Edit2 
+            <Edit2
               className="w-8 h-8 mb-3"
               style={{ color: 'var(--primary)' }}
             />
-            <h3 
+            <h3
               style={{
                 fontSize: 'var(--text-base)',
                 fontWeight: 'var(--font-weight-semibold)',
@@ -875,17 +875,17 @@ function MinimalVariant({
         </motion.div>
 
         {/* Contact Info */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
           className="text-center p-6 rounded-xl"
-          style={{ 
+          style={{
             backgroundColor: 'var(--surface)',
             border: '1px solid var(--border)'
           }}
         >
-          <p 
+          <p
             className="mb-4"
             style={{
               fontSize: 'var(--text-sm)',
@@ -930,7 +930,7 @@ function MinimalVariant({
 
         {/* Optional Homepage Link */}
         {onGoHome && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.9 }}

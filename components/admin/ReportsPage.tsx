@@ -10,7 +10,7 @@ import { SkeletonPage, SkeletonKPI, SkeletonList, SkeletonChart, SkeletonTrendin
 import { Permission, hasPermission } from '@/lib/auth/rbac';
 
 export function ReportsPage({ user }: { user?: any }) {
-  const [selectedYear] = useState(String(new Date().getFullYear()));
+  const [selectedYear, setSelectedYear] = useState(String(new Date().getFullYear()));
   const [bookingsByContacts, setBookingsByContacts] = useState<any[]>([]);
   const [monthlyReport, setMonthlyReport] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -132,7 +132,7 @@ export function ReportsPage({ user }: { user?: any }) {
             </div>
 
             {/* Monthly Booking Report */}
-            <MonthlyReportLayout2 data={monthlyReport} user={user} />
+            <MonthlyReportLayout2 data={monthlyReport} user={user} selectedYear={selectedYear} onYearChange={setSelectedYear} />
           </>
         )}
 

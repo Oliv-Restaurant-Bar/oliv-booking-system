@@ -5,6 +5,8 @@ import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { requirePermissionWrapper } from "@/lib/auth/rbac-middleware";
 import { Permission } from "@/lib/auth/rbac";
+import { sendUserCreatedEmail } from "@/lib/actions/email";
+import { getSession } from "@/lib/auth/server";
 
 // GET /api/admin/users - Fetch all users
 export async function GET() {
@@ -46,6 +48,9 @@ export async function POST(request: NextRequest) {
   try {
     // Check permission
     await requirePermissionWrapper(Permission.CREATE_USER);
+
+    // Get current admin session
+    const session = await getSession();
 
     const body = await request.json();
     const { name, email, role, password } = body;
@@ -93,6 +98,20 @@ export async function POST(request: NextRequest) {
       })
       .where(eq(adminUser.id, result.user.id))
       .returning();
+
+    // Send welcome email to the new user
+    try {
+      await sendUserCreatedEmail({
+        userName: updatedUser.name,
+        userEmail: updatedUser.email,
+        userRole: updatedUser.role || "read_only",
+        createdBy: session?.user?.name || "System Administrator",
+        tempPassword: password || "defaultPassword123",
+      });
+    } catch (emailError) {
+      console.error("Failed to send user creation email:", emailError);
+      // Don't fail the user creation if email fails
+    }
 
     return NextResponse.json({
       id: updatedUser.id,

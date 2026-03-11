@@ -112,6 +112,7 @@ export const emailTypeEnum = [
   "unlock_declined",
   "assignment",
   "kitchen_pdf",
+  "user_created",
 ] as const;
 export type EmailType = (typeof emailTypeEnum)[number];
 

@@ -678,7 +678,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                     <div className="bg-card border border-border rounded-xl p-6">
                         <div className="flex items-center justify-between mb-5">
                             <h3 className="text-foreground flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                <CalendarDays className="w-5 h-5 text-primary" /> Event Details
+                                <CalendarDays className="w-5 h-5 text-primary" />
+                                Event Details
                             </h3>
                             {kitchenPdfStatus && (
                                 <KitchenPdfStatusBadge

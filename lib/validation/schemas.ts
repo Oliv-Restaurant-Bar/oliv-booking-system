@@ -13,12 +13,12 @@ export const userNameSchema = z.string()
 
 export const userFirstNameSchema = z.string()
   .min(2, 'First name must be at least 2 characters')
-  .max(30, 'First name cannot exceed 30 characters')
+  .max(20, 'First name cannot exceed 20 characters')
   .trim();
 
 export const userLastNameSchema = z.string()
   .min(2, 'Last name must be at least 2 characters')
-  .max(30, 'Last name cannot exceed 30 characters')
+  .max(20, 'Last name cannot exceed 20 characters')
   .trim();
 
 export const userEmailSchema = z.string()

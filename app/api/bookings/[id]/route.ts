@@ -80,14 +80,14 @@ export async function GET(
         const effectiveGuestCount = isPerPerson ? (booking.guest_count || 1) : 1;
         const unitPrice = Number(item.unit_price);
         const totalPrice = unitPrice * item.quantity * effectiveGuestCount;
-        
+
         // Include notes (variant/comment) in the item name if present
         const displayName = item.notes ? `${item.item_name} (${item.notes})` : item.item_name;
 
         return {
           item: displayName || 'Unknown Item',
           category: item.category_name || 'Unknown',
-          quantity: isPerPerson 
+          quantity: isPerPerson
             ? `${effectiveGuestCount} guests x ${Math.round(unitPrice)} CHF`
             : `${item.quantity} x ${Math.round(unitPrice)} CHF`,
           price: `CHF ${totalPrice.toFixed(2)}`,
@@ -115,7 +115,7 @@ export async function GET(
 
     // Extract address from internal notes
     const addressMatch = booking.internal_notes?.match(/Address: ([^\n]+)/);
-    const address = addressMatch ? addressMatch[1] : '';
+    const address = addressMatch ? addressMatch[1].replace('N/A', '').trim() : '';
 
     // Extract menu selection from internal notes for display in notes
     const menuMatch = booking.internal_notes?.match(/Menu Selection: ([^\n]+)/);
@@ -152,6 +152,12 @@ export async function GET(
       console.error('Error fetching contact history:', e);
     }
 
+    const businessMatch = booking.internal_notes?.match(/Business: ([^\n]+)/);
+    const business = businessMatch ? businessMatch[1].replace('N/A', '').trim() : '';
+
+    const occasionMatch = booking.internal_notes?.match(/Occasion: ([^\n]+)/);
+    const occasion = occasionMatch ? occasionMatch[1].replace('N/A', '').trim() : '';
+
     return NextResponse.json({
       id: booking.id,
       assignedTo: booking.assigned_to ? {
@@ -168,6 +174,7 @@ export async function GET(
         avatar: contactName.charAt(0).toUpperCase() || 'G',
         avatarColor: '#9DAE91',
         address: address,
+        business: business,
       },
       event: {
         date: booking.event_date
@@ -178,7 +185,7 @@ export async function GET(
           })
           : '',
         time: booking.event_time ? booking.event_time.substring(0, 5) : '',
-        occasion: 'Event',
+        occasion: occasion || 'Event',
         location: booking.location || undefined,
       },
       location: booking.location || '',

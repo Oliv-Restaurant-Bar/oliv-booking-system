@@ -328,6 +328,34 @@ export function getKitchenPdfTemplateData(
 }
 
 /**
+ * Prepare template data for user creation email
+ */
+export function getUserCreatedTemplateData(params: {
+  userName: string;
+  userEmail: string;
+  userRole: string;
+  tempPassword: string;
+  createdBy?: string;
+  loginUrl?: string;
+}): TemplateData {
+  const roleDisplayNames: Record<string, string> = {
+    super_admin: "Super Administrator",
+    admin: "Administrator",
+    moderator: "Moderator",
+    read_only: "Read Only",
+  };
+
+  return {
+    user_name: params.userName,
+    user_email: params.userEmail,
+    user_role: roleDisplayNames[params.userRole] || params.userRole,
+    temp_password: params.tempPassword,
+    created_by: params.createdBy || "System Administrator",
+    login_url: params.loginUrl || `${process.env.NEXT_PUBLIC_APP_URL}/admin/login`,
+  };
+}
+
+/**
  * Get template data for any email type
  */
 export function getTemplateData(
@@ -456,6 +484,7 @@ export function getTemplateName(emailType: EmailType, estimatedTotal?: number): 
     unlock_declined: process.env.ZEPTOMAIL_TEMPLATE_UNLOCK_DECLINED || "unlock-declined",
     assignment: process.env.ZEPTOMAIL_TEMPLATE_ASSIGNED || "booking-assigned",
     kitchen_pdf: process.env.ZEPTOMAIL_TEMPLATE_KITCHEN_PDF || "kitchen-pdf",
+    user_created: process.env.ZEPTOMAIL_TEMPLATE_USER_CREATED || "user-created",
     custom: "custom-email",
   };
 
@@ -502,6 +531,7 @@ export function getEmailSubject(
     unlock_declined: `Update zu Ihrer Anfrage auf Bearbeitung - Oliv Restaurant`,
     assignment: `New Booking Assigned: ${booking.lead?.contactName || "Customer"}`,
     kitchen_pdf: `Kitchen Sheet: ${booking.lead?.contactName || "Customer"} - ${formattedDate}`,
+    user_created: `Welcome to Oliv Booking System - Your Account is Ready`,
     custom: `Nachricht von Oliv Restaurant`,
   };
 

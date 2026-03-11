@@ -241,6 +241,8 @@ export function ProfilePage({ session }: ProfilePageProps) {
       newErrors.newPassword = newPasswordResult.error.errors[0].message;
     } else if (!passwordForm.newPassword) {
       newErrors.newPassword = 'New password is required';
+    } else if (passwordForm.newPassword === passwordForm.currentPassword) {
+      newErrors.newPassword = 'New password must be different from current password';
     }
 
     // Validate confirm password matches
@@ -431,7 +433,14 @@ export function ProfilePage({ session }: ProfilePageProps) {
                   value={passwordForm.currentPassword}
                   onChange={(e) => {
                     setPasswordForm({ ...passwordForm, currentPassword: e.target.value });
+                    // Clear error if user is typing
                     if (passwordErrors.currentPassword) setPasswordErrors({ ...passwordErrors, currentPassword: undefined });
+                  }}
+                  onBlur={() => {
+                    // If current password matches new password, show error on new password field
+                    if (passwordForm.currentPassword && passwordForm.newPassword && passwordForm.currentPassword === passwordForm.newPassword) {
+                      setPasswordErrors({ ...passwordErrors, newPassword: 'New password must be different from current password' });
+                    }
                   }}
                   placeholder="Enter current password"
                   error={passwordErrors.currentPassword}
@@ -445,13 +454,20 @@ export function ProfilePage({ session }: ProfilePageProps) {
                   value={passwordForm.newPassword}
                   onChange={(e) => {
                     setPasswordForm({ ...passwordForm, newPassword: e.target.value });
+                    // Clear error if user is typing
                     if (passwordErrors.newPassword) setPasswordErrors({ ...passwordErrors, newPassword: undefined });
+                  }}
+                  onBlur={() => {
+                    // Show error on blur if new password matches current password
+                    if (passwordForm.newPassword && passwordForm.newPassword === passwordForm.currentPassword) {
+                      setPasswordErrors({ ...passwordErrors, newPassword: 'New password must be different from current password' });
+                    }
                   }}
                   placeholder="Enter new password"
                   maxLength={100}
                   showCharacterCount
                   error={passwordErrors.newPassword}
-                  helperText="Min. 8 characters"
+                  helperText="Min. 8 characters, must be different from current password"
                   showPasswordToggle
                   required
                 />
@@ -530,9 +546,10 @@ export function ProfilePage({ session }: ProfilePageProps) {
                 if (profileErrors.firstName) setProfileErrors({ ...profileErrors, firstName: undefined });
               }}
               placeholder="Enter first name"
-              maxLength={30}
+              maxLength={20}
               showCharacterCount
               error={profileErrors.firstName}
+              helperText="2-20 characters"
               required
             />
 
@@ -545,9 +562,10 @@ export function ProfilePage({ session }: ProfilePageProps) {
                 if (profileErrors.lastName) setProfileErrors({ ...profileErrors, lastName: undefined });
               }}
               placeholder="Enter last name"
-              maxLength={30}
+              maxLength={20}
               showCharacterCount
               error={profileErrors.lastName}
+              helperText="2-20 characters"
               required
             />
           </div>
@@ -564,7 +582,7 @@ export function ProfilePage({ session }: ProfilePageProps) {
             maxLength={255}
             showCharacterCount
             error={profileErrors.email}
-            helperText="Must be a valid email address"
+            helperText="Must be a valid email address (max 255 characters)"
             required
           />
 
@@ -573,14 +591,16 @@ export function ProfilePage({ session }: ProfilePageProps) {
             type="tel"
             value={editForm.phone}
             onChange={(e) => {
-              setEditForm({ ...editForm, phone: e.target.value });
+              // Only allow numbers and plus sign (for country code)
+              const value = e.target.value.replace(/[^0-9+]/g, '');
+              setEditForm({ ...editForm, phone: value });
               if (profileErrors.phone) setProfileErrors({ ...profileErrors, phone: undefined });
             }}
             placeholder="Enter phone number"
             maxLength={20}
             showCharacterCount
             error={profileErrors.phone}
-            helperText="Optional"
+            helperText="Optional - Only numbers and + allowed (max 20 characters)"
           />
         </div>
       </Modal>

@@ -85,6 +85,20 @@ export function CustomMenuWizard() {
   const [summaryViewMode, setSummaryViewMode] = useState<'per-person' | 'total'>('total');
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
   const [errors, setErrors] = useState<Partial<EventDetails>>({});
+  const [touched, setTouched] = useState<Record<keyof EventDetails, boolean>>({
+    name: false,
+    email: false,
+    telephone: false,
+    street: false,
+    plz: false,
+    location: false,
+    eventDate: false,
+    eventTime: false,
+    guestCount: false,
+    occasion: false,
+    specialRequests: false,
+    business: false,
+  } as Record<keyof EventDetails, boolean>);
 
   // Refs for category pill auto-scroll
   const categoryRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -98,6 +112,8 @@ export function CustomMenuWizard() {
   const [tempComment, setTempComment] = useState<string>('');
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [signature, setSignature] = useState('');
+  const [editBookingData, setEditBookingData] = useState<{ items: any[], guestCount: string } | null>(null);
+  const [isEditRestored, setIsEditRestored] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [inquiryNumber, setInquiryNumber] = useState('');
   const [step2Error, setStep2Error] = useState('');
@@ -176,17 +192,39 @@ export function CustomMenuWizard() {
 
                 // Load menu items from booking_items
                 if (booking.booking_items && booking.booking_items.length > 0) {
+                  // Save for later restoration after menuItems is ready
+                  setEditBookingData({
+                    items: booking.booking_items,
+                    guestCount: booking.guestCount?.toString() || '1'
+                  });
+
                   const items = booking.booking_items.map((item: any) => item.itemId || item.item_id);
                   setSelectedItems(items);
 
                   const quantities: Record<string, number> = {};
+                  const guestCounts: Record<string, number> = {};
+                  const comments: Record<string, string> = {};
+
                   booking.booking_items.forEach((item: any) => {
                     const id = item.itemId || item.item_id;
                     if (id) {
                       quantities[id] = item.quantity || 1;
+                      // Guest count for per-item is stored in quantity in the latest version
+                      guestCounts[id] = item.quantity || 1;
+
+                      // Extract comment from notes
+                      if (item.notes) {
+                        const commentMatch = item.notes.match(/Comment: ([^|]+)/);
+                        if (commentMatch) {
+                          comments[id] = commentMatch[1].trim();
+                        }
+                      }
                     }
                   });
+
                   setItemQuantities(quantities);
+                  setItemGuestCounts(guestCounts);
+                  setItemComments(comments);
                 }
 
                 // Clear sessionStorage - commented out because it breaks StrictMode (dev) re-mounts
@@ -209,6 +247,73 @@ export function CustomMenuWizard() {
       }
     }
   }, [searchParams]);
+
+  // Extra effect to restore variants and addons once menu data is loaded
+  useEffect(() => {
+    if (menuItems.length > 0 && editBookingData && !isEditRestored) {
+      console.log('Restoring variants and addons from booking notes...');
+      const restoredVariants: Record<string, string> = {};
+      const restoredAddOns: Record<string, string[]> = {};
+
+      editBookingData.items.forEach((item: any) => {
+        const itemId = item.itemId || item.item_id;
+        if (!itemId || !item.notes) return;
+
+        const menuItem = menuItems.find(mi => mi.id === itemId);
+        if (!menuItem) return;
+
+        // Restore Variants
+        const variantMatch = item.notes.match(/Variant: ([^|]+)/);
+        if (variantMatch && menuItem.variants) {
+          const variantName = variantMatch[1].trim();
+          const variant = menuItem.variants.find(v => v.name === variantName);
+          if (variant) {
+            console.log(`  → Restored variant "${variantName}" for item ${menuItem.name}`);
+            restoredVariants[itemId] = variant.id;
+          }
+        }
+
+        // Restore Add-ons
+        const addonsMatch = item.notes.match(/Add-ons: ([^|]+)/);
+        if (addonsMatch) {
+          const addonNames = addonsMatch[1].split(',').map((s: string) => s.trim());
+          const addonIds: string[] = [];
+
+          addonNames.forEach((name: string) => {
+            // Check in addonGroups if they exist
+            if (menuItem.addonGroups) {
+              for (const group of menuItem.addonGroups) {
+                const addOn = group.items.find(i => i.name === name);
+                if (addOn) {
+                  addonIds.push(addOn.id);
+                  break;
+                }
+              }
+            } else if (menuItem.addOns) {
+              // Check in legacy addOns
+              const addOn = menuItem.addOns.find(a => a.name === name);
+              if (addOn) {
+                addonIds.push(addOn.id);
+              }
+            }
+          });
+
+          if (addonIds.length > 0) {
+            console.log(`  → Restored ${addonIds.length} addons for item ${menuItem.name}`);
+            restoredAddOns[itemId] = addonIds;
+          }
+        }
+      });
+
+      if (Object.keys(restoredVariants).length > 0) {
+        setItemVariants(prev => ({ ...prev, ...restoredVariants }));
+      }
+      if (Object.keys(restoredAddOns).length > 0) {
+        setItemAddOns(prev => ({ ...prev, ...restoredAddOns }));
+      }
+      setIsEditRestored(true);
+    }
+  }, [menuItems, editBookingData, isEditRestored]);
 
   // Fetch menu data from database
   useEffect(() => {
@@ -429,6 +534,82 @@ export function CustomMenuWizard() {
     { id: 'requests', label: 'Requests', icon: ClipboardList },
   ];
 
+  // Real-time validation errors for touched fields
+  const realtimeErrors = useMemo(() => {
+    const newErrors: Partial<EventDetails> = {};
+
+    if (touched.name) {
+      const nameResult = customerNameSchema.safeParse(eventDetails.name);
+      if (!nameResult.success) newErrors.name = nameResult.error.errors[0].message;
+    }
+
+    if (touched.email) {
+      const emailResult = userEmailSchema.safeParse(eventDetails.email);
+      if (!emailResult.success) newErrors.email = emailResult.error.errors[0].message;
+    }
+
+    if (touched.telephone) {
+      const phoneResult = customerPhoneSchema.safeParse(eventDetails.telephone);
+      if (!phoneResult.success) newErrors.telephone = phoneResult.error.errors[0].message;
+    }
+
+    if (touched.street) {
+      const streetResult = customerStreetSchema.safeParse(eventDetails.street);
+      if (!streetResult.success) newErrors.street = streetResult.error.errors[0].message;
+    }
+
+    if (touched.plz) {
+      const plzResult = customerPlzSchema.safeParse(eventDetails.plz);
+      if (!plzResult.success) newErrors.plz = plzResult.error.errors[0].message;
+    }
+
+    if (touched.location) {
+      const locationResult = customerLocationSchema.safeParse(eventDetails.location);
+      if (!locationResult.success) newErrors.location = locationResult.error.errors[0].message;
+    }
+
+    if (touched.eventDate && !eventDetails.eventDate) {
+      newErrors.eventDate = 'Event date is required';
+    } else if (touched.eventDate && eventDetails.eventDate) {
+      const selectedDateTime = new Date(`${eventDetails.eventDate}T${eventDetails.eventTime || '00:00'}`);
+      const twentyFourHoursFromNow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      if (selectedDateTime < twentyFourHoursFromNow) {
+        newErrors.eventDate = 'Booking must be at least 24 hours in advance';
+      }
+    }
+
+    if (touched.eventTime && !eventDetails.eventTime) {
+      newErrors.eventTime = 'Event time is required';
+    }
+
+    if (touched.guestCount) {
+      if (!eventDetails.guestCount) {
+        newErrors.guestCount = 'Number of guests is required';
+      } else if (parseInt(eventDetails.guestCount) < 1) {
+        newErrors.guestCount = 'Must have at least 1 guest';
+      } else if (parseInt(eventDetails.guestCount) > 1000) {
+        newErrors.guestCount = 'Number of guests cannot exceed 1,000';
+      }
+    }
+
+    if (touched.occasion && eventDetails.occasion) {
+      const occasionResult = customerOccasionSchema.safeParse(eventDetails.occasion);
+      if (!occasionResult.success) newErrors.occasion = occasionResult.error.errors[0].message;
+    }
+
+    if (touched.specialRequests && eventDetails.specialRequests) {
+      const specialRequestsResult = customerSpecialRequestsSchema.safeParse(eventDetails.specialRequests);
+      if (!specialRequestsResult.success) newErrors.specialRequests = specialRequestsResult.error.errors[0].message;
+    }
+
+    return newErrors;
+  }, [touched, eventDetails]);
+
+  // Merge real-time errors with submit errors (submit errors take precedence)
+  const displayErrors = useMemo(() => {
+    return { ...realtimeErrors, ...errors };
+  }, [realtimeErrors, errors]);
+
   const validateStep1 = () => {
     const newErrors: Partial<EventDetails> = {};
 
@@ -513,13 +694,26 @@ export function CustomMenuWizard() {
 
   // Memoized validation states for better reactivity
   const isContactTabValid = useMemo(() => {
+    const phoneTrimmed = eventDetails.telephone.trim();
+    const phoneDigitsOnly = phoneTrimmed.replace(/\s/g, '').replace(/\+/g, '');
     return (
       eventDetails.name.trim() !== '' &&
       eventDetails.email.trim() !== '' &&
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(eventDetails.email) &&
-      eventDetails.telephone.trim() !== ''
+      phoneTrimmed !== '' &&
+      phoneDigitsOnly.length >= 10 &&
+      phoneDigitsOnly.length <= 20
     );
   }, [eventDetails.name, eventDetails.email, eventDetails.telephone]);
+
+  const isAddressTabValid = useMemo(() => {
+    const isStreetValid = eventDetails.street.trim().length >= 5;
+    const isPlzValid = eventDetails.plz.trim().length >= 4 &&
+      eventDetails.plz.trim().length <= 10 &&
+      /^\d+$/.test(eventDetails.plz.trim());
+    const isLocationValid = eventDetails.location.trim().length >= 3;
+    return isStreetValid && isPlzValid && isLocationValid;
+  }, [eventDetails.street, eventDetails.plz, eventDetails.location]);
 
   const isEventTabValid = useMemo(() => {
     const isDateValid = eventDetails.eventDate !== '' &&
@@ -537,24 +731,40 @@ export function CustomMenuWizard() {
     const isDateValid = eventDetails.eventDate !== '' &&
       (new Date(`${eventDetails.eventDate}T${eventDetails.eventTime || '00:00'}`) >= new Date(Date.now() + 24 * 60 * 60 * 1000));
 
+    const phoneTrimmed = eventDetails.telephone.trim();
+    const phoneDigitsOnly = phoneTrimmed.replace(/\s/g, '').replace(/\+/g, '');
+    const isPhoneValid = phoneTrimmed !== '' &&
+      phoneDigitsOnly.length >= 10 &&
+      phoneDigitsOnly.length <= 20 &&
+      /^[0-9+\s]+$/.test(phoneTrimmed);
+
+    const isStreetValid = eventDetails.street.trim().length >= 5;
+    const isPlzValid = eventDetails.plz.trim().length >= 4 &&
+      eventDetails.plz.trim().length <= 10 &&
+      /^\d+$/.test(eventDetails.plz.trim());
+    const isLocationValid = eventDetails.location.trim().length >= 3;
+
     return (
       eventDetails.name.trim() !== '' &&
       eventDetails.email.trim() !== '' &&
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(eventDetails.email) &&
-      eventDetails.telephone.trim() !== '' &&
+      isPhoneValid &&
+      isStreetValid &&
+      isPlzValid &&
+      isLocationValid &&
       isDateValid &&
       eventDetails.guestCount !== '' &&
       parseInt(eventDetails.guestCount) >= 1 &&
       parseInt(eventDetails.guestCount) <= 1000
     );
-  }, [eventDetails.name, eventDetails.email, eventDetails.telephone, eventDetails.eventDate, eventDetails.eventTime, eventDetails.guestCount]);
+  }, [eventDetails.name, eventDetails.email, eventDetails.telephone, eventDetails.street, eventDetails.plz, eventDetails.location, eventDetails.eventDate, eventDetails.eventTime, eventDetails.guestCount]);
 
   const isCurrentTabValid = useMemo(() => {
     switch (activeTab) {
       case 'contact':
         return isContactTabValid;
       case 'address':
-        return true; // No required fields on address tab
+        return isAddressTabValid;
       case 'event':
         return isEventTabValid;
       case 'requests':
@@ -562,7 +772,7 @@ export function CustomMenuWizard() {
       default:
         return true;
     }
-  }, [activeTab, isContactTabValid, isEventTabValid, isStep1Valid]);
+  }, [activeTab, isContactTabValid, isAddressTabValid, isEventTabValid, isStep1Valid]);
 
   // Helper functions for tab navigation
   const getNextTab = () => {
@@ -1307,12 +1517,15 @@ export function CustomMenuWizard() {
                             onChange={(e) => {
                               const value = e.target.value.replace(/[^0-9+\s]/g, '');
                               setEventDetails({ ...eventDetails, telephone: value });
-                              if (errors.telephone) setErrors({ ...errors, telephone: undefined });
+                              if (!touched.telephone) setTouched({ ...touched, telephone: true });
+                            }}
+                            onBlur={() => {
+                              if (!touched.telephone) setTouched({ ...touched, telephone: true });
                             }}
                             placeholder="+41 31 123 45 67"
                             maxLength={20}
                             showCharacterCount
-                            error={errors.telephone}
+                            error={displayErrors.telephone}
                             helperText="Min. 10 characters"
                             required
                             className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
@@ -1333,12 +1546,15 @@ export function CustomMenuWizard() {
                             value={eventDetails.street}
                             onChange={(e) => {
                               setEventDetails({ ...eventDetails, street: e.target.value });
-                              if (errors.street) setErrors({ ...errors, street: undefined });
+                              if (!touched.street) setTouched({ ...touched, street: true });
+                            }}
+                            onBlur={() => {
+                              if (!touched.street) setTouched({ ...touched, street: true });
                             }}
                             placeholder="Musterstrasse 123"
                             maxLength={100}
                             showCharacterCount
-                            error={errors.street}
+                            error={displayErrors.street}
                             helperText="Min. 5 characters"
                             required
                             className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
@@ -1352,12 +1568,15 @@ export function CustomMenuWizard() {
                               onChange={(e) => {
                                 const value = e.target.value.replace(/[^0-9]/g, '');
                                 setEventDetails({ ...eventDetails, plz: value });
-                                if (errors.plz) setErrors({ ...errors, plz: undefined });
+                                if (!touched.plz) setTouched({ ...touched, plz: true });
+                              }}
+                              onBlur={() => {
+                                if (!touched.plz) setTouched({ ...touched, plz: true });
                               }}
                               placeholder="3000"
                               maxLength={10}
                               showCharacterCount
-                              error={errors.plz}
+                              error={displayErrors.plz}
                               helperText="Min. 4 characters"
                               required
                             // className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
@@ -1369,7 +1588,10 @@ export function CustomMenuWizard() {
                               value={eventDetails.location}
                               onChange={(e) => {
                                 setEventDetails({ ...eventDetails, location: e.target.value });
-                                if (errors.location) setErrors({ ...errors, location: undefined });
+                                if (!touched.location) setTouched({ ...touched, location: true });
+                              }}
+                              onBlur={() => {
+                                if (!touched.location) setTouched({ ...touched, location: true });
                               }}
                               placeholder="Bern"
                               maxLength={50}
@@ -1959,11 +2181,11 @@ export function CustomMenuWizard() {
                                 {/* Collapsible Content */}
                                 {!isCartCollapsed && (
                                   <div className="px-5 pb-5">
-                                    <div className="mb-4 pt-2 border-t border-border">
+                                    {/* <div className="mb-4 pt-2 border-t border-border">
                                       <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
                                         Per-person items calculated for {eventDetails.guestCount || '0'} {parseInt(eventDetails.guestCount) === 1 ? 'guest' : 'guests'}
                                       </p>
-                                    </div>
+                                    </div> */}
 
                                     {selectedItems.length === 0 ? (
                                       <div className="text-center py-8">

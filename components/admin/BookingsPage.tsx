@@ -14,12 +14,12 @@ import * as XLSX from 'xlsx';
 
 const allStatuses = [
   { label: 'All Status', value: 'All Status', dotColor: '' },
-  { label: 'New', value: 'New', dotColor: '#8b5cf6' },
-  { label: 'Pending', value: 'Pending', dotColor: '#eab308' },
-  { label: 'Confirmed', value: 'Confirmed', dotColor: '#10b981' },
-  { label: 'Touchbase', value: 'Touchbase', dotColor: '#9DAE91' },
-  { label: 'Declined', value: 'Declined', dotColor: '#ef4444' },
-  { label: 'Completed', value: 'Completed', dotColor: '#3b82f6' },
+  { label: 'New', value: 'new', dotColor: '#8b5cf6' },
+  { label: 'Pending', value: 'pending', dotColor: '#eab308' },
+  { label: 'Confirmed', value: 'confirmed', dotColor: '#10b981' },
+  { label: 'Touchbase', value: 'touchbase', dotColor: '#9DAE91' },
+  { label: 'Declined', value: 'declined', dotColor: '#ef4444' },
+  { label: 'Completed', value: 'completed', dotColor: '#3b82f6' },
 ];
 
 export function BookingsPage({ user }: { user?: any }) {

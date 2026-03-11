@@ -51,7 +51,7 @@ export function KitchenPdfStatusBadge({
   return (
     <Badge
       className={cn(
-        'flex items-center gap-1.5 border px-3 py-1.5 rounded-full',
+        'flex items-center gap-1.5 border',
         config.bg,
         config.text,
         config.border

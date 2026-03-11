@@ -353,7 +353,11 @@ export function CustomMenuWizard() {
                         <input
                           type="tel"
                           value={eventDetails.phone}
-                          onChange={(e) => setEventDetails({ ...eventDetails, phone: e.target.value })}
+                          onChange={(e) => {
+                            // Only allow numbers, spaces, plus sign, and hyphens
+                            const value = e.target.value.replace(/[^0-9+\s-]/g, '');
+                            setEventDetails({ ...eventDetails, phone: value });
+                          }}
                           className={`w-full pl-11 pr-4 py-2.5 bg-input-background border rounded-lg transition-colors ${errors.phone ? 'border-destructive' : 'border-border focus:border-primary'
                             }`}
                           placeholder="+1 (555) 123-4567"

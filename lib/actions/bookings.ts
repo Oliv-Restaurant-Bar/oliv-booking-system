@@ -42,6 +42,72 @@ export interface CreateBookingInput {
   kitchenNotes?: string;
 }
 
+/**
+ * Helper to parse business, occupation and address from internalNotes field
+ */
+function parseInternalNotes(notes: string | null) {
+  let businessName = '';
+  let occasion = '';
+  let street = '';
+  let plz = '';
+  let location = '';
+
+  if (notes) {
+    const lines = notes.split('\n');
+    for (const line of lines) {
+      if (line.startsWith('Business: ')) {
+        businessName = line.replace('Business: ', '').replace('N/A', '').trim();
+      } else if (line.startsWith('Occasion: ')) {
+        occasion = line.replace('Occasion: ', '').replace('N/A', '').trim();
+      } else if (line.startsWith('Address: ')) {
+        const address = line.replace('Address: ', '').replace('N/A', '').trim();
+        if (!address) continue;
+
+        const addressParts = address.split(',').map(s => s.trim());
+
+        if (addressParts.length >= 3) {
+          // Format: Street, PLZ, Location
+          street = addressParts[0];
+          plz = addressParts[1];
+          location = addressParts.slice(2).join(', ');
+        } else if (addressParts.length === 2) {
+          // Format: Street, PLZ Location OR PLZ, Ort
+          const part1 = addressParts[0];
+          const part2 = addressParts[1];
+
+          // Check if first part is exactly a PLZ
+          const firstPartPlzMatch = part1.match(/^(\d{4,5})$/);
+          if (firstPartPlzMatch) {
+            plz = part1;
+            location = part2;
+          } else {
+            street = part1;
+            // Try to split second part into PLZ and Location
+            const plzMatch = part2.match(/^(\d{4,5})\s+(.+)$/);
+            if (plzMatch) {
+              plz = plzMatch[1];
+              location = plzMatch[2];
+            } else {
+              location = part2;
+            }
+          }
+        } else if (addressParts.length === 1) {
+          // Check if it's just a PLZ ORT
+          const plzMatch = addressParts[0].match(/^(\d{4,5})\s+(.+)$/);
+          if (plzMatch) {
+            plz = plzMatch[1];
+            location = plzMatch[2];
+          } else {
+            street = addressParts[0];
+          }
+        }
+      }
+    }
+  }
+
+  return { businessName, occasion, street, plz, location };
+}
+
 export async function createBooking(input: CreateBookingInput & { leadEmail?: string; leadName?: string }) {
   try {
     // Require CREATE_BOOKING permission
@@ -547,39 +613,7 @@ export async function getBookingWithDetails(id: string) {
     const items = await db.select().from(bookingItems).where(eq(bookingItems.bookingId, id));
 
     // Parse internalNotes to extract business, address, and occasion
-    // Format: "Business: X\nOccasion: Y\nAddress: Z"
-    let businessName = '';
-    let occasion = '';
-    let street = '';
-    let plz = '';
-    let location = '';
-
-    if (booking.internalNotes) {
-      const lines = booking.internalNotes.split('\n');
-      for (const line of lines) {
-        if (line.startsWith('Business: ')) {
-          businessName = line.replace('Business: ', '');
-        } else if (line.startsWith('Occasion: ')) {
-          occasion = line.replace('Occasion: ', '');
-        } else if (line.startsWith('Address: ')) {
-          const address = line.replace('Address: ', '');
-          // Parse address "Street, PLZ Location"
-          const addressParts = address.split(', ');
-          if (addressParts.length >= 2) {
-            street = addressParts[0];
-            const plzLocation = addressParts.slice(1).join(', ');
-            // Try to separate PLZ from location
-            const plzMatch = plzLocation.match(/^(\d{4,5})\s+(.+)$/);
-            if (plzMatch) {
-              plz = plzMatch[1];
-              location = plzMatch[2];
-            } else {
-              location = plzLocation;
-            }
-          }
-        }
-      }
-    }
+    const { businessName, occasion, street, plz, location } = parseInternalNotes(booking.internalNotes);
 
     return {
       success: true,
@@ -986,36 +1020,7 @@ export async function getBookingForClientEdit(bookingId: string) {
     const items = await db.select().from(bookingItems).where(eq(bookingItems.bookingId, bookingId));
 
     // Parse internalNotes to extract business, address, and occasion
-    let businessName = '';
-    let occasion = '';
-    let street = '';
-    let plz = '';
-    let location = '';
-
-    if (booking.internalNotes) {
-      const lines = booking.internalNotes.split('\n');
-      for (const line of lines) {
-        if (line.startsWith('Business: ')) {
-          businessName = line.replace('Business: ', '');
-        } else if (line.startsWith('Occasion: ')) {
-          occasion = line.replace('Occasion: ', '');
-        } else if (line.startsWith('Address: ')) {
-          const address = line.replace('Address: ', '');
-          const addressParts = address.split(', ');
-          if (addressParts.length >= 2) {
-            street = addressParts[0];
-            const plzLocation = addressParts.slice(1).join(', ');
-            const plzMatch = plzLocation.match(/^(\d{4,5})\s+(.+)$/);
-            if (plzMatch) {
-              plz = plzMatch[1];
-              location = plzMatch[2];
-            } else {
-              location = plzLocation;
-            }
-          }
-        }
-      }
-    }
+    const { businessName, occasion, street, plz, location } = parseInternalNotes(booking.internalNotes);
 
     return {
       success: true,

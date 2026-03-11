@@ -48,7 +48,7 @@ export default function AdminLoginPage() {
         <div className="mb-8 text-center">
           <div className="flex justify-center mb-2">
             <img
-              src="/assets/59e4409f00962b160c922c848df8eb1ebce3a245.png"
+              src="/assets/oliv-logo.png"
               alt="OLIV Logo"
               className="h-16 w-auto"
             />

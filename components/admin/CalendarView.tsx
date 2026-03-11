@@ -3,6 +3,8 @@
 import { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Users, Clock, Check, MapPin, Calendar as CalendarIcon, CheckCircle2, XCircle, X, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { BookingStatusBadge } from './BookingStatusBadge';
+
 
 // Date utilities
 const parseEventDate = (dateStr: string): Date => {
@@ -50,7 +52,7 @@ const statusColors: Record<string, { color: string; bg: string; text: string; bo
   'pending': { color: '#eab308', bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200' },
 };
 
-const getStatusStyle = (status: string = 'pending') => {
+const getStatusStyle = (status: string = 'Pending') => {
   const s = status.toLowerCase();
   return statusColors[s] || statusColors.pending;
 };
@@ -113,22 +115,7 @@ function BookingMiniCard({ booking, onClick, showDate = true }: BookingMiniCardP
           </div>
         </div>
         <div className="flex items-center gap-1.5">
-          <span
-            className={cn(
-              "px-2 py-0.5 rounded-md border flex items-center gap-1 text-xs font-medium",
-              getStatusStyle(booking.status).bg,
-              getStatusStyle(booking.status).text,
-              getStatusStyle(booking.status).border
-            )}
-          >
-            <div
-              className="w-1 h-1 rounded-full flex-shrink-0"
-              style={{
-                backgroundColor: getStatusStyle(booking.status).color
-              }}
-            />
-            {booking.status}
-          </span>
+          <BookingStatusBadge status={booking.status} />
           {booking.kitchenPdf?.sentStatus === 'sent' && (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-medium">
               <CheckCircle2 className="w-2.5 h-2.5" />
