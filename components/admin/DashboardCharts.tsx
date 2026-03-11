@@ -55,7 +55,22 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
       'Pending': 'pending',
       'Cancelled': 'cancelled'
     };
-    const key = keyMap[status] || status.toLowerCase();
+
+    // Normalize: try exact match, then case-insensitive match, then camelCase if it has spaces
+    let key = keyMap[status];
+
+    if (!key) {
+      // Try a case-insensitive lookup in the map
+      const lowerStatus = status.toLowerCase();
+      const entry = Object.entries(keyMap).find(([k]) => k.toLowerCase() === lowerStatus);
+      if (entry) {
+        key = entry[1];
+      } else {
+        // Fallback: convert "No show" to "noShow" manually if it's not in the map
+        key = lowerStatus.replace(/\s+(.)/g, (_, char) => char.toUpperCase());
+      }
+    }
+
     try {
       return tStatus(key);
     } catch {

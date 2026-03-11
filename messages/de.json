@@ -48,7 +48,7 @@
     "profile": "Profil",
     "logout": "Abmelden",
     "login": "Anmelden",
-    "dashboard": "Dashboard",
+    "dashboard": "Armaturenbrett",
     "signIn": "Anmelden",
     "signOut": "Abmelden"
   },
@@ -337,7 +337,7 @@
       "selectStatus": "Status auswählen"
     },
     "dashboard": {
-      "title": "Dashboard",
+      "title": "Armaturenbrett",
       "welcome": "Willkommen zurück",
       "kpis": {
         "bookings": "Anzahl Buchungen",
@@ -349,6 +349,15 @@
         "bookingsLast30Days": "Buchungen der letzten 30 Tage",
         "statusSummary": "Zusammenfassung Status",
         "revenueTrend": "Umsatzentwicklung"
+      },
+      "subtitles": {
+        "bookings": "Verwalten und verfolgen Sie alle Restaurantbuchungen",
+        "reports": "Analyse- und Leistungsberichte anzeigen",
+        "menuConfig": "Konfigurieren Sie Ihre Restaurant-Menüartikel",
+        "userManagement": "Mitarbeiter und Benutzerberechtigungen verwalten",
+        "settings": "Konfigurieren Sie Ihre Restauranteinstellungen",
+        "profile": "Verwalten Sie Ihr Konto und Ihre Einstellungen",
+        "help": "Hilfe und Support erhalten"
       }
     },
     "bookings": {
@@ -461,7 +470,7 @@
       "addChoice": "Option hinzufügen"
     },
     "sidebar": {
-      "dashboard": "Dashboard",
+      "dashboard": "Armaturenbrett",
       "bookings": "Buchungen",
       "reports": "Berichte",
       "menuConfig": "Menü-Konfiguration",
@@ -478,15 +487,6 @@
       "signingIn": "Anmelden...",
       "signInBtn": "Anmelden",
       "protectedAccess": "Geschützter Zugang nur für Mitarbeiter von OLIV Restaurant & Bar"
-    },
-    "subtitles": {
-      "bookings": "Verwalten und verfolgen Sie alle Restaurantbuchungen",
-      "reports": "Analyse- und Leistungsberichte anzeigen",
-      "menuConfig": "Konfigurieren Sie Ihre Restaurant-Menüartikel",
-      "userManagement": "Mitarbeiter und Benutzerberechtigungen verwalten",
-      "settings": "Konfigurieren Sie Ihre Restauranteinstellungen",
-      "profile": "Verwalten Sie Ihr Konto und Ihre Einstellungen",
-      "help": "Hilfe und Support erhalten"
     }
   },
   "landing": {
