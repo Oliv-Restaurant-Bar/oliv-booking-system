@@ -126,7 +126,7 @@
     "description": "Description",
     "price": "Price",
     "category": "Category",
-    "dietary": "Dietary",
+    "dietaryLabel": "Dietary",
     "available": "Available",
     "image": "Image",
     "categories": {
@@ -136,7 +136,7 @@
       "beverages": "Beverages",
       "sides": "Sides"
     },
-    "dietary": {
+    "dietaryOptions": {
       "vegetarian": "Vegetarian",
       "vegan": "Vegan",
       "glutenFree": "Gluten Free",
@@ -313,6 +313,29 @@
     "monthsAgo": "{months} months ago"
   },
   "admin": {
+    "venue": {
+      "add": "Add Venue",
+      "edit": "Edit Venue",
+      "addedSuccess": "Venue added successfully",
+      "updatedSuccess": "Venue updated successfully",
+      "failedToSave": "Failed to save venue",
+      "failedToDelete": "Failed to delete venue",
+      "deletedSuccess": "Venue deleted successfully"
+    },
+    "assignUser": {
+      "title": "Assign User",
+      "description": "Select a user to assign.",
+      "buttonText": "Apply",
+      "assignedSuccess": "User assigned successfully",
+      "failedToAssign": "Failed to assign user"
+    },
+    "gridView": {
+      "noBookings": "No bookings found",
+      "tryAdjustFilters": "Try adjusting your filters or search query"
+    },
+    "statusDropdown": {
+      "selectStatus": "Select status"
+    },
     "dashboard": {
       "title": "Dashboard",
       "welcome": "Welcome back",
@@ -455,6 +478,15 @@
       "signingIn": "Signing in...",
       "signInBtn": "Sign In",
       "protectedAccess": "Protected access for OLIV Restaurant & Bar staff only"
+    },
+    "subtitles": {
+      "bookings": "Manage and track all restaurant bookings",
+      "reports": "View analytics and performance reports",
+      "menuConfig": "Configure your restaurant menu items",
+      "userManagement": "Manage staff and user permissions",
+      "settings": "Configure your restaurant settings",
+      "profile": "Manage your account and preferences",
+      "help": "Get help and support"
     }
   },
   "landing": {
@@ -466,7 +498,21 @@
       "seeHowItWorks": "See how it works",
       "eventsCatered": "Events Catered",
       "menuOptions": "Menu Options",
-      "clientRating": "Client Rating"
+      "clientRating": "Client Rating",
+      "stats": {
+        "events": "500+",
+        "menus": "50+",
+        "rating": "4.9★"
+      },
+      "eventTypes": {
+        "weddings": "Weddings",
+        "corporate": "Corporate Events",
+        "celebrations": "Special Celebrations"
+      },
+      "guestRange": "{min}-{max} guests",
+      "premiumPackages": "Premium Packages Available",
+      "professionalSolutions": "Professional Solutions",
+      "customizableExperiences": "Customizable Experiences"
     },
     "howItWorks": {
       "title": "OUR PROCESS",

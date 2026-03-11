@@ -4,24 +4,27 @@ import { ArrowRight } from 'lucide-react';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import { SectionHeading } from './SectionHeading';
 import { Button } from './Button';
+import { useLandingTranslation } from '@/lib/i18n/client';
 
 export function WhyOliveVariant6() {
+  const t = useLandingTranslation();
+
   const features = [
     {
-      title: 'Excellent cuisine',
-      description: 'Fresh, seasonal ingredients, creatively prepared by our experienced kitchen team.',
+      title: t('whyOlive.cuisine.title'),
+      description: t('whyOlive.cuisine.description'),
       image: 'https://images.unsplash.com/photo-1757358957218-67e771ec07bb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmaW5lJTIwZGluaW5nJTIwY3Vpc2luZSUyMGZvb2R8ZW58MXx8fHwxNzcwNDkwNjUzfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
       alt: 'Fine dining cuisine'
     },
     {
-      title: 'Elegant ambience',
-      description: 'Stylish premises in the heart of Bern for events of 10 to 100 people.',
+      title: t('whyOlive.ambience.title'),
+      description: t('whyOlive.ambience.description'),
       image: 'https://images.unsplash.com/photo-1761499101631-92cde2434bc4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbGVnYW50JTIwZXZlbnQlMjB2ZW51ZSUyMGludGVyaW9yfGVufDF8fHx8MTc3MDQxODUzNHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
       alt: 'Elegant event venue'
     },
     {
-      title: 'Personal care',
-      description: 'Individually tailored service – from planning to execution.',
+      title: t('whyOlive.care.title'),
+      description: t('whyOlive.care.description'),
       image: 'https://images.unsplash.com/photo-1769812343266-323d6b508f24?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYXRlcmluZyUyMHNlcnZpY2UlMjBob3NwaXRhbGl0eXxlbnwxfHx8fDE3NzA0OTA2NTN8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
       alt: 'Catering service hospitality'
     }
@@ -31,9 +34,9 @@ export function WhyOliveVariant6() {
     <section id="why-olive" className="py-[50px] bg-background">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading
-          badge="WHY CHOOSE US"
-          title="Why Olive?"
-          description="We bring passion, precision, and premium quality to every event we cater."
+          badge={t('whyOlive.title')}
+          title={t('whyOlive.subtitle')}
+          description={t('whyOlive.description')}
         />
 
         <div className="grid md:grid-cols-3 gap-8 mt-16">
@@ -75,7 +78,7 @@ export function WhyOliveVariant6() {
 
         <div className="flex justify-center mt-12">
           <Button variant="secondary" icon={ArrowRight} iconPosition="right" to="/wizard">
-            Create Menu Now
+            {t('howItWorks.createMenu')}
           </Button>
         </div>
       </div>

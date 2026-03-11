@@ -126,7 +126,7 @@
     "description": "Beschreibung",
     "price": "Preis",
     "category": "Kategorie",
-    "dietary": "Ernährung",
+    "dietaryLabel": "Ernährung",
     "available": "Verfügbar",
     "image": "Bild",
     "categories": {
@@ -136,7 +136,7 @@
       "beverages": "Getränke",
       "sides": "Beilagen"
     },
-    "dietary": {
+    "dietaryOptions": {
       "vegetarian": "Vegetarisch",
       "vegan": "Vegan",
       "glutenFree": "Glutenfrei",
@@ -313,6 +313,29 @@
     "monthsAgo": "vor {months} Monaten"
   },
   "admin": {
+    "venue": {
+      "add": "Ort hinzufügen",
+      "edit": "Ort bearbeiten",
+      "addedSuccess": "Ort erfolgreich hinzugefügt",
+      "updatedSuccess": "Ort erfolgreich aktualisiert",
+      "failedToSave": "Ort konnte nicht gespeichert werden",
+      "failedToDelete": "Ort konnte nicht gelöscht werden",
+      "deletedSuccess": "Ort erfolgreich gelöscht"
+    },
+    "assignUser": {
+      "title": "Benutzer zuweisen",
+      "description": "Wählen Sie einen Benutzer zum Zuweisen aus.",
+      "buttonText": "Anwenden",
+      "assignedSuccess": "Benutzer erfolgreich zugewiesen",
+      "failedToAssign": "Benutzer konnte nicht zugewiesen werden"
+    },
+    "gridView": {
+      "noBookings": "Keine Buchungen gefunden",
+      "tryAdjustFilters": "Versuchen Sie, Ihre Filter oder Suchanfrage anzupassen"
+    },
+    "statusDropdown": {
+      "selectStatus": "Status auswählen"
+    },
     "dashboard": {
       "title": "Dashboard",
       "welcome": "Willkommen zurück",
@@ -455,6 +478,15 @@
       "signingIn": "Anmelden...",
       "signInBtn": "Anmelden",
       "protectedAccess": "Geschützter Zugang nur für Mitarbeiter von OLIV Restaurant & Bar"
+    },
+    "subtitles": {
+      "bookings": "Verwalten und verfolgen Sie alle Restaurantbuchungen",
+      "reports": "Analyse- und Leistungsberichte anzeigen",
+      "menuConfig": "Konfigurieren Sie Ihre Restaurant-Menüartikel",
+      "userManagement": "Mitarbeiter und Benutzerberechtigungen verwalten",
+      "settings": "Konfigurieren Sie Ihre Restauranteinstellungen",
+      "profile": "Verwalten Sie Ihr Konto und Ihre Einstellungen",
+      "help": "Hilfe und Support erhalten"
     }
   },
   "landing": {
@@ -466,7 +498,21 @@
       "seeHowItWorks": "Siehe, wie es funktioniert",
       "eventsCatered": "Events betreut",
       "menuOptions": "Menüoptionen",
-      "clientRating": "Kundenbewertung"
+      "clientRating": "Kundenbewertung",
+      "stats": {
+        "events": "500+",
+        "menus": "50+",
+        "rating": "4.9★"
+      },
+      "eventTypes": {
+        "weddings": "Hochzeiten",
+        "corporate": "Firmenveranstaltungen",
+        "celebrations": "Besondere Feiern"
+      },
+      "guestRange": "{min}-{max} Gäste",
+      "premiumPackages": "Premium-Pakete verfügbar",
+      "professionalSolutions": "Professionelle Lösungen",
+      "customizableExperiences": "Anpassbare Erlebnisse"
     },
     "howItWorks": {
       "title": "UNSER PROZESS",

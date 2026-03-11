@@ -2,8 +2,10 @@
 
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from './Button';
+import { useLandingTranslation } from '@/lib/i18n/client';
 
 export function CTASectionVariant1() {
+  const t = useLandingTranslation();
   return (
     <section id="cta" className="py-[50px] bg-background">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -18,29 +20,29 @@ export function CTASectionVariant1() {
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-foreground/20 backdrop-blur-sm rounded-full mb-6">
               <Sparkles className="w-4 h-4 text-primary-foreground" />
               <span className="text-primary-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-                READY TO START?
+                {t('cta.title')}
               </span>
             </div>
 
             <h2 className="text-primary-foreground mb-6" style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)', fontWeight: 'var(--font-weight-semibold)', lineHeight: '1.2' }}>
-              Create Your Perfect Menu
+              {t('cta.subtitle')}
               <br />
-              In Just Minutes
+              {t('cta.description')}
             </h2>
 
             <p className="text-primary-foreground/90 mb-8 max-w-2xl mx-auto" style={{ fontSize: 'var(--text-h4)' }}>
-              Join hundreds of satisfied clients who trust Olive for their catering needs. Start building your custom menu today – no credit card required.
+              {t('cta.body')}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button 
-                variant="secondary" 
-                size="lg" 
-                icon={ArrowRight} 
+              <Button
+                variant="secondary"
+                size="lg"
+                icon={ArrowRight}
                 iconPosition="right"
                 to="/wizard"
               >
-                Create Menu Now
+                {t('cta.button')}
               </Button>
             </div>
           </div>

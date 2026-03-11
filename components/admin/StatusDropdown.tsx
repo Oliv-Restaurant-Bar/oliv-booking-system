@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, LucideIcon } from 'lucide-react';
+import { useAdminTranslation } from '@/lib/i18n/client';
 
 interface StatusOption {
   value: string;
@@ -23,11 +24,15 @@ export function StatusDropdown({
   options,
   value,
   onChange,
-  placeholder = 'Select status',
+  placeholder = undefined,
   className = '',
   disabled = false
 }: StatusDropdownProps) {
+  const t = useAdminTranslation();
   const [isOpen, setIsOpen] = useState(false);
+
+  // Use translation for default placeholder if not provided
+  const dropdownPlaceholder = placeholder || t('statusDropdown.selectStatus');
   const dropdownRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -78,7 +83,7 @@ export function StatusDropdown({
             />
           )}
           {selectedOption?.icon && <selectedOption.icon className="w-4 h-4" />}
-          {selectedOption?.label || placeholder}
+          {selectedOption?.label || dropdownPlaceholder}
         </div>
         <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>

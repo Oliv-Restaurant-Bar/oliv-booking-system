@@ -1,13 +1,14 @@
-'use client';
-
+import { useState } from 'react';
 import { ArrowRight, Play } from 'lucide-react';
 import { Button } from './Button';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
-import { useLandingTranslation } from '@/lib/i18n/client';
+import { useLandingTranslation, useTranslation } from '@/lib/i18n/client';
+import { useTranslations } from 'next-intl';
 
 export function HeroVariant6() {
   const t = useLandingTranslation();
-  const heroT = useLandingTranslation();
+  const tOccasion = useTranslation('occasion');
+  const tCommon = useTranslations('common');
 
   return (
     <section id="hero" className="relative min-h-screen lg:max-h-[750px] flex items-center p-4 sm:p-6 lg:p-8 bg-background">
@@ -19,7 +20,7 @@ export function HeroVariant6() {
             alt="Elegant catering food display"
             className="w-full h-full object-cover"
           />
-          
+
           {/* Gradient Overlays */}
           <div className="absolute inset-0 bg-gradient-to-r from-secondary/95 via-secondary/85 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-t from-secondary/90 via-transparent to-transparent" />
@@ -47,9 +48,16 @@ export function HeroVariant6() {
                   lineHeight: '1.1'
                 }}
               >
-                Build <span className="text-primary">Unforgettable</span>
-                <br />
-                Dining Moments
+                {t('hero.title').split(' ').map((word: string, i: number) => (
+                  <span key={i}>
+                    {word === 'Unforgettable' || word === 'unvergessliche' ? (
+                      <span className="text-primary">{word}</span>
+                    ) : (
+                      word
+                    )}
+                    {' '}
+                  </span>
+                ))}
               </h1>
 
               {/* Description */}
@@ -79,7 +87,7 @@ export function HeroVariant6() {
               <div className="grid grid-cols-3 gap-6 pt-8">
                 <div className="space-y-1">
                   <div className="text-primary" style={{ fontSize: 'var(--text-h2)', fontWeight: 'var(--font-weight-semibold)' }}>
-                    500+
+                    {t('hero.stats.events')}
                   </div>
                   <div className="text-white/70" style={{ fontSize: 'var(--text-small)' }}>
                     {t('hero.eventsCatered')}
@@ -87,7 +95,7 @@ export function HeroVariant6() {
                 </div>
                 <div className="space-y-1">
                   <div className="text-primary" style={{ fontSize: 'var(--text-h2)', fontWeight: 'var(--font-weight-semibold)' }}>
-                    50+
+                    {t('hero.stats.menus')}
                   </div>
                   <div className="text-white/70" style={{ fontSize: 'var(--text-small)' }}>
                     {t('hero.menuOptions')}
@@ -95,7 +103,7 @@ export function HeroVariant6() {
                 </div>
                 <div className="space-y-1">
                   <div className="text-primary" style={{ fontSize: 'var(--text-h2)', fontWeight: 'var(--font-weight-semibold)' }}>
-                    4.9★
+                    {t('hero.stats.rating')}
                   </div>
                   <div className="text-white/70" style={{ fontSize: 'var(--text-small)' }}>
                     {t('hero.clientRating')}
@@ -108,7 +116,7 @@ export function HeroVariant6() {
             <div className="relative hidden lg:block">
               <div className="space-y-6">
                 {/* Weddings Card */}
-                <div 
+                <div
                   className="bg-white/95 backdrop-blur-md p-6 rounded-2xl shadow-2xl border border-white/20 transform hover:scale-105 transition-transform group"
                   style={{ borderRadius: 'var(--radius-card)' }}
                 >
@@ -120,14 +128,14 @@ export function HeroVariant6() {
                     </div>
                     <div className="flex-1">
                       <h3 className="text-foreground mb-2" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
-                        Weddings
+                        {t('hero.eventTypes.weddings')}
                       </h3>
                       <p className="text-muted-foreground mb-3" style={{ fontSize: 'var(--text-base)' }}>
-                        150-300 guests
+                        {t('hero.guestRange', { min: 150, max: 300 })}
                       </p>
                       <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full">
                         <span className="text-primary" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
-                          Premium Packages Available
+                          {t('hero.premiumPackages')}
                         </span>
                       </div>
                     </div>
@@ -135,7 +143,7 @@ export function HeroVariant6() {
                 </div>
 
                 {/* Corporate Events Card - Offset */}
-                <div 
+                <div
                   className="bg-primary p-6 rounded-2xl shadow-2xl transform hover:scale-105 transition-transform ml-12 group"
                   style={{ borderRadius: 'var(--radius-card)' }}
                 >
@@ -147,14 +155,14 @@ export function HeroVariant6() {
                     </div>
                     <div className="flex-1">
                       <h3 className="text-primary-foreground mb-2" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
-                        Corporate Events
+                        {t('hero.eventTypes.corporate')}
                       </h3>
                       <p className="text-primary-foreground/80 mb-3" style={{ fontSize: 'var(--text-base)' }}>
-                        50-200 guests
+                        {t('hero.guestRange', { min: 50, max: 200 })}
                       </p>
                       <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary-foreground/20 rounded-full">
                         <span className="text-primary-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
-                          Professional Solutions
+                          {t('hero.professionalSolutions')}
                         </span>
                       </div>
                     </div>
@@ -162,7 +170,7 @@ export function HeroVariant6() {
                 </div>
 
                 {/* Special Celebrations Card */}
-                <div 
+                <div
                   className="bg-white/95 backdrop-blur-md p-6 rounded-2xl shadow-2xl border border-white/20 transform hover:scale-105 transition-transform group"
                   style={{ borderRadius: 'var(--radius-card)' }}
                 >
@@ -174,14 +182,14 @@ export function HeroVariant6() {
                     </div>
                     <div className="flex-1">
                       <h3 className="text-foreground mb-2" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
-                        Special Celebrations
+                        {t('hero.eventTypes.celebrations')}
                       </h3>
                       <p className="text-muted-foreground mb-3" style={{ fontSize: 'var(--text-base)' }}>
-                        20-100 guests
+                        {t('hero.guestRange', { min: 20, max: 100 })}
                       </p>
                       <div className="inline-flex items-center gap-2 px-3 py-1 bg-secondary/20 rounded-full">
                         <span className="text-secondary" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
-                          Customizable Experiences
+                          {t('hero.customizableExperiences')}
                         </span>
                       </div>
                     </div>
@@ -189,6 +197,7 @@ export function HeroVariant6() {
                 </div>
               </div>
             </div>
+
           </div>
         </div>
       </div>

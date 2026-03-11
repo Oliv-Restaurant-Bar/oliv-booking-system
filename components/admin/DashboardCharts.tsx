@@ -3,6 +3,7 @@
 import * as Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 import { BarChart3, PieChart, TrendingUp } from 'lucide-react';
+import { useAdminTranslation, useTranslation } from '@/lib/i18n/client';
 
 interface DailyData {
   date: string;
@@ -38,6 +39,30 @@ const statusGradients: Record<string, { start: string; end: string }> = {
 };
 
 export function DashboardCharts({ bookingsData, revenueData, statusData }: DashboardChartsProps) {
+  const t = useAdminTranslation();
+  const tStatus = useTranslation('bookingStatus');
+
+  const getStatusLabel = (status: string) => {
+    // Map database status names to i18n keys
+    const keyMap: Record<string, string> = {
+      'Confirmed': 'confirmed',
+      'Completed': 'completed',
+      'Touchbase': 'touchbase',
+      'New': 'new',
+      'No show': 'noShow',
+      'Declined': 'declined',
+      'Unresponsive': 'unresponsive',
+      'Pending': 'pending',
+      'Cancelled': 'cancelled'
+    };
+    const key = keyMap[status] || status.toLowerCase();
+    try {
+      return tStatus(key);
+    } catch {
+      return status;
+    }
+  };
+
   return (
     <>
       {/* Main Content Grid */}
@@ -49,7 +74,7 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
               <BarChart3 className="w-5 h-5 text-primary" />
             </div>
             <h3 style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-              Bookings in Last 30 Days
+              {t('dashboard.charts.bookingsLast30Days')}
             </h3>
           </div>
           <div className="flex-1 min-h-0">
@@ -125,7 +150,7 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
                     fontFamily: 'var(--font-sans)',
                   },
                   formatter: function (this: any) {
-                    return '<b>' + this.x + '</b><br/>' + 'Bookings: <b>' + Math.round(this.y) + '</b>';
+                    return '<b>' + this.x + '</b><br/>' + t('bookings.title') + ': <b>' + Math.round(this.y) + '</b>';
                   },
                 },
                 plotOptions: {
@@ -146,7 +171,7 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
                 },
                 series: [
                   {
-                    name: 'Bookings',
+                    name: t('bookings.title'),
                     data: bookingsData.map((data) => data.bookings),
                     color: {
                       linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
@@ -170,7 +195,7 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
               <PieChart className="w-5 h-5 text-primary" />
             </div>
             <h3 style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-              Status Summary
+              {t('dashboard.charts.statusSummary')}
             </h3>
           </div>
           <HighchartsReact
@@ -200,10 +225,10 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
               },
               series: [
                 {
-                  name: 'Status',
+                  name: t('dashboard.charts.statusSummary'),
                   colorByPoint: true,
                   data: statusData.map((item) => ({
-                    name: item.name,
+                    name: getStatusLabel(item.name),
                     y: item.value,
                     color: {
                       linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
@@ -225,7 +250,7 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: item.color }}
                   />
-                  <span style={{ fontSize: 'var(--text-base)' }} className="text-foreground">{item.name}</span>
+                  <span style={{ fontSize: 'var(--text-base)' }} className="text-foreground">{getStatusLabel(item.name)}</span>
                 </div>
                 <span style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }} className="text-foreground">
                   {item.value}
@@ -243,7 +268,7 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
             <TrendingUp className="w-5 h-5 text-primary" />
           </div>
           <h3 style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-            Revenue Trend
+            {t('dashboard.charts.revenueTrend')}
           </h3>
         </div>
         <HighchartsReact
@@ -312,7 +337,7 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
                 fontFamily: 'var(--font-sans)',
               },
               formatter: function (this: any) {
-                return '<b>' + this.x + '</b><br/>' + 'Revenue: <b>CHF ' + this.y.toLocaleString() + '</b>';
+                return '<b>' + this.x + '</b><br/>' + t('dashboard.kpis.revenue') + ': <b>CHF ' + this.y.toLocaleString() + '</b>';
               },
             },
             plotOptions: {
@@ -342,7 +367,7 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
             },
             series: [
               {
-                name: 'Revenue',
+                name: t('dashboard.kpis.revenue'),
                 data: revenueData.map((data) => data.revenue),
                 color: '#9DAE91',
               },

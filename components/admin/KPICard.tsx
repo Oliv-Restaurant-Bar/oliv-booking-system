@@ -1,6 +1,7 @@
 'use client';
 
 import * as LucideIcons from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 type IconName = keyof typeof LucideIcons;
 
@@ -13,9 +14,12 @@ interface KPICardProps {
     isPositive: boolean;
   };
   variant?: 'default' | 'compact' | 'detailed';
+  isNumeric?: boolean; // New prop to indicate if value should be formatted as a numeric count
 }
 
-export function KPICard({ title, value, iconName, trend, variant = 'default' }: KPICardProps) {
+export function KPICard({ title, value, iconName, trend, variant = 'default', isNumeric = false }: KPICardProps) {
+  const t = useTranslations('admin.dashboard');
+
   // Get the icon component by name
   const Icon = (LucideIcons as any)[iconName];
 
@@ -24,20 +28,18 @@ export function KPICard({ title, value, iconName, trend, variant = 'default' }: 
     return null;
   }
 
-  // Format value: ensure integers for booking counts, keep original for other values
+  // Format value: ensure integers for counts, keep original for other values
   const formatValue = (val: string | number) => {
     // If value is a string, check if it's a number that should be integer
     if (typeof val === 'string') {
-      // Check if it's a numeric string (for counts)
-      if (/^\d+\.?\d*$/.test(val) && title.toLowerCase().includes('booking')) {
+      if (/^\d+\.?\d*$/.test(val) && isNumeric) {
         return Math.floor(Number(val)).toLocaleString();
       }
       return val;
     }
     // If value is a number
     if (typeof val === 'number') {
-      // Booking counts should be integers
-      if (title.toLowerCase().includes('booking') || title.toLowerCase().includes('items') || title.toLowerCase().includes('categories')) {
+      if (isNumeric) {
         return Math.floor(val).toLocaleString();
       }
       return val.toLocaleString();
@@ -90,7 +92,7 @@ export function KPICard({ title, value, iconName, trend, variant = 'default' }: 
               {trend.isPositive ? '↑' : '↓'} {trend.value}
             </span>
             <span className="text-muted-foreground" style={{ fontSize: 'var(--text-label)' }}>
-              vs last month
+              {t('kpis.vsLastMonth')}
             </span>
           </div>
         )}
@@ -120,7 +122,7 @@ export function KPICard({ title, value, iconName, trend, variant = 'default' }: 
             {trend.isPositive ? '↑' : '↓'} {trend.value}
           </span>
           <span className="text-muted-foreground" style={{ fontSize: 'var(--text-label)' }}>
-            vs last month
+            {t('kpis.vsLastMonth')}
           </span>
         </div>
       )}

@@ -3,6 +3,7 @@ import { KitchenPdfStatusBadge } from './KitchenPdfStatusBadge';
 import { BookingStatusBadge } from './BookingStatusBadge';
 import type { KitchenPdfStatus } from '@/services/kitchen-pdf.service';
 import { formatDistanceToNow } from 'date-fns';
+import { useAdminTranslation } from '@/lib/i18n/client';
 
 interface GridViewProps {
   bookings: Array<{
@@ -38,11 +39,13 @@ interface GridViewProps {
 }
 
 export function GridView({ onOpenModal, bookings }: GridViewProps) {
+  const t = useAdminTranslation();
+
   if (bookings.length === 0) {
     return (
       <div className="bg-card border border-border rounded-xl p-12 text-center">
-        <div className="text-muted-foreground mb-2">No bookings found</div>
-        <div className="text-sm text-muted-foreground">Try adjusting your filters or search query</div>
+        <div className="text-muted-foreground mb-2">{t('gridView.noBookings')}</div>
+        <div className="text-sm text-muted-foreground">{t('gridView.tryAdjustFilters')}</div>
       </div>
     );
   }

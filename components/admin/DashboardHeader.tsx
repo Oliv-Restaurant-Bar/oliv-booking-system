@@ -43,43 +43,43 @@ export function DashboardHeader({
     }
   }, [isDropdownOpen]);
 
-  // Page titles and subtitles
-  const pageInfo: Record<string, { title: string; subtitle: string }> = {
+  const currentPageInfo = {
     'dashboard': {
       title: t('title'),
       subtitle: `${t('welcome')}, ${displayUserName}!`
     },
     'bookings': {
       title: navT('bookings'),
-      subtitle: 'Manage and track all restaurant bookings'
+      subtitle: t('subtitles.bookings')
     },
     'reports': {
       title: navT('reports'),
-      subtitle: 'View analytics and performance reports'
+      subtitle: t('subtitles.reports')
     },
     'menu-config': {
       title: navT('menu'),
-      subtitle: 'Configure your restaurant menu items'
+      subtitle: t('subtitles.menuConfig')
     },
     'user-management': {
       title: navT('users'),
-      subtitle: 'Manage staff and user permissions'
+      subtitle: t('subtitles.userManagement')
     },
     'settings': {
       title: navT('settings'),
-      subtitle: 'Configure your restaurant settings'
+      subtitle: t('subtitles.settings')
     },
     'profile': {
       title: navT('profile'),
-      subtitle: 'Manage your account and preferences'
+      subtitle: t('subtitles.profile')
     },
     'help': {
-      title: 'Help',
-      subtitle: 'Get help and support'
+      title: t('subtitles.help').split(' ')[0], // "Help" or "Hilfe"
+      subtitle: t('subtitles.help')
     }
+  }[currentPage] || {
+    title: t('title'),
+    subtitle: `${t('welcome')}, ${displayUserName}!`
   };
-
-  const currentPageInfo = pageInfo[currentPage] || pageInfo['dashboard'];
 
   const handleLogout = async () => {
     try {

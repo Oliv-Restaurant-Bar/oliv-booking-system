@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, UserPlus, Check, Loader2 } from 'lucide-react';
 import { Button } from '../user/Button';
 import { toast } from 'sonner';
+import { useAdminTranslation, useCommonTranslation } from '@/lib/i18n/client';
 
 interface User {
     id: string;
@@ -33,14 +34,21 @@ export function AssignUserModal({
     assignedTo,
     onAssign,
     isLoading = false,
-    title = "Assign User",
-    description = "Select a user to assign.",
-    buttonText = "Apply",
+    title = undefined,
+    description = undefined,
+    buttonText = undefined,
     showUnassigned = true,
     icon = <UserPlus className="w-5 h-5 text-primary" />
 }: AssignUserModalProps) {
+    const t = useAdminTranslation();
+    const tCommon = useCommonTranslation();
     const [selectedUser, setSelectedUser] = useState(assignedTo);
     const [isSaving, setIsSaving] = useState(false);
+
+    // Use translation defaults if props are not provided
+    const modalTitle = title || t('assignUser.title');
+    const modalDescription = description || t('assignUser.description');
+    const modalButtonText = buttonText || t('assignUser.buttonText');
 
     useEffect(() => {
         setSelectedUser(assignedTo);
@@ -56,11 +64,11 @@ export function AssignUserModal({
         setIsSaving(true);
         try {
             await onAssign(selectedUser);
-            toast.success('User assigned successfully');
+            toast.success(t('assignUser.assignedSuccess'));
             onClose();
         } catch (error) {
             console.error('Error assigning user:', error);
-            toast.error('Failed to assign user');
+            toast.error(t('assignUser.failedToAssign'));
         } finally {
             setIsSaving(false);
         }
@@ -86,7 +94,7 @@ export function AssignUserModal({
                                 {icon}
                             </div>
                             <h3 className="text-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                {title}
+                                {modalTitle}
                             </h3>
                         </div>
                         <button
@@ -101,7 +109,7 @@ export function AssignUserModal({
                     {/* Body */}
                     <div className="p-6">
                         <p className="text-muted-foreground mb-6" style={{ fontSize: 'var(--text-base)' }}>
-                            {description}
+                            {modalDescription}
                         </p>
 
                         {isLoading ? (
@@ -190,7 +198,7 @@ export function AssignUserModal({
                             onClick={handleSave}
                             disabled={isSaving || isLoading}
                         >
-                            {isSaving ? 'Saving...' : buttonText}
+                            {isSaving ? tCommon('loading') : modalButtonText}
                         </Button>
                     </div>
                 </div>

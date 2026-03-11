@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { ValidatedInput } from '@/components/ui/validated-input';
 import { ValidatedTextarea } from '@/components/ui/validated-textarea';
 import { venueNameSchema, venueDescriptionSchema } from '@/lib/validation/schemas';
+import { useAdminTranslation, useCommonTranslation } from '@/lib/i18n/client';
 
 interface VenueModalProps {
   isOpen: boolean;
@@ -23,6 +24,8 @@ export function VenueModal({
   venue,
   isLoading = false,
 }: VenueModalProps) {
+  const t = useAdminTranslation();
+  const tCommon = useCommonTranslation();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -77,14 +80,14 @@ export function VenueModal({
     setIsSaving(true);
     try {
       await onSave({ name: name.trim(), description: description.trim() });
-      toast.success(venue ? 'Venue updated successfully' : 'Venue added successfully');
+      toast.success(venue ? t('venue.updatedSuccess') : t('venue.addedSuccess'));
       // Reset form on success
       setName('');
       setDescription('');
       setErrors({});
     } catch (error) {
       console.error('Error saving venue:', error);
-      toast.error('Failed to save venue');
+      toast.error(t('venue.failedToSave'));
     } finally {
       setIsSaving(false);
     }
@@ -116,7 +119,7 @@ export function VenueModal({
                 <MapPin className="w-5 h-5 text-primary" />
               </div>
               <h3 className="text-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                {venue ? 'Edit Venue' : 'Add New Venue'}
+                {venue ? t('venue.edit') : t('venue.add')}
               </h3>
             </div>
             <button
@@ -174,7 +177,7 @@ export function VenueModal({
               style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
             >
               <X className="w-4 h-4" />
-              Cancel
+              {tCommon('cancel')}
             </button>
             <button
               onClick={handleSubmit}

@@ -8,8 +8,10 @@ import { X, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import { SectionHeading } from './SectionHeading';
 import { Button } from './Button';
+import { useLandingTranslation } from '@/lib/i18n/client';
 
 export function Gallery() {
+  const t = useLandingTranslation();
   const [selectedImage, setSelectedImage] = useState<number | null>(null);
   const sliderRef = useRef<Slider>(null);
 
@@ -118,10 +120,10 @@ export function Gallery() {
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header with Navigation Buttons */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-12">
-          <SectionHeading 
-            badge="OUR RESTAURANT"
-            title="Gallery"
-            description="Explore our restaurant through images"
+          <SectionHeading
+            badge={t('gallery.title')}
+            title={t('gallery.subtitle')}
+            description={t('gallery.description')}
             align="left"
           />
           
@@ -165,7 +167,7 @@ export function Gallery() {
                   {/* Hover Overlay */}
                   <div className="absolute inset-0 bg-secondary/0 group-hover:bg-secondary/40 transition-all duration-300 flex items-center justify-center">
                     <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                      View Image
+                      {t('gallery.viewImage')}
                     </span>
                   </div>
                 </div>
@@ -176,7 +178,7 @@ export function Gallery() {
 
         <div className="flex justify-center mt-12">
           <Button variant="secondary" icon={ArrowRight} iconPosition="right" to="/wizard">
-            Create Menu Now
+            {t('howItWorks.createMenu')}
           </Button>
         </div>
 

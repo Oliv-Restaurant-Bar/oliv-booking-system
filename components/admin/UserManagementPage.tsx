@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { canModifyUser } from '@/lib/auth/rbac';
 import { userFirstNameSchema, userLastNameSchema, userEmailSchema, userPasswordSchema } from '@/lib/validation/schemas';
 import { useTranslation as useGenericTranslation, useCommonTranslation, useButtonTranslation, useMessageTranslation } from '@/lib/i18n/client';
+import { useLocale } from 'next-intl';
 
 interface User {
   id: string;
@@ -30,6 +31,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
   const commonT = useCommonTranslation();
   const buttonT = useButtonTranslation();
   const messageT = useMessageTranslation();
+  const locale = useLocale();
 
   const [users, setUsers] = useState<User[]>([]);
 
@@ -62,18 +64,34 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
     password?: string;
   }>({});
 
+  const getRoleLabel = (role: User['role']) => {
+    try {
+      return t(`roles.${role}`);
+    } catch {
+      return role;
+    }
+  };
+
+  const getStatusLabel = (status: User['status']) => {
+    try {
+      return t(`status.${status.toLowerCase()}`);
+    } catch {
+      return status;
+    }
+  };
+
   // Role options for dropdown (matching schema roles)
   const roleOptions = [
-    { value: 'super_admin', label: 'Super Admin', icon: Shield },
-    { value: 'admin', label: 'Admin', icon: User },
-    { value: 'moderator', label: 'Moderator', icon: Users },
-    { value: 'read_only', label: 'Read Only', icon: Eye },
+    { value: 'super_admin', label: getRoleLabel('super_admin'), icon: Shield },
+    { value: 'admin', label: getRoleLabel('admin'), icon: User },
+    { value: 'moderator', label: getRoleLabel('moderator'), icon: Users },
+    { value: 'read_only', label: getRoleLabel('read_only'), icon: Eye },
   ];
 
   // Status options for dropdown
   const statusOptions = [
-    { value: 'Active', label: 'Active', dotColor: '#10b981' },
-    { value: 'Inactive', label: 'Inactive', dotColor: '#ef4444' },
+    { value: 'Active', label: getStatusLabel('Active'), dotColor: '#10b981' },
+    { value: 'Inactive', label: getStatusLabel('Inactive'), dotColor: '#ef4444' },
   ];
 
   // Fetch users from API
@@ -305,21 +323,6 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
     }
   };
 
-  const getRoleLabel = (role: User['role']) => {
-    switch (role) {
-      case 'super_admin':
-        return 'Super Admin';
-      case 'admin':
-        return 'Admin';
-      case 'moderator':
-        return 'Moderator';
-      case 'read_only':
-        return 'Read Only';
-      default:
-        return role;
-    }
-  };
-
   const getStatusBadgeColor = (status: User['status']) => {
     return status === 'Active'
       ? 'bg-green-50 text-green-700'
@@ -358,11 +361,11 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
                 icon={Download}
                 onClick={() => {
                   const excelData = filteredUsers.map(user => ({
-                    'Name': user.name,
-                    'Email': user.email,
-                    'Role': getRoleLabel(user.role),
-                    'Status': user.status,
-                    'Created At': new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+                    [commonT('name')]: user.name,
+                    [commonT('email')]: user.email,
+                    [t('userRole')]: getRoleLabel(user.role),
+                    [commonT('status')]: getStatusLabel(user.status),
+                    [t('createdAt')]: new Date(user.createdAt).toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' }),
                   }));
 
                   // Create worksheet
@@ -370,7 +373,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
 
                   // Create workbook
                   const workbook = XLSX.utils.book_new();
-                  XLSX.utils.book_append_sheet(workbook, worksheet, 'Users');
+                  XLSX.utils.book_append_sheet(workbook, worksheet, t('title'));
 
                   // Generate and download file
                   XLSX.writeFile(workbook, `users_export_${new Date().toISOString().split('T')[0]}.xlsx`);
@@ -417,22 +420,22 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
                 <thead className="bg-muted border-b border-border">
                   <tr>
                     <th className="text-left px-4 py-3 text-foreground hidden md:table-cell" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      Name
+                      {commonT('name')}
                     </th>
                     <th className="text-left px-4 py-3 text-foreground hidden lg:table-cell" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      Email
+                      {commonT('email')}
                     </th>
                     <th className="text-left px-4 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      Role
+                      {t('userRole')}
                     </th>
                     <th className="text-left px-4 py-3 text-foreground hidden sm:table-cell" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      Status
+                      {commonT('status')}
                     </th>
                     <th className="text-left px-4 py-3 text-foreground hidden lg:table-cell" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      Created
+                      {t('createdAt')}
                     </th>
                     <th className="text-center px-4 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      Actions
+                      {commonT('actions')}
                     </th>
                   </tr>
                 </thead>
@@ -477,18 +480,17 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
                         </td>
                         <td className="px-4 py-4 hidden sm:table-cell">
                           <span className={`inline-flex px-3 py-1 rounded-full ${getStatusBadgeColor(user.status)}`} style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
-                            {user.status}
+                            {getStatusLabel(user.status)}
                           </span>
                         </td>
                         <td className="px-4 py-4 text-muted-foreground hidden lg:table-cell" style={{ fontSize: 'var(--text-base)' }}>
-                          {new Date(user.createdAt).toLocaleDateString('en-US', {
+                          {new Date(user.createdAt).toLocaleDateString(locale, {
                             year: 'numeric',
                             month: 'short',
                             day: 'numeric'
                           })}
                         </td>
                         {/* Actions column - show edit/delete based on permissions */}
-                        {/* {(isSuperAdmin || user.id === currentUserId) && ( */}
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-end gap-2">
                             {/* Edit button - always show for own profile */}
@@ -496,7 +498,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
                               onClick={() => handleEditClick(user)}
                               disabled={user.id !== currentUserId && !isSuperAdmin}
                               className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
-                              title={user.id === currentUserId ? "Edit my profile" : "Edit user"}
+                              title={user.id === currentUserId ? t('editMyProfile') : t('editUser')}
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
@@ -507,14 +509,13 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
                                 onClick={() => handleDeleteClick(user)}
                                 className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-muted-foreground hover:text-destructive"
                                 disabled={user.id !== currentUserId && !isSuperAdmin}
-                                title="Delete user"
+                                title={t('deleteUser')}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
                             )}
                           </div>
                         </td>
-                        {/* )} */}
                       </tr>
                     ))
                   )}
@@ -631,7 +632,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
               options={roleOptions}
               value={formRole}
               onChange={(value) => setFormRole(value as User['role'])}
-              placeholder="Select role"
+              placeholder={commonT('select')}
               className="w-full"
             />
           </div>
@@ -729,7 +730,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
               options={roleOptions}
               value={formRole}
               onChange={(value) => setFormRole(value as User['role'])}
-              placeholder="Select role"
+              placeholder={commonT('select')}
               className="w-full"
               disabled={selectedUser?.id === currentUserId} // Disable role change for own profile
             />
@@ -746,7 +747,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
               options={statusOptions}
               value={formStatus}
               onChange={(value) => setFormStatus(value as User['status'])}
-              placeholder="Select status"
+              placeholder={commonT('select')}
               className="w-full"
               disabled={selectedUser?.id === currentUserId} // Disable status change for own profile
             />

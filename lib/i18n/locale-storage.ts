@@ -3,7 +3,7 @@
  * Handles cookie-based locale persistence and retrieval
  */
 
-export const DEFAULT_LOCALE = 'en' as const;
+export const DEFAULT_LOCALE = 'de' as const;
 export const SUPPORTED_LOCALES = ['en', 'de'] as const;
 export type Locale = typeof SUPPORTED_LOCALES[number];
 
