@@ -5,6 +5,7 @@ import { Home, Plus, Phone, Mail, Edit2, CheckCircle, Clock, FileCheck, Utensils
 import { Button } from './Button';
 import confetti from 'canvas-confetti';
 import { motion } from 'motion/react';
+import { useWizardTranslation } from '@/lib/i18n/client';
 
 interface ThankYouScreenProps {
   inquiryNumber: string;
@@ -21,6 +22,7 @@ export function ThankYouScreen({
   onGoHome,
   variant = 'centered'
 }: ThankYouScreenProps) {
+  const t = useWizardTranslation();
 
   // Trigger confetti on mount
   useEffect(() => {
@@ -65,6 +67,7 @@ export function ThankYouScreen({
       onCreateNew={onCreateNew}
       onEditOrder={onEditOrder}
       onGoHome={onGoHome}
+      t={t}
     />;
   }
 
@@ -74,6 +77,7 @@ export function ThankYouScreen({
       onCreateNew={onCreateNew}
       onEditOrder={onEditOrder}
       onGoHome={onGoHome}
+      t={t}
     />;
   }
 
@@ -82,6 +86,7 @@ export function ThankYouScreen({
     onCreateNew={onCreateNew}
     onEditOrder={onEditOrder}
     onGoHome={onGoHome}
+    t={t}
   />;
 }
 
@@ -90,8 +95,9 @@ function CenteredVariant({
   inquiryNumber,
   onCreateNew,
   onEditOrder,
-  onGoHome
-}: Omit<ThankYouScreenProps, 'variant'>) {
+  onGoHome,
+  t
+}: Omit<ThankYouScreenProps, 'variant'> & { t: any }) {
   return (
     <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: 'var(--background)' }}>
       <motion.div
@@ -157,7 +163,7 @@ function CenteredVariant({
             fontFamily: 'var(--font-family-heading)'
           }}
         >
-          Thank you for your inquiry!
+          {t('thankYou.title')}
         </motion.h1>
 
         {/* Congratulations Subheading */}
@@ -173,7 +179,7 @@ function CenteredVariant({
             fontFamily: 'var(--font-family-body)'
           }}
         >
-          Congratulations on taking the first step!
+          {t('thankYou.subtitle')}
         </motion.p>
 
         {/* Description */}
@@ -189,9 +195,7 @@ function CenteredVariant({
             lineHeight: '1.6'
           }}
         >
-          We have received your request and will contact you within 24 hours
-          <br />
-          to discuss the details and finalize your menu together.
+          {t('thankYou.description')}
         </motion.p>
 
         {/* Inquiry Number */}
@@ -206,7 +210,7 @@ function CenteredVariant({
             fontFamily: 'var(--font-family-body)'
           }}
         >
-          Your inquiry number: <span style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--foreground)' }}>{inquiryNumber}</span>
+          {t('thankYou.inquiryNumber')} <span style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--foreground)' }}>{inquiryNumber}</span>
         </motion.p>
 
         {/* Action Buttons */}
@@ -224,7 +228,7 @@ function CenteredVariant({
               iconPosition="left"
               fullWidth
             >
-              Go to homepage
+              {t('thankYou.goToHomepage')}
             </Button>
           )}
           <Button
@@ -233,7 +237,7 @@ function CenteredVariant({
             icon={Plus}
             iconPosition="left"
           >
-            Create new request
+            {t('thankYou.createNewRequest')}
           </Button>
         </motion.div>
 
@@ -257,7 +261,7 @@ function CenteredVariant({
           }}
         >
           <Edit2 className="w-4 h-4" />
-          Edit your order
+          {t('thankYou.editOrder')}
         </motion.button>
 
         {/* Contact Section */}
@@ -318,8 +322,9 @@ function SplitVariant({
   inquiryNumber,
   onCreateNew,
   onEditOrder,
-  onGoHome
-}: Omit<ThankYouScreenProps, 'variant'>) {
+  onGoHome,
+  t
+}: Omit<ThankYouScreenProps, 'variant'> & { t: any }) {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row" style={{ backgroundColor: 'var(--background)' }}>
       {/* Left Side - Success Message */}
@@ -674,8 +679,9 @@ function MinimalVariant({
   inquiryNumber,
   onCreateNew,
   onEditOrder,
-  onGoHome
-}: Omit<ThankYouScreenProps, 'variant'>) {
+  onGoHome,
+  t
+}: Omit<ThankYouScreenProps, 'variant'> & { t: any }) {
   return (
     <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: 'var(--background)' }}>
       <motion.div

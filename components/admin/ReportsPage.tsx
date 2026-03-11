@@ -8,8 +8,10 @@ import { TrendingItems } from './TrendingItems';
 import { MonthlyReportLayout2 } from './MonthlyReportLayout2';
 import { SkeletonPage, SkeletonKPI, SkeletonList, SkeletonChart, SkeletonTrendingItems, SkeletonMonthlyReport } from '@/components/ui/skeleton-loaders';
 import { Permission, hasPermission } from '@/lib/auth/rbac';
+import { useTranslations } from 'next-intl';
 
 export function ReportsPage({ user }: { user?: any }) {
+  const t = useTranslations('admin.reports');
   const [selectedYear, setSelectedYear] = useState(String(new Date().getFullYear()));
   const [bookingsByContacts, setBookingsByContacts] = useState<any[]>([]);
   const [monthlyReport, setMonthlyReport] = useState<any[]>([]);
@@ -72,7 +74,7 @@ export function ReportsPage({ user }: { user?: any }) {
               {/* Top Customers */}
               <div className="bg-card border border-border rounded-xl p-4 md:p-6">
                 <h3 className="text-foreground mb-4 md:mb-6" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                  Top Customers by Revenue
+                  {t('topCustomers')}
                 </h3>
                 <div className="overflow-y-auto" style={{ maxHeight: '400px' }}>
                   {bookingsByContacts.slice(0, 5).map((contact, index) => (
@@ -109,17 +111,17 @@ export function ReportsPage({ user }: { user?: any }) {
                           CHF {contact.totalRevenue.toLocaleString()}
                         </p>
                         <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                          {Math.floor(contact.bookings)} bookings
+                          {t('bookings', { count: Math.floor(contact.bookings) })}
                         </p>
                       </div>
 
                       {/* Additional Stats - Hide on mobile/tablet */}
                       <div className="text-right hidden lg:block flex-shrink-0">
                         <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                          Avg: CHF {contact.avgRevenue.toLocaleString()}
+                          {t('avgRevenue', { amount: contact.avgRevenue.toLocaleString() })}
                         </p>
                         <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                          {contact.totalPersons} persons
+                          {t('guests', { count: contact.totalPersons })}
                         </p>
                       </div>
                     </div>

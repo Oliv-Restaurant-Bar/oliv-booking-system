@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
+import { useTranslations } from 'next-intl';
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const t = useTranslations('admin.login');
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -54,7 +56,7 @@ export default function AdminLoginPage() {
             />
           </div>
           <p className="text-muted-foreground">
-            Sign in to access the admin panel
+            {t('signIn')}
           </p>
         </div>
 
@@ -67,7 +69,7 @@ export default function AdminLoginPage() {
 
           <div>
             <label htmlFor="email" className="block text-sm font-medium mb-2">
-              Email
+              {t('email')}
             </label>
             <input
               id="email"
@@ -76,13 +78,13 @@ export default function AdminLoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               className="w-full px-4 py-3 rounded-lg border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              placeholder="admin@oliv-restaurant.com"
+              placeholder={t('emailPlaceholder')}
             />
           </div>
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium mb-2">
-              Password
+              {t('password')}
             </label>
             <div className="relative">
               <input
@@ -92,7 +94,7 @@ export default function AdminLoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 className="w-full px-4 py-3 pr-12 rounded-lg border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                placeholder="••••••••"
+                placeholder={t('passwordPlaceholder')}
               />
               <button
                 type="button"
@@ -109,12 +111,12 @@ export default function AdminLoginPage() {
             disabled={loading}
             className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-medium hover:bg-secondary hover:text-secondary-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Signing in..." : "Sign In"}
+            {loading ? t('signingIn') : t('signInBtn')}
           </button>
         </form>
 
         <div className="mt-6 text-center text-sm text-muted-foreground">
-          <p>Protected access for OLIV Restaurant & Bar staff only</p>
+          <p>{t('protectedAccess')}</p>
         </div>
       </div>
     </div>

@@ -431,7 +431,7 @@ export async function sendAssignmentNotification(params: {
 }): Promise<{ success: boolean; error?: string }> {
   try {
     const useTemplates = process.env.USE_ZEPTOMAIL_TEMPLATES === "true";
-    const subject = `New Booking Assigned: ${params.customerName}`;
+    const subject = `Neue Buchung zugewiesen: ${params.customerName}`;
 
     if (useTemplates) {
       const templateName = getTemplateName("assignment" as any);
@@ -481,18 +481,18 @@ export async function sendAssignmentNotification(params: {
 
       const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
-          <h2 style="color: #4CAF50;">Booking Assignment Notification</h2>
-          <p>Hello ${params.adminName},</p>
-          <p>A new booking has been assigned to you in the system.</p>
+          <h2 style="color: #4CAF50;">Benachrichtigung über Buchungszuweisung</h2>
+          <p>Hallo ${params.adminName},</p>
+          <p>Ihnen wurde im System eine neue Buchung zugewiesen.</p>
           <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <p><strong>Customer:</strong> ${params.customerName}</p>
-            <p><strong>Date:</strong> ${params.eventDate}</p>
-            <p><strong>Time:</strong> ${params.eventTime}</p>
+            <p><strong>Kunde:</strong> ${params.customerName}</p>
+            <p><strong>Datum:</strong> ${params.eventDate}</p>
+            <p><strong>Uhrzeit:</strong> ${params.eventTime}</p>
           </div>
-          <p>Please log in to the admin panel to view full details and manage this booking.</p>
-          <a href="${bookingUrl}" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">View Booking</a>
+          <p>Bitte melden Sie sich im Admin-Panel an, um die vollständigen Details anzusehen und diese Buchung zu verwalten.</p>
+          <a href="${bookingUrl}" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">Buchung ansehen</a>
           <p style="margin-top: 30px; font-size: 12px; color: #777;">
-            This is an automated message from the Oliv Booking System.
+            Dies ist eine automatisierte Nachricht aus dem Oliv Buchungssystem.
           </p>
         </div>
       `;
@@ -540,7 +540,7 @@ export async function sendKitchenPdfEmail(params: {
 }): Promise<{ success: boolean; error?: string }> {
   try {
     const useTemplates = process.env.USE_ZEPTOMAIL_TEMPLATES === "true";
-    const subject = `Kitchen Sheet: ${params.customerName} - ${params.eventDate}`;
+    const subject = `Küchenblatt: ${params.customerName} - ${params.eventDate}`;
 
     // Clean and validate base64 content
     let base64Content = params.pdfBase64;
@@ -634,32 +634,32 @@ export async function sendKitchenPdfEmail(params: {
           <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8fafc; border-bottom: 2px solid #e2e8f0;">
             <tr>
               <td style="padding: 20px 30px;">
-                <h2 style="color: #0f172a; margin: 0; font-size: 24px;">Kitchen Sheet Routing</h2>
+                <h2 style="color: #0f172a; margin: 0; font-size: 24px;">Küchenblatt-Weiterleitung</h2>
               </td>
             </tr>
           </table>
           
           <div style="padding: 30px;">
             <p style="font-size: 16px; line-height: 1.5; color: #334155; margin-top: 0;">
-              Hello,
+              Guten Tag,
             </p>
             <p style="font-size: 16px; line-height: 1.5; color: #334155;">
-              A new kitchen sheet has been generated for an upcoming booking. Please find the PDF attached to this email.
+              ein neues Küchenblatt wurde für eine bevorstehende Buchung erstellt. Bitte finden Sie das PDF im Anhang dieser E-Mail.
             </p>
             
             <div style="background-color: #f1f5f9; border-left: 4px solid #3b82f6; padding: 15px 20px; margin: 25px 0;">
-              <p style="margin: 0 0 10px 0; font-size: 15px;"><strong>Customer:</strong> ${params.customerName}</p>
-              <p style="margin: 0; font-size: 15px;"><strong>Date:</strong> ${params.eventDate}</p>
+              <p style="margin: 0 0 10px 0; font-size: 15px;"><strong>Kunde:</strong> ${params.customerName}</p>
+              <p style="margin: 0; font-size: 15px;"><strong>Datum:</strong> ${params.eventDate}</p>
             </div>
             
             <p style="font-size: 16px; line-height: 1.5; color: #334155; margin-bottom: 30px;">
-              Document Name: <em>${params.documentName}</em>
+              Dokumentenname: <em>${params.documentName}</em>
             </p>
             
             <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;" />
             
             <p style="font-size: 13px; color: #64748b; margin: 0; text-align: center;">
-              This is an automated operational message from the Oliv Booking System.
+              Dies ist eine automatisierte betriebliche Nachricht aus dem Oliv Buchungssystem.
             </p>
           </div>
         </div>
@@ -723,7 +723,7 @@ export async function sendUserCreatedEmail(params: {
       return { success: true };
     }
 
-    const subject = "Welcome to Oliv Booking System - Your Account is Ready";
+    const subject = "Willkommen beim Oliv Buchungssystem - Ihr Konto ist bereit";
 
     if (useTemplates) {
       const templateName = process.env.ZEPTOMAIL_TEMPLATE_USER_CREATED || "user-created";
@@ -741,7 +741,7 @@ export async function sendUserCreatedEmail(params: {
         user_name: params.userName,
         user_email: params.userEmail,
         user_role: displayRole,
-        created_by: params.createdBy || "System Administrator",
+        created_by: params.createdBy || "Systemadministrator",
         login_url: `${process.env.NEXT_PUBLIC_APP_URL}/admin/login`,
         temp_password: params.tempPassword,
       };
@@ -774,46 +774,46 @@ export async function sendUserCreatedEmail(params: {
     } else {
       // Fallback: Generate HTML email
       const roleDisplayNames: Record<string, string> = {
-        super_admin: "Super Administrator",
+        super_admin: "Super-Administrator",
         admin: "Administrator",
         moderator: "Moderator",
-        read_only: "Read Only",
+        read_only: "Nur Lesezugriff",
       };
       const displayRole = roleDisplayNames[params.userRole] || params.userRole;
 
       const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 40px 20px;">
           <div style="background-color: white; border-radius: 8px; padding: 40px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h2 style="color: #9DAE91; margin: 0 0 20px 0; font-size: 24px;">Welcome to Oliv Booking System</h2>
+            <h2 style="color: #9DAE91; margin: 0 0 20px 0; font-size: 24px;">Willkommen beim Oliv Buchungssystem</h2>
             <p style="font-size: 16px; line-height: 1.5; color: #334155; margin-bottom: 20px;">
-              Hello <strong>${params.userName}</strong>,
+              Hallo <strong>${params.userName}</strong>,
             </p>
             <p style="font-size: 16px; line-height: 1.5; color: #334155; margin-bottom: 20px;">
-              Your account has been successfully created in the Oliv Booking System. You can now access the admin panel to manage bookings, menus, and more.
+              Ihr Konto wurde erfolgreich im Oliv Buchungssystem erstellt. Sie können nun auf das Admin-Panel zugreifen, um Buchungen, Menüs und mehr zu verwalten.
             </p>
-
+ 
             <div style="background-color: #f1f5f9; border-left: 4px solid #9DAE91; padding: 15px 20px; margin: 25px 0;">
-              <p style="margin: 0 0 10px 0; font-size: 15px;"><strong>Email:</strong> ${params.userEmail}</p>
-              <p style="margin: 0; font-size: 15px;"><strong>Role:</strong> ${displayRole}</p>
+              <p style="margin: 0 0 10px 0; font-size: 15px;"><strong>E-Mail:</strong> ${params.userEmail}</p>
+              <p style="margin: 0; font-size: 15px;"><strong>Rolle:</strong> ${displayRole}</p>
             </div>
 
             <div style="text-align: center; margin: 30px 0;">
               <a href="${process.env.NEXT_PUBLIC_APP_URL}/admin/login" style="display: inline-block; background-color: #9DAE91; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">
-                Login to Admin Panel
+                Zum Admin-Panel anmelden
               </a>
             </div>
 
             <p style="font-size: 14px; line-height: 1.5; color: #64748b; margin-bottom: 10px;">
-              Your temporary password is: <strong>${params.tempPassword}</strong>
+              Ihr temporäres Passwort lautet: <strong>${params.tempPassword}</strong>
             </p>
             <p style="font-size: 14px; line-height: 1.5; color: #64748b; margin-bottom: 20px;">
-              Please change your password after your first login for security.
+              Bitte ändern Sie Ihr Passwort aus Sicherheitsgründen nach Ihrer ersten Anmeldung.
             </p>
 
             <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;" />
 
             <p style="font-size: 13px; color: #64748b; margin: 0; text-align: center;">
-              This is an automated message from the Oliv Booking System.
+              Dies ist eine automatisierte Nachricht aus dem Oliv Buchungssystem.
             </p>
           </div>
         </div>

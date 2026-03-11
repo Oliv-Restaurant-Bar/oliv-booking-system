@@ -144,17 +144,85 @@
       "dairyFree": "Dairy Free"
     }
   },
+  "profile": {
+    "title": "Profile",
+    "editProfile": "Edit Profile",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email",
+    "phone": "Phone",
+    "role": "Role",
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm New Password",
+    "enterCurrentPassword": "Enter current password",
+    "enterNewPassword": "Enter new password",
+    "confirmNewPassword": "Confirm new password",
+    "passwordChanged": "Password changed successfully",
+    "profileUpdated": "Profile updated successfully",
+    "saveChanges": "Save Changes",
+    "characterLimits": {
+      "firstName": "2-20 characters",
+      "lastName": "2-20 characters",
+      "email": "Must be a valid email address (max 255 characters)",
+      "phone": "Optional - Only numbers and + allowed (max 20 characters)"
+    },
+    "placeholders": {
+      "firstName": "Enter first name",
+      "lastName": "Enter last name",
+      "email": "Enter email address",
+      "phone": "Enter phone number"
+    },
+    "passwordHelp": "Min. 8 characters, must be different from current password"
+  },
   "user": {
     "title": "Users",
     "addUser": "Add User",
+    "addNewUser": "Add New User",
     "editUser": "Edit User",
+    "editMyProfile": "Edit My Profile",
     "deleteUser": "Delete User",
     "userName": "User Name",
     "userEmail": "User Email",
     "userRole": "User Role",
     "userStatus": "User Status",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "password": "Password",
+    "passwordOptional": "Password (optional - will use default if empty)",
+    "enterPassword": "Enter password",
+    "adding": "Adding...",
+    "saving": "Saving...",
+    "searchPlaceholder": "Search by name, email, or role...",
+    "noUsersFound": "No users found",
     "lastLogin": "Last Login",
     "createdAt": "Created At",
+    "characterLimits": {
+      "firstName": "2-20 characters",
+      "lastName": "2-20 characters",
+      "email": "Must be a valid email address (max 255 characters)",
+      "password": "Min. 8 characters, max. 100 characters"
+    },
+    "placeholders": {
+      "firstName": "Enter first name",
+      "lastName": "Enter last name",
+      "email": "user@restaurant.com",
+      "password": "Enter password"
+    },
+    "restrictions": {
+      "cannotChangeOwnRole": "You cannot change your own role",
+      "cannotDeactivateSelf": "You cannot deactivate your own account",
+      "editOwnProfileInfo": "You can edit your profile information, but cannot change your role or status."
+    },
+    "toast": {
+      "userAdded": "User added successfully",
+      "userUpdated": "User updated successfully",
+      "userDeleted": "User deleted successfully",
+      "failedToAdd": "Failed to add user",
+      "failedToUpdate": "Failed to update user",
+      "failedToDelete": "Failed to delete user"
+    },
     "roles": {
       "super_admin": "Super Admin",
       "admin": "Admin",
@@ -240,5 +308,275 @@
     "daysAgo": "{days} days ago",
     "weeksAgo": "{weeks} weeks ago",
     "monthsAgo": "{months} months ago"
+  },
+  "admin": {
+    "dashboard": {
+      "title": "Dashboard",
+      "welcome": "Welcome back",
+      "kpis": {
+        "bookings": "No. of Bookings",
+        "revenue": "Total Revenue",
+        "items": "Total Items",
+        "vsLastMonth": "vs last month"
+      },
+      "charts": {
+        "bookingsLast30Days": "Bookings in Last 30 Days",
+        "statusSummary": "Status Summary",
+        "revenueTrend": "Revenue Trend"
+      }
+    },
+    "bookings": {
+      "title": "Bookings",
+      "search": "Search by name, email, or phone...",
+      "export": "Export",
+      "refresh": "Refresh",
+      "filtersApplied": "Filters Applied",
+      "showing": "Showing {from} to {to} of {total} bookings",
+      "noBookings": "No bookings found",
+      "tryAdjustFilters": "Try adjusting your filters or search query",
+      "statuses": {
+        "all": "All Status",
+        "new": "New",
+        "pending": "Pending",
+        "confirmed": "Confirmed",
+        "touchbase": "Touchbase",
+        "declined": "Declined",
+        "completed": "Completed"
+      },
+      "exportColumns": {
+        "customerName": "Customer Name",
+        "email": "Email",
+        "phone": "Phone",
+        "eventDate": "Event Date",
+        "time": "Time",
+        "guests": "Guests",
+        "occasion": "Occasion",
+        "amount": "Amount",
+        "status": "Status",
+        "contactedBy": "Contacted By",
+        "contactedWhen": "Contacted When"
+      },
+      "views": {
+        "grid": "Grid",
+        "calendar": "Calendar"
+      },
+      "months": {
+        "january": "January",
+        "february": "February",
+        "march": "March",
+        "april": "April",
+        "may": "May",
+        "june": "June",
+        "july": "July",
+        "august": "August",
+        "september": "September",
+        "october": "October",
+        "november": "November",
+        "december": "December"
+      }
+    },
+    "reports": {
+      "title": "Reports",
+      "topCustomers": "Top Customers by Revenue",
+      "avgRevenue": "Avg: CHF {amount}",
+      "bookings": "{count} bookings",
+      "guests": "{count} persons"
+    },
+    "settings": {
+      "title": "Settings",
+      "venueLocations": "Venue Locations",
+      "venueDesc": "Manage restaurant locations for bookings",
+      "addVenue": "Add New Venue",
+      "noVenues": "No venues defined yet.",
+      "noVenuesDesc": "Click 'Add New Venue' to create your first venue.",
+      "editVenue": "Edit Venue",
+      "deleteVenue": "Delete Venue",
+      "languageRegion": "Language & Region",
+      "language": "Language",
+      "timeZone": "Time Zone",
+      "dateFormat": "Date Format",
+      "currency": "Currency",
+      "showCurrency": "Show currency symbol in reports",
+      "languages": {
+        "english": "English",
+        "german": "German",
+        "french": "French",
+        "italian": "Italian"
+      },
+      "timeZones": {
+        "zurich": "Europe/Zurich (GMT+1)",
+        "london": "Europe/London (GMT+0)",
+        "paris": "Europe/Paris (GMT+1)"
+      },
+      "dateFormats": {
+        "mdy": "MM/DD/YYYY (e.g., 02/05/2026)",
+        "dmy": "DD/MM/YYYY (e.g., 05/02/2026)"
+      },
+      "currencies": {
+        "chf": "CHF - Swiss Franc",
+        "eur": "EUR - Euro",
+        "usd": "USD - US Dollar",
+        "gbp": "GBP - British Pound"
+      }
+    },
+    "menuConfig": {
+      "title": "Menu Config",
+      "searchCategories": "Search menu categories by name, description...",
+      "searchGroups": "Search choice groups by name...",
+      "categoryDesc": "Brief description of this category",
+      "itemDesc": "Describe this menu item",
+      "variantName": "Variant name (e.g., Small, Medium)",
+      "ingredients": "List all ingredients...",
+      "noVariants": "No variants added yet. Click 'Add Variant' to create pricing options.",
+      "noAddons": "No addon groups available. Create addon groups in the 'Choices & Addons' tab first.",
+      "deleteCategory": "Delete Category",
+      "deleteItem": "Delete Menu Item",
+      "deleteGroup": "Delete Group",
+      "addChoice": "Add Choice"
+    },
+    "sidebar": {
+      "dashboard": "Dashboard",
+      "bookings": "Bookings",
+      "reports": "Reports",
+      "menuConfig": "Menu Config",
+      "userManagement": "User Management",
+      "settings": "Settings"
+    },
+    "login": {
+      "title": "Admin Panel",
+      "signIn": "Sign in to access the admin panel",
+      "email": "Email",
+      "password": "Password",
+      "emailPlaceholder": "admin@oliv-restaurant.com",
+      "passwordPlaceholder": "••••••••",
+      "signingIn": "Signing in...",
+      "signInBtn": "Sign In",
+      "protectedAccess": "Protected access for OLIV Restaurant & Bar staff only"
+    }
+  },
+  "landing": {
+    "hero": {
+      "welcome": "WELCOME TO PREMIUM DINING",
+      "title": "Build Unforgettable Dining Moments",
+      "description": "Design custom catering menus in minutes with our intuitive wizard. Perfect for weddings, corporate events, and special celebrations.",
+      "getStarted": "Get started free",
+      "seeHowItWorks": "See how it works",
+      "eventsCatered": "Events Catered",
+      "menuOptions": "Menu Options",
+      "clientRating": "Client Rating"
+    },
+    "howItWorks": {
+      "title": "OUR PROCESS",
+      "subtitle": "How It Works",
+      "description": "Three simple steps to create your perfect catering experience",
+      "step1": {
+        "title": "Event Details",
+        "description": "Share your contact details, event date, and number of guests with us."
+      },
+      "step2": {
+        "title": "Choose Menu",
+        "description": "Select from our curated offerings - from appetizers to desserts."
+      },
+      "step3": {
+        "title": "Review & Submit",
+        "description": "We'll contact you to review your request and confirm availability."
+      },
+      "createMenu": "Create Menu Now"
+    },
+    "whyOlive": {
+      "title": "WHY CHOOSE US",
+      "subtitle": "Why Olive?",
+      "description": "We bring passion, precision, and premium quality to every event we cater.",
+      "cuisine": {
+        "title": "Excellent cuisine",
+        "description": "Fresh, seasonal ingredients, creatively prepared by our experienced kitchen team."
+      },
+      "ambience": {
+        "title": "Elegant ambience",
+        "description": "Stylish premises in the heart of Bern for events of 10 to 100 people."
+      },
+      "care": {
+        "title": "Personal care",
+        "description": "Individually tailored service – from planning to execution."
+      }
+    },
+    "gallery": {
+      "title": "OUR RESTAURANT",
+      "subtitle": "Gallery",
+      "description": "Explore our restaurant through images",
+      "viewImage": "View Image",
+      "counter": "{current} / {total}"
+    },
+    "cta": {
+      "title": "READY TO START?",
+      "subtitle": "Create Your Perfect Menu",
+      "description": "In Just Minutes",
+      "body": "Join hundreds of satisfied clients who trust Olive for their catering needs. Start building your custom menu today – no credit card required.",
+      "button": "Create Menu Now"
+    },
+    "footer": {
+      "terms": "Terms",
+      "privacy": "Privacy",
+      "copyright": "© 2024 Olive Catering. All rights reserved."
+    },
+    "header": {
+      "home": "Home",
+      "howItWorks": "How It Works",
+      "whyOlive": "Why Olive",
+      "gallery": "Gallery",
+      "createMenu": "Create Menu"
+    }
+  },
+  "wizard": {
+    "form": {
+      "name": "Name",
+      "business": "Business",
+      "email": "Email",
+      "telephone": "Telephone",
+      "street": "Street",
+      "plz": "PLZ",
+      "location": "Location",
+      "eventDate": "Event Date",
+      "eventTime": "Event Time",
+      "guestCount": "Guest Count",
+      "occasion": "Occasion",
+      "specialRequests": "Special Requests"
+    },
+    "categories": {
+      "appetizers": "Appetizers",
+      "mainCourse": "Main Course",
+      "desserts": "Desserts",
+      "beverages": "Beverages"
+    },
+    "actions": {
+      "addToCart": "Add to Cart",
+      "remove": "Remove",
+      "next": "Next",
+      "previous": "Previous",
+      "reviewOrder": "Review Order",
+      "submitRequest": "Submit Request"
+    },
+    "cart": {
+      "title": "Your Selection",
+      "empty": "Your cart is empty",
+      "total": "Total"
+    },
+    "thankYou": {
+      "title": "Thank you for your inquiry!",
+      "subtitle": "Congratulations on taking the first step!",
+      "description": "We have received your request and will contact you within 24 hours to discuss the details and finalize your menu together.",
+      "inquiryNumber": "Your inquiry number:",
+      "goToHomepage": "Go to homepage",
+      "createNewRequest": "Create new request",
+      "editOrder": "Edit your order",
+      "contact": "Contact",
+      "questions": "Questions? Contact us",
+      "needHelp": "Need immediate assistance?",
+      "steps": {
+        "confirmation": "1. Confirmation Call",
+        "finalization": "2. Menu Finalization",
+        "preparation": "3. Event Preparation"
+      }
+    }
   }
 }

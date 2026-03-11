@@ -1,8 +1,10 @@
 import { getRequestConfig } from 'next-intl/server';
+import { getLocale } from './lib/i18n/locale-storage';
 
-export default getRequestConfig(async () => {
-  // Provide a static locale, read from cookies/headers, or detect from user preferences
-  const locale = 'en';
+export default getRequestConfig(async ({ requestLocale }) => {
+  // Read locale from cookies, fallback to 'en'
+  const cookies = await import('next/headers').then(m => m.cookies());
+  const locale = getLocale(cookies);
 
   return {
     locale,

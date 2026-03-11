@@ -2,9 +2,22 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
+import { NextIntlClientProvider, useLocale, useMessages } from 'next-intl';
 import { DashboardSidebar } from '@/components/admin/DashboardSidebar';
 import { DashboardHeader } from '@/components/admin/DashboardHeader';
 import { DashboardFooter } from '@/components/admin/DashboardFooter';
+
+// Wrapper component to provide i18n context
+function AdminIntlProvider({ children }: { children: React.ReactNode }) {
+  const locale = useLocale();
+  const messages = useMessages();
+
+  return (
+    <NextIntlClientProvider messages={messages} locale={locale}>
+      {children}
+    </NextIntlClientProvider>
+  );
+}
 
 export default function AdminLayout({
   children,
@@ -69,11 +82,12 @@ export default function AdminLayout({
 
   // If it's the login page, render children without sidebar/header
   if (isLoginPage) {
-    return <>{children}</>;
+    return <AdminIntlProvider>{children}</AdminIntlProvider>;
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <AdminIntlProvider>
+      <div className="flex min-h-screen bg-background">
       {/* Desktop Sidebar - Hidden on mobile */}
       <div className="hidden lg:block sticky top-0 h-screen self-start">
         <DashboardSidebar user={session?.user} />
@@ -115,5 +129,6 @@ export default function AdminLayout({
         </div>
       </div>
     </div>
+    </AdminIntlProvider>
   );
 }

@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import { Permission, hasPermission } from '@/lib/auth/rbac';
 import { UserRole } from '@/lib/db/schema';
+import { useSidebarTranslation } from '@/lib/i18n/client';
 
 interface DashboardSidebarProps {
   user?: any;
@@ -13,17 +14,18 @@ interface DashboardSidebarProps {
 
 export function DashboardSidebar({ user, activeItem = 'dashboard', onNavigate }: DashboardSidebarProps) {
   const pathname = usePathname();
+  const t = useSidebarTranslation();
   // Handle both user object and session object (which contains a user property)
   const userData = user?.user || user;
   const userRole = (userData?.role as UserRole) || 'read_only';
 
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', href: '/admin', icon: Home, permission: Permission.VIEW_DASHBOARD },
-    { id: 'bookings', label: 'Bookings', href: '/admin/bookings', icon: ShoppingBag, permission: Permission.VIEW_BOOKINGS },
-    { id: 'reports', label: 'Reports', href: '/admin/reports', icon: BarChart3, permission: Permission.VIEW_REPORTS },
-    { id: 'menu-config', label: 'Menu Config', href: '/admin/menu-config', icon: UtensilsCrossed, permission: Permission.VIEW_MENU },
-    { id: 'user-management', label: 'User Management', href: '/admin/user-management', icon: Users, permission: Permission.VIEW_USERS },
-    { id: 'settings', label: 'Settings', href: '/admin/settings', icon: Settings, permission: Permission.VIEW_SETTINGS },
+    { id: 'dashboard', label: t('dashboard'), href: '/admin', icon: Home, permission: Permission.VIEW_DASHBOARD },
+    { id: 'bookings', label: t('bookings'), href: '/admin/bookings', icon: ShoppingBag, permission: Permission.VIEW_BOOKINGS },
+    { id: 'reports', label: t('reports'), href: '/admin/reports', icon: BarChart3, permission: Permission.VIEW_REPORTS },
+    { id: 'menu-config', label: t('menuConfig'), href: '/admin/menu-config', icon: UtensilsCrossed, permission: Permission.VIEW_MENU },
+    { id: 'user-management', label: t('userManagement'), href: '/admin/user-management', icon: Users, permission: Permission.VIEW_USERS },
+    { id: 'settings', label: t('settings'), href: '/admin/settings', icon: Settings, permission: Permission.VIEW_SETTINGS },
   ];
 
   // Filter items based on user permissions

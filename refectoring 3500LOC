@@ -1,0 +1,64 @@
+# Refactoring Massive Components
+
+This plan outlines the steps to refactor `CustomMenuWizardVariant1.tsx` (~4200 LOC) and `MenuConfigPageV3Complete.tsx` (~3600 LOC) into smaller, more manageable modules.
+
+## User Review Required
+
+> [!IMPORTANT]
+> This refactor involves significant movement of code into new files. While the functionality will remain identical, the file structure will change. Please confirm if the proposed directory structure aligns with your project preferences.
+
+## Proposed Changes
+
+### Component: `CustomMenuWizard` Refactor
+Goal: Split the giant wizard component into specialized sub-components and hooks.
+
+#### [NEW] [types.ts](file:///d:/Oliv-Booking-System/components/user/wizard/types.ts)
+- Extract all interfaces like `EventDetails`, `MenuItem`, `AddonGroup`, etc.
+
+#### [NEW] [useWizardCart.ts](file:///d:/Oliv-Booking-System/components/user/wizard/hooks/useWizardCart.ts)
+- Extract cart management logic: `toggleMenuItem`, `updateQuantity`, `removeFromCart`.
+- Extract pricing calculations: `getTotalPrice`, `getItemTotalPrice`, `getTotalPriceWithAddOns`.
+
+#### [NEW] [Step1Form.tsx](file:///d:/Oliv-Booking-System/components/user/wizard/components/Step1Form.tsx)
+- Extract the event details form logic and UI.
+
+#### [NEW] [CategorySection.tsx](file:///d:/Oliv-Booking-System/components/user/wizard/components/CategorySection.tsx)
+- Extract the menu category selection and item listing.
+
+#### [MODIFY] [CustomMenuWizardVariant1.tsx](file:///d:/Oliv-Booking-System/components/user/CustomMenuWizardVariant1.tsx)
+- Orchestrate the sub-components and use the new hooks.
+- Reduce file size to < 500 LOC.
+
+---
+
+### Component: `MenuConfigPage` Refactor
+Goal: Modularize the admin menu configuration page.
+
+#### [NEW] [constants.ts](file:///d:/Oliv-Booking-System/components/admin/menu/constants.ts)
+- Move `dietaryTagOptions`, `allergenOptions`, and `additiveOptions` here.
+
+#### [NEW] [CategoryCard.tsx](file:///d:/Oliv-Booking-System/components/admin/menu/components/CategoryCard.tsx)
+- Extract the individual category row/card along with its edit/delete/active toggles.
+
+#### [NEW] [ItemSettingsModal.tsx](file:///d:/Oliv-Booking-System/components/admin/menu/components/ItemSettingsModal.tsx)
+- Extract the huge modal for item settings (variants, nutritional info, tags).
+
+#### [MODIFY] [MenuConfigPageV3Complete.tsx](file:///d:/Oliv-Booking-System/components/admin/MenuConfigPageV3Complete.tsx)
+- Focus on layout and higher-level state management.
+- Reduce file size to < 800 LOC.
+
+## Verification Plan
+
+### Manual Verification
+- **User Booking Flow:**
+    1. Open the booking wizard.
+    2. Fill in Step 1 (Event Details) and verify validation.
+    3. Navigate through categories and add items to cart.
+    4. Verify quantities and pricing calculations updates correctly.
+    5. Submit the booking and ensure success.
+- **Admin Menu Management:**
+    1. Navigate to the Menu Configuration page.
+    2. Toggle category/item active status.
+    3. Open item settings and edit nutritional info/tags.
+    4. Reorder categories using drag-and-drop.
+    5. Verify changes persist after refresh.

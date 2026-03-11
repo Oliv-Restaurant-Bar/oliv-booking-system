@@ -13,6 +13,7 @@ import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import { canModifyUser } from '@/lib/auth/rbac';
 import { userFirstNameSchema, userLastNameSchema, userEmailSchema, userPasswordSchema } from '@/lib/validation/schemas';
+import { useTranslation as useGenericTranslation, useCommonTranslation, useButtonTranslation, useMessageTranslation } from '@/lib/i18n/client';
 
 interface User {
   id: string;
@@ -24,6 +25,12 @@ interface User {
 }
 
 export function UserManagementPage({ currentUser }: { currentUser: any }) {
+  // Translation hooks
+  const t = useGenericTranslation('user');
+  const commonT = useCommonTranslation();
+  const buttonT = useButtonTranslation();
+  const messageT = useMessageTranslation();
+
   const [users, setUsers] = useState<User[]>([]);
 
   // Robust check for super_admin role - handle both direct user object and session object
@@ -172,12 +179,12 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
       }
 
       await fetchUsers();
-      toast.success('User added successfully');
+      toast.success(t('toast.userAdded'));
       setIsAddUserModalOpen(false);
       resetForm();
     } catch (err: any) {
       console.error('Error adding user:', err);
-      toast.error(err.message || 'Failed to add user');
+      toast.error(err.message || t('toast.failedToAdd'));
     } finally {
       setIsSubmitting(false);
     }
@@ -198,7 +205,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
 
     // Show helpful message for self-edit
     if (user.id === currentUserId) {
-      toast.info('You can edit your profile information, but cannot change your role or status.');
+      toast.info(t('restrictions.editOwnProfileInfo'));
     }
 
     setIsEditUserModalOpen(true);
@@ -232,13 +239,13 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
       }
 
       await fetchUsers();
-      toast.success('User updated successfully');
+      toast.success(t('toast.userUpdated'));
       setIsEditUserModalOpen(false);
       resetForm();
       setSelectedUser(null);
     } catch (err: any) {
       console.error('Error updating user:', err);
-      toast.error(err.message || 'Failed to update user');
+      toast.error(err.message || t('toast.failedToUpdate'));
     } finally {
       setIsSubmitting(false);
     }
@@ -266,12 +273,12 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
       }
 
       await fetchUsers();
-      toast.success('User deleted successfully');
+      toast.success(t('toast.userDeleted'));
       setIsDeleteModalOpen(false);
       setSelectedUser(null);
     } catch (err: any) {
       console.error('Error deleting user:', err);
-      toast.error(err.message || 'Failed to delete user');
+      toast.error(err.message || t('toast.failedToDelete'));
     } finally {
       setIsSubmitting(false);
     }
@@ -333,7 +340,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Search by name, email, or role..."
+                placeholder={t('searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
@@ -364,7 +371,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
                 }}
                 className="sm:w-auto"
               >
-                Export
+                {commonT('export')}
               </Button>
               {isSuperAdmin && (
                 <Button
@@ -373,7 +380,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
                   onClick={() => setIsAddUserModalOpen(true)}
                   className="sm:w-auto"
                 >
-                  Add User
+                  {t('addNewUser')}
                 </Button>
               )}
               <Button
@@ -381,9 +388,9 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
                 onClick={fetchUsers}
                 disabled={loading}
                 className="sm:w-auto"
-                title="Refresh"
+                title={commonT('refresh')}
               >
-                Refresh
+                {commonT('refresh')}
               </Button>
             </div>
           </div>
@@ -431,7 +438,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
                       <td colSpan={6} className="px-6 py-12 text-center">
                         <Users className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                         <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                          No users found
+                          {t('noUsersFound')}
                         </p>
                       </td>
                     </tr>
@@ -521,7 +528,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
           resetForm();
         }}
         icon={Users}
-        title="Add New User"
+        title={t('addNewUser')}
         maxWidth="md"
         footer={
           <>
@@ -530,7 +537,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
               resetForm();
               setError(null);
             }}>
-              Cancel
+              {buttonT('cancel')}
             </Button>
             <Button
               variant="primary"
@@ -538,7 +545,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
               onClick={handleAddUser}
               disabled={!formFirstName.trim() || !formLastName.trim() || !formEmail.trim() || isSubmitting}
             >
-              {isSubmitting ? 'Adding...' : 'Add User'}
+              {isSubmitting ? t('adding') : t('addUser')}
             </Button>
           </>
         }
@@ -546,73 +553,73 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <ValidatedInput
-              label="First Name"
+              label={t('firstName')}
               type="text"
               value={formFirstName}
               onChange={(e) => {
                 setFormFirstName(e.target.value);
                 if (errors.firstName) setErrors({ ...errors, firstName: undefined });
               }}
-              placeholder="Enter first name"
+              placeholder={t('placeholders.firstName')}
               maxLength={20}
               showCharacterCount
               error={errors.firstName}
-              helperText="2-20 characters"
+              helperText={t('characterLimits.firstName')}
               required
             />
 
             <ValidatedInput
-              label="Last Name"
+              label={t('lastName')}
               type="text"
               value={formLastName}
               onChange={(e) => {
                 setFormLastName(e.target.value);
                 if (errors.lastName) setErrors({ ...errors, lastName: undefined });
               }}
-              placeholder="Enter last name"
+              placeholder={t('placeholders.lastName')}
               maxLength={20}
               showCharacterCount
               error={errors.lastName}
-              helperText="2-20 characters"
+              helperText={t('characterLimits.lastName')}
               required
             />
           </div>
 
           <ValidatedInput
-            label="Email"
+            label={t('email')}
             type="email"
             value={formEmail}
             onChange={(e) => {
               setFormEmail(e.target.value);
               if (errors.email) setErrors({ ...errors, email: undefined });
             }}
-            placeholder="user@restaurant.com"
+            placeholder={t('placeholders.email')}
             maxLength={255}
             showCharacterCount
             error={errors.email}
-            helperText="Must be a valid email address (max 255 characters)"
+            helperText={t('characterLimits.email')}
             required
           />
 
           <ValidatedInput
-            label="Password (optional - will use default if empty)"
+            label={t('passwordOptional')}
             type="password"
             value={formPassword}
             onChange={(e) => {
               setFormPassword(e.target.value);
               if (errors.password) setErrors({ ...errors, password: undefined });
             }}
-            placeholder="Enter password"
+            placeholder={t('placeholders.password')}
             maxLength={100}
             showCharacterCount
             error={errors.password}
-            helperText="Min. 8 characters, max. 100 characters"
+            helperText={t('characterLimits.password')}
             showPasswordToggle
           />
 
           <div>
             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-              Role
+              {t('userRole')}
             </label>
             <StatusDropdown
               options={roleOptions}
@@ -634,7 +641,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
           setSelectedUser(null);
         }}
         icon={Edit2}
-        title={selectedUser?.id === currentUserId ? "Edit My Profile" : "Edit User"}
+        title={selectedUser?.id === currentUserId ? t('editMyProfile') : t('editUser')}
         maxWidth="md"
         footer={
           <>
@@ -644,7 +651,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
               setSelectedUser(null);
               setError(null);
             }}>
-              Cancel
+              {buttonT('cancel')}
             </Button>
             <Button
               variant="primary"
@@ -652,7 +659,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
               onClick={handleSaveEdit}
               disabled={!formFirstName.trim() || !formLastName.trim() || !formEmail.trim() || isSubmitting}
             >
-              {isSubmitting ? 'Saving...' : 'Save Changes'}
+              {isSubmitting ? t('saving') : t('saveChanges')}
             </Button>
           </>
         }
@@ -660,57 +667,57 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <ValidatedInput
-              label="First Name"
+              label={t('firstName')}
               type="text"
               value={formFirstName}
               onChange={(e) => {
                 setFormFirstName(e.target.value);
                 if (errors.firstName) setErrors({ ...errors, firstName: undefined });
               }}
-              placeholder="Enter first name"
+              placeholder={t('placeholders.firstName')}
               maxLength={20}
               showCharacterCount
               error={errors.firstName}
-              helperText="2-20 characters"
+              helperText={t('characterLimits.firstName')}
               required
             />
 
             <ValidatedInput
-              label="Last Name"
+              label={t('lastName')}
               type="text"
               value={formLastName}
               onChange={(e) => {
                 setFormLastName(e.target.value);
                 if (errors.lastName) setErrors({ ...errors, lastName: undefined });
               }}
-              placeholder="Enter last name"
+              placeholder={t('placeholders.lastName')}
               maxLength={20}
               showCharacterCount
               error={errors.lastName}
-              helperText="2-20 characters"
+              helperText={t('characterLimits.lastName')}
               required
             />
           </div>
 
           <ValidatedInput
-            label="Email"
+            label={t('email')}
             type="email"
             value={formEmail}
             onChange={(e) => {
               setFormEmail(e.target.value);
               if (errors.email) setErrors({ ...errors, email: undefined });
             }}
-            placeholder="user@restaurant.com"
+            placeholder={t('placeholders.email')}
             maxLength={255}
             showCharacterCount
             error={errors.email}
-            helperText="Must be a valid email address (max 255 characters)"
+            helperText={t('characterLimits.email')}
             required
           />
 
           <div>
             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-              Role
+              {t('userRole')}
             </label>
             <StatusDropdown
               options={roleOptions}
@@ -721,13 +728,13 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
               disabled={selectedUser?.id === currentUserId} // Disable role change for own profile
             />
             {selectedUser?.id === currentUserId && (
-              <p className="text-xs text-muted-foreground mt-1">You cannot change your own role</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('restrictions.cannotChangeOwnRole')}</p>
             )}
           </div>
 
           <div>
             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-              Status
+              {t('userStatus')}
             </label>
             <StatusDropdown
               options={statusOptions}
@@ -738,7 +745,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
               disabled={selectedUser?.id === currentUserId} // Disable status change for own profile
             />
             {selectedUser?.id === currentUserId && (
-              <p className="text-xs text-muted-foreground mt-1">You cannot deactivate your own account</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('restrictions.cannotDeactivateSelf')}</p>
             )}
           </div>
         </div>
@@ -752,9 +759,9 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
           setSelectedUser(null);
         }}
         onConfirm={handleConfirmDelete}
-        title="Delete User"
-        message={`Are you sure you want to delete "${selectedUser?.name}"? This action cannot be undone.`}
-        confirmText={isSubmitting ? 'Deleting...' : 'Delete User'}
+        title={`${t('deleteUser')}: ${selectedUser?.name}`}
+        message={messageT('deleteConfirm')}
+        confirmText={isSubmitting ? t('saving') : t('deleteUser')}
         confirmIcon="delete"
       />
     </div>

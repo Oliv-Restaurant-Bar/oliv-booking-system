@@ -1,4 +1,6 @@
 import { getTranslations } from 'next-intl/server';
+import { cookies } from 'next/headers';
+import { getLocale, type Locale } from './locale-storage';
 
 /**
  * Get translations for a specific namespace on the server
@@ -90,4 +92,19 @@ export async function getValidationTranslation() {
  */
 export async function getEmailTranslation() {
   return await getTranslations('email');
+}
+
+/**
+ * Get the current locale on the server side
+ */
+export async function getServerLocale(): Promise<Locale> {
+  const cookieStore = await cookies();
+  return getLocale(cookieStore);
+}
+
+/**
+ * Get messages for a locale on the server side
+ */
+export async function getServerMessages(locale: Locale) {
+  return (await import(`../../messages/${locale}.json`)).default;
 }

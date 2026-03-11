@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, Menu, LogOut, UserCircle, ChevronDown } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useNavTranslation } from '@/lib/i18n/client';
 
 interface DashboardHeaderProps {
   user?: any;
@@ -20,6 +22,8 @@ export function DashboardHeader({
   onMenuClick
 }: DashboardHeaderProps) {
   const router = useRouter();
+  const t = useTranslations('admin.dashboard');
+  const navT = useNavTranslation();
   const userData = user?.user || user;
   const displayUserName = userName || userData?.name || 'Admin User';
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -42,31 +46,31 @@ export function DashboardHeader({
   // Page titles and subtitles
   const pageInfo: Record<string, { title: string; subtitle: string }> = {
     'dashboard': {
-      title: 'Dashboard',
-      subtitle: `Welcome back, ${displayUserName}! Here's what's happening today.`
+      title: t('title'),
+      subtitle: `${t('welcome')}, ${displayUserName}!`
     },
     'bookings': {
-      title: 'Bookings',
+      title: navT('bookings'),
       subtitle: 'Manage and track all restaurant bookings'
     },
     'reports': {
-      title: 'Reports',
+      title: navT('reports'),
       subtitle: 'View analytics and performance reports'
     },
     'menu-config': {
-      title: 'Menu Config',
+      title: navT('menu'),
       subtitle: 'Configure your restaurant menu items'
     },
     'user-management': {
-      title: 'User Management',
+      title: navT('users'),
       subtitle: 'Manage staff and user permissions'
     },
     'settings': {
-      title: 'Settings',
+      title: navT('settings'),
       subtitle: 'Configure your restaurant settings'
     },
     'profile': {
-      title: 'Profile',
+      title: navT('profile'),
       subtitle: 'Manage your account and preferences'
     },
     'help': {
@@ -151,7 +155,7 @@ export function DashboardHeader({
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-left cursor-pointer"
               >
                 <UserCircle className="w-4 h-4 text-muted-foreground" />
-                <span style={{ fontSize: 'var(--text-base)' }}>Profile</span>
+                <span style={{ fontSize: 'var(--text-base)' }}>{navT('profile')}</span>
               </button>
               <button
                 onClick={() => {
@@ -161,7 +165,7 @@ export function DashboardHeader({
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-left border-t border-border cursor-pointer"
               >
                 <LogOut className="w-4 h-4 text-muted-foreground" />
-                <span style={{ fontSize: 'var(--text-base)' }}>Logout</span>
+                <span style={{ fontSize: 'var(--text-base)' }}>{navT('logout')}</span>
               </button>
             </div>
           )}

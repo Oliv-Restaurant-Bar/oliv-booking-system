@@ -144,17 +144,85 @@
       "dairyFree": "Laktosefrei"
     }
   },
+  "profile": {
+    "title": "Profil",
+    "editProfile": "Profil bearbeiten",
+    "firstName": "Vorname",
+    "lastName": "Nachname",
+    "email": "E-Mail",
+    "phone": "Telefon",
+    "role": "Rolle",
+    "changePassword": "Passwort ändern",
+    "currentPassword": "Aktuelles Passwort",
+    "newPassword": "Neues Passwort",
+    "confirmPassword": "Neues Passwort bestätigen",
+    "enterCurrentPassword": "Aktuelles Passwort eingeben",
+    "enterNewPassword": "Neues Passwort eingeben",
+    "confirmNewPassword": "Neues Passwort bestätigen",
+    "passwordChanged": "Passwort erfolgreich geändert",
+    "profileUpdated": "Profil erfolgreich aktualisiert",
+    "saveChanges": "Änderungen speichern",
+    "characterLimits": {
+      "firstName": "2-20 Zeichen",
+      "lastName": "2-20 Zeichen",
+      "email": "Muss eine gültige E-Mail-Adresse sein (max 255 Zeichen)",
+      "phone": "Optional - Nur Zahlen und + erlaubt (max 20 Zeichen)"
+    },
+    "placeholders": {
+      "firstName": "Vornamen eingeben",
+      "lastName": "Nachnamen eingeben",
+      "email": "E-Mail-Adresse eingeben",
+      "phone": "Telefonnummer eingeben"
+    },
+    "passwordHelp": "Min. 8 Zeichen, muss sich vom aktuellen Passwort unterscheiden"
+  },
   "user": {
     "title": "Benutzer",
     "addUser": "Benutzer hinzufügen",
+    "addNewUser": "Neuen Benutzer hinzufügen",
     "editUser": "Benutzer bearbeiten",
+    "editMyProfile": "Mein Profil bearbeiten",
     "deleteUser": "Benutzer löschen",
     "userName": "Benutzername",
     "userEmail": "Benutzer-E-Mail",
     "userRole": "Benutzerrolle",
     "userStatus": "Benutzerstatus",
+    "firstName": "Vorname",
+    "lastName": "Nachname",
+    "password": "Passwort",
+    "passwordOptional": "Passwort (optional - Standard wird verwendet, wenn leer)",
+    "enterPassword": "Passwort eingeben",
+    "adding": "Hinzufügen...",
+    "saving": "Speichern...",
+    "searchPlaceholder": "Nach Name, E-Mail oder Rolle suchen...",
+    "noUsersFound": "Keine Benutzer gefunden",
     "lastLogin": "Letzte Anmeldung",
     "createdAt": "Erstellt am",
+    "characterLimits": {
+      "firstName": "2-20 Zeichen",
+      "lastName": "2-20 Zeichen",
+      "email": "Muss eine gültige E-Mail-Adresse sein (max 255 Zeichen)",
+      "password": "Min. 8 Zeichen, max. 100 Zeichen"
+    },
+    "placeholders": {
+      "firstName": "Vornamen eingeben",
+      "lastName": "Nachnamen eingeben",
+      "email": "benutzer@restaurant.com",
+      "password": "Passwort eingeben"
+    },
+    "restrictions": {
+      "cannotChangeOwnRole": "Sie können Ihre eigene Rolle nicht ändern",
+      "cannotDeactivateSelf": "Sie können Ihr eigenes Konto nicht deaktivieren",
+      "editOwnProfileInfo": "Sie können Ihre Profilinformationen bearbeiten, aber nicht Ihre Rolle oder Ihren Status ändern."
+    },
+    "toast": {
+      "userAdded": "Benutzer erfolgreich hinzugefügt",
+      "userUpdated": "Benutzer erfolgreich aktualisiert",
+      "userDeleted": "Benutzer erfolgreich gelöscht",
+      "failedToAdd": "Benutzer konnte nicht hinzugefügt werden",
+      "failedToUpdate": "Benutzer konnte nicht aktualisiert werden",
+      "failedToDelete": "Benutzer konnte nicht gelöscht werden"
+    },
     "roles": {
       "super_admin": "Super-Admin",
       "admin": "Admin",
@@ -240,5 +308,275 @@
     "daysAgo": "vor {days} Tagen",
     "weeksAgo": "vor {weeks} Wochen",
     "monthsAgo": "vor {months} Monaten"
+  },
+  "admin": {
+    "dashboard": {
+      "title": "Dashboard",
+      "welcome": "Willkommen zurück",
+      "kpis": {
+        "bookings": "Anzahl Buchungen",
+        "revenue": "Gesamtumsatz",
+        "items": "Gesamtartikel",
+        "vsLastMonth": "vs letzten Monat"
+      },
+      "charts": {
+        "bookingsLast30Days": "Buchungen der letzten 30 Tage",
+        "statusSummary": "Zusammenfassung Status",
+        "revenueTrend": "Umsatzentwicklung"
+      }
+    },
+    "bookings": {
+      "title": "Buchungen",
+      "search": "Suche nach Name, E-Mail oder Telefon...",
+      "export": "Exportieren",
+      "refresh": "Aktualisieren",
+      "filtersApplied": "Filter angewendet",
+      "showing": "Zeige {from} bis {to} von {total} Buchungen",
+      "noBookings": "Keine Buchungen gefunden",
+      "tryAdjustFilters": "Versuchen Sie, Ihre Filter oder Suchanfrage anzupassen",
+      "statuses": {
+        "all": "Alle Status",
+        "new": "Neu",
+        "pending": "Ausstehend",
+        "confirmed": "Bestätigt",
+        "touchbase": "Kontakt aufnehmen",
+        "declined": "Abgelehnt",
+        "completed": "Abgeschlossen"
+      },
+      "exportColumns": {
+        "customerName": "Kundenname",
+        "email": "E-Mail",
+        "phone": "Telefon",
+        "eventDate": "Eventdatum",
+        "time": "Zeit",
+        "guests": "Gäste",
+        "occasion": "Anlass",
+        "amount": "Betrag",
+        "status": "Status",
+        "contactedBy": "Kontaktiert von",
+        "contactedWhen": "Kontaktiert am"
+      },
+      "views": {
+        "grid": "Raster",
+        "calendar": "Kalender"
+      },
+      "months": {
+        "january": "Januar",
+        "february": "Februar",
+        "march": "März",
+        "april": "April",
+        "may": "Mai",
+        "june": "Juni",
+        "july": "Juli",
+        "august": "August",
+        "september": "September",
+        "october": "Oktober",
+        "november": "November",
+        "december": "Dezember"
+      }
+    },
+    "reports": {
+      "title": "Berichte",
+      "topCustomers": "Top-Kunden nach Umsatz",
+      "avgRevenue": "Durchschn: CHF {amount}",
+      "bookings": "{count} Buchungen",
+      "guests": "{count} Personen"
+    },
+    "settings": {
+      "title": "Einstellungen",
+      "venueLocations": "Veranstaltungsorte",
+      "venueDesc": "Verwalten Sie Restaurantstandorte für Buchungen",
+      "addVenue": "Neuen Ort hinzufügen",
+      "noVenues": "Noch keine Orte definiert.",
+      "noVenuesDesc": "Klicken Sie auf 'Neuen Ort hinzufügen', um Ihren ersten Ort zu erstellen.",
+      "editVenue": "Ort bearbeiten",
+      "deleteVenue": "Ort löschen",
+      "languageRegion": "Sprache & Region",
+      "language": "Sprache",
+      "timeZone": "Zeitzone",
+      "dateFormat": "Datumsformat",
+      "currency": "Währung",
+      "showCurrency": "Währungssymbol in Berichten anzeigen",
+      "languages": {
+        "english": "Englisch",
+        "german": "Deutsch",
+        "french": "Französisch",
+        "italian": "Italienisch"
+      },
+      "timeZones": {
+        "zurich": "Europa/Zürich (GMT+1)",
+        "london": "Europa/London (GMT+0)",
+        "paris": "Europa/Paris (GMT+1)"
+      },
+      "dateFormats": {
+        "mdy": "MM/TT/JJJJ (z.B. 02.05.2026)",
+        "dmy": "TT.MM.JJJJ (z.B. 05.02.2026)"
+      },
+      "currencies": {
+        "chf": "CHF - Schweizer Franken",
+        "eur": "EUR - Euro",
+        "usd": "USD - US-Dollar",
+        "gbp": "GBP - Britisches Pfund"
+      }
+    },
+    "menuConfig": {
+      "title": "Menü-Konfiguration",
+      "searchCategories": "Menükategorien nach Name, Beschreibung suchen...",
+      "searchGroups": "Optionsgruppen nach Namen suchen...",
+      "categoryDesc": "Kurze Beschreibung dieser Kategorie",
+      "itemDesc": "Diesen Menüartikel beschreiben",
+      "variantName": "Variantenname (z.B. Klein, Mittel)",
+      "ingredients": "Alle Zutaten auflisten...",
+      "noVariants": "Noch keine Varianten hinzugefügt. Klicken Sie auf 'Variante hinzufügen', um Preiskptionen zu erstellen.",
+      "noAddons": "Keine Addon-Gruppen verfügbar. Erstellen Sie Addon-Gruppen zuerst im Tab 'Optionen & Addons'.",
+      "deleteCategory": "Kategorie löschen",
+      "deleteItem": "Menüartikel löschen",
+      "deleteGroup": "Gruppe löschen",
+      "addChoice": "Option hinzufügen"
+    },
+    "sidebar": {
+      "dashboard": "Dashboard",
+      "bookings": "Buchungen",
+      "reports": "Berichte",
+      "menuConfig": "Menü-Konfiguration",
+      "userManagement": "Benutzerverwaltung",
+      "settings": "Einstellungen"
+    },
+    "login": {
+      "title": "Admin-Panel",
+      "signIn": "Anmelden für Zugriff auf das Admin-Panel",
+      "email": "E-Mail",
+      "password": "Passwort",
+      "emailPlaceholder": "admin@oliv-restaurant.com",
+      "passwordPlaceholder": "••••••••",
+      "signingIn": "Anmelden...",
+      "signInBtn": "Anmelden",
+      "protectedAccess": "Geschützter Zugang nur für Mitarbeiter von OLIV Restaurant & Bar"
+    }
+  },
+  "landing": {
+    "hero": {
+      "welcome": "WILLKOMMEN BEI PREMIUM DINING",
+      "title": "Schaffen Sie unvergessliche Dining-Momente",
+      "description": "Erstellen Sie benutzerdefinierte Catering-Menüs in Minuten mit unserem intuitiven Wizard. Perfekt für Hochzeiten, Firmenevents und besondere Feiern.",
+      "getStarted": "Kostenlos starten",
+      "seeHowItWorks": "Siehe, wie es funktioniert",
+      "eventsCatered": "Events betreut",
+      "menuOptions": "Menüoptionen",
+      "clientRating": "Kundenbewertung"
+    },
+    "howItWorks": {
+      "title": "UNSER PROZESS",
+      "subtitle": "Wie es funktioniert",
+      "description": "Drei einfache Schritte zu Ihrem perfekten Catering-Erlebnis",
+      "step1": {
+        "title": "Event-Details",
+        "description": "Teilen Sie uns Ihre Kontaktdaten, das Eventdatum und die Anzahl der Gäste mit."
+      },
+      "step2": {
+        "title": "Menü wählen",
+        "description": "Wählen Sie aus unseren kuratierten Angeboten - von Vorspeisen bis Desserts."
+      },
+      "step3": {
+        "title": "Überprüfen & Absenden",
+        "description": "Wir kontaktieren Sie, um Ihre Anfrage zu besprechen und die Verfügbarkeit zu bestätigen."
+      },
+      "createMenu": "Jetzt Menü erstellen"
+    },
+    "whyOlive": {
+      "title": "WARUM UNS WÄHLEN",
+      "subtitle": "Warum Olive?",
+      "description": "Wir bringen Leidenschaft, Präzision und Premium-Qualität in jedes Event, das wir betreuen.",
+      "cuisine": {
+        "title": "Ausgezeichnete Küche",
+        "description": "Frische, saisonale Zutaten, kreativ zubereitet von unserem erfahrenen Küchenteam."
+      },
+      "ambience": {
+        "title": "Elegantes Ambiente",
+        "description": "Stylische Räumlichkeiten im Herzen von Bern für Events von 10 bis 100 Personen."
+      },
+      "care": {
+        "title": "Persönliche Betreuung",
+        "description": "Individuell zugeschnittener Service – von der Planung bis zur Durchführung."
+      }
+    },
+    "gallery": {
+      "title": "UNSER RESTAURANT",
+      "subtitle": "Galerie",
+      "description": "Erkunden Sie unser Restaurant durch Bilder",
+      "viewImage": "Bild ansehen",
+      "counter": "{current} / {total}"
+    },
+    "cta": {
+      "title": "BEREIT ZU STARTEN?",
+      "subtitle": "Erstellen Sie Ihr perfektes Menü",
+      "description": "In Nur Wenigen Minuten",
+      "body": "Schliessen Sie sich Hunderten zufriedener Kunden an, die Olive für ihre Catering-Bedürfnisse vertrauen. Beginnen Sie noch heute mit dem Bau Ihres benutzerdefinierten Menüs – keine Kreditkarte erforderlich.",
+      "button": "Jetzt Menü erstellen"
+    },
+    "footer": {
+      "terms": "AGB",
+      "privacy": "Datenschutz",
+      "copyright": "© 2024 Olive Catering. Alle Rechte vorbehalten."
+    },
+    "header": {
+      "home": "Startseite",
+      "howItWorks": "Wie es funktioniert",
+      "whyOlive": "Warum Olive",
+      "gallery": "Galerie",
+      "createMenu": "Menü erstellen"
+    }
+  },
+  "wizard": {
+    "form": {
+      "name": "Name",
+      "business": "Firma",
+      "email": "E-Mail",
+      "telephone": "Telefon",
+      "street": "Strasse",
+      "plz": "PLZ",
+      "location": "Ort",
+      "eventDate": "Eventdatum",
+      "eventTime": "Eventzeit",
+      "guestCount": "Gästeanzahl",
+      "occasion": "Anlass",
+      "specialRequests": "Spezielle Wünsche"
+    },
+    "categories": {
+      "appetizers": "Vorspeisen",
+      "mainCourse": "Hauptgericht",
+      "desserts": "Desserts",
+      "beverages": "Getränke"
+    },
+    "actions": {
+      "addToCart": "In den Warenkorb",
+      "remove": "Entfernen",
+      "next": "Weiter",
+      "previous": "Zurück",
+      "reviewOrder": "Bestellung überprüfen",
+      "submitRequest": "Anfrage absenden"
+    },
+    "cart": {
+      "title": "Ihre Auswahl",
+      "empty": "Ihr Warenkorb ist leer",
+      "total": "Gesamt"
+    },
+    "thankYou": {
+      "title": "Vielen Dank für Ihre Anfrage!",
+      "subtitle": "Herzlichen Glückwunsch zum ersten Schritt!",
+      "description": "Wir haben Ihre Anfrage erhalten und werden uns innerhalb von 24 Stunden bei Ihnen melden, um die Details zu besprechen und Ihr Menü gemeinsam zu finalisieren.",
+      "inquiryNumber": "Ihre Anfragenummer:",
+      "goToHomepage": "Zur Startseite",
+      "createNewRequest": "Neue Anfrage erstellen",
+      "editOrder": "Bestellung bearbeiten",
+      "contact": "Kontakt",
+      "questions": "Fragen? Kontaktieren Sie uns",
+      "needHelp": "Sofortige Hilfe benötigt?",
+      "steps": {
+        "confirmation": "1. Bestätigungsanruf",
+        "finalization": "2. Menü-Finalisierung",
+        "preparation": "3. Event-Vorbereitung"
+      }
+    }
   }
 }

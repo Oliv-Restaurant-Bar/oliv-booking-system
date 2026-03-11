@@ -9,8 +9,10 @@ import { Permission, hasPermission } from '@/lib/auth/rbac';
 import { VenueService } from '@/services/venue.service';
 import type { Venue } from '@/services/venue.service';
 import { toast } from 'sonner';
+import { useSettingsTranslation } from '@/lib/i18n/client';
 
 export function SettingsPage({ user }: { user?: any }) {
+  const t = useSettingsTranslation();
   const userRole = user?.role;
   const canUpdateSettings = hasPermission(userRole, Permission.UPDATE_SETTINGS);
 
@@ -136,10 +138,10 @@ export function SettingsPage({ user }: { user?: any }) {
               <div className="flex justify-between w-full">
                 <div>
                   <h3 className="text-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                    Venue Locations
+                    {t('venueLocations')}
                   </h3>
                   <p className="text-muted-foreground text-sm mt-0.5">
-                    Manage restaurant locations for bookings
+                    {t('venueDesc')}
                   </p>
                 </div>
                 <button
@@ -148,7 +150,7 @@ export function SettingsPage({ user }: { user?: any }) {
                   className="px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Plus className="w-4 h-4" />
-                  Add New Venue
+                  {t('addVenue')}
                 </button>
               </div>
             </div>
@@ -169,8 +171,8 @@ export function SettingsPage({ user }: { user?: any }) {
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
                     <MapPin className="w-6 h-6 text-primary/40" />
                   </div>
-                  <p className="text-muted-foreground font-medium">No venues defined yet.</p>
-                  <p className="text-sm text-muted-foreground/60 mt-1">Click "Add New Venue" to create your first venue.</p>
+                  <p className="text-muted-foreground font-medium">{t('noVenues')}</p>
+                  <p className="text-sm text-muted-foreground/60 mt-1">{t('noVenuesDesc')}</p>
                 </div>
               ) : (
                 venues.map((venue) => (
@@ -226,7 +228,7 @@ export function SettingsPage({ user }: { user?: any }) {
                 <Globe className="w-5 h-5 text-primary" />
               </div>
               <h3 className="text-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                Language & Region
+                {t('languageRegion')}
               </h3>
             </div>
 

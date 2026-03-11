@@ -9,6 +9,7 @@ import { changePassword } from '@/lib/actions/auth';
 import { toast } from 'sonner';
 import type { Session } from '@/lib/auth';
 import { userFirstNameSchema, userLastNameSchema, userEmailSchema, userPhoneSchema, userPasswordSchema } from '@/lib/validation/schemas';
+import { useProfileTranslation, useAuthTranslation, useButtonTranslation, useMessageTranslation } from '@/lib/i18n/client';
 
 interface SessionWithRole extends Session {
   user: Session['user'] & {
@@ -21,6 +22,12 @@ interface ProfilePageProps {
 }
 
 export function ProfilePage({ session }: ProfilePageProps) {
+  // Translation hooks
+  const t = useProfileTranslation();
+  const authT = useAuthTranslation();
+  const buttonT = useButtonTranslation();
+  const messageT = useMessageTranslation();
+
   // Cast session to include role
   const sessionWithRole = session as SessionWithRole;
 
@@ -215,7 +222,7 @@ export function ProfilePage({ session }: ProfilePageProps) {
       });
 
       setIsEditProfileModalOpen(false);
-      toast.success(result.message || 'Profile updated successfully!');
+      toast.success(result.message || t('profileUpdated'));
     } catch (error) {
       console.error('Error saving profile:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to update profile');
@@ -266,7 +273,7 @@ export function ProfilePage({ session }: ProfilePageProps) {
       });
 
       if (result.success) {
-        toast.success('Password changed successfully!');
+        toast.success(t('passwordChanged'));
         setPasswordForm({
           currentPassword: '',
           newPassword: '',
@@ -408,7 +415,7 @@ export function ProfilePage({ session }: ProfilePageProps) {
                 style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
               >
                 <User className="w-4 h-4" />
-                Edit Profile
+                {t('editProfile')}
               </button>
             </div>
           </div>
@@ -422,13 +429,13 @@ export function ProfilePage({ session }: ProfilePageProps) {
                   <Lock className="w-5 h-5 text-primary" />
                 </div>
                 <h3 className="text-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                  Change Password
+                  {t('changePassword')}
                 </h3>
               </div>
 
               <div className="space-y-4">
                 <ValidatedInput
-                  label="Current Password"
+                  label={t('currentPassword')}
                   type="password"
                   value={passwordForm.currentPassword}
                   onChange={(e) => {
@@ -442,14 +449,14 @@ export function ProfilePage({ session }: ProfilePageProps) {
                       setPasswordErrors({ ...passwordErrors, newPassword: 'New password must be different from current password' });
                     }
                   }}
-                  placeholder="Enter current password"
+                  placeholder={t('enterCurrentPassword')}
                   error={passwordErrors.currentPassword}
                   showPasswordToggle
                   required
                 />
 
                 <ValidatedInput
-                  label="New Password"
+                  label={t('newPassword')}
                   type="password"
                   value={passwordForm.newPassword}
                   onChange={(e) => {
@@ -463,24 +470,24 @@ export function ProfilePage({ session }: ProfilePageProps) {
                       setPasswordErrors({ ...passwordErrors, newPassword: 'New password must be different from current password' });
                     }
                   }}
-                  placeholder="Enter new password"
+                  placeholder={t('enterNewPassword')}
                   maxLength={100}
                   showCharacterCount
                   error={passwordErrors.newPassword}
-                  helperText="Min. 8 characters, must be different from current password"
+                  helperText={t('passwordHelp')}
                   showPasswordToggle
                   required
                 />
 
                 <ValidatedInput
-                  label="Confirm New Password"
+                  label={t('confirmPassword')}
                   type="password"
                   value={passwordForm.confirmPassword}
                   onChange={(e) => {
                     setPasswordForm({ ...passwordForm, confirmPassword: e.target.value });
                     if (passwordErrors.confirmPassword) setPasswordErrors({ ...passwordErrors, confirmPassword: undefined });
                   }}
-                  placeholder="Confirm new password"
+                  placeholder={t('confirmNewPassword')}
                   error={passwordErrors.confirmPassword}
                   showPasswordToggle
                   required
@@ -496,12 +503,12 @@ export function ProfilePage({ session }: ProfilePageProps) {
                     {isChangingPassword ? (
                       <>
                         <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-transparent rounded-full animate-spin" />
-                        Changing...
+                        {t('saving')}
                       </>
                     ) : (
                       <>
                         <Check className="w-4 h-4" />
-                        Change Password
+                        {t('changePassword')}
                       </>
                     )}
                   </button>
@@ -517,11 +524,11 @@ export function ProfilePage({ session }: ProfilePageProps) {
         isOpen={isEditProfileModalOpen}
         onClose={() => setIsEditProfileModalOpen(false)}
         icon={User}
-        title="Edit Profile"
+        title={t('editProfile')}
         footer={
           <>
             <Button variant="secondary" icon={X} onClick={() => setIsEditProfileModalOpen(false)}>
-              Cancel
+              {buttonT('cancel')}
             </Button>
             <Button
               variant="primary"
@@ -530,7 +537,7 @@ export function ProfilePage({ session }: ProfilePageProps) {
               disabled={!hasChanges || isSavingProfile}
               className={!hasChanges || isSavingProfile ? 'opacity-50 cursor-not-allowed' : ''}
             >
-              {isSavingProfile ? 'Saving...' : 'Save Changes'}
+              {isSavingProfile ? t('saving') : t('saveChanges')}
             </Button>
           </>
         }
@@ -538,56 +545,56 @@ export function ProfilePage({ session }: ProfilePageProps) {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <ValidatedInput
-              label="First Name"
+              label={t('firstName')}
               type="text"
               value={editForm.firstName}
               onChange={(e) => {
                 setEditForm({ ...editForm, firstName: e.target.value });
                 if (profileErrors.firstName) setProfileErrors({ ...profileErrors, firstName: undefined });
               }}
-              placeholder="Enter first name"
+              placeholder={t('placeholders.firstName')}
               maxLength={20}
               showCharacterCount
               error={profileErrors.firstName}
-              helperText="2-20 characters"
+              helperText={t('characterLimits.firstName')}
               required
             />
 
             <ValidatedInput
-              label="Last Name"
+              label={t('lastName')}
               type="text"
               value={editForm.lastName}
               onChange={(e) => {
                 setEditForm({ ...editForm, lastName: e.target.value });
                 if (profileErrors.lastName) setProfileErrors({ ...profileErrors, lastName: undefined });
               }}
-              placeholder="Enter last name"
+              placeholder={t('placeholders.lastName')}
               maxLength={20}
               showCharacterCount
               error={profileErrors.lastName}
-              helperText="2-20 characters"
+              helperText={t('characterLimits.lastName')}
               required
             />
           </div>
 
           <ValidatedInput
-            label="Email"
+            label={authT('email')}
             type="email"
             value={editForm.email}
             onChange={(e) => {
               setEditForm({ ...editForm, email: e.target.value });
               if (profileErrors.email) setProfileErrors({ ...profileErrors, email: undefined });
             }}
-            placeholder="Enter email address"
+            placeholder={t('placeholders.email')}
             maxLength={255}
             showCharacterCount
             error={profileErrors.email}
-            helperText="Must be a valid email address (max 255 characters)"
+            helperText={t('characterLimits.email')}
             required
           />
 
           <ValidatedInput
-            label="Phone"
+            label={t('phone')}
             type="tel"
             value={editForm.phone}
             onChange={(e) => {
@@ -596,11 +603,11 @@ export function ProfilePage({ session }: ProfilePageProps) {
               setEditForm({ ...editForm, phone: value });
               if (profileErrors.phone) setProfileErrors({ ...profileErrors, phone: undefined });
             }}
-            placeholder="Enter phone number"
+            placeholder={t('placeholders.phone')}
             maxLength={20}
             showCharacterCount
             error={profileErrors.phone}
-            helperText="Optional - Only numbers and + allowed (max 20 characters)"
+            helperText={t('characterLimits.phone')}
           />
         </div>
       </Modal>

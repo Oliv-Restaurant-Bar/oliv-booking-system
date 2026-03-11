@@ -4,15 +4,17 @@ import { Menu, X, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import Image from 'next/image';
 import { Button } from './Button';
+import { useLandingTranslation } from '@/lib/i18n/client';
 
 export function HeaderVariant6() {
+  const t = useLandingTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navigation = [
-    { name: 'Home', href: '#hero' },
-    { name: 'How It Works', href: '#how-it-works' },
-    { name: 'Why Olive', href: '#why-olive' },
-    { name: 'Gallery', href: '#gallery' },
+    { name: t('header.home'), href: '#hero' },
+    { name: t('header.howItWorks'), href: '#how-it-works' },
+    { name: t('header.whyOlive'), href: '#why-olive' },
+    { name: t('header.gallery'), href: '#gallery' },
   ];
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -61,7 +63,7 @@ export function HeaderVariant6() {
           {/* CTA Button - Desktop */}
           <div className="hidden md:flex items-center gap-3">
             <Button variant="primary" to="/wizard">
-              Create Menu
+              {t('header.createMenu')}
             </Button>
           </div>
 
@@ -91,7 +93,7 @@ export function HeaderVariant6() {
               ))}
               <div className="px-4 pt-2 flex flex-col gap-2">
                 <Button variant="primary" fullWidth to="/wizard">
-                  Create Menu
+                  {t('header.createMenu')}
                 </Button>
               </div>
             </div>

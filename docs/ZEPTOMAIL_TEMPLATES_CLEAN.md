@@ -626,7 +626,7 @@ This document contains **clean ZeptoMail templates** with **ZERO conditional log
 
 **When to use:** Notifies admin when a guest requests to unlock a booking.
 
-**Subject:** `Anfrage auf Bearbeitung - Booking #{{booking_id}}`
+**Subject:** `Anfrage zur Freischaltung - Buchung #{{booking_id}}`
 
 **HTML:**
 ```html
@@ -648,8 +648,8 @@ This document contains **clean ZeptoMail templates** with **ZERO conditional log
 <body>
   <div class="container">
     <div class="header">
-      <h1 style="margin: 0; font-size: 28px;">🔑 Unlock Request</h1>
-      <p style="margin: 10px 0 0 0;">Booking #{{booking_id}}</p>
+      <h1 style="margin: 0; font-size: 28px;">🔑 Anfrage zur Freischaltung</h1>
+      <p style="margin: 10px 0 0 0;">Buchung #{{booking_id}}</p>
     </div>
 
     <div class="content">
@@ -666,7 +666,7 @@ This document contains **clean ZeptoMail templates** with **ZERO conditional log
       <p>Klicken Sie auf den untenstehenden Link, um die Buchung im Admin-Dashboard zu prüfen und freizuschalten:</p>
       <a href="{{admin_url}}" class="button">Zum Admin-Dashboard</a>
 
-      <p>Mit freundlichen Grüßen,<br/>Oliv Booking System</p>
+      <p>Mit freundlichen Grüßen,<br/>Oliv Buchungssystem</p>
     </div>
 
     <div class="footer">
@@ -1149,7 +1149,7 @@ This document contains **clean ZeptoMail templates** with **ZERO conditional log
 
 **When to use:** New admin user account is created
 
-**Subject:** `Welcome to Oliv Booking System - Your Account is Ready`
+**Subject:** `Willkommen beim Oliv Buchungssystem - Ihr Konto ist bereit`
 
 **HTML:**
 ```html
@@ -1176,39 +1176,39 @@ This document contains **clean ZeptoMail templates** with **ZERO conditional log
 <body>
   <div class="container">
     <div class="header">
-      <h1 style="margin: 0; font-size: 28px;">🎉 Welcome to Oliv Booking System</h1>
-      <p style="margin: 10px 0 0 0;">Your Account is Ready</p>
+      <h1 style="margin: 0; font-size: 28px;">🎉 Willkommen beim Oliv Buchungssystem</h1>
+      <p style="margin: 10px 0 0 0;">Ihr Konto ist bereit</p>
     </div>
 
     <div class="content">
-      <p>Hello <strong>{{user_name}}</strong>,</p>
-      <p>Your account has been successfully created in the Oliv Booking System. You can now access the admin panel to manage bookings, menus, and more.</p>
+      <p>Hallo <strong>{{user_name}}</strong>,</p>
+      <p>Ihr Konto wurde erfolgreich im Oliv Buchungssystem erstellt. Sie können nun auf das Admin-Panel zugreifen, um Buchungen, Menüs und mehr zu verwalten.</p>
 
       <div class="info-box">
-        <h3 style="margin: 0 0 10px 0; color: #2c3e50;">👤 Account Details</h3>
-        <p style="margin: 0 0 5px 0; color: #2c3e50;"><strong>Email:</strong> {{user_email}}</p>
-        <p style="margin: 0; color: #2c3e50;"><strong>Role:</strong> {{user_role}}</p>
+        <h3 style="margin: 0 0 10px 0; color: #2c3e50;">👤 Kontodetails</h3>
+        <p style="margin: 0 0 5px 0; color: #2c3e50;"><strong>E-Mail:</strong> {{user_email}}</p>
+        <p style="margin: 0; color: #2c3e50;"><strong>Rolle:</strong> {{user_role}}</p>
       </div>
 
       <div style="text-align: center; margin: 30px 0;">
         <a href="{{login_url}}" class="button">
-          Login to Admin Panel
+          Zum Admin-Panel anmelden
         </a>
       </div>
 
       <div class="warning">
         <p style="margin: 0; font-size: 14px; color: #856404;">
-          <strong>Important:</strong> Your temporary password is: <code>{{temp_password}}</code><br/>
-          Please change your password after your first login for security.
+          <strong>Wichtig:</strong> Ihr temporäres Passwort lautet: <code>{{temp_password}}</code><br/>
+          Bitte ändern Sie Ihr Passwort aus Sicherheitsgründen nach Ihrer ersten Anmeldung.
         </p>
       </div>
 
-      <p style="margin-top: 20px;">If you have any questions, please contact your system administrator.</p>
-      <p>Best regards,<br/>Oliv Booking System Team</p>
+      <p style="margin-top: 20px;">Falls Sie Fragen haben, wenden Sie sich bitte an Ihren Systemadministrator.</p>
+      <p>Mit freundlichen Grüßen,<br/>Ihr Oliv Buchungssystem-Team</p>
     </div>
 
     <div class="footer">
-      <p>Oliv Restaurant Booking System</p>
+      <p>Oliv Restaurant Buchungssystem</p>
       <p><a href="https://oliv-restaurant.ch" style="color: #2c3e50;">www.oliv-restaurant.ch</a></p>
     </div>
   </div>

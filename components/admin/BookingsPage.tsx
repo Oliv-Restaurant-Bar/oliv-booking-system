@@ -11,6 +11,7 @@ import { GridView } from './GridView';
 import { CalendarView } from './CalendarView';
 import { BookingDetailPage, type Booking } from './BookingDetailPage';
 import * as XLSX from 'xlsx';
+import { useBookingTranslation, useCommonTranslation } from '@/lib/i18n/client';
 
 const allStatuses = [
   { label: 'All Status', value: 'All Status', dotColor: '' },
@@ -25,6 +26,8 @@ const allStatuses = [
 export function BookingsPage({ user }: { user?: any }) {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const t = useBookingTranslation();
+  const commonT = useCommonTranslation();
   const [allBookingsData, setAllBookingsData] = useState<Booking[]>([]); // Store all fetched data
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState<'list' | 'detail'>('list');
@@ -138,17 +141,17 @@ export function BookingsPage({ user }: { user?: any }) {
 
   const handleExport = () => {
     const excelData = filteredBookings.map((booking: Booking) => ({
-      'Customer Name': booking.customer.name,
-      'Email': booking.customer.email,
-      'Phone': booking.customer.phone,
-      'Event Date': booking.event.date,
-      'Time': booking.event.time,
-      'Guests': booking.guests,
-      'Occasion': booking.event.occasion,
-      'Amount': booking.amount,
-      'Status': booking.status,
-      'Contacted By': booking.contactHistory?.[0]?.by || '',
-      'Contacted When': booking.contactHistory?.[0]?.date || '',
+      [t('exportColumns.customerName')]: booking.customer.name,
+      [t('exportColumns.email')]: booking.customer.email,
+      [t('exportColumns.phone')]: booking.customer.phone,
+      [t('exportColumns.eventDate')]: booking.event.date,
+      [t('exportColumns.time')]: booking.event.time,
+      [t('exportColumns.guests')]: booking.guests,
+      [t('exportColumns.occasion')]: booking.event.occasion,
+      [t('exportColumns.amount')]: booking.amount,
+      [t('exportColumns.status')]: booking.status,
+      [t('exportColumns.contactedBy')]: booking.contactHistory?.[0]?.by || '',
+      [t('exportColumns.contactedWhen')]: booking.contactHistory?.[0]?.date || '',
     }));
     const worksheet = XLSX.utils.json_to_sheet(excelData);
     const workbook = XLSX.utils.book_new();
@@ -168,7 +171,7 @@ export function BookingsPage({ user }: { user?: any }) {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="Search by name, email, or phone..."
+                  placeholder={t('search')}
                   className="w-full pl-10 pr-10 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                   style={{ fontSize: 'var(--text-base)' }}
                   value={searchQuery}
@@ -202,7 +205,7 @@ export function BookingsPage({ user }: { user?: any }) {
                     onClick={handleExport}
                     className="whitespace-nowrap w-full"
                   >
-                    Export
+                    {t('export')}
                   </Button>
                 </div>
                 <button
@@ -231,7 +234,7 @@ export function BookingsPage({ user }: { user?: any }) {
                 <div className="flex items-center gap-2">
                   <div className="px-2 py-1 bg-primary/10 text-primary rounded-md flex items-center gap-1.5" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
                     <Filter className="w-3.5 h-3.5" />
-                    Filters Applied
+                    {t('filtersApplied')}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {searchQuery && (
@@ -271,7 +274,7 @@ export function BookingsPage({ user }: { user?: any }) {
           {/* Empty State
           {!loading && bookingsData.length === 0 && (
             <div className="text-center py-16">
-              <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>No bookings found</p>
+              <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>{t('noBookings')}</p>
             </div>
           )} */}
 
@@ -299,7 +302,11 @@ export function BookingsPage({ user }: { user?: any }) {
               {viewMode === 'grid' && totalPages > 1 && (
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-8 mt-4 border-t border-border">
                   <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                    Showing <span className="text-foreground font-medium">{(page - 1) * pageSize + 1}</span> to <span className="text-foreground font-medium">{Math.min(page * pageSize, totalCount)}</span> of <span className="text-foreground font-medium">{totalCount}</span> bookings
+                    {t('showing', {
+                      from: (page - 1) * pageSize + 1,
+                      to: Math.min(page * pageSize, totalCount),
+                      total: totalCount
+                    })}
                   </p>
                   <div className="flex items-center gap-1.5">
                     <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="p-2 rounded-lg border border-border hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"><ChevronLeft className="w-5 h-5" /></button>

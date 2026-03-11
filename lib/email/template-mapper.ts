@@ -306,7 +306,7 @@ export function getAssignmentTemplateData(
 ): TemplateData {
   return {
     admin_name: params.adminName || "Admin",
-    customer_name: booking.lead?.contactName || "Customer",
+    customer_name: booking.lead?.contactName || "Gast",
     event_date: params.eventDate || formatGermanDate(booking.eventDate),
     event_time: params.eventTime || booking.eventTime,
     booking_url: params.bookingUrl || `${process.env.NEXT_PUBLIC_APP_URL}/admin/bookings?id=${booking.id}`,
@@ -321,9 +321,9 @@ export function getKitchenPdfTemplateData(
   params: { documentName?: string; eventDate?: string } = {}
 ): TemplateData {
   return {
-    customer_name: booking.lead?.contactName || "Customer",
+    customer_name: booking.lead?.contactName || "Gast",
     event_date: params.eventDate || formatGermanDate(booking.eventDate),
-    document_name: params.documentName || "Kitchen Sheet",
+    document_name: params.documentName || "Küchenblatt",
   };
 }
 
@@ -339,10 +339,10 @@ export function getUserCreatedTemplateData(params: {
   loginUrl?: string;
 }): TemplateData {
   const roleDisplayNames: Record<string, string> = {
-    super_admin: "Super Administrator",
+    super_admin: "Super-Administrator",
     admin: "Administrator",
     moderator: "Moderator",
-    read_only: "Read Only",
+    read_only: "Nur Lesezugriff",
   };
 
   return {
@@ -350,7 +350,7 @@ export function getUserCreatedTemplateData(params: {
     user_email: params.userEmail,
     user_role: roleDisplayNames[params.userRole] || params.userRole,
     temp_password: params.tempPassword,
-    created_by: params.createdBy || "System Administrator",
+    created_by: params.createdBy || "Systemadministrator",
     login_url: params.loginUrl || `${process.env.NEXT_PUBLIC_APP_URL}/admin/login`,
   };
 }
@@ -526,12 +526,12 @@ export function getEmailSubject(
     reminder: `Erinnerung an Ihre Buchung morgen - Oliv Restaurant`,
     no_show: `Nicht erschienen - Oliv Restaurant - ${formattedDate}`,
     declined: `Ihre Buchungsanfrage - Oliv Restaurant`,
-    unlock_requested: `Anfrage auf Bearbeitung - Booking #${generateShortBookingId(booking.id).toUpperCase()}`,
+    unlock_requested: `Anfrage auf Bearbeitung - Buchung #${generateShortBookingId(booking.id).toUpperCase()}`,
     unlock_granted: `Ihre Buchung wurde freigeschaltet - Oliv Restaurant`,
     unlock_declined: `Update zu Ihrer Anfrage auf Bearbeitung - Oliv Restaurant`,
-    assignment: `New Booking Assigned: ${booking.lead?.contactName || "Customer"}`,
-    kitchen_pdf: `Kitchen Sheet: ${booking.lead?.contactName || "Customer"} - ${formattedDate}`,
-    user_created: `Welcome to Oliv Booking System - Your Account is Ready`,
+    assignment: `Neue Buchung zugewiesen: ${booking.lead?.contactName || "Gast"}`,
+    kitchen_pdf: `Küchenblatt: ${booking.lead?.contactName || "Gast"} - ${formattedDate}`,
+    user_created: `Willkommen beim Oliv Buchungssystem - Ihr Konto ist bereit`,
     custom: `Nachricht von Oliv Restaurant`,
   };
 

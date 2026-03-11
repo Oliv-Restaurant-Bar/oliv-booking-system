@@ -3,8 +3,12 @@
 import { ArrowRight, Play } from 'lucide-react';
 import { Button } from './Button';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
+import { useLandingTranslation } from '@/lib/i18n/client';
 
 export function HeroVariant6() {
+  const t = useLandingTranslation();
+  const heroT = useLandingTranslation();
+
   return (
     <section id="hero" className="relative min-h-screen lg:max-h-[750px] flex items-center p-4 sm:p-6 lg:p-8 bg-background">
       <div className="relative w-full min-h-[calc(100vh-2rem)] sm:min-h-[calc(100vh-3rem)] lg:min-h-[calc(100vh-4rem)] lg:max-h-[750px] overflow-hidden rounded-3xl" style={{ borderRadius: 'var(--radius-card)' }}>
@@ -30,14 +34,14 @@ export function HeroVariant6() {
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/20 backdrop-blur-md border border-primary/30 rounded-full">
                 <div className="w-2 h-2 rounded-full bg-primary" />
                 <span className="text-primary" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-                  WELCOME TO PREMIUM DINING
+                  {t('hero.welcome')}
                 </span>
               </div>
 
               {/* Main Heading */}
-              <h1 
+              <h1
                 className="text-white leading-tight"
-                style={{ 
+                style={{
                   fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
                   fontWeight: 'var(--font-weight-semibold)',
                   lineHeight: '1.1'
@@ -49,26 +53,25 @@ export function HeroVariant6() {
               </h1>
 
               {/* Description */}
-              <p 
+              <p
                 className="text-white/80 leading-relaxed max-w-lg"
                 style={{ fontSize: 'var(--text-h4)' }}
               >
-                Design custom catering menus in minutes with our intuitive wizard. 
-                Perfect for weddings, corporate events, and special celebrations.
+                {t('hero.description')}
               </p>
 
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <Button variant="primary" icon={ArrowRight} iconPosition="right" className="sm:flex-1" to="/wizard">
-                  Get started free
+                  {t('hero.getStarted')}
                 </Button>
-                
-                <Button 
+
+                <Button
                   variant="outline"
                   to="#how-it-works"
                   className="sm:flex-1 bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 hover:text-white hover:border-white/20"
                 >
-                  See how it works
+                  {t('hero.seeHowItWorks')}
                 </Button>
               </div>
 
@@ -79,7 +82,7 @@ export function HeroVariant6() {
                     500+
                   </div>
                   <div className="text-white/70" style={{ fontSize: 'var(--text-small)' }}>
-                    Events Catered
+                    {t('hero.eventsCatered')}
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -87,7 +90,7 @@ export function HeroVariant6() {
                     50+
                   </div>
                   <div className="text-white/70" style={{ fontSize: 'var(--text-small)' }}>
-                    Menu Options
+                    {t('hero.menuOptions')}
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -95,7 +98,7 @@ export function HeroVariant6() {
                     4.9★
                   </div>
                   <div className="text-white/70" style={{ fontSize: 'var(--text-small)' }}>
-                    Client Rating
+                    {t('hero.clientRating')}
                   </div>
                 </div>
               </div>
