@@ -1,3 +1,4 @@
+'use client';
 import { HeaderVariant6 } from './HeaderVariant6';
 import { HeroVariant6 } from './HeroVariant6';
 import { HowItWorksVariant6 } from './HowItWorksVariant6';

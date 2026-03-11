@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { GripVertical, Edit2, MoreVertical, Plus, ChevronDown, ChevronRight, Trash2, Eye, EyeOff, Search, UtensilsCrossed, ListPlus, Upload, X, Copy, Settings, Check, Users } from 'lucide-react';
+import { useMenuConfigTranslation, useCommonTranslation } from '@/lib/i18n/client';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import { DietaryIcon } from '@/components/user/DietaryIcon';
 import { Modal } from '../user/Modal';
@@ -188,7 +189,10 @@ const additiveOptions = [
   'BHA/BHT'
 ];
 
+
 export function MenuConfigPage({ user }: { user?: any }) {
+  const t = useMenuConfigTranslation();
+  const ct = useCommonTranslation();
   const userRole = user?.role;
   const canCreateCategory = hasPermission(userRole, Permission.CREATE_MENU_CATEGORY);
   const canEditCategory = hasPermission(userRole, Permission.EDIT_MENU_CATEGORY);
@@ -696,7 +700,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                   style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
                 >
                   <UtensilsCrossed className="w-4 h-4" />
-                  Menu Categories
+                  {t('tabs.items')}
                 </button>
                 <button
                   onClick={() => setActiveTab('addons')}
@@ -707,7 +711,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                   style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
                 >
                   <ListPlus className="w-4 h-4" />
-                  Choices & Addons
+                  {t('tabs.addons')}
                 </button>
               </div>
             </div>
@@ -722,7 +726,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <input
                         type="text"
-                        placeholder="Search menu categories by name, description..."
+                        placeholder={t('placeholders.searchCategories')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
@@ -739,7 +743,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           setIsAddCategoryModalOpen(true);
                         }}
                       >
-                        Add New Category
+                        {t('buttons.addCategory')}
                       </Button>
                     )}
                   </div>
@@ -805,7 +809,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                     </h4>
                                     {category.items.length > 0 && (
                                       <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full" style={{ fontSize: 'var(--text-small)' }}>
-                                        {category.items.length} {category.items.length === 1 ? 'item' : 'items'}
+                                        {category.items.length} {category.items.length === 1 ? ct('item') : ct('items')}
                                       </span>
                                     )}
                                     {/* {category.guestCount && (
@@ -825,7 +829,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                 {/* Actions - Right side */}
                                 <div className="flex items-center gap-2 flex-shrink-0">
                                   {canEditCategory && (
-                                    <Tooltip title="Edit category" position="top">
+                                    <Tooltip title={t('tooltips.editCategory')} position="top">
                                       <button
                                         onClick={() => {
                                           setEditingCategoryId(category.id);
@@ -845,7 +849,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                   )}
 
                                   {canCreateItem && (
-                                    <Tooltip title="Add menu item" position="top">
+                                    <Tooltip title={t('tooltips.addItem')} position="top">
                                       <button
                                         onClick={() => {
                                           setActiveCategoryId(category.id);
@@ -891,7 +895,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                   )}
 
                                   {canEditCategory && (
-                                    <Tooltip title="Add choice" position="top">
+                                    <Tooltip title={t('buttons.addChoice')} position="top">
                                       <button
                                         onClick={() => {
                                           setChoiceCategoryId(category.id);
@@ -937,7 +941,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                               >
                                                 <ListPlus className="w-4 h-4 text-muted-foreground" />
                                                 <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                                  Add choice
+                                                  {t('buttons.addChoice')}
                                                 </span>
                                               </button>
                                             )}
@@ -952,7 +956,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                               >
                                                 <Copy className="w-4 h-4 text-muted-foreground" />
                                                 <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                                  Duplicate
+                                                  {t('buttons.duplicate')}
                                                 </span>
                                               </button>
                                             )}
@@ -969,14 +973,14 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                                   <>
                                                     <EyeOff className="w-4 h-4 text-muted-foreground" />
                                                     <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                                      Hide
+                                                      {t('buttons.hide')}
                                                     </span>
                                                   </>
                                                 ) : (
                                                   <>
                                                     <Eye className="w-4 h-4 text-muted-foreground" />
                                                     <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                                      Show
+                                                      {t('buttons.show')}
                                                     </span>
                                                   </>
                                                 )}
@@ -1008,7 +1012,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                               >
                                                 <Trash2 className="w-4 h-4 text-destructive" />
                                                 <span className="text-destructive" style={{ fontSize: 'var(--text-base)' }}>
-                                                  Remove
+                                                  {t('buttons.remove')}
                                                 </span>
                                               </button>
                                             )}
@@ -1297,7 +1301,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <input
                         type="text"
-                        placeholder="Search choice groups by name..."
+                        placeholder={t('placeholders.searchGroups')}
                         className="w-full pl-10 pr-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                         style={{ fontSize: 'var(--text-base)' }}
                       />
@@ -1311,7 +1315,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           setIsAddGroupModalOpen(true);
                         }}
                       >
-                        Add Group
+                        {t('buttons.addGroup')}
                       </Button>
                     )}
                   </div>
@@ -1349,7 +1353,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                               {group.name}
                             </h4>
                             <span className={`px-2 py-0.5 rounded-full ${group.isRequired ? 'bg-primary/10 text-primary' : 'bg-primary/10 text-primary'}`} style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
-                              {group.isRequired ? 'Choice' : 'Addon'}
+                              {group.isRequired ? ct('choice') : ct('addon')}
                             </span>
                             {/* {group.isRequired && (
                               <span className="px-2 py-0.5 bg-destructive/10 text-destructive rounded-full" style={{ fontSize: 'var(--text-small)' }}>
@@ -1358,12 +1362,12 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             )} */}
                             {group.items.length > 0 && (
                               <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full" style={{ fontSize: 'var(--text-small)' }}>
-                                {group.items.length} {group.items.length === 1 ? 'item' : 'items'}
+                                {group.items.length} {group.items.length === 1 ? ct('item') : ct('items')}
                               </span>
                             )}
                           </div>
                           <p className="text-muted-foreground line-clamp-1" style={{ fontSize: 'var(--text-small)' }}>
-                            Select {group.minSelect}-{group.maxSelect}
+                            {ct('select')} {group.minSelect}-{group.maxSelect}
                             {group.subtitle && ` • ${group.subtitle}`}
                           </p>
                         </div>
@@ -1624,7 +1628,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
               isOpen={isAddCategoryModalOpen}
               onClose={() => setIsAddCategoryModalOpen(false)}
               icon={UtensilsCrossed}
-              title={editingCategoryId ? 'Edit Category' : 'Add New Category'}
+              title={editingCategoryId ? t('titles.editCategory') : t('titles.addCategory')}
               footer={
                 <>
                   <Button
@@ -1636,7 +1640,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                       setEditingCategoryId(null);
                     }}
                   >
-                    Cancel
+                    {ct('cancel')}
                   </Button>
                   <Button
                     variant="primary"
@@ -1698,7 +1702,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                     }}
                     disabled={!newCategory.name || newCategory.name.trim() === '' || newCategory.name.length > 100 || newCategory.description.length > 500}
                   >
-                    {editingCategoryId ? 'Save Changes' : 'Add Category'}
+                    {editingCategoryId ? t('buttons.saveChanges') : t('buttons.addCategory')}
                   </Button>
                 </>
               }
@@ -1706,14 +1710,14 @@ export function MenuConfigPage({ user }: { user?: any }) {
               <div className="space-y-4">
                 <div>
                   <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                    Category Name *
+                    {t('labels.categoryName')} *
                   </label>
                   <input
                     type="text"
                     maxLength={100}
                     value={newCategory.name}
                     onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-                    placeholder="e.g., Appetizers, Main Courses"
+                    placeholder={t('placeholders.categoryName')}
                     className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                     style={{ fontSize: 'var(--text-base)' }}
                   />
@@ -1722,13 +1726,13 @@ export function MenuConfigPage({ user }: { user?: any }) {
 
                 <div>
                   <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                    Description
+                    {t('labels.description')}
                   </label>
                   <textarea
                     value={newCategory.description}
                     maxLength={500}
                     onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
-                    placeholder="Brief description of this category"
+                    placeholder={t('placeholders.categoryDesc')}
                     rows={3}
                     className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                     style={{ fontSize: 'var(--text-base)' }}
@@ -1738,7 +1742,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
 
                 <div>
                   <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                    Category Image
+                    {t('labels.categoryImage')}
                   </label>
                   <div className="border-2 border-dashed border-border rounded-lg p-4 bg-muted/20">
                     {(newCategory.imageUrl || newCategory.image) ? (
@@ -1753,7 +1757,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                         <label className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity cursor-pointer flex items-center justify-center gap-2">
                           <Upload className="w-4 h-4" />
                           <span style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                            Change Image
+                            {t('buttons.changeImage')}
                           </span>
                           <input
                             type="file"
@@ -1774,7 +1778,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           <Upload className="w-8 h-8 text-primary" />
                         </div>
                         <span className="text-foreground mb-1" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                          Upload Image
+                          {t('buttons.uploadImage')}
                         </span>
                         <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
                           Click to browse or drag and drop
@@ -1823,7 +1827,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                       setPricingMode('price');
                     }}
                   >
-                    Cancel
+                    {ct('cancel')}
                   </Button>
                   <Button
                     variant="primary"
@@ -2924,7 +2928,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                       setNewGroup({ name: '', subtitle: '', type: 'optional', minSelect: 0, maxSelect: 1 });
                     }}
                   >
-                    Cancel
+                    {ct('cancel')}
                   </Button>
                   <Button
                     variant="primary"
@@ -3145,7 +3149,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                       setNewAddonItem({ name: '', price: '', dietaryType: 'veg', isActive: true });
                     }}
                   >
-                    Cancel
+                    {ct('cancel')}
                   </Button>
                   <Button
                     variant="primary"
@@ -3511,7 +3515,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                       setSelectedAddonGroups([]);
                     }}
                   >
-                    Cancel
+                    {ct('cancel')}
                   </Button>
                   <Button
                     variant="primary"

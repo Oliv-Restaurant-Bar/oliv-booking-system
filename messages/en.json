@@ -35,7 +35,12 @@
     "filter": "Filter",
     "sort": "Sort",
     "refresh": "Refresh",
-    "download": "Download"
+    "download": "Download",
+    "item": "item",
+    "items": "items",
+    "choice": "Choice",
+    "addon": "Addon",
+    "select": "Select"
   },
   "nav": {
     "home": "Home",
@@ -456,12 +461,77 @@
     },
     "menuConfig": {
       "title": "Menu Config",
-      "searchCategories": "Search menu categories by name, description...",
-      "searchGroups": "Search choice groups by name...",
-      "categoryDesc": "Brief description of this category",
-      "itemDesc": "Describe this menu item",
-      "variantName": "Variant name (e.g., Small, Medium)",
-      "ingredients": "List all ingredients...",
+      "titles": {
+        "editCategory": "Edit Category",
+        "addCategory": "Add New Category",
+        "editItem": "Edit Menu Item",
+        "addItem": "Add New Item",
+        "editGroup": "Edit Group",
+        "addGroup": "Add New Group"
+      },
+      "tabs": {
+        "items": "Menu Categories",
+        "addons": "Choices & Addons"
+      },
+      "buttons": {
+        "addCategory": "Add New Category",
+        "addItem": "Add New Item",
+        "addGroup": "Add New Group",
+        "addAddon": "Add New Addon",
+        "remove": "Remove",
+        "duplicate": "Duplicate",
+        "show": "Show",
+        "hide": "Hide",
+        "addChoice": "Add Choice",
+        "uploadImage": "Upload Image",
+        "changeImage": "Change Image",
+        "saveChanges": "Save Changes"
+      },
+      "labels": {
+        "categoryName": "Category Name",
+        "description": "Description",
+        "categoryImage": "Category Image",
+        "itemName": "Item Name",
+        "price": "Price",
+        "pricingType": "Pricing Type",
+        "itemImage": "Item Image",
+        "active": "Active",
+        "groupName": "Group Name",
+        "subtitle": "Subtitle",
+        "selectionType": "Selection Type"
+      },
+      "placeholders": {
+        "searchCategories": "Search menu categories by name, description...",
+        "searchGroups": "Search choice groups by name...",
+        "categoryName": "e.g., Appetizers, Main Courses",
+        "categoryDesc": "Brief description of this category",
+        "itemName": "e.g., Margherita Pizza",
+        "itemDesc": "Describe this menu item",
+        "variantName": "Variant name (e.g., Small, Medium)",
+        "groupName": "e.g., Size, Toppings, Extras",
+        "addonName": "e.g., Extra Cheese",
+        "ingredients": "List all ingredients...",
+        "nutrition": {
+          "servingSize": "e.g., 100g",
+          "calories": "e.g., 250 kcal",
+          "protein": "e.g., 15g",
+          "carbs": "e.g., 30g",
+          "fat": "e.g., 10g",
+          "fiber": "e.g., 5g",
+          "sugar": "e.g., 8g",
+          "sodium": "e.g., 500mg"
+        }
+      },
+      "tooltips": {
+        "viewDetails": "View item details",
+        "editCategory": "Edit Category",
+        "deleteCategory": "Delete Category",
+        "addItem": "Add a new item to this category",
+        "editItem": "Edit Item",
+        "deleteItem": "Delete Item",
+        "editGroup": "Edit Group",
+        "deleteGroup": "Delete Group"
+      },
       "noVariants": "No variants added yet. Click 'Add Variant' to create pricing options.",
       "noAddons": "No addon groups available. Create addon groups in the 'Choices & Addons' tab first.",
       "deleteCategory": "Delete Category",
