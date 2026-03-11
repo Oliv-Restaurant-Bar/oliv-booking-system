@@ -93,6 +93,14 @@ export function DashboardHeader({
     }
   };
 
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  };
+
   return (
     <div
       className={`mx-4 md:mx-8 mt-3 md:mt-5 mb-4 md:mb-5 flex items-center bg-card rounded-2xl px-4 md:px-[32px] py-[10px] border border-border transition-shadow duration-300 ${isScrolled ? 'shadow-lg' : 'shadow-sm'
@@ -133,7 +141,9 @@ export function DashboardHeader({
                 />
               ) : (
                 <div className="w-full h-full bg-primary flex items-center justify-center">
-                  <User className="w-4 h-4 text-primary-foreground" />
+                  <span className="text-white text-[12px] font-semibold">
+                    {getInitials(displayUserName)}
+                  </span>
                 </div>
               )}
             </div>
