@@ -579,6 +579,24 @@ export const kitchenPdfLogs = pgTable(
   }),
 );
 
+// System Settings
+export const systemSettings = pgTable(
+  "system_settings",
+  {
+    id: text("id").primaryKey(),
+    language: text("language").notNull().default("English"),
+    timeZone: text("time_zone").notNull().default("Europe/Zurich"),
+    dateFormat: text("date_format").notNull().default("DD/MM/YYYY"),
+    currency: text("currency").notNull().default("CHF"),
+    showCurrencySymbol: boolean("show_currency_symbol").notNull().default(true),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    updatedBy: text("updated_by"), // User ID of who last updated the settings
+  },
+  (table) => ({
+    idIdx: index("system_settings_id_idx").on(table.id),
+  }),
+);
+
 // Better Auth type exports
 export type Session = typeof session.$inferSelect;
 export type NewSession = typeof session.$inferInsert;
@@ -622,4 +640,6 @@ export type NewVenue = typeof venues.$inferInsert;
 export type KitchenPdfLog = typeof kitchenPdfLogs.$inferSelect;
 export type NewKitchenPdfLog = typeof kitchenPdfLogs.$inferInsert;
 export type LandingPageContent = typeof landingPageContent.$inferSelect;
-export type NewLandingPageContent = typeof landingPageContent.$inferInsert;
+export type NewLandingPageContent = typeof landingPageContent.$inferSelect;
+export type SystemSettings = typeof systemSettings.$inferSelect;
+export type NewSystemSettings = typeof systemSettings.$inferInsert;

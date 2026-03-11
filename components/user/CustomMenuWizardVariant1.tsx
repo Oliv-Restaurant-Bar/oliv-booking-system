@@ -1908,7 +1908,7 @@ export function CustomMenuWizard() {
                                 >
                                   {isLocked && <Lock className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />}
                                   {isVisited && !isActive && !isLocked && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
-                                  <span>{category}</span>
+                                  <span className='truncate max-w-[150px]'>{category}</span>
                                   {categoryItemCount > 0 && !isLocked && (
                                     <span className={`px-2 py-0.5 rounded-full text-xs ${isActive ? 'bg-secondary-foreground/20 text-secondary-foreground' : 'bg-primary/10 text-primary'
                                       }`}>
@@ -1943,7 +1943,7 @@ export function CustomMenuWizard() {
                               />
                               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
                                 <div className="p-6">
-                                  <h4 className="text-white mb-1" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                  <h4 className="text-white mb-1 line-clamp-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
                                     {selectedCategory}
                                   </h4>
                                   <p className="text-white/90" style={{ fontSize: 'var(--text-small)' }}>
@@ -2025,7 +2025,7 @@ export function CustomMenuWizard() {
                                           )}
                                           <div className="flex-1">
                                             <div className="flex flex-col gap-1">
-                                              <h5 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                              <h5 className="text-foreground line-clamp-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
                                                 {item.name}
                                               </h5>
                                               {isConsumption(item) && (
@@ -2215,7 +2215,7 @@ export function CustomMenuWizard() {
                                                       {item.dietaryType !== 'none' && (
                                                         <DietaryIcon type={item.dietaryType} size="sm" />
                                                       )}
-                                                      <h6 className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
+                                                      <h6 className="text-foreground truncate max-w-[200px]" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
                                                         {item.name}
                                                       </h6>
                                                       {isConsumption(item) && (
@@ -2230,7 +2230,7 @@ export function CustomMenuWizard() {
                                                         </span>
                                                       )}
                                                       <span className="text-muted-foreground flex items-center flex-wrap" style={{ fontSize: 'var(--text-small)' }}>
-                                                        <span className="mx-1">•</span>{item.category}
+                                                        <span className="mx-1 truncate max-w-[100px]">• {item.category}</span>
                                                         {itemVariants[itemId] && item.variants && (() => {
                                                           const variant = item.variants.find(v => v.id === itemVariants[itemId]);
                                                           return variant ? <><span className="mx-1">•</span>{variant.name}</> : '';
@@ -3869,9 +3869,9 @@ export function CustomMenuWizard() {
                   <div className="mb-6">
                     <h4 className="text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
                       Additional Comments
-                      <span className="text-muted-foreground ml-1" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-normal)' }}>
+                      {/* <span className="text-muted-foreground ml-1" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-normal)' }}>
                         (Optional)
-                      </span>
+                      </span> */}
                     </h4>
                     <ValidatedTextarea
                       value={tempComment}
@@ -4098,7 +4098,7 @@ export function CustomMenuWizard() {
                       const item = menuItems.find(i => i.id === itemId);
                       if (!item) return null;
                       const quantity = itemQuantities[itemId] || 1;
-                      const isBeverage = item.category === 'Beverages';
+                      // const isBeverage = item.category === 'Beverages';
                       const isPerPersonItemValue = isPerPerson(item);
                       return (
                         <div key={itemId} className="bg-card border border-border rounded-lg p-2.5" style={{ borderRadius: 'var(--radius)' }}>

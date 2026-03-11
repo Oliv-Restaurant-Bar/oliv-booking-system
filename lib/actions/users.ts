@@ -30,10 +30,8 @@ export async function createAdminUser(input: CreateAdminUserInput) {
       return { success: false, error: "Only super admins can create users" };
     }
 
-    // Check if trying to create a user with equal or higher role
-    if (!canModifyUser(currentUserRole, input.id, currentUserId, input.role)) {
-      return { success: false, error: "You cannot create a user with equal or higher role" };
-    }
+    // Super admins can create any role including other super admins
+    // No additional role hierarchy check needed for super admins
 
     // Create user using Better Auth
     await auth.api.signUpEmail({
@@ -75,7 +73,21 @@ export async function updateAdminUser(id: string, updates: Partial<typeof adminU
       return { success: false, error: "User not found" };
     }
 
-    // Check if current user can modify this user
+    // Super admins can modify any user including other super admins
+    if (currentUserRole === 'super_admin') {
+      // Allow all modifications for super admins
+      const [user] = await db
+        .update(adminUser)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(adminUser.id, id))
+        .returning();
+
+      revalidatePath("/admin/user-management");
+
+      return { success: true, data: user };
+    }
+
+    // For non-super admins, check if they can modify this user
     if (!canModifyUser(currentUserRole, id, currentUserId, targetUser.role as any)) {
       return { success: false, error: "You don't have permission to modify this user" };
     }

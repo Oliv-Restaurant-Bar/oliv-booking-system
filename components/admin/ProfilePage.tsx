@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { User, Mail, Phone, Shield, Camera, Lock, Check, X, Eye, EyeOff } from 'lucide-react';
-import { UserAvatar } from './UserAvatar';
 import { Modal } from '../user/Modal';
 import { Button } from '../user/Button';
 import { ValidatedInput } from '@/components/ui/validated-input';
@@ -324,6 +323,9 @@ export function ProfilePage({ session }: ProfilePageProps) {
   //   }
   // };
 
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  };
 
   return (
     <div className="min-h-full bg-background px-4 md:px-8 pt-4 md:pt-6 pb-6 flex flex-col">
@@ -334,11 +336,34 @@ export function ProfilePage({ session }: ProfilePageProps) {
             <div className="bg-card border border-border rounded-xl p-4 md:p-6 flex flex-col items-center">
               {/* Avatar - Profile picture upload disabled */}
               <div className="relative mb-4">
-                <UserAvatar
-                  name={`${profileData.firstName} ${profileData.lastName}`}
-                  image={profileData.avatar}
-                  size="xl"
+                <div className="w-32 h-32 rounded-full bg-primary flex items-center justify-center text-white overflow-hidden" style={{ fontSize: '48px', fontWeight: 'var(--font-weight-semibold)' }}>
+                  {profileData.avatar ? (
+                    <img
+                      src={profileData.avatar}
+                      alt={`${profileData.firstName} ${profileData.lastName}`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    getInitials(profileData.firstName, profileData.lastName)
+                  )}
+                </div>
+                {/* Camera button disabled
+                <button
+                  onClick={handleAvatarClick}
+                  className="absolute bottom-0 right-0 w-10 h-10 bg-secondary rounded-full flex items-center justify-center border-4 border-card hover:bg-primary transition-colors"
+                >
+                  <Camera className="w-5 h-5 text-white" />
+                </button>
+                */}
+                {/* File input disabled
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
                 />
+                */}
               </div>
 
               {/* Name and Role */}

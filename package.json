@@ -15,6 +15,7 @@
     "db:reset-admin": "dotenv -e .env -- tsx lib/db/reset-admin.ts",
     "db:verify": "dotenv -e .env -- tsx lib/db/verify-admin.ts",
     "db:create-user": "dotenv -e .env -- tsx lib/db/create-user.ts",
+    "db:add-settings": "dotenv -e .env -- tsx scripts/add-settings-table.ts",
     "db:recalculate-totals": "dotenv -e .env -- tsx lib/db/recalculate-totals.ts",
     "email:test": "dotenv -e .env -- tsx scripts/test-email.ts",
     "email:test-dummy": "tsx scripts/test-email-with-dummy.ts",

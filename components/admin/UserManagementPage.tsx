@@ -105,7 +105,13 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.role.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ).sort((a, b) => {
+    // Sort current user to the top
+    if (a.id === currentUserId) return -1;
+    if (b.id === currentUserId) return 1;
+    // Otherwise maintain original order
+    return 0;
+  });
 
   // Reset form
   const resetForm = () => {
@@ -425,11 +431,9 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
                     <th className="text-left px-4 py-3 text-foreground hidden lg:table-cell" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
                       Created
                     </th>
-                    {isSuperAdmin && (
-                      <th className="text-right px-4 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
-                        Actions
-                      </th>
-                    )}
+                    <th className="text-center px-4 py-3 text-foreground" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)' }}>
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -484,31 +488,33 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
                           })}
                         </td>
                         {/* Actions column - show edit/delete based on permissions */}
-                        {(isSuperAdmin || user.id === currentUserId) && (
-                          <td className="px-6 py-4">
-                            <div className="flex items-center justify-end gap-2">
-                              {/* Edit button - always show for own profile */}
-                              <button
-                                onClick={() => handleEditClick(user)}
-                                className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
-                                title={user.id === currentUserId ? "Edit my profile" : "Edit user"}
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
+                        {/* {(isSuperAdmin || user.id === currentUserId) && ( */}
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-end gap-2">
+                            {/* Edit button - always show for own profile */}
+                            <button
+                              onClick={() => handleEditClick(user)}
+                              disabled={user.id !== currentUserId && !isSuperAdmin}
+                              className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                              title={user.id === currentUserId ? "Edit my profile" : "Edit user"}
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
 
-                              {/* Delete button - never show for own profile, only for super_admins on other users */}
-                              {isSuperAdmin && user.id !== currentUserId && (
-                                <button
-                                  onClick={() => handleDeleteClick(user)}
-                                  className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-muted-foreground hover:text-destructive"
-                                  title="Delete user"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        )}
+                            {/* Delete button - never show for own profile, only for super_admins on other users */}
+                            {isSuperAdmin && user.id !== currentUserId && (
+                              <button
+                                onClick={() => handleDeleteClick(user)}
+                                className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-muted-foreground hover:text-destructive"
+                                disabled={user.id !== currentUserId && !isSuperAdmin}
+                                title="Delete user"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                        {/* )} */}
                       </tr>
                     ))
                   )}

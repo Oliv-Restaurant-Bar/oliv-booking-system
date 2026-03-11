@@ -67,20 +67,26 @@ export async function PUT(
     }
 
     // Check role hierarchy: can the current user modify the target user?
-    if (!canModifyUser(currentUserRole, id, currentUserId, existingUser.role as any)) {
-      return NextResponse.json(
-        { error: "You don't have permission to modify this user (hierarchy restriction)" },
-        { status: 403 }
-      );
+    // Super admins can modify any user including other super admins
+    if (currentUserRole !== 'super_admin') {
+      if (!canModifyUser(currentUserRole, id, currentUserId, existingUser.role as any)) {
+        return NextResponse.json(
+          { error: "You don't have permission to modify this user (hierarchy restriction)" },
+          { status: 403 }
+        );
+      }
     }
 
     // If changing role, check if assigning a role equal to or higher than own
+    // Super admins can assign any role including super_admin
     if (role && role !== existingUser.role) {
-      if (!canModifyUser(currentUserRole, id, currentUserId, role as any)) {
-        return NextResponse.json(
-          { error: "You cannot assign a role equal to or higher than your own" },
-          { status: 403 }
-        );
+      if (currentUserRole !== 'super_admin') {
+        if (!canModifyUser(currentUserRole, id, currentUserId, role as any)) {
+          return NextResponse.json(
+            { error: "You cannot assign a role equal to or higher than your own" },
+            { status: 403 }
+          );
+        }
       }
     }
 
@@ -159,11 +165,14 @@ export async function DELETE(
     }
 
     // Check role hierarchy: can the current user delete the target user?
-    if (!canModifyUser(currentUserRole, id, currentUserId, existingUser.role as any)) {
-      return NextResponse.json(
-        { error: "You don't have permission to delete this user (hierarchy restriction)" },
-        { status: 403 }
-      );
+    // Super admins can delete any user including other super admins
+    if (currentUserRole !== 'super_admin') {
+      if (!canModifyUser(currentUserRole, id, currentUserId, existingUser.role as any)) {
+        return NextResponse.json(
+          { error: "You don't have permission to delete this user (hierarchy restriction)" },
+          { status: 403 }
+        );
+      }
     }
 
     // Delete user (cascade will delete related records)

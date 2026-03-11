@@ -801,7 +801,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 mb-1">
                                     <h4 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                      {category.name}
+                                      {category.name.slice(0, 15)} {category.name.length > 15 ? '...' : ''}
                                     </h4>
                                     {category.items.length > 0 && (
                                       <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full" style={{ fontSize: 'var(--text-small)' }}>
@@ -818,7 +818,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                     )} */}
                                   </div>
                                   <p className="text-muted-foreground line-clamp-1" style={{ fontSize: 'var(--text-small)' }}>
-                                    {category.description}
+                                    {category.description.slice(0, 25)} {category.description.length > 25 ? '...' : ''}
                                   </p>
                                 </div>
 
@@ -1717,6 +1717,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                     className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                     style={{ fontSize: 'var(--text-base)' }}
                   />
+                  <p className="text-muted-foreground text-xs mt-1 text-right">{newCategory.name.length}/100</p>
                 </div>
 
                 <div>
@@ -1732,6 +1733,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                     className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                     style={{ fontSize: 'var(--text-base)' }}
                   />
+                  <p className="text-muted-foreground text-xs mt-1 text-right">{newCategory.description.length}/500</p>
                 </div>
 
                 <div>
@@ -2008,7 +2010,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                         }
                       }
                     }}
-                    disabled={!activeCategoryId || !newMenuItem.name || (pricingMode === 'price' && !newMenuItem.price) || (pricingMode === 'variants' && newMenuItem.variants.length === 0) || newMenuItem.name.trim() === '' || newMenuItem.name.length > 100 || newMenuItem.description.length > 500 || (newMenuItem.price !== '' && parseFloat(newMenuItem.price) < 0) || newMenuItem.variants.some(v => !v.name?.trim() || v.name.length > 100 || v.price < 0)}
+                    disabled={!activeCategoryId || !newMenuItem.name || (pricingMode === 'price' && !newMenuItem.price) || (pricingMode === 'variants' && newMenuItem.variants.length === 0) || newMenuItem.name.trim() === '' || newMenuItem.name.length > 100 || newMenuItem.description.length > 500 || newMenuItem.ingredients.length > 1000 || (newMenuItem.price !== '' && parseFloat(newMenuItem.price) < 0) || newMenuItem.variants.some(v => !v.name?.trim() || v.name.length > 100 || v.price < 0) || newMenuItem.nutritionalInfo.servingSize.length > 50 || newMenuItem.nutritionalInfo.calories.length > 50 || newMenuItem.nutritionalInfo.protein.length > 50 || newMenuItem.nutritionalInfo.carbs.length > 50 || newMenuItem.nutritionalInfo.fat.length > 50 || newMenuItem.nutritionalInfo.fiber.length > 50 || newMenuItem.nutritionalInfo.sugar.length > 50 || newMenuItem.nutritionalInfo.sodium.length > 50}
                   >
                     {editingMenuItemId ? 'Save Changes' : 'Add Item'}
                   </Button>
@@ -2048,6 +2050,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                     className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                     style={{ fontSize: 'var(--text-base)' }}
                   />
+                  <p className="text-muted-foreground text-xs mt-1 text-right">{newMenuItem.name.length}/100</p>
                 </div>
 
                 <div>
@@ -2063,6 +2066,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                     className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                     style={{ fontSize: 'var(--text-base)' }}
                   />
+                  <p className="text-muted-foreground text-xs mt-1 text-right">{newMenuItem.description.length}/500</p>
                 </div>
 
                 <div>
@@ -2295,36 +2299,41 @@ export function MenuConfigPage({ user }: { user?: any }) {
                     {newMenuItem.variants.length > 0 ? (
                       <div className="space-y-2 mt-3">
                         {newMenuItem.variants.map((variant, index) => (
-                          <div key={variant.id} className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                            <input
-                              type="text"
-                              maxLength={100}
-                              value={variant.name}
-                              onChange={(e) => updateVariant(index, 'name', e.target.value)}
-                              placeholder="Variant name (e.g., Small, Medium)"
-                              className="flex-1 px-3 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-                              style={{ fontSize: 'var(--text-base)' }}
-                            />
-                            <div className="relative w-32">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>€</span>
-                              <input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={variant.price}
-                                onChange={(e) => updateVariant(index, 'price', parseFloat(e.target.value) || 0)}
-                                placeholder="0.00"
-                                className="w-full pl-8 pr-3 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-                                style={{ fontSize: 'var(--text-base)' }}
-                              />
+                          <div key={variant.id} className="space-y-1">
+                            <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                              <div className="flex-1">
+                                <input
+                                  type="text"
+                                  maxLength={100}
+                                  value={variant.name}
+                                  onChange={(e) => updateVariant(index, 'name', e.target.value)}
+                                  placeholder="Variant name (e.g., Small, Medium)"
+                                  className="w-full px-3 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                                  style={{ fontSize: 'var(--text-base)' }}
+                                />
+                                <p className="text-muted-foreground text-[10px] mt-0.5 text-right">{variant.name.length}/100</p>
+                              </div>
+                              <div className="relative w-32 flex-shrink-0">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>€</span>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={variant.price}
+                                  onChange={(e) => updateVariant(index, 'price', parseFloat(e.target.value) || 0)}
+                                  placeholder="0.00"
+                                  className="w-full pl-8 pr-3 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                                  style={{ fontSize: 'var(--text-base)' }}
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeVariant(index)}
+                                className="p-2 hover:bg-accent rounded-lg transition-colors text-destructive flex-shrink-0"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => removeVariant(index)}
-                              className="p-2 hover:bg-accent rounded-lg transition-colors text-destructive"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
                           </div>
                         ))}
                       </div>
@@ -2509,9 +2518,11 @@ export function MenuConfigPage({ user }: { user?: any }) {
                         onChange={(e) => setNewMenuItem({ ...newMenuItem, ingredients: e.target.value })}
                         placeholder="List all ingredients..."
                         rows={3}
+                        maxLength={1000}
                         className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                         style={{ fontSize: 'var(--text-base)' }}
                       />
+                      <p className="text-muted-foreground text-xs mt-1 text-right">{newMenuItem.ingredients.length}/1000</p>
                     </div>
 
                     {/* Allergens */}
@@ -2598,6 +2609,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           </label>
                           <input
                             type="text"
+                            maxLength={50}
                             value={newMenuItem.nutritionalInfo.servingSize}
                             onChange={(e) => setNewMenuItem({
                               ...newMenuItem,
@@ -2607,6 +2619,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                             style={{ fontSize: 'var(--text-base)' }}
                           />
+                          <p className="text-muted-foreground text-[10px] mt-0.5 text-right">{newMenuItem.nutritionalInfo.servingSize.length}/50</p>
                         </div>
                         <div>
                           <label className="block text-muted-foreground mb-1.5" style={{ fontSize: 'var(--text-small)' }}>
@@ -2614,6 +2627,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           </label>
                           <input
                             type="text"
+                            maxLength={50}
                             value={newMenuItem.nutritionalInfo.calories}
                             onChange={(e) => setNewMenuItem({
                               ...newMenuItem,
@@ -2623,6 +2637,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                             style={{ fontSize: 'var(--text-base)' }}
                           />
+                          <p className="text-muted-foreground text-[10px] mt-0.5 text-right">{newMenuItem.nutritionalInfo.calories.length}/50</p>
                         </div>
                         <div>
                           <label className="block text-muted-foreground mb-1.5" style={{ fontSize: 'var(--text-small)' }}>
@@ -2630,6 +2645,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           </label>
                           <input
                             type="text"
+                            maxLength={50}
                             value={newMenuItem.nutritionalInfo.protein}
                             onChange={(e) => setNewMenuItem({
                               ...newMenuItem,
@@ -2639,6 +2655,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                             style={{ fontSize: 'var(--text-base)' }}
                           />
+                          <p className="text-muted-foreground text-[10px] mt-0.5 text-right">{newMenuItem.nutritionalInfo.protein.length}/50</p>
                         </div>
                         <div>
                           <label className="block text-muted-foreground mb-1.5" style={{ fontSize: 'var(--text-small)' }}>
@@ -2646,6 +2663,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           </label>
                           <input
                             type="text"
+                            maxLength={50}
                             value={newMenuItem.nutritionalInfo.carbs}
                             onChange={(e) => setNewMenuItem({
                               ...newMenuItem,
@@ -2655,6 +2673,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                             style={{ fontSize: 'var(--text-base)' }}
                           />
+                          <p className="text-muted-foreground text-[10px] mt-0.5 text-right">{newMenuItem.nutritionalInfo.carbs.length}/50</p>
                         </div>
                         <div>
                           <label className="block text-muted-foreground mb-1.5" style={{ fontSize: 'var(--text-small)' }}>
@@ -2662,6 +2681,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           </label>
                           <input
                             type="text"
+                            maxLength={50}
                             value={newMenuItem.nutritionalInfo.fat}
                             onChange={(e) => setNewMenuItem({
                               ...newMenuItem,
@@ -2671,6 +2691,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                             style={{ fontSize: 'var(--text-base)' }}
                           />
+                          <p className="text-muted-foreground text-[10px] mt-0.5 text-right">{newMenuItem.nutritionalInfo.fat.length}/50</p>
                         </div>
                         <div>
                           <label className="block text-muted-foreground mb-1.5" style={{ fontSize: 'var(--text-small)' }}>
@@ -2678,6 +2699,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           </label>
                           <input
                             type="text"
+                            maxLength={50}
                             value={newMenuItem.nutritionalInfo.fiber}
                             onChange={(e) => setNewMenuItem({
                               ...newMenuItem,
@@ -2687,6 +2709,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                             style={{ fontSize: 'var(--text-base)' }}
                           />
+                          <p className="text-muted-foreground text-[10px] mt-0.5 text-right">{newMenuItem.nutritionalInfo.fiber.length}/50</p>
                         </div>
                         <div>
                           <label className="block text-muted-foreground mb-1.5" style={{ fontSize: 'var(--text-small)' }}>
@@ -2694,6 +2717,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           </label>
                           <input
                             type="text"
+                            maxLength={50}
                             value={newMenuItem.nutritionalInfo.sugar}
                             onChange={(e) => setNewMenuItem({
                               ...newMenuItem,
@@ -2703,6 +2727,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                             style={{ fontSize: 'var(--text-base)' }}
                           />
+                          <p className="text-muted-foreground text-[10px] mt-0.5 text-right">{newMenuItem.nutritionalInfo.sugar.length}/50</p>
                         </div>
                         <div>
                           <label className="block text-muted-foreground mb-1.5" style={{ fontSize: 'var(--text-small)' }}>
@@ -2710,6 +2735,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           </label>
                           <input
                             type="text"
+                            maxLength={50}
                             value={newMenuItem.nutritionalInfo.sodium}
                             onChange={(e) => setNewMenuItem({
                               ...newMenuItem,
@@ -2719,6 +2745,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                             style={{ fontSize: 'var(--text-base)' }}
                           />
+                          <p className="text-muted-foreground text-[10px] mt-0.5 text-right">{newMenuItem.nutritionalInfo.sodium.length}/50</p>
                         </div>
                       </div>
                     </div>
@@ -2991,6 +3018,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                     className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                     style={{ fontSize: 'var(--text-base)' }}
                   />
+                  <p className="text-muted-foreground text-xs mt-1 text-right">{newGroup.name.length}/100</p>
                 </div>
 
                 {/* Type Selection */}
@@ -3222,6 +3250,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                     className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                     style={{ fontSize: 'var(--text-base)' }}
                   />
+                  <p className="text-muted-foreground text-xs mt-1 text-right">{newAddonItem.name.length}/100</p>
                 </div>
 
                 {/* Price */}

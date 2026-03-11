@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Globe, DollarSign, Check, MapPin, Plus, X, Edit2, Trash2 } from 'lucide-react';
+import { Globe, DollarSign, Check, MapPin, Plus, X, Edit2, Trash2, Save } from 'lucide-react';
 import { SkeletonGrid, SkeletonKPI } from '@/components/ui/skeleton-loaders';
 import { StatusDropdown } from './StatusDropdown';
 import { VenueModal } from './VenueModal';
 import { Permission, hasPermission } from '@/lib/auth/rbac';
 import { VenueService } from '@/services/venue.service';
+import { SettingsService } from '@/services/settings.service';
 import type { Venue } from '@/services/venue.service';
 import { toast } from 'sonner';
 import { useSettingsTranslation } from '@/lib/i18n/client';
@@ -21,6 +22,9 @@ export function SettingsPage({ user }: { user?: any }) {
   const [dateFormat, setDateFormat] = useState('MM/DD/YYYY');
   const [currency, setCurrency] = useState('CHF');
   const [showCurrencySymbol, setShowCurrencySymbol] = useState(true);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
   // Venue Management State
   const [venues, setVenues] = useState<Venue[]>([]);
@@ -29,7 +33,70 @@ export function SettingsPage({ user }: { user?: any }) {
   const [isLoadingVenues, setIsLoadingVenues] = useState(false);
   const [isSavingVenue, setIsSavingVenue] = useState(false);
 
-  // Language options
+  // Load settings on mount
+  useEffect(() => {
+    loadSettings();
+    loadVenues();
+  }, []);
+
+  const loadSettings = async () => {
+    setIsLoadingSettings(true);
+    try {
+      const settings = await SettingsService.getAll();
+      if (settings) {
+        setLanguage(settings.language);
+        setTimeZone(settings.timeZone);
+        setDateFormat(settings.dateFormat);
+        setCurrency(settings.currency);
+        setShowCurrencySymbol(settings.showCurrencySymbol);
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+      toast.error('Failed to load settings');
+    } finally {
+      setIsLoadingSettings(false);
+    }
+  };
+
+  const loadVenues = async () => {
+    setIsLoadingVenues(true);
+    const venueList = await VenueService.getAll();
+    setVenues(venueList);
+    setIsLoadingVenues(false);
+  };
+
+  const handleSaveSettings = async () => {
+    setIsSavingSettings(true);
+    try {
+      const result = await SettingsService.update({
+        language,
+        timeZone,
+        dateFormat,
+        currency,
+        showCurrencySymbol,
+        updatedBy: user?.user?.id || user?.id,
+      });
+
+      if (result) {
+        toast.success('Settings saved successfully');
+        setHasChanges(false);
+      } else {
+        toast.error('Failed to save settings');
+      }
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast.error('Failed to save settings');
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
+
+  // Track changes
+  useEffect(() => {
+    if (!isLoadingSettings) {
+      setHasChanges(true);
+    }
+  }, [language, timeZone, dateFormat, currency, showCurrencySymbol]);
   const languageOptions = [
     { value: 'English', label: 'English' },
     { value: 'German', label: 'German' },
@@ -60,18 +127,6 @@ export function SettingsPage({ user }: { user?: any }) {
     { value: 'USD', label: 'USD - US Dollar' },
     { value: 'GBP', label: 'GBP - British Pound' },
   ];
-
-  // Load venues on mount
-  useEffect(() => {
-    loadVenues();
-  }, []);
-
-  const loadVenues = async () => {
-    setIsLoadingVenues(true);
-    const venueList = await VenueService.getAll();
-    setVenues(venueList);
-    setIsLoadingVenues(false);
-  };
 
   // Venue Management Handlers
   const handleAddVenue = () => {
@@ -128,6 +183,28 @@ export function SettingsPage({ user }: { user?: any }) {
   return (
     <div className="min-h-full bg-background flex flex-col">
       <div className="w-full flex-1">
+        {/* Header with Save Button */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-foreground" style={{ fontSize: 'var(--text-h2)', fontWeight: 'var(--font-weight-semibold)' }}>
+              {t('title')}
+            </h1>
+            <p className="text-muted-foreground mt-1" style={{ fontSize: 'var(--text-base)' }}>
+              Configure your system-wide settings
+            </p>
+          </div>
+          {hasChanges && canUpdateSettings && (
+            <button
+              onClick={handleSaveSettings}
+              disabled={isSavingSettings || !canUpdateSettings}
+              className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Save className="w-4 h-4" />
+              {isSavingSettings ? 'Saving...' : 'Save Changes'}
+            </button>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Venue Management Card */}
           <div className="bg-card border border-border rounded-xl p-6 lg:col-span-2">

@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
 
     // Get current admin session
     const session = await getSession();
+    const currentUserRole = session?.user?.role as any;
 
     const body = await request.json();
     const { name, email, role, password } = body;
@@ -59,6 +60,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Name and email are required" },
         { status: 400 }
+      );
+    }
+
+    // Only super_admin can create super_admin users
+    if (role === 'super_admin' && currentUserRole !== 'super_admin') {
+      return NextResponse.json(
+        { error: "Only super admins can create super admin users" },
+        { status: 403 }
       );
     }
 

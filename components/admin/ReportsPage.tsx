@@ -9,6 +9,7 @@ import { MonthlyReportLayout2 } from './MonthlyReportLayout2';
 import { SkeletonPage, SkeletonKPI, SkeletonList, SkeletonChart, SkeletonTrendingItems, SkeletonMonthlyReport } from '@/components/ui/skeleton-loaders';
 import { Permission, hasPermission } from '@/lib/auth/rbac';
 import { useTranslations } from 'next-intl';
+import { SettingsService } from '@/services/settings.service';
 
 export function ReportsPage({ user }: { user?: any }) {
   const t = useTranslations('admin.reports');
@@ -16,6 +17,7 @@ export function ReportsPage({ user }: { user?: any }) {
   const [bookingsByContacts, setBookingsByContacts] = useState<any[]>([]);
   const [monthlyReport, setMonthlyReport] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currencySymbol, setCurrencySymbol] = useState('CHF');
 
   // Fetch reports data on component mount
   useEffect(() => {
@@ -39,6 +41,13 @@ export function ReportsPage({ user }: { user?: any }) {
         setLoading(false);
       }
     };
+
+    // Load currency symbol
+    SettingsService.getCurrencySymbol().then(symbol => {
+      if (symbol) {
+        setCurrencySymbol(symbol);
+      }
+    });
 
     fetchReportsData();
   }, [selectedYear]);
@@ -108,7 +117,7 @@ export function ReportsPage({ user }: { user?: any }) {
                       {/* Revenue Stats */}
                       <div className="text-right flex-shrink-0">
                         <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                          CHF {contact.totalRevenue.toLocaleString()}
+                          {currencySymbol} {contact.totalRevenue.toLocaleString()}
                         </p>
                         <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
                           {t('bookings', { count: Math.floor(contact.bookings) })}
