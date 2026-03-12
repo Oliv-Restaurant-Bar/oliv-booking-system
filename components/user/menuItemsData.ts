@@ -3,6 +3,8 @@ export interface MenuItemVariant {
   name: string;
   price: number;
   description?: string;
+  /** Average consumption: number of people served per unit for this variant */
+  averageConsumption?: number;
 }
 
 export interface MenuItem {
@@ -13,6 +15,8 @@ export interface MenuItem {
   price: number;
   /** Supports both UI values ('per-person', 'flat-rate') and DB values ('per_person', 'flat_fee', 'billed_by_consumption') */
   pricingType: 'per-person' | 'flat-rate' | 'per_person' | 'flat_fee' | 'billed_by_consumption';
+  /** Average consumption: number of people served per unit (e.g., 1 bottle serves 3 people) */
+  averageConsumption?: number;
   image: string;
   allergens?: string[];
   addOns?: { id: string; name: string; price: number }[];

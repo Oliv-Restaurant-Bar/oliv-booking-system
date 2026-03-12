@@ -58,6 +58,7 @@ interface MenuItemData {
   image: string;
   price: number;
   pricingType?: 'per_person' | 'flat_fee' | 'billed_by_consumption';
+  averageConsumption?: number;
   isActive: boolean;
   variants: VariantOption[];
   dietaryType: 'veg' | 'non-veg' | 'vegan' | 'none';
@@ -83,6 +84,7 @@ interface VariantOption {
   id: string;
   name: string;
   price: number;
+  averageConsumption?: number;
 }
 
 interface Category {
@@ -207,6 +209,37 @@ export function MenuConfigPage({ user }: { user?: any }) {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
   const [addonGroups, setAddonGroups] = useState<AddonGroup[]>([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Function to upload image
+  const handleImageUpload = async (file: File): Promise<string> => {
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload/image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.success && result.imageUrl) {
+        toast.success('Image uploaded successfully');
+        return result.imageUrl;
+      } else {
+        toast.error(result.error || 'Failed to upload image');
+        throw new Error(result.error || 'Upload failed');
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Failed to upload image');
+      throw error;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'items' | 'addons'>('items');
   const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
@@ -254,6 +287,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
     variants: [] as VariantOption[],
     assignedAddonGroups: [] as string[],
     isCombo: false,
+    averageConsumption: '' as string,
     // Item settings for expandable section
     dietaryType: 'none' as 'veg' | 'non-veg' | 'vegan' | 'none',
     dietaryTags: [] as string[],
@@ -630,6 +664,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
       id: `variant-${Date.now()}`,
       name: '',
       price: 0,
+      averageConsumption: undefined,
     };
     setNewMenuItem({
       ...newMenuItem,
@@ -637,7 +672,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
     });
   };
 
-  const updateVariant = (index: number, field: 'name' | 'price', value: string | number) => {
+  const updateVariant = (index: number, field: 'name' | 'price' | 'averageConsumption', value: string | number | undefined) => {
     const updatedVariants = [...newMenuItem.variants];
     updatedVariants[index] = {
       ...updatedVariants[index],
@@ -793,7 +828,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                 </button>
 
                                 {/* Image - Larger rectangular */}
-                                <div className="w-24 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-muted relative">
+                                <div className="hidden sm:block w-24 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-muted relative">
                                   <ImageWithFallback
                                     src={category.image}
                                     alt={category.name}
@@ -805,7 +840,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 mb-1">
                                     <h4 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                      {category.name.slice(0, 15)} {category.name.length > 15 ? '...' : ''}
+                                      {category.name.slice(0, 25)} {category.name.length > 25 ? '...' : ''}
                                     </h4>
                                     {category.items.length > 0 && (
                                       <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full" style={{ fontSize: 'var(--text-small)' }}>
@@ -825,11 +860,11 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                     {category.description.slice(0, 25)} {category.description.length > 25 ? '...' : ''}
                                   </p>
                                 </div>
-
-                                {/* Actions - Right side */}
-                                <div className="flex items-center gap-2 flex-shrink-0">
-                                  {canEditCategory && (
-                                    <Tooltip title={t('tooltips.editCategory')} position="top">
+                                {/* Category actions - Desktop buttons + Mobile dropdown */}
+                                {(canEditCategory || canCreateItem || canDeleteCategory) && (
+                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                    {/* Desktop: Edit Category Button */}
+                                    {canEditCategory && (
                                       <button
                                         onClick={() => {
                                           setEditingCategoryId(category.id);
@@ -841,15 +876,15 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                           });
                                           setIsAddCategoryModalOpen(true);
                                         }}
-                                        className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                        className="hidden md:flex p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                        title={t('tooltips.editCategory')}
                                       >
                                         <Edit2 className="w-4 h-4" />
                                       </button>
-                                    </Tooltip>
-                                  )}
+                                    )}
 
-                                  {canCreateItem && (
-                                    <Tooltip title={t('tooltips.addItem')} position="top">
+                                    {/* Desktop: Add Item Button */}
+                                    {canCreateItem && (
                                       <button
                                         onClick={() => {
                                           setActiveCategoryId(category.id);
@@ -865,6 +900,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                             variants: [],
                                             assignedAddonGroups: [],
                                             isCombo: false,
+                                            averageConsumption: '',
                                             dietaryType: 'veg',
                                             dietaryTags: [],
                                             ingredients: '',
@@ -887,29 +923,29 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                           setPricingMode('price');
                                           setIsAddMenuItemModalOpen(true);
                                         }}
-                                        className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                        className="hidden md:flex p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                        title={t('tooltips.addItem')}
                                       >
                                         <Plus className="w-4 h-4" />
                                       </button>
-                                    </Tooltip>
-                                  )}
+                                    )}
 
-                                  {canEditCategory && (
-                                    <Tooltip title={t('buttons.addChoice')} position="top">
+                                    {/* Desktop: Add Choice Button */}
+                                    {canEditCategory && (
                                       <button
                                         onClick={() => {
                                           setChoiceCategoryId(category.id);
                                           setSelectedAddonGroups(category.assignedAddonGroups || []);
                                           setIsAddChoiceModalOpen(true);
                                         }}
-                                        className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                        className="hidden md:flex p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                        title={t('buttons.addChoice')}
                                       >
                                         <ListPlus className="w-4 h-4" />
                                       </button>
-                                    </Tooltip>
-                                  )}
+                                    )}
 
-                                  {(canEditCategory || canDeleteCategory) && (
+                                    {/* Mobile Dropdown + Desktop Duplicate, Show/Hide & Delete */}
                                     <div className="relative">
                                       <button
                                         onClick={() => setOpenDropdownId(openDropdownId === category.id ? null : category.id)}
@@ -927,8 +963,82 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                             onClick={() => setOpenDropdownId(null)}
                                           />
 
-                                          {/* Dropdown */}
+                                          {/* Dropdown Content */}
                                           <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-20">
+                                            {/* Mobile: Edit Category */}
+                                            {canEditCategory && (
+                                              <button
+                                                onClick={() => {
+                                                  setEditingCategoryId(category.id);
+                                                  setNewCategory({
+                                                    name: category.name,
+                                                    description: category.description,
+                                                    image: null,
+                                                    imageUrl: category.image,
+                                                  });
+                                                  setIsAddCategoryModalOpen(true);
+                                                  setOpenDropdownId(null);
+                                                }}
+                                                className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border md:hidden"
+                                              >
+                                                <Edit2 className="w-4 h-4 text-muted-foreground" />
+                                                <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                                  {t('tooltips.editCategory')}
+                                                </span>
+                                              </button>
+                                            )}
+
+                                            {/* Mobile: Add Item */}
+                                            {canCreateItem && (
+                                              <button
+                                                onClick={() => {
+                                                  setActiveCategoryId(category.id);
+                                                  setEditingMenuItemId(null);
+                                                  setNewMenuItem({
+                                                    name: '',
+                                                    description: '',
+                                                    price: '',
+                                                    pricingType: 'per_person',
+                                                    image: null,
+                                                    imageUrl: '',
+                                                    isActive: true,
+                                                    variants: [],
+                                                    assignedAddonGroups: [],
+                                                    isCombo: false,
+                                                    averageConsumption: '',
+                                                    dietaryType: 'veg',
+                                                    dietaryTags: [],
+                                                    ingredients: '',
+                                                    allergens: [],
+                                                    additives: [],
+                                                    nutritionalInfo: {
+                                                      servingSize: '',
+                                                      calories: '',
+                                                      protein: '',
+                                                      carbs: '',
+                                                      fat: '',
+                                                      fiber: '',
+                                                      sugar: '',
+                                                      sodium: '',
+                                                    },
+                                                  });
+                                                  setShowItemSettings(false);
+                                                  setShowAddons(false);
+                                                  setShowChoices(false);
+                                                  setPricingMode('price');
+                                                  setIsAddMenuItemModalOpen(true);
+                                                  setOpenDropdownId(null);
+                                                }}
+                                                className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border md:hidden"
+                                              >
+                                                <Plus className="w-4 h-4 text-muted-foreground" />
+                                                <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                                  {t('tooltips.addItem')}
+                                                </span>
+                                              </button>
+                                            )}
+
+                                            {/* Mobile: Add Choice */}
                                             {canEditCategory && (
                                               <button
                                                 onClick={() => {
@@ -937,7 +1047,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                                   setIsAddChoiceModalOpen(true);
                                                   setOpenDropdownId(null);
                                                 }}
-                                                className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
+                                                className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border md:hidden"
                                               >
                                                 <ListPlus className="w-4 h-4 text-muted-foreground" />
                                                 <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
@@ -946,6 +1056,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                               </button>
                                             )}
 
+                                            {/* Duplicate (all screens) */}
                                             {canCreateCategory && (
                                               <button
                                                 onClick={() => {
@@ -961,6 +1072,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                               </button>
                                             )}
 
+                                            {/* Show/Hide (all screens) */}
                                             {canEditCategory && (
                                               <button
                                                 onClick={() => {
@@ -987,21 +1099,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                               </button>
                                             )}
 
-                                            {/* {canEditCategory && (
-                                              <button
-                                                onClick={() => {
-                                                  toggleGuestCount(category.id);
-                                                  setOpenDropdownId(null);
-                                                }}
-                                                className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
-                                              >
-                                                <Users className="w-4 h-4 text-muted-foreground" />
-                                                <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                                  {category.guestCount ? 'Auto guest count' : 'Manual guest count'}
-                                                </span>
-                                              </button>
-                                            )} */}
-
+                                            {/* Delete (all screens) */}
                                             {canDeleteCategory && (
                                               <button
                                                 onClick={() => {
@@ -1020,10 +1118,9 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                         </>
                                       )}
                                     </div>
-                                  )}
-                                </div>
+                                  </div>
+                                )}
                               </div>
-
                               {/* Menu Items - Nested under category */}
                               {category.isExpanded && category.items.length > 0 && (
                                 <div className="bg-muted/30">
@@ -1039,9 +1136,8 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                           <GripVertical className="w-4 h-4" />
                                         </button>
                                       )}
-
                                       {/* Image - Smaller for items */}
-                                      <div className="w-16 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted relative">
+                                      <div className="hidden sm:block w-16 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted relative">
                                         <ImageWithFallback
                                           src={item.image}
                                           alt={item.name}
@@ -1060,7 +1156,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                           {item.dietaryType && (
                                             <DietaryIcon type={item.dietaryType as any} size="sm" />
                                           )}
-                                          <span>{item.name}</span>
+                                          <span className={`text-ellipsis overflow-hidden whitespace-nowrap ${item.name.slice(0, 25)} ${item.name.length > 25 ? '...' : ''}`}>{item.name}</span>
                                           {item.isCombo && (
                                             <span
                                               className="px-2 py-0.5 rounded text-xs uppercase inline-block ml-1"
@@ -1093,7 +1189,6 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                           </div>
                                         )}
                                       </div>
-
                                       {/* Price */}
                                       <div className="text-right flex-shrink-0">
                                         <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
@@ -1101,10 +1196,11 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                         </p>
                                       </div>
 
-                                      {/* Actions */}
-                                      <div className="flex items-center gap-1 flex-shrink-0">
+                                      {/* Actions - Desktop buttons + Mobile dropdown */}
+                                      <div className="flex items-center gap-2 flex-shrink-0">
                                         {canEditItem && (
-                                          <Tooltip title="Edit item" position="top">
+                                          <>
+                                            {/* Desktop: Edit Button */}
                                             <button
                                               onClick={() => {
                                                 setActiveCategoryId(category.id);
@@ -1120,68 +1216,37 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                                   variants: item.variants || [],
                                                   assignedAddonGroups: item.assignedAddonGroups || [],
                                                   isCombo: item.isCombo || false,
+                                                  averageConsumption: (item as any).averageConsumption ? String((item as any).averageConsumption) : '',
                                                   dietaryType: item.dietaryType || 'none',
                                                   dietaryTags: item.dietaryTags || [],
                                                   ingredients: item.ingredients || '',
                                                   allergens: item.allergens || [],
                                                   additives: item.additives || [],
-                                                  nutritionalInfo: {
-                                                    servingSize: item.nutritionalInfo?.servingSize || '',
-                                                    calories: item.nutritionalInfo?.calories || '',
-                                                    protein: item.nutritionalInfo?.protein || '',
-                                                    carbs: item.nutritionalInfo?.carbs || '',
-                                                    fat: item.nutritionalInfo?.fat || '',
-                                                    fiber: item.nutritionalInfo?.fiber || '',
-                                                    sugar: item.nutritionalInfo?.sugar || '',
-                                                    sodium: item.nutritionalInfo?.sodium || '',
-                                                  },
+                                                  nutritionalInfo: item.nutritionalInfo || {},
                                                 });
-                                                setShowItemSettings(false);
-                                                setShowAddons(false);
-                                                setShowChoices(false);
-                                                // Set pricing mode based on whether item has variants
-                                                setPricingMode((item.variants && item.variants.length > 0) ? 'variants' : 'price');
                                                 setIsAddMenuItemModalOpen(true);
                                               }}
-                                              className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                              className="hidden md:flex p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                              title="Edit Item"
                                             >
                                               <Edit2 className="w-4 h-4" />
                                             </button>
-                                          </Tooltip>
-                                        )}
-                                        {canEditItem && (
-                                          <Tooltip title="Item settings" position="top">
+
+                                            {/* Desktop: Item Settings Button */}
                                             <button
                                               onClick={() => {
                                                 setActiveCategoryId(category.id);
                                                 setSettingsMenuItemId(item.id);
-                                                setItemSettings({
-                                                  dietaryType: item.dietaryType || 'none',
-                                                  dietaryTags: item.dietaryTags || [],
-                                                  ingredients: item.ingredients || '',
-                                                  allergens: item.allergens || [],
-                                                  additives: item.additives || [],
-                                                  nutritionalInfo: {
-                                                    servingSize: item.nutritionalInfo?.servingSize || '',
-                                                    calories: item.nutritionalInfo?.calories || '',
-                                                    protein: item.nutritionalInfo?.protein || '',
-                                                    carbs: item.nutritionalInfo?.carbs || '',
-                                                    fat: item.nutritionalInfo?.fat || '',
-                                                    fiber: item.nutritionalInfo?.fiber || '',
-                                                    sugar: item.nutritionalInfo?.sugar || '',
-                                                    sodium: item.nutritionalInfo?.sodium || '',
-                                                  },
-                                                });
+                                                setItemSettings(item as any);
                                                 setIsItemSettingsModalOpen(true);
                                               }}
-                                              className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                              className="hidden md:flex p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                              title="Item Settings"
                                             >
                                               <Settings className="w-4 h-4" />
                                             </button>
-                                          </Tooltip>
-                                        )}
-                                        {canEditItem && (
-                                          <Tooltip title="Add choice" position="top">
+
+                                            {/* Desktop: Add Choice Button */}
                                             <button
                                               onClick={() => {
                                                 setActiveCategoryId(category.id);
@@ -1189,38 +1254,132 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                                 setSelectedAddonGroups(item.assignedAddonGroups || []);
                                                 setIsAddChoiceModalOpen(true);
                                               }}
-                                              className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                              className="hidden md:flex p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                              title="Add Choice"
                                             >
                                               <ListPlus className="w-4 h-4" />
                                             </button>
-                                          </Tooltip>
+                                          </>
                                         )}
-                                        {canEditItem && (
-                                          <Tooltip title={item.isActive ? "Hide item" : "Show item"} position="top">
+
+                                        {/* Mobile Dropdown + Desktop Show/Hide & Delete */}
+                                        {(canEditItem || canDeleteItem) && (
+                                          <div className="relative">
                                             <button
-                                              onClick={() => toggleMenuItemActive(category.id, item.id)}
-                                              className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                              onClick={() => setOpenDropdownId(openDropdownId === item.id ? null : item.id)}
+                                              className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
                                             >
-                                              {item.isActive ? (
-                                                <Eye className="w-4 h-4" />
-                                              ) : (
-                                                <EyeOff className="w-4 h-4" />
-                                              )}
+                                              <MoreVertical className="w-4 h-4" />
                                             </button>
-                                          </Tooltip>
-                                        )}
-                                        {canDeleteItem && (
-                                          <Tooltip title="Delete item" position="left">
-                                            <button
-                                              onClick={() => {
-                                                setDeleteMenuItemId(item.id);
-                                                setActiveCategoryId(category.id);
-                                              }}
-                                              className="p-1.5 hover:bg-accent rounded-lg transition-colors text-destructive hover:text-destructive cursor-pointer"
-                                            >
-                                              <Trash2 className="w-4 h-4" />
-                                            </button>
-                                          </Tooltip>
+
+                                            {openDropdownId === item.id && (
+                                              <>
+                                                <div className="fixed inset-0 z-10" onClick={() => setOpenDropdownId(null)} />
+                                                <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-30">
+                                                  {canEditItem && (
+                                                    <>
+                                                      {/* Mobile: Edit Item */}
+                                                      <button
+                                                        onClick={() => {
+                                                          setActiveCategoryId(category.id);
+                                                          setEditingMenuItemId(item.id);
+                                                          setNewMenuItem({
+                                                            name: item.name,
+                                                            description: item.description,
+                                                            price: item.price.toString(),
+                                                            pricingType: (item as any).pricingType || 'per_person',
+                                                            image: null,
+                                                            imageUrl: item.image,
+                                                            isActive: item.isActive,
+                                                            variants: item.variants || [],
+                                                            assignedAddonGroups: item.assignedAddonGroups || [],
+                                                            isCombo: item.isCombo || false,
+                                                            averageConsumption: (item as any).averageConsumption ? String((item as any).averageConsumption) : '',
+                                                            dietaryType: item.dietaryType || 'none',
+                                                            dietaryTags: item.dietaryTags || [],
+                                                            ingredients: item.ingredients || '',
+                                                            allergens: item.allergens || [],
+                                                            additives: item.additives || [],
+                                                            nutritionalInfo: item.nutritionalInfo || {},
+                                                          });
+                                                          setIsAddMenuItemModalOpen(true);
+                                                          setOpenDropdownId(null);
+                                                        }}
+                                                        className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border md:hidden"
+                                                      >
+                                                        <Edit2 className="w-4 h-4 text-muted-foreground" />
+                                                        <span style={{ fontSize: 'var(--text-base)' }}>Edit Item</span>
+                                                      </button>
+
+                                                      {/* Mobile: Item Settings */}
+                                                      <button
+                                                        onClick={() => {
+                                                          setActiveCategoryId(category.id);
+                                                          setSettingsMenuItemId(item.id);
+                                                          setItemSettings(item as any);
+                                                          setIsItemSettingsModalOpen(true);
+                                                          setOpenDropdownId(null);
+                                                        }}
+                                                        className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border md:hidden"
+                                                      >
+                                                        <Settings className="w-4 h-4 text-muted-foreground" />
+                                                        <span style={{ fontSize: 'var(--text-base)' }}>Item Settings</span>
+                                                      </button>
+
+                                                      {/* Mobile: Add Choice */}
+                                                      <button
+                                                        onClick={() => {
+                                                          setActiveCategoryId(category.id);
+                                                          setChoiceItemId(item.id);
+                                                          setSelectedAddonGroups(item.assignedAddonGroups || []);
+                                                          setIsAddChoiceModalOpen(true);
+                                                          setOpenDropdownId(null);
+                                                        }}
+                                                        className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border md:hidden"
+                                                      >
+                                                        <ListPlus className="w-4 h-4 text-muted-foreground" />
+                                                        <span style={{ fontSize: 'var(--text-base)' }}>Add Choice</span>
+                                                      </button>
+
+                                                      {/* Show/Hide Item (all screens) */}
+                                                      <button
+                                                        onClick={() => {
+                                                          toggleMenuItemActive(category.id, item.id);
+                                                          setOpenDropdownId(null);
+                                                        }}
+                                                        className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
+                                                      >
+                                                        {item.isActive ? (
+                                                          <>
+                                                            <EyeOff className="w-4 h-4 text-muted-foreground" />
+                                                            <span style={{ fontSize: 'var(--text-base)' }}>Hide Item</span>
+                                                          </>
+                                                        ) : (
+                                                          <>
+                                                            <Eye className="w-4 h-4 text-muted-foreground" />
+                                                            <span style={{ fontSize: 'var(--text-base)' }}>Show Item</span>
+                                                          </>
+                                                        )}
+                                                      </button>
+                                                    </>
+                                                  )}
+                                                  {canDeleteItem && (
+                                                    <button
+                                                      onClick={() => {
+                                                        setDeleteMenuItemId(item.id);
+                                                        setActiveCategoryId(category.id);
+                                                        setOpenDropdownId(null);
+                                                      }}
+                                                      className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left text-destructive"
+                                                    >
+                                                      <Trash2 className="w-4 h-4" />
+                                                      <span style={{ fontSize: 'var(--text-base)' }}>Delete Item</span>
+                                                    </button>
+                                                  )}
+                                                </div>
+                                              </>
+                                            )}
+                                          </div>
                                         )}
                                       </div>
                                     </div>
@@ -1250,6 +1409,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                           variants: [],
                                           assignedAddonGroups: [],
                                           isCombo: false,
+                                          averageConsumption: '',
                                           dietaryType: 'veg',
                                           dietaryTags: [],
                                           ingredients: '',
@@ -1372,33 +1532,59 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           </p>
                         </div>
 
-                        {/* Actions - Right side */}
+                        {/* Actions - Desktop buttons + Mobile dropdown */}
                         {canManageAddons && (
-                          <button
-                            onClick={() => {
-                              setEditingGroupId(group.id);
-                              setNewGroup({
-                                name: group.name,
-                                subtitle: group.subtitle || '',
-                                type: group.isRequired ? 'mandatory' : 'optional',
-                                minSelect: group.minSelect,
-                                maxSelect: group.maxSelect,
-                              });
-                              setIsAddGroupModalOpen(true);
-                            }}
-                            className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
+                          <>
+                            {/* Desktop: Edit Group Button */}
+                            <button
+                              onClick={() => {
+                                setEditingGroupId(group.id);
+                                setNewGroup({
+                                  name: group.name,
+                                  subtitle: group.subtitle || '',
+                                  type: group.isRequired ? 'mandatory' : 'optional',
+                                  minSelect: group.minSelect,
+                                  maxSelect: group.maxSelect,
+                                });
+                                setIsAddGroupModalOpen(true);
+                              }}
+                              className="hidden md:flex p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                              title="Edit Group"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+
+                            {/* Desktop: Add Item Button */}
+                            <button
+                              onClick={() => {
+                                setCurrentGroupId(group.id);
+                                setEditingAddonItemId(null);
+                                setNewAddonItem({
+                                  name: '',
+                                  price: '',
+                                  dietaryType: 'veg',
+                                  isActive: true,
+                                });
+                                setIsAddAddonItemModalOpen(true);
+                              }}
+                              className="hidden md:flex p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                              title="Add Item"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+
+                            {/* Desktop: Delete Button */}
+                            <button
+                              onClick={() => setDeleteGroupId(group.id)}
+                              className="hidden md:flex p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-destructive"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
                         )}
-                        {canManageAddons && (
-                          <button
-                            onClick={() => setDeleteGroupId(group.id)}
-                            className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
+
+                        {/* Mobile Dropdown + Desktop Duplicate & Show/Hide */}
                         {canManageAddons && (
                           <div className="relative">
                             <button
@@ -1419,6 +1605,29 @@ export function MenuConfigPage({ user }: { user?: any }) {
 
                                 {/* Dropdown */}
                                 <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-lg shadow-xl overflow-hidden z-50">
+                                  {/* Mobile: Edit Group */}
+                                  <button
+                                    onClick={() => {
+                                      setEditingGroupId(group.id);
+                                      setNewGroup({
+                                        name: group.name,
+                                        subtitle: group.subtitle || '',
+                                        type: group.isRequired ? 'mandatory' : 'optional',
+                                        minSelect: group.minSelect,
+                                        maxSelect: group.maxSelect,
+                                      });
+                                      setIsAddGroupModalOpen(true);
+                                      setOpenAddonGroupDropdownId(null);
+                                    }}
+                                    className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border md:hidden"
+                                  >
+                                    <Edit2 className="w-4 h-4 text-muted-foreground" />
+                                    <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                      Edit Group
+                                    </span>
+                                  </button>
+
+                                  {/* Mobile: Add Item */}
                                   <button
                                     onClick={() => {
                                       setCurrentGroupId(group.id);
@@ -1432,7 +1641,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                       setIsAddAddonItemModalOpen(true);
                                       setOpenAddonGroupDropdownId(null);
                                     }}
-                                    className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
+                                    className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border md:hidden"
                                   >
                                     <Plus className="w-4 h-4 text-muted-foreground" />
                                     <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
@@ -1440,6 +1649,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                     </span>
                                   </button>
 
+                                  {/* Show/Hide (all screens) */}
                                   <button
                                     onClick={() => {
                                       toggleAddonGroupActive(group.id);
@@ -1457,6 +1667,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                     </span>
                                   </button>
 
+                                  {/* Duplicate (all screens) */}
                                   <button
                                     onClick={() => {
                                       duplicateAddonGroup(group.id);
@@ -1470,6 +1681,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                     </span>
                                   </button>
 
+                                  {/* Delete (all screens) */}
                                   <button
                                     onClick={() => {
                                       setDeleteGroupId(group.id);
@@ -1744,7 +1956,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                   <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                     {t('labels.categoryImage')}
                   </label>
-                  <div className="border-2 border-dashed border-border rounded-lg p-4 bg-muted/20">
+                  <div className="border-2 border-dashed border-border rounded-lg p-4 bg-muted/20 hidden md:block">
                     {(newCategory.imageUrl || newCategory.image) ? (
                       <div className="space-y-3">
                         <div className="w-full h-48 rounded-lg overflow-hidden bg-muted">
@@ -1757,15 +1969,22 @@ export function MenuConfigPage({ user }: { user?: any }) {
                         <label className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity cursor-pointer flex items-center justify-center gap-2">
                           <Upload className="w-4 h-4" />
                           <span style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                            {t('buttons.changeImage')}
+                            {uploadingImage ? 'Uploading...' : t('buttons.changeImage')}
                           </span>
                           <input
                             type="file"
                             accept="image/*"
-                            onChange={(e) => {
+                            disabled={uploadingImage}
+                            onChange={async (e) => {
                               const file = e.target.files?.[0];
                               if (file) {
-                                setNewCategory({ ...newCategory, image: file, imageUrl: '' });
+                                try {
+                                  const imageUrl = await handleImageUpload(file);
+                                  setNewCategory({ ...newCategory, image: null, imageUrl });
+                                } catch (error) {
+                                  // If upload fails, still allow the user to see the preview using createObjectURL
+                                  setNewCategory({ ...newCategory, image: file, imageUrl: URL.createObjectURL(file) });
+                                }
                               }
                             }}
                             className="hidden"
@@ -1778,7 +1997,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           <Upload className="w-8 h-8 text-primary" />
                         </div>
                         <span className="text-foreground mb-1" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                          {t('buttons.uploadImage')}
+                          {uploadingImage ? 'Uploading...' : t('buttons.uploadImage')}
                         </span>
                         <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
                           Click to browse or drag and drop
@@ -1786,10 +2005,17 @@ export function MenuConfigPage({ user }: { user?: any }) {
                         <input
                           type="file"
                           accept="image/*"
-                          onChange={(e) => {
+                          disabled={uploadingImage}
+                          onChange={async (e) => {
                             const file = e.target.files?.[0];
                             if (file) {
-                              setNewCategory({ ...newCategory, image: file, imageUrl: '' });
+                              try {
+                                const imageUrl = await handleImageUpload(file);
+                                setNewCategory({ ...newCategory, image: null, imageUrl });
+                              } catch (error) {
+                                // If upload fails, still allow the user to see the preview using createObjectURL
+                                setNewCategory({ ...newCategory, image: file, imageUrl: URL.createObjectURL(file) });
+                              }
                             }
                           }}
                           className="hidden"
@@ -1835,6 +2061,27 @@ export function MenuConfigPage({ user }: { user?: any }) {
                     onClick={async () => {
                       if (!activeCategoryId || !newMenuItem.name || (pricingMode === 'price' && !newMenuItem.price) || (pricingMode === 'variants' && newMenuItem.variants.length === 0)) return;
 
+                      // Validate average consumption for billed_by_consumption items
+                      if (newMenuItem.pricingType === 'billed_by_consumption') {
+                        if (pricingMode === 'price') {
+                          // Simple price mode: validate item-level average consumption
+                          const avgConsumption = parseInt(newMenuItem.averageConsumption);
+                          if (!newMenuItem.averageConsumption || isNaN(avgConsumption) || avgConsumption < 1) {
+                            toast.error('Please enter a valid average consumption (minimum 1 person per unit)');
+                            return;
+                          }
+                        } else if (pricingMode === 'variants') {
+                          // Variants mode: validate that each variant has average consumption
+                          const variantsWithoutConsumption = newMenuItem.variants.filter(
+                            v => !v.averageConsumption || v.averageConsumption < 1
+                          );
+                          if (variantsWithoutConsumption.length > 0) {
+                            toast.error('Please set "People per unit" for all variants (minimum 1 person per unit)');
+                            return;
+                          }
+                        }
+                      }
+
                       if (editingMenuItemId) {
                         // Edit existing item
                         console.log('Updating menu item:', editingMenuItemId);
@@ -1845,6 +2092,9 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           descriptionDe: newMenuItem.description,
                           pricePerPerson: Number(newMenuItem.price || 0).toString(),
                           pricingType: newMenuItem.pricingType,
+                          averageConsumption: (newMenuItem.pricingType === 'billed_by_consumption' && pricingMode === 'price')
+                            ? parseInt(newMenuItem.averageConsumption)
+                            : undefined,
                           imageUrl: newMenuItem.imageUrl || newMenuItem.image?.name || '',
                           isActive: newMenuItem.isActive,
                           variants: newMenuItem.variants,
@@ -1900,6 +2150,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             variants: [],
                             assignedAddonGroups: [],
                             isCombo: false,
+                            averageConsumption: '',
                             dietaryType: 'veg',
                             dietaryTags: [],
                             ingredients: '',
@@ -1937,6 +2188,9 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           descriptionDe: newMenuItem.description,
                           pricePerPerson: Number(newMenuItem.price || 0),
                           pricingType: newMenuItem.pricingType,
+                          averageConsumption: (newMenuItem.pricingType === 'billed_by_consumption' && pricingMode === 'price')
+                            ? parseInt(newMenuItem.averageConsumption)
+                            : undefined,
                           imageUrl: newMenuItem.imageUrl || newMenuItem.image?.name || '',
                           variants: newMenuItem.variants,
                           isCombo: newMenuItem.isCombo,
@@ -1957,6 +2211,9 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             description: newMenuItem.description,
                             price: Number(newMenuItem.price || 0),
                             pricingType: newMenuItem.pricingType,
+                            averageConsumption: newMenuItem.pricingType === 'billed_by_consumption'
+                              ? parseInt(newMenuItem.averageConsumption)
+                              : undefined,
                             image: newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl,
                             isActive: newMenuItem.isActive,
                             variants: newMenuItem.variants,
@@ -1986,6 +2243,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                             variants: [],
                             assignedAddonGroups: [],
                             isCombo: false,
+                            averageConsumption: '',
                             dietaryType: 'veg',
                             dietaryTags: [],
                             ingredients: '',
@@ -2131,6 +2389,32 @@ export function MenuConfigPage({ user }: { user?: any }) {
                   </div>
                 </div>
 
+                {/* Average Consumption - Only show for billed_by_consumption with simple price (not variants) */}
+                {newMenuItem.pricingType === 'billed_by_consumption' && pricingMode === 'price' && (
+                  <div className="mt-4 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                    <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                      Average Consumption *
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="number"
+                        min="1"
+                        max="100"
+                        step="1"
+                        value={newMenuItem.averageConsumption}
+                        onChange={(e) => setNewMenuItem({ ...newMenuItem, averageConsumption: e.target.value })}
+                        placeholder="e.g., 3"
+                        className="flex-1 px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                        style={{ fontSize: 'var(--text-base)' }}
+                      />
+                      <span className="text-muted-foreground text-sm">people per unit</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      How many people does one unit (bottle, etc.) serve? Used to calculate recommended quantities for customers.
+                    </p>
+                  </div>
+                )}
+
                 {/* Pricing Mode Toggle */}
                 <div className="flex items-center justify-between">
                   <label className="block text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
@@ -2241,15 +2525,22 @@ export function MenuConfigPage({ user }: { user?: any }) {
                         <label className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity cursor-pointer flex items-center justify-center gap-2">
                           <Upload className="w-4 h-4" />
                           <span style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                            Change Image
+                            {uploadingImage ? 'Uploading...' : 'Change Image'}
                           </span>
                           <input
                             type="file"
                             accept="image/*"
-                            onChange={(e) => {
+                            disabled={uploadingImage}
+                            onChange={async (e) => {
                               const file = e.target.files?.[0];
                               if (file) {
-                                setNewMenuItem({ ...newMenuItem, image: file, imageUrl: '' });
+                                try {
+                                  const imageUrl = await handleImageUpload(file);
+                                  setNewMenuItem({ ...newMenuItem, image: null, imageUrl });
+                                } catch (error) {
+                                  // If upload fails, still allow the user to see the preview using createObjectURL
+                                  setNewMenuItem({ ...newMenuItem, image: file, imageUrl: URL.createObjectURL(file) });
+                                }
                               }
                             }}
                             className="hidden"
@@ -2262,7 +2553,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                           <Upload className="w-8 h-8 text-primary" />
                         </div>
                         <span className="text-foreground mb-1" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                          Upload Image
+                          {uploadingImage ? 'Uploading...' : 'Upload Image'}
                         </span>
                         <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
                           Click to browse or drag and drop
@@ -2270,10 +2561,17 @@ export function MenuConfigPage({ user }: { user?: any }) {
                         <input
                           type="file"
                           accept="image/*"
-                          onChange={(e) => {
+                          disabled={uploadingImage}
+                          onChange={async (e) => {
                             const file = e.target.files?.[0];
                             if (file) {
-                              setNewMenuItem({ ...newMenuItem, image: file, imageUrl: '' });
+                              try {
+                                const imageUrl = await handleImageUpload(file);
+                                setNewMenuItem({ ...newMenuItem, image: null, imageUrl });
+                              } catch (error) {
+                                // If upload fails, still allow the user to see the preview using createObjectURL
+                                setNewMenuItem({ ...newMenuItem, image: file, imageUrl: URL.createObjectURL(file) });
+                              }
                             }
                           }}
                           className="hidden"
@@ -2287,9 +2585,16 @@ export function MenuConfigPage({ user }: { user?: any }) {
                 {pricingMode === 'variants' && (
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="block text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                        Variants *
-                      </label>
+                      <div>
+                        <label className="block text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                          Variants *
+                        </label>
+                        {newMenuItem.pricingType === 'billed_by_consumption' && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Set "People per unit" for each variant to calculate recommended quantities
+                          </p>
+                        )}
+                      </div>
                       <button
                         type="button"
                         onClick={addVariant}
@@ -2329,6 +2634,18 @@ export function MenuConfigPage({ user }: { user?: any }) {
                                   className="w-full pl-8 pr-3 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                                   style={{ fontSize: 'var(--text-base)' }}
                                 />
+                              </div>
+                              <div className="relative w-40 flex-shrink-0">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={variant.averageConsumption || ''}
+                                  onChange={(e) => updateVariant(index, 'averageConsumption', e.target.value ? parseInt(e.target.value) : undefined)}
+                                  placeholder="People/unit"
+                                  className="w-full px-3 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                                  style={{ fontSize: 'var(--text-base)' }}
+                                />
+                                <p className="text-muted-foreground text-[10px] mt-0.5 text-right">People per unit</p>
                               </div>
                               <button
                                 type="button"
@@ -3644,9 +3961,8 @@ export function MenuConfigPage({ user }: { user?: any }) {
               </div>
             </Modal>
           </>
-        )
-        }
-      </div >
-    </div >
+        )}
+      </div>
+    </div>
   );
 }

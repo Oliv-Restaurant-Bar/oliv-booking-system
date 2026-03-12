@@ -1,7 +1,6 @@
 'use client';
 
 import * as LucideIcons from 'lucide-react';
-import { useTranslations } from 'next-intl';
 
 type IconName = keyof typeof LucideIcons;
 
@@ -15,10 +14,10 @@ interface KPICardProps {
   };
   variant?: 'default' | 'compact' | 'detailed';
   isNumeric?: boolean; // New prop to indicate if value should be formatted as a numeric count
+  vsLastMonthLabel?: string; // Optional label for "vs last month"
 }
 
-export function KPICard({ title, value, iconName, trend, variant = 'default', isNumeric = false }: KPICardProps) {
-  const t = useTranslations('admin.dashboard');
+export function KPICard({ title, value, iconName, trend, variant = 'default', isNumeric = false, vsLastMonthLabel = 'vs last month' }: KPICardProps) {
 
   // Get the icon component by name
   const Icon = (LucideIcons as any)[iconName];
@@ -92,7 +91,7 @@ export function KPICard({ title, value, iconName, trend, variant = 'default', is
               {trend.isPositive ? '↑' : '↓'} {trend.value}
             </span>
             <span className="text-muted-foreground" style={{ fontSize: 'var(--text-label)' }}>
-              {t('kpis.vsLastMonth')}
+              {vsLastMonthLabel}
             </span>
           </div>
         )}
@@ -122,7 +121,7 @@ export function KPICard({ title, value, iconName, trend, variant = 'default', is
             {trend.isPositive ? '↑' : '↓'} {trend.value}
           </span>
           <span className="text-muted-foreground" style={{ fontSize: 'var(--text-label)' }}>
-            {t('kpis.vsLastMonth')}
+            {vsLastMonthLabel}
           </span>
         </div>
       )}

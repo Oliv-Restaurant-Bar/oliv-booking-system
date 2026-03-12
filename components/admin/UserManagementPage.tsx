@@ -107,7 +107,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
       setUsers(data);
     } catch (err) {
       console.error('Error fetching users:', err);
-      setError('Failed to load users. Please try again.');
+      setError(t('toast.failedToLoad'));
     } finally {
       setLoading(false);
     }

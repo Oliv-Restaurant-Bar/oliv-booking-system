@@ -8,6 +8,7 @@ import { MenuItem, MenuItemVariant } from './menuItemsData';
 import { DietaryIcon } from './DietaryIcon';
 import { ThankYouScreen } from './ThankYouScreen';
 import { WizardHeader } from './WizardHeader';
+import { DateTimePickerModal } from './DateTimePickerModal';
 import { submitWizardForm, requestBookingUnlock } from '@/lib/actions/wizard';
 import { NativeRadio } from '@/components/ui/NativeRadio';
 import { NativeCheckbox } from '@/components/ui/NativeCheckbox';
@@ -135,6 +136,9 @@ export function CustomMenuWizard() {
   const [isUnlockRequested, setIsUnlockRequested] = useState(false);
   const [isRequestingUnlock, setIsRequestingUnlock] = useState(false);
   const [includeBeveragePrices, setIncludeBeveragePrices] = useState(false);
+
+  // Date and Time picker modal states
+  const [isDateTimePickerOpen, setIsDateTimePickerOpen] = useState(false);
 
   // Check for edit mode from sessionStorage
   useEffect(() => {
@@ -361,6 +365,7 @@ export function CustomMenuWizard() {
                 ingredients: item.ingredients || '',
                 isGlutenFree: item.dietaryTags?.includes('Gluten Free') || item.dietaryTags?.includes('gluten-free') || false,
                 isCombo: item.isCombo || false,
+                averageConsumption: item.averageConsumption || null,
                 variants: item.variants || [],
                 addOns: (() => {
                   const catAddonGroupIds = (data.categoryAddonGroups || [])
@@ -1019,6 +1024,29 @@ export function CustomMenuWizard() {
   const isConsumption = (item: MenuItem) => item.pricingType === 'billed_by_consumption';
   const isNonPerPerson = (item: MenuItem) => isFlatFee(item) || isConsumption(item);
 
+  // Calculate recommended quantity for consumption-based items
+  const calculateRecommendedQuantity = (item: MenuItem, itemId?: string): number | null => {
+    if (!isConsumption(item)) return null;
+
+    const guestCount = parseInt(eventDetails.guestCount) || 0;
+    if (guestCount === 0) return null;
+
+    // Get the average consumption value to use
+    let avgConsumption = item.averageConsumption || null;
+
+    // If a variant is selected, use the variant's average consumption if available
+    if (itemId && itemVariants[itemId] && item.variants) {
+      const selectedVariant = item.variants.find(v => v.id === itemVariants[itemId]);
+      if (selectedVariant?.averageConsumption) {
+        avgConsumption = selectedVariant.averageConsumption;
+      }
+    }
+
+    if (!avgConsumption || avgConsumption <= 0) return null;
+
+    return Math.ceil(guestCount / avgConsumption);
+  };
+
   const openDetailsModal = (item: MenuItem) => {
     const isAlreadySelected = selectedItems.includes(item.id);
     setDetailsModalItem(item);
@@ -1045,6 +1073,12 @@ export function CustomMenuWizard() {
       const totalGuestCount = parseInt(eventDetails.guestCount) || 1;
       setTempGuestCount(isAlreadySelected ? (itemGuestCounts[item.id] || totalGuestCount) : totalGuestCount);
       setTempQuantity(1); // Always 1 for per-person
+    } else if (isConsumption(item)) {
+      // Consumption: Calculate recommended quantity
+      const selectedVariantId = isAlreadySelected ? (itemVariants[item.id] || defaultVariantId) : defaultVariantId;
+      const recommended = calculateRecommendedQuantity(item, item.id);
+      setTempQuantity(isAlreadySelected ? (itemQuantities[item.id] || recommended || 1) : (recommended || 1));
+      setTempGuestCount(null);
     } else {
       // Flat-rate: Use quantity
       setTempQuantity(isAlreadySelected ? (itemQuantities[item.id] || 1) : 1);
@@ -1611,41 +1645,37 @@ export function CustomMenuWizard() {
                           <Calendar className="w-4 h-4 text-primary" />
                           Event Details
                         </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4">
+                          {/* Date & Time Picker */}
                           <div>
                             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                              Datum *
+                              Date & Time *
                             </label>
-                            <Input
-                              type="date"
-                              value={eventDetails.eventDate}
-                              onChange={(e) => setEventDetails({ ...eventDetails, eventDate: e.target.value })}
-                              className={`w-full px-4 py-2.5 bg-background border rounded-lg transition-colors ${errors.eventDate ? 'border-destructive' : 'border-border focus:border-primary'
-                                }`}
-                              min={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                            <button
+                              type="button"
+                              onClick={() => setIsDateTimePickerOpen(true)}
+                              className={`
+                                w-full px-4 py-3 bg-background border rounded-lg transition-colors text-left
+                                flex items-center justify-between group
+                                ${(errors.eventDate || errors.eventTime) ? 'border-destructive' : 'border-border hover:border-primary hover:shadow-sm'}
+                              `}
                               style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
-                            />
-                            {errors.eventDate && (
+                            >
+                              <span className={(eventDetails.eventDate || eventDetails.eventTime) ? 'text-foreground' : 'text-muted-foreground'}>
+                                {eventDetails.eventDate && eventDetails.eventTime
+                                  ? `${new Date(eventDetails.eventDate).toLocaleDateString('de-CH', { day: '2-digit', month: 'short', year: 'numeric' })} um ${eventDetails.eventTime}`
+                                  : eventDetails.eventDate
+                                  ? new Date(eventDetails.eventDate).toLocaleDateString('de-CH', { day: '2-digit', month: 'short', year: 'numeric' })
+                                  : eventDetails.eventTime
+                                  ? eventDetails.eventTime
+                                  : 'Date & Time'
+                                }
+                              </span>
+                              <Calendar className="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors" />
+                            </button>
+                            {(errors.eventDate || errors.eventTime) && (
                               <p className="text-destructive mt-1" style={{ fontSize: 'var(--text-small)' }}>
-                                {errors.eventDate}
-                              </p>
-                            )}
-                          </div>
-
-                          <div>
-                            <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                              Time *
-                            </label>
-                            <Input
-                              type="time"
-                              value={eventDetails.eventTime}
-                              onChange={(e) => setEventDetails({ ...eventDetails, eventTime: e.target.value })}
-                              className={`w-full px-4 py-2.5 bg-background border rounded-lg transition-colors ${errors.eventTime ? 'border-destructive' : 'border-border focus:border-primary'}`}
-                              style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
-                            />
-                            {errors.eventTime && (
-                              <p className="text-destructive mt-1" style={{ fontSize: 'var(--text-small)' }}>
-                                {errors.eventTime}
+                                {errors.eventDate || errors.eventTime}
                               </p>
                             )}
                           </div>
@@ -1662,7 +1692,7 @@ export function CustomMenuWizard() {
                                 }`}
                               placeholder="10"
                               min="1"
-                              max="1000"
+                              max="10000"
                               style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
                             />
                             {errors.guestCount && (
@@ -2284,6 +2314,32 @@ export function CustomMenuWizard() {
                                                 {isConsumption(item) ? (
                                                   <div className="pt-2 border-t border-border mt-2">
                                                     <div className="flex flex-col gap-1.5">
+                                                      {/* Recommended quantity display - MOVED TO TOP */}
+                                                      {(() => {
+                                                        const recommendedQty = calculateRecommendedQuantity(item, itemId);
+                                                        const avgConsumption = (() => {
+                                                          // Get variant's average consumption if available
+                                                          if (itemVariants[itemId] && item.variants) {
+                                                            const variant = item.variants.find(v => v.id === itemVariants[itemId]);
+                                                            if (variant?.averageConsumption) return variant.averageConsumption;
+                                                          }
+                                                          return item.averageConsumption;
+                                                        })();
+                                                        if (!recommendedQty || !avgConsumption) return null;
+                                                        return (
+                                                          <div className="flex items-center justify-between px-2 py-1.5 bg-primary/5 rounded-lg">
+                                                            <div className="flex items-center gap-1.5">
+                                                              <Sparkles className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                                                              <span className="text-xs text-foreground">
+                                                                Recommended: <span className="font-semibold text-primary">{recommendedQty} units</span>
+                                                              </span>
+                                                            </div>
+                                                            <span className="text-[10px] text-muted-foreground">
+                                                              ({avgConsumption} people/unit)
+                                                            </span>
+                                                          </div>
+                                                        );
+                                                      })()}
                                                       <div className="flex items-center justify-between">
                                                         <div className="flex items-center gap-1.5 flex-wrap">
                                                           <span className="px-1.5 py-0.5 bg-green-100/80 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded text-xs font-medium">
@@ -2731,7 +2787,7 @@ export function CustomMenuWizard() {
                                         ) : (
                                           <ChevronUp className="w-4 h-4 text-muted-foreground" />
                                         )}
-                                        <h5 className="text-foreground font-semibold" style={{ fontSize: 'var(--text-base)' }}>
+                                        <h5 className="text-foreground font-semibold truncate max-w-125" style={{ fontSize: 'var(--text-base)' }}>
                                           {category}
                                         </h5>
                                         <span className="px-2 py-0.5 bg-muted rounded-full text-xs text-muted-foreground">
@@ -2771,7 +2827,7 @@ export function CustomMenuWizard() {
                                                     {item.dietaryType !== 'none' && (
                                                       <DietaryIcon type={item.dietaryType} size="sm" />
                                                     )}
-                                                    <h6 className="text-foreground font-medium text-sm">
+                                                    <h6 className="text-foreground font-medium text-sm truncate max-w-125">
                                                       {item.name}
                                                     </h6>
                                                   </div>
@@ -2812,7 +2868,7 @@ export function CustomMenuWizard() {
                                                     </span>
                                                   )}
                                                   {itemComments[itemId] && (
-                                                    <span className="italic">Note: {itemComments[itemId]}</span>
+                                                    <span className="italic truncate max-w-125">Note: {itemComments[itemId]}</span>
                                                   )}
                                                 </div>
                                               </div>
@@ -3010,7 +3066,7 @@ export function CustomMenuWizard() {
                                                   className="flex justify-between items-center py-1 pl-3 border-b border-border/50 last:border-0"
                                                 >
                                                   <div className="flex items-center gap-2">
-                                                    <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                                                    <span className="text-muted-foreground truncate max-w-125" style={{ fontSize: 'var(--text-small)' }}>
                                                       {item.name}
                                                     </span>
                                                     <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
@@ -3039,7 +3095,7 @@ export function CustomMenuWizard() {
                                       Per Person Total
                                     </p>
                                     <p className="text-muted-foreground text-sm mt-1">
-                                      For {eventDetails.guestCount || '0'} guests
+                                      × {eventDetails.guestCount || '0'} guests
                                     </p>
                                   </div>
                                   <div className="text-right">
@@ -3617,6 +3673,40 @@ export function CustomMenuWizard() {
                     </p>
                   </div>
 
+                  {/* Recommendation for consumption-based items */}
+                  {isConsumption(detailsModalItem) && (() => {
+                    const avgConsumption = (() => {
+                      // Get variant's average consumption if available
+                      if (tempVariant && detailsModalItem.variants) {
+                        const variant = detailsModalItem.variants.find(v => v.id === tempVariant);
+                        if (variant?.averageConsumption) return variant.averageConsumption;
+                      }
+                      return detailsModalItem.averageConsumption;
+                    })();
+                    if (!avgConsumption) return null;
+                    const guestCount = parseInt(eventDetails.guestCount) || 0;
+                    if (guestCount === 0) return null;
+                    const recommended = Math.ceil(guestCount / avgConsumption);
+                    return (
+                      <div className="mb-4 p-3 bg-amber-50 rounded-lg border border-amber-500/30">
+                        <div className="flex items-start gap-2">
+                          <Sparkles className="w-4 h-4 text-amber-900/80 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-foreground">
+                              Recommended for {eventDetails.guestCount} guests:{' '}
+                              <span className="text-amber-900/80 font-semibold">
+                                {recommended} units
+                              </span>
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Based on {avgConsumption} people per unit
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   {/* Size/Variant Selection */}
                   {detailsModalItem.variants && detailsModalItem.variants.length > 0 && (
                     <div className="mb-6">
@@ -3954,7 +4044,7 @@ export function CustomMenuWizard() {
                         </div>
                       ) : (
                         <>
-                          {/* Flat-rate items: Quantity selector */}
+                          {/* Flat-rate/Consumption items: Quantity selector */}
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => setTempQuantity(Math.max(1, tempQuantity - 1))}
@@ -4158,6 +4248,32 @@ export function CustomMenuWizard() {
                           {isConsumption(item) ? (
                             <div className="pt-2 border-t border-border mt-2">
                               <div className="flex flex-col gap-1.5">
+                                {/* Recommended quantity display - MOVED TO TOP */}
+                                {(() => {
+                                  const recommendedQty = calculateRecommendedQuantity(item, itemId);
+                                  const avgConsumption = (() => {
+                                    // Get variant's average consumption if available
+                                    if (itemVariants[itemId] && item.variants) {
+                                      const variant = item.variants.find(v => v.id === itemVariants[itemId]);
+                                      if (variant?.averageConsumption) return variant.averageConsumption;
+                                    }
+                                    return item.averageConsumption;
+                                  })();
+                                  if (!recommendedQty || !avgConsumption) return null;
+                                  return (
+                                    <div className="flex items-center justify-between px-2 py-1.5 bg-primary/5 rounded-lg">
+                                      <div className="flex items-center gap-1.5">
+                                        <Sparkles className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                                        <span className="text-xs text-foreground">
+                                          Recommended: <span className="font-semibold text-primary">{recommendedQty} units</span>
+                                        </span>
+                                      </div>
+                                      <span className="text-[10px] text-muted-foreground">
+                                        ({avgConsumption} people/unit)
+                                      </span>
+                                    </div>
+                                  );
+                                })()}
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-1.5 flex-wrap">
                                     <span className="px-1.5 py-0.5 bg-green-100/80 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded text-xs font-medium">
@@ -4252,6 +4368,22 @@ export function CustomMenuWizard() {
           )
         }
       </div >
+
+      {/* Date & Time Picker Modal */}
+      <DateTimePickerModal
+        isOpen={isDateTimePickerOpen}
+        onClose={() => setIsDateTimePickerOpen(false)}
+        onSelectDate={(date) => {
+          setEventDetails({ ...eventDetails, eventDate: date });
+          if (errors.eventDate) setErrors({ ...errors, eventDate: undefined });
+        }}
+        onSelectTime={(time) => {
+          setEventDetails({ ...eventDetails, eventTime: time });
+          if (errors.eventTime) setErrors({ ...errors, eventTime: undefined });
+        }}
+        initialDate={eventDetails.eventDate}
+        initialTime={eventDetails.eventTime}
+      />
     </>
   );
 }

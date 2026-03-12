@@ -13,15 +13,7 @@ import { BookingDetailPage, type Booking } from './BookingDetailPage';
 import * as XLSX from 'xlsx';
 import { useBookingTranslation, useCommonTranslation } from '@/lib/i18n/client';
 
-const allStatuses = [
-  { label: 'All Status', value: 'All Status', dotColor: '' },
-  { label: 'New', value: 'new', dotColor: '#8b5cf6' },
-  { label: 'Pending', value: 'pending', dotColor: '#eab308' },
-  { label: 'Confirmed', value: 'confirmed', dotColor: '#10b981' },
-  { label: 'Touchbase', value: 'touchbase', dotColor: '#9DAE91' },
-  { label: 'Declined', value: 'declined', dotColor: '#ef4444' },
-  { label: 'Completed', value: 'completed', dotColor: '#3b82f6' },
-];
+
 
 export function BookingsPage({ user }: { user?: any }) {
   const searchParams = useSearchParams();
@@ -129,6 +121,9 @@ export function BookingsPage({ user }: { user?: any }) {
         }
       };
       fetchSingleBooking();
+    } else if (!bookingId && currentPage === 'list') {
+      // Refetch bookings when returning to list view to ensure data is fresh
+      fetchBookings();
     } else if (!bookingId && currentPage === 'detail') {
       // Sync state if URL is cleared manually
       setCurrentPage('list');
@@ -137,7 +132,15 @@ export function BookingsPage({ user }: { user?: any }) {
   }, [searchParams]);
 
   // Status options for dropdown
-  const statusOptions = allStatuses;
+  const statusOptions = [
+    { label: t('statuses.all'), value: 'All Status', dotColor: '' },
+    { label: t('statuses.new'), value: 'new', dotColor: '#8b5cf6' },
+    { label: t('statuses.pending'), value: 'pending', dotColor: '#eab308' },
+    { label: t('statuses.confirmed'), value: 'confirmed', dotColor: '#10b981' },
+    { label: t('statuses.touchbase'), value: 'touchbase', dotColor: '#9DAE91' },
+    { label: t('statuses.declined'), value: 'declined', dotColor: '#ef4444' },
+    { label: t('statuses.completed'), value: 'completed', dotColor: '#3b82f6' },
+  ];
 
   const handleExport = () => {
     const excelData = filteredBookings.map((booking: Booking) => ({
@@ -212,7 +215,7 @@ export function BookingsPage({ user }: { user?: any }) {
                   onClick={fetchBookings}
                   disabled={loading}
                   className="p-2.5 border border-border bg-background hover:bg-accent rounded-lg transition-colors cursor-pointer flex-shrink-0"
-                  title="Refresh"
+                  title={t('refresh')}
                 >
                   <RefreshCw className={`w-5 h-5 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
                 </button>
@@ -239,22 +242,24 @@ export function BookingsPage({ user }: { user?: any }) {
                   <div className="flex flex-wrap gap-2">
                     {searchQuery && (
                       <span className="px-2 py-1 bg-accent rounded-md text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                        Search: <span className="text-foreground font-medium">{searchQuery}</span>
+                        {commonT('search')}: <span className="text-foreground font-medium">{searchQuery}</span>
                       </span>
                     )}
                     {selectedStatus !== 'All Status' && (
                       <span className="px-2 py-1 bg-accent rounded-md text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                        Status: <span className="text-foreground font-medium">{selectedStatus}</span>
+                        {commonT('status')}: <span className="text-foreground font-medium">
+                          {statusOptions.find(o => o.value === selectedStatus)?.label || selectedStatus}
+                        </span>
                       </span>
                     )}
                   </div>
                 </div>
                 <button
                   onClick={resetFilters}
-                  className="text-primary hover:text-secondary transition-colors underline underline-offset-4"
+                  className="text-primary hover:text-secondary transition-colors underline underline-offset-4 cursor-pointer"
                   style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                 >
-                  Reset all filters
+                  {t('resetFilters')}
                 </button>
               </div>
             )}
@@ -335,6 +340,9 @@ export function BookingsPage({ user }: { user?: any }) {
           user={user}
           onBack={() => {
             router.push('/admin/bookings');
+          }}
+          onBookingUpdated={() => {
+            fetchBookings();
           }}
         />
       )}

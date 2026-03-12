@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { WizardLoading } from '@/components/user/WizardLoading';
 
 interface EditBookingPageProps {
   params: Promise<{
@@ -12,14 +13,9 @@ interface EditBookingPageProps {
 
 export default function EditBookingPage({ params }: EditBookingPageProps) {
   const router = useRouter();
-  const [id, setId] = useState<string | null>(null);
-  const [secret, setSecret] = useState<string | null>(null);
 
   useEffect(() => {
     params.then(({ id: bookingId, secret: editSecret }) => {
-      setId(bookingId);
-      setSecret(editSecret);
-
       // Redirect to wizard with booking info in sessionStorage
       sessionStorage.setItem('edit_booking_id', bookingId);
       sessionStorage.setItem('edit_secret', editSecret);
@@ -30,12 +26,5 @@ export default function EditBookingPage({ params }: EditBookingPageProps) {
     });
   }, [params, router]);
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-        <p className="text-foreground">Loading your booking...</p>
-      </div>
-    </div>
-  );
+  return <WizardLoading />;
 }

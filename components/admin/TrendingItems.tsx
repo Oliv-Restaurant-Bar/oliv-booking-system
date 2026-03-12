@@ -5,6 +5,8 @@ import { ChevronDown, TrendingUp, TrendingDown } from 'lucide-react';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import { CategoryPill } from '../user/CategoryPill';
 import { SkeletonTrendingItems } from '@/components/ui/skeleton-loaders';
+import { useTranslations, useLocale } from 'next-intl';
+import { useCommonTranslation } from '@/lib/i18n/client';
 
 interface TrendingItem {
   rank: number;
@@ -23,7 +25,7 @@ interface TrendingItemsProps {
   trendingData?: TrendingItem[];
 }
 
-const categories = ['All Categories', 'Main Course', 'Pizza', 'Drink', 'Dessert', 'Appetizer'];
+const defaultCategories = ['All Categories', 'Main Course', 'Pizza', 'Drink', 'Dessert', 'Appetizer'];
 
 const categoryColors: Record<string, string> = {
   'All Categories': '#9DAE91',
@@ -44,6 +46,19 @@ const categoryColors: Record<string, string> = {
 const defaultImage = 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=400&fit=crop';
 
 export function TrendingItems({ trendingData: propTrendingData }: TrendingItemsProps) {
+  const t = useTranslations('admin.reports');
+  const commonT = useCommonTranslation();
+  const locale = useLocale();
+
+  const categories = [
+    { value: 'All Categories', label: t('allCategories') },
+    { value: 'Main Course', label: commonT('categories.mainCourses') },
+    { value: 'Pizza', label: 'Pizza' },
+    { value: 'Drink', label: commonT('categories.beverages') },
+    { value: 'Dessert', label: commonT('categories.desserts') },
+    { value: 'Appetizer', label: commonT('categories.starters') },
+  ];
+
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [trendingData, setTrendingData] = useState<TrendingItem[]>([]);
@@ -77,12 +92,12 @@ export function TrendingItems({ trendingData: propTrendingData }: TrendingItemsP
   const filteredData = selectedCategory === 'All Categories'
     ? trendingData.slice(0, 5)
     : trendingData
-        .filter(item => {
-          const itemCat = item.category.toLowerCase();
-          const selCat = selectedCategory.toLowerCase();
-          return itemCat.includes(selCat) || selCat.includes(itemCat);
-        })
-        .slice(0, 5);
+      .filter(item => {
+        const itemCat = item.category.toLowerCase();
+        const selCat = selectedCategory.toLowerCase();
+        return itemCat.includes(selCat) || selCat.includes(itemCat);
+      })
+      .slice(0, 5);
 
   if (loading) {
     return <SkeletonTrendingItems />;
@@ -94,7 +109,7 @@ export function TrendingItems({ trendingData: propTrendingData }: TrendingItemsP
       <div className="flex items-start justify-between mb-6">
         <div>
           <h3 className="text-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-            Trending Items
+            {t('trendingItems')}
           </h3>
         </div>
 
@@ -107,7 +122,7 @@ export function TrendingItems({ trendingData: propTrendingData }: TrendingItemsP
               className="px-4 py-2 bg-background border border-border text-foreground rounded-lg flex items-center gap-2 hover:bg-accent transition-colors cursor-pointer"
               style={{ fontSize: 'var(--text-base)' }}
             >
-              {selectedCategory}
+              {categories.find(c => c.value === selectedCategory)?.label || selectedCategory}
               <ChevronDown className="w-4 h-4" />
             </button>
 
@@ -115,17 +130,16 @@ export function TrendingItems({ trendingData: propTrendingData }: TrendingItemsP
               <div className="absolute right-0 mt-2 w-48 bg-card rounded-lg shadow-lg border border-border overflow-hidden z-50">
                 {categories.map((category, index) => (
                   <button
-                    key={category}
+                    key={category.value}
                     onClick={() => {
-                      setSelectedCategory(category);
+                      setSelectedCategory(category.value);
                       setIsCategoryDropdownOpen(false);
                     }}
-                    className={`w-full px-4 py-2.5 text-left text-foreground hover:bg-accent transition-colors cursor-pointer ${
-                      category === selectedCategory ? 'bg-accent' : ''
-                    } ${index > 0 ? 'border-t border-border' : ''}`}
+                    className={`w-full px-4 py-2.5 text-left text-foreground hover:bg-accent transition-colors cursor-pointer ${category.value === selectedCategory ? 'bg-accent' : ''
+                      } ${index > 0 ? 'border-t border-border' : ''}`}
                     style={{ fontSize: 'var(--text-base)' }}
                   >
-                    {category}
+                    {category.label}
                   </button>
                 ))}
               </div>
@@ -139,16 +153,15 @@ export function TrendingItems({ trendingData: propTrendingData }: TrendingItemsP
         {filteredData.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
-              No trending items found
+              {t('noTrendingItems')}
             </p>
           </div>
         ) : (
           filteredData.map((item, index) => (
             <div
               key={item.rank}
-              className={`flex items-center gap-4 py-3 hover:bg-accent/50 transition-colors ${
-                index < filteredData.length - 1 ? 'border-b border-border' : ''
-              }`}
+              className={`flex items-center gap-4 py-3 hover:bg-accent/50 transition-colors ${index < filteredData.length - 1 ? 'border-b border-border' : ''
+                }`}
             >
               {/* Rank */}
               <div className="text-muted-foreground w-6 flex-shrink-0" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
@@ -167,7 +180,7 @@ export function TrendingItems({ trendingData: propTrendingData }: TrendingItemsP
               {/* Item Details */}
               <div className="flex-1 min-w-0">
                 <h4 className="text-foreground truncate" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                  {item.name}
+                  {locale === 'de' && item.nameDe ? item.nameDe : item.name}
                 </h4>
                 <div className="flex items-center gap-3 mt-1">
                   <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
@@ -175,7 +188,7 @@ export function TrendingItems({ trendingData: propTrendingData }: TrendingItemsP
                   </span>
                   {/* Category Badge */}
                   <CategoryPill
-                    label={item.category}
+                    label={locale === 'de' && item.categoryDe ? item.categoryDe : item.category}
                     color={categoryColors[item.category] || '#9DAE91'}
                     variant="badge"
                   />

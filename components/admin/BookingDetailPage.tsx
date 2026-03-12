@@ -16,6 +16,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonBookingDetail } from '@/components/ui/skeleton-loaders';
 import { ValidatedTextarea } from '@/components/ui/validated-textarea';
 import { bookingKitchenNotesSchema, bookingCommentSchema } from '@/lib/validation/schemas';
+import { useBookingTranslation, useCommonTranslation, useButtonTranslation } from '@/lib/i18n/client';
+import { useTranslations } from 'next-intl';
 
 export interface Booking {
     id: string;
@@ -68,11 +70,17 @@ interface BookingDetailPageProps {
     bookingId: string;
     booking?: Booking | null;
     onBack?: () => void;
+    onBookingUpdated?: () => void;
     user?: any;
 }
 
-export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, user }: BookingDetailPageProps) {
+export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, onBookingUpdated, user }: BookingDetailPageProps) {
     const router = useRouter();
+    const t = useBookingTranslation();
+    const commonT = useCommonTranslation();
+    const buttonT = useButtonTranslation();
+    const statusT = useTranslations('bookingStatus');
+
     const [booking, setBooking] = useState<Booking | null>(initialBooking || null);
     const [loading, setLoading] = useState(!initialBooking);
     const [comments, setComments] = useState<Array<{ by: string; time: string; date: string; action: string; type?: 'system' | 'manual' }>>(
@@ -258,14 +266,14 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             if (response.ok) {
                 setIsLocked(!isLocked);
                 if (showAuditHistory) fetchAuditHistory();
-                toast.success(`Booking ${!isLocked ? 'locked' : 'unlocked'} successfully!`);
+                toast.success(t(!isLocked ? 'toast.lockSuccess' : 'toast.unlockSuccess'));
             } else {
                 const errorData = await response.json();
-                toast.error(`Failed to ${action} booking: ${errorData.error || 'Unknown error'}`);
+                toast.error(`${t(action === 'lock' ? 'toast.lockFailed' : 'toast.unlockFailed')}: ${errorData.error || commonT('error')}`);
             }
         } catch (error) {
             console.error('Error toggling lock:', error);
-            toast.error('Failed to toggle lock. Please try again.');
+            toast.error(t(!isLocked ? 'toast.lockFailed' : 'toast.unlockFailed'));
         } finally {
             setLockLoading(false);
         }
@@ -309,7 +317,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                     const baseUrl = window.location.origin;
                     const editLink = `${baseUrl}/booking/${booking.id}/edit/${data.editSecret}`;
                     await copyToClipboard(editLink);
-                    toast.success('Edit link copied to clipboard!');
+                    toast.success(t('toast.copyLinkSuccess'));
                     return;
                 }
 
@@ -320,25 +328,25 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                         const baseUrl = window.location.origin;
                         const editLink = `${baseUrl}/booking/${booking.id}/edit/${generateData.editSecret}`;
                         await copyToClipboard(editLink);
-                        toast.success('Edit link generated and copied to clipboard!');
+                        toast.success(t('toast.generateLinkSuccess'));
                         return;
                     }
                 }
             }
-            toast.error('Unable to generate edit link. Please try again.');
+            toast.error(t('toast.generateLinkFailed'));
         } catch (error) {
             console.error('Error copying edit link:', error);
-            toast.error('Failed to copy edit link. Please try again.');
+            toast.error(t('toast.copyLinkFailed'));
         }
     };
 
     const statusOptions = [
-        { value: 'new', label: 'New', dotColor: '#8b5cf6' },
-        { value: 'touchbase', label: 'Touchbase', dotColor: '#9DAE91' },
-        { value: 'pending', label: 'Pending', dotColor: '#eab308' },
-        { value: 'confirmed', label: 'Confirmed', dotColor: '#10b981' },
-        { value: 'completed', label: 'Completed', dotColor: '#3b82f6' },
-        { value: 'declined', label: 'Declined', dotColor: '#ef4444' },
+        { value: 'new', label: statusT('new'), dotColor: '#8b5cf6' },
+        { value: 'touchbase', label: statusT('touchbase'), dotColor: '#9DAE91' },
+        { value: 'pending', label: statusT('pending'), dotColor: '#eab308' },
+        { value: 'confirmed', label: statusT('confirmed'), dotColor: '#10b981' },
+        { value: 'completed', label: statusT('completed'), dotColor: '#3b82f6' },
+        { value: 'declined', label: statusT('declined'), dotColor: '#ef4444' },
     ];
 
     const handleAddComment = async () => {
@@ -373,13 +381,13 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                 setComments([...comments, newCommentObj]);
                 setNewComment('');
                 setErrors({ ...errors, comment: undefined });
-                toast.success('Comment added');
+                toast.success(t('toast.commentAdded'));
             } else {
-                toast.error('Failed to save comment');
+                toast.error(t('toast.saveFailed'));
             }
         } catch (error) {
             console.error('Error saving comment:', error);
-            toast.error('Failed to save comment');
+            toast.error(t('toast.saveFailed'));
         }
     };
 
@@ -392,10 +400,32 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ bookingId: booking.id, status: value }),
             });
-            toast.success('Status updated successfully');
+            toast.success(t('toast.statusUpdated'));
+            onBookingUpdated?.();
         } catch (error) {
             console.error('Error updating status:', error);
-            toast.error('Failed to update status');
+            toast.error(t('toast.statusUpdateFailed'));
+        }
+    };
+
+    const handleVenueChange = async (value: string) => {
+        if (!booking) return;
+        setSelectedVenue(value);
+        try {
+            const response = await fetch(`/api/bookings/${booking.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ location: value }),
+            });
+            if (response.ok) {
+                toast.success(t('toast.venueUpdated'));
+                onBookingUpdated?.();
+            } else {
+                toast.error(t('toast.saveFailed'));
+            }
+        } catch (error) {
+            console.error('Error updating venue:', error);
+            toast.error(t('toast.saveFailed'));
         }
     };
 
@@ -408,19 +438,18 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     kitchenNotes: kitchenNotes,
-                    location: selectedVenue,
                     assignedTo: assignedTo || null
                 }),
             });
             if (response.ok) {
-                toast.success('Changes saved successfully');
+                toast.success(t('toast.saveSuccess'));
                 window.location.reload();
             } else {
-                toast.error('Failed to save changes');
+                toast.error(t('toast.saveFailed'));
             }
         } catch (error) {
             console.error('Error saving booking changes:', error);
-            toast.error('Failed to save changes');
+            toast.error(t('toast.saveFailed'));
         } finally {
             setIsSaving(false);
         }
@@ -496,7 +525,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                 type: 'system' as const
             };
             setComments([...comments, newCommentObj]);
-            toast.success(action === 'email' ? 'PDF sent' : 'PDF downloaded');
+            toast.success(t(action === 'email' ? 'toast.pdfSentSuccess' : 'toast.pdfDownloadSuccess'));
         }
     };
 
@@ -513,9 +542,9 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
                 <div className="text-center">
-                    <p className="text-muted-foreground mb-4" style={{ fontSize: 'var(--text-base)' }}>Booking not found</p>
+                    <p className="text-muted-foreground mb-4" style={{ fontSize: 'var(--text-base)' }}>{t('noBookings')}</p>
                     <button onClick={onBack || (() => router.back())} className="px-4 py-2 bg-primary text-white rounded-lg">
-                        Back to Bookings
+                        {t('backToBookings')}
                     </button>
                 </div>
             </div>
@@ -534,7 +563,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                             style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
                         >
                             <ArrowLeft className="w-5 h-5" />
-                            <span className="hidden sm:inline">Back to Bookings</span>
+                            <span className="hidden sm:inline">{t('backToBookings')}</span>
                         </button>
                     </div>
                     <div className="flex items-center gap-3 flex-wrap">
@@ -555,7 +584,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                 style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
                             >
                                 <FileText className="w-4 h-4" />
-                                Kitchen Sheet
+                                {t('kitchenSheet')}
                             </button>
                         )}
 
@@ -566,7 +595,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                 style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
                             >
                                 <History className="w-4 h-4" />
-                                {showAuditHistory ? 'Hide History' : 'Show History'}
+                                {showAuditHistory ? t('hideHistory') : t('showHistory')}
                             </button>
                         )}
 
@@ -577,7 +606,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                 style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
                             >
                                 <Link className="w-4 h-4" />
-                                Copy Edit Link
+                                {t('copyEditLink')}
                             </button>
                         )}
 
@@ -588,7 +617,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                 style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
                             >
                                 <UserPlus className="w-4 h-4" />
-                                {assignedTo ? adminUsers.find(u => u.id === assignedTo)?.name || 'Assigned' : 'Not Assigned Yet'}
+                                {assignedTo ? adminUsers.find(u => u.id === assignedTo)?.name || commonT('success') : t('notAssignedYet')}
                             </button>
                         )}
 
@@ -602,7 +631,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     }`}
                                 style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
                             >
-                                {lockLoading ? 'Loading...' : isLocked ? <><Lock className="w-4 h-4" />UnLock</> : <><Lock className="w-4 h-4" />Lock</>}
+                                {lockLoading ? commonT('loading') : isLocked ? <><Lock className="w-4 h-4" />{t('unlock')}</> : <><Lock className="w-4 h-4" />{t('lock')}</>}
                             </button>
                         )}
                     </div>
@@ -615,8 +644,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                     <div className="mb-6 p-4 bg-booking-locked/10 border border-booking-locked rounded-lg flex items-center gap-3">
                         <Lock className="w-5 h-5 text-booking-locked-lock dark:text-booking-locked-lock flex-shrink-0" />
                         <div>
-                            <p className="font-medium text-booking-locked-text dark:text-booking-locked-text">Booking is Locked</p>
-                            <p className="text-sm text-booking-locked-text dark:text-booking-locked-text">Clients cannot edit this booking. You can still make changes as an admin.</p>
+                            <p className="font-medium text-booking-locked-text dark:text-booking-locked-text">{t('lockedMessage')}</p>
+                            <p className="text-sm text-booking-locked-text dark:text-booking-locked-text">{t('lockedDescription')}</p>
                         </div>
                     </div>
                 )}
@@ -624,10 +653,10 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
                     <div className="mb-6">
                         <h1 className="text-foreground" style={{ fontSize: 'var(--text-h1)', fontWeight: 'var(--font-weight-semibold)' }}>
-                            Booking Details
+                            {t('details')}
                         </h1>
                         <p className="text-muted-foreground mt-1" style={{ fontSize: 'var(--text-base)' }}>
-                            View and manage booking information
+                            {t('viewManageTitle')}
                         </p>
                     </div>
 
@@ -636,7 +665,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                             options={statusOptions}
                             value={localStatus}
                             onChange={handleStatusChange}
-                            placeholder="Select status"
+                            placeholder={statusT('all')}
                             className="w-full"
                             disabled={!canUpdateStatus}
                         />
@@ -648,27 +677,27 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                     <div className="bg-card border border-border rounded-xl p-6">
                         <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
                             <User className="w-5 h-5 text-primary" />
-                            Customer Information
+                            {t('customerInfo')}
                         </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-1">
-                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Name</label>
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{commonT('name')}</label>
                                 <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.name}</p>
                             </div>
                             <div className="space-y-1">
-                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Business</label>
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{commonT('business')}</label>
                                 <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.business || '-'}</p>
                             </div>
                             <div className="space-y-1">
-                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Email</label>
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{commonT('email')}</label>
                                 <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.email}</p>
                             </div>
                             <div className="space-y-1">
-                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Phone Number</label>
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{commonT('phone')}</label>
                                 <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.phone}</p>
                             </div>
                             <div className="sm:col-span-2 space-y-1">
-                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Address</label>
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('address')}</label>
                                 <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.address || '-'}</p>
                             </div>
                         </div>
@@ -679,7 +708,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                         <div className="flex items-center justify-between mb-5">
                             <h3 className="text-foreground flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
                                 <CalendarDays className="w-5 h-5 text-primary" />
-                                Event Details
+                                {t('eventDetails')}
                             </h3>
                             {kitchenPdfStatus && (
                                 <KitchenPdfStatusBadge
@@ -690,41 +719,41 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-1">
-                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Event Date</label>
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{commonT('date')}</label>
                                 <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.event.date}</p>
                             </div>
                             <div className="space-y-1">
-                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Time</label>
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{commonT('time')}</label>
                                 <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.event.time}</p>
                             </div>
                             <div className="space-y-1">
-                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Guests</label>
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('guests')}</label>
                                 <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.guests}</p>
                             </div>
                             <div className="space-y-1">
-                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Occasion</label>
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('occasion')}</label>
                                 <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.event.occasion}</p>
                             </div>
                             <div className="space-y-1">
-                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Amount (CHF)</label>
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('amount')} (CHF)</label>
                                 <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.amount}</p>
                             </div>
                             <div className="space-y-1">
-                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Venue Location</label>
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('venueLocation')}</label>
                                 {canEditBooking ? (
                                     <select
                                         value={selectedVenue}
-                                        onChange={(e) => setSelectedVenue(e.target.value)}
+                                        onChange={(e) => handleVenueChange(e.target.value)}
                                         className="w-full px-4 py-2 bg-input-background border border-border rounded-lg text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20"
                                         style={{ fontSize: 'var(--text-base)' }}
                                     >
-                                        <option value="">Not Assigned</option>
+                                        <option value="">{t('notAssigned')}</option>
                                         {venueLocations.map((loc: string) => (
                                             <option key={loc} value={loc}>{loc}</option>
                                         ))}
                                     </select>
                                 ) : (
-                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{selectedVenue || 'Not Assigned'}</p>
+                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{selectedVenue || t('notAssigned')}</p>
                                 )}
                             </div>
                         </div>
@@ -733,16 +762,16 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                     {/* Menu Items */}
                     <div className="bg-card border border-border rounded-xl p-6">
                         <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                            <UtensilsCrossed className="w-5 h-5 text-primary" /> Menu Items
+                            <UtensilsCrossed className="w-5 h-5 text-primary" /> {t('menuItems')}
                         </h3>
                         <div className="bg-background border border-border rounded-lg overflow-hidden overflow-x-auto">
                             <table className="w-full">
                                 <thead className="bg-muted">
                                     <tr>
-                                        <th className="px-4 py-3 text-left text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>Item</th>
-                                        <th className="px-4 py-3 text-left text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>Category</th>
-                                        <th className="px-4 py-3 text-left text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>Quantity</th>
-                                        <th className="px-4 py-3 text-right text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>Price</th>
+                                        <th className="px-4 py-3 text-left text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>{commonT('item')}</th>
+                                        <th className="px-4 py-3 text-left text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>{commonT('category')}</th>
+                                        <th className="px-4 py-3 text-left text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>{t('quantity')}</th>
+                                        <th className="px-4 py-3 text-right text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>{buttonT('price')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -756,11 +785,11 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                             </tr>
                                         ))
                                     ) : (
-                                        <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>No items selected</td></tr>
+                                        <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>{t('noItemsSelected')}</td></tr>
                                     )}
                                     {booking.menuItems && booking.menuItems.length > 0 && (
                                         <tr className="border-t-2 border-border bg-muted">
-                                            <td colSpan={3} className="px-4 py-3 text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>Total Amount</td>
+                                            <td colSpan={3} className="px-4 py-3 text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>{t('totalAmount')}</td>
                                             <td className="px-4 py-3 text-right text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>{booking.amount}</td>
                                         </tr>
                                     )}
@@ -769,7 +798,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                         </div>
 
                         <h3 className="text-foreground mt-10 mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                            <MessageSquare className="w-5 h-5 text-primary" /> Notes for Kitchen Staff
+                            <MessageSquare className="w-5 h-5 text-primary" /> {t('kitchenNotes')}
                         </h3>
                         <div className="space-y-4">
                             <div className="space-y-1">
@@ -781,7 +810,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                             if (errors.kitchenNotes) setErrors({ ...errors, kitchenNotes: undefined });
                                         }}
                                         rows={3}
-                                        placeholder="Enter notes specifically for the kitchen staff (will be included in PDF)..."
+                                        placeholder={t('kitchenNotesPlaceholder')}
                                         maxLength={1000}
                                         showCharacterCount
                                         error={errors.kitchenNotes}
@@ -789,7 +818,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     />
                                 ) : (
                                     <div className="p-4 bg-muted/20 border border-border/50 rounded-lg text-foreground min-h-[80px] whitespace-pre-wrap" style={{ fontSize: 'var(--text-base)' }}>
-                                        {kitchenNotes || <span className="text-muted-foreground italic">No kitchen notes specified</span>}
+                                        {kitchenNotes || <span className="text-muted-foreground italic">{t('noDataFound')}</span>}
                                     </div>
                                 )}
                             </div>
@@ -822,194 +851,192 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                     {/* Additional Information */}
                     <div className="bg-card border border-border rounded-xl p-6">
                         <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                            <MessageSquare className="w-5 h-5 text-primary" /> Additional Information From Customer
+                            <MessageSquare className="w-5 h-5 text-primary" /> {t('additionalInfo')}
                         </h3>
-                        <div className="space-y-4">
-                            <div className="space-y-1">
-                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Allergies</label>
-                                <p className="text-foreground font-medium whitespace-pre-wrap" style={{ fontSize: 'var(--text-base)' }}>
-                                    {allergies || <span className="text-muted-foreground italic font-normal">No allergies specified</span>}
-                                </p>
-                                <p className="text-muted-foreground text-xs mt-1">This field is filled by the client during booking</p>
+                        <div className="space-y-1">
+                            <label className="text-muted-foreground block font-medium" style={{ fontSize: 'var(--text-small)' }}>{t('allergyDetails')}</label>
+                            <div className="p-4 bg-muted/20 border border-border/50 rounded-lg text-foreground min-h-[60px] whitespace-pre-wrap" style={{ fontSize: 'var(--text-base)' }}>
+                                {Array.isArray(allergies) ? allergies.join(', ') : allergies || <span className="text-muted-foreground italic">{t('noDataFound')}</span>}
                             </div>
-                            <div className="space-y-1 text-pt-2">
-                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>Notes</label>
-                                <p className="text-foreground font-medium whitespace-pre-wrap" style={{ fontSize: 'var(--text-base)' }}>
-                                    {notes || <span className="text-muted-foreground italic font-normal">No notes specified</span>}
-                                </p>
-                                <p className="text-muted-foreground text-xs mt-1">This field is filled by the client during booking</p>
+                            <p className="text-muted-foreground text-xs mt-1">{t('clientFilledField')}</p>
+                        </div>
+                        <div className="space-y-1 text-pt-2">
+                            <label className="text-muted-foreground block font-medium" style={{ fontSize: 'var(--text-small)' }}>{t('internalNotes')}</label>
+                            <div className="p-4 bg-muted/20 border border-border/50 rounded-lg text-foreground min-h-[60px] whitespace-pre-wrap" style={{ fontSize: 'var(--text-base)' }}>
+                                {notes || <span className="text-muted-foreground italic font-normal">{t('noDataFound')}</span>}
                             </div>
+                            <p className="text-muted-foreground text-xs mt-1">{t('clientFilledField')}</p>
                         </div>
                     </div>
-
-                    {/* Comments Section */}
-                    <div className="bg-card border border-border rounded-xl p-6">
-                        <div className="flex items-center justify-between mb-5">
-                            <h3 className="text-foreground flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                <MessageSquare className="w-5 h-5 text-primary" /> Comments & Activity
-                            </h3>
-                            <span className="px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-xs font-medium border border-border">
-                                {comments.length} items
-                            </span>
-                        </div>
-                        <div className="space-y-4">
-                            <div className="max-h-[500px] overflow-y-auto pr-2 space-y-4 -mr-2 scrollbar-thin">
-                                {comments.length === 0 ? (
-                                    <div className="text-center py-8 bg-muted/20 rounded-lg border border-dashed border-border">
-                                        <MessageSquare className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-                                        <p className="text-muted-foreground text-sm">No comments or activity yet</p>
-                                    </div>
-                                ) : (
-                                    comments.map((contact, index) => (
-                                        <CommentItem key={index} contact={contact} />
-                                    ))
-                                )}
-                            </div>
-
-                            {canEditBooking && (
-                                <div className="space-y-3 pt-4 border-t border-border/50">
-                                    <ValidatedTextarea
-                                        value={newComment}
-                                        onChange={(e) => {
-                                            setNewComment(e.target.value);
-                                            if (errors.comment) setErrors({ ...errors, comment: undefined });
-                                        }}
-                                        placeholder="Add a comment or internal note..."
-                                        rows={3}
-                                        maxLength={500}
-                                        showCharacterCount
-                                        error={errors.comment}
-                                    />
-                                    <div className="flex justify-end">
-                                        <button
-                                            onClick={handleAddComment}
-                                            disabled={!newComment.trim()}
-                                            className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                                            style={{ fontSize: 'var(--text-base)' }}
-                                        >
-                                            <Send className="w-4 h-4" /> Add Comment
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Audit History */}
-                    {showAuditHistory && (
-                        <div className="bg-card border border-border rounded-xl p-6">
-                            <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                <History className="w-5 h-5 text-primary" /> Audit History
-                            </h3>
-                            {auditLoading ? (
-                                <div className="text-center py-8 text-muted-foreground">Loading audit history...</div>
-                            ) : auditLogs.length === 0 ? (
-                                <div className="text-center py-8 text-muted-foreground">No changes recorded yet</div>
-                            ) : (
-                                <div className="space-y-4">
-                                    {auditLogs.map((log) => (
-                                        <div key={log.id} className="bg-background border border-border rounded-lg p-4">
-                                            <div className="flex items-start justify-between mb-3">
-                                                <div className="flex items-center gap-2">
-                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white flex-shrink-0 ${log.actor_type === 'admin' ? 'bg-primary' : 'bg-secondary'}`}>
-                                                        {log.actor_label.charAt(0)}
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{log.actor_label}</p>
-                                                        {log.admin_name && <p className="text-muted-foreground text-sm">{log.admin_email}</p>}
-                                                    </div>
-                                                </div>
-                                                <span className="text-muted-foreground text-sm">{new Date(log.created_at).toLocaleString()}</span>
-                                            </div>
-                                            <div className="space-y-2">
-                                                {log.changes.map((change: any, idx: number) => (
-                                                    <div key={idx} className="flex items-center gap-2 text-sm">
-                                                        <span className="text-muted-foreground">{change.field.replace(/([A-Z])/g, ' $1').replace(/^./, (str: string) => str.toUpperCase())}:</span>
-                                                        <span className={`line-through ${change.from ? 'text-red-500' : 'text-muted-foreground'}`}>{change.from === null || change.from === undefined ? 'None' : String(change.from)}</span>
-                                                        <span className="text-muted-foreground">→</span>
-                                                        <span className="text-green-500 font-medium">{change.to === null || change.to === undefined ? 'None' : String(change.to)}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Save Button */}
-                    {canEditBooking && (
-                        <div className="pb-4">
-                            <button
-                                onClick={handleSaveChanges}
-                                disabled={isSaving}
-                                className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}
-                            >
-                                {isSaving ? 'Saving...' : 'Save Changes'}
-                            </button>
-                        </div>
-                    )}
-
                 </div>
 
-                {/* Kitchen PDF Action Modal */}
-                {isPdfActionModalOpen && booking && (
-                    <KitchenPdfActionModal
-                        isOpen={isPdfActionModalOpen}
-                        onClose={() => setIsPdfActionModalOpen(false)}
-                        onActionComplete={handlePdfActionComplete}
-                        booking={{
-                            ...booking,
-                            allergies: typeof allergies === 'string' ? allergies : (Array.isArray(allergies) ? (allergies as string[]).join(', ') : ''),
-                            notes: notes,
-                            kitchenNotes: kitchenNotes,
-                            menuItems: booking.menuItems?.map(item => ({
-                                ...item,
-                                quantity: String(item.quantity)
-                            }))
-                        }}
-                    />
+                {/* Comments Section */}
+                <div className="bg-card border border-border rounded-xl p-6">
+                    <div className="flex items-center justify-between mb-5">
+                        <h3 className="text-foreground flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                            <MessageSquare className="w-5 h-5 text-primary" /> {t('commentsActivity')}
+                        </h3>
+                        <span className="px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-xs font-medium border border-border">
+                            {comments.length} {t('items')}
+                        </span>
+                    </div>
+                    <div className="space-y-4">
+                        <div className="max-h-[500px] overflow-y-auto pr-2 space-y-4 -mr-2 scrollbar-thin">
+                            {comments.length === 0 ? (
+                                <div className="text-center py-8 bg-muted/20 rounded-lg border border-dashed border-border">
+                                    <MessageSquare className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                                    <p className="text-muted-foreground text-sm">{t('noComments')}</p>
+                                </div>
+                            ) : (
+                                comments.map((contact, index) => (
+                                    <CommentItem key={index} contact={contact} t={t} commonT={commonT} />
+                                ))
+                            )}
+                        </div>
+
+                        {canEditBooking && (
+                            <div className="space-y-3 pt-4 border-t border-border/50">
+                                <ValidatedTextarea
+                                    value={newComment}
+                                    onChange={(e) => {
+                                        setNewComment(e.target.value);
+                                        if (errors.comment) setErrors({ ...errors, comment: undefined });
+                                    }}
+                                    placeholder={t('commentPlaceholder')}
+                                    rows={3}
+                                    maxLength={500}
+                                    showCharacterCount
+                                    error={errors.comment}
+                                />
+                                <div className="flex justify-end">
+                                    <button
+                                        onClick={handleAddComment}
+                                        disabled={!newComment.trim()}
+                                        className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                                        style={{ fontSize: 'var(--text-base)' }}
+                                    >
+                                        <Send className="w-4 h-4" /> {t('addComment')}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Audit History */}
+                {showAuditHistory && (
+                    <div className="bg-card border border-border rounded-xl p-6">
+                        <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                            <History className="w-5 h-5 text-primary" /> {t('auditHistory')}
+                        </h3>
+                        {auditLoading ? (
+                            <div className="text-center py-8 text-muted-foreground">{commonT('loading')}</div>
+                        ) : auditLogs.length === 0 ? (
+                            <div className="text-center py-8 text-muted-foreground">{t('noChanges')}</div>
+                        ) : (
+                            <div className="space-y-4">
+                                {auditLogs.map((log) => (
+                                    <div key={log.id} className="bg-background border border-border rounded-lg p-4">
+                                        <div className="flex items-start justify-between mb-3">
+                                            <div className="flex items-center gap-2">
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white flex-shrink-0 ${log.actor_type === 'admin' ? 'bg-primary' : 'bg-secondary'}`}>
+                                                    {log.actor_label.charAt(0)}
+                                                </div>
+                                                <div>
+                                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{log.actor_label}</p>
+                                                    {log.admin_name && <p className="text-muted-foreground text-sm">{log.admin_email}</p>}
+                                                </div>
+                                            </div>
+                                            <span className="text-muted-foreground text-sm">{new Date(log.created_at).toLocaleString()}</span>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {log.changes.map((change: any, idx: number) => (
+                                                <div key={idx} className="flex items-center gap-2 text-sm">
+                                                    <span className="text-muted-foreground">{change.field.replace(/([A-Z])/g, ' $1').replace(/^./, (str: string) => str.toUpperCase())}:</span>
+                                                    <span className={`line-through ${change.from ? 'text-red-500' : 'text-muted-foreground'}`}>{change.from === null || change.from === undefined ? 'None' : String(change.from)}</span>
+                                                    <span className="text-muted-foreground">→</span>
+                                                    <span className="text-green-500 font-medium">{change.to === null || change.to === undefined ? 'None' : String(change.to)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 )}
 
-                {/* Assign User Modal */}
-                {isAssignModalOpen && (
-                    <AssignUserModal
-                        isOpen={isAssignModalOpen}
-                        onClose={() => setIsAssignModalOpen(false)}
-                        users={adminUsers}
-                        assignedTo={assignedTo}
-                        onAssign={async (userId) => {
-                            setAssignedTo(userId);
-                            try {
-                                const response = await fetch(`/api/bookings/${booking.id}`, {
-                                    method: 'PUT',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        assignedTo: userId || null
-                                    }),
-                                });
-                                if (response.ok) {
-                                    toast.success('Assignment updated successfully');
-                                    window.location.reload();
-                                } else {
-                                    toast.error('Failed to update assignment');
-                                }
-                            } catch (error) {
-                                console.error('Error updating assignment:', error);
-                                toast.error('Failed to update assignment');
-                            }
-                        }}
-                        isLoading={isAdminUsersLoading}
-                    />
+                {/* Save Button */}
+                {canEditBooking && (
+                    <div className="pb-4">
+                        <button
+                            onClick={handleSaveChanges}
+                            disabled={isSaving}
+                            className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}
+                        >
+                            {isSaving ? commonT('loading') : t('saveChanges')}
+                        </button>
+                    </div>
                 )}
+
             </div>
+
+            {/* Kitchen PDF Action Modal */}
+            {isPdfActionModalOpen && booking && (
+                <KitchenPdfActionModal
+                    isOpen={isPdfActionModalOpen}
+                    onClose={() => setIsPdfActionModalOpen(false)}
+                    onActionComplete={handlePdfActionComplete}
+                    booking={{
+                        ...booking,
+                        allergies: typeof allergies === 'string' ? allergies : (Array.isArray(allergies) ? (allergies as string[]).join(', ') : ''),
+                        notes: notes,
+                        kitchenNotes: kitchenNotes,
+                        menuItems: booking.menuItems?.map(item => ({
+                            ...item,
+                            quantity: String(item.quantity)
+                        }))
+                    }}
+                />
+            )}
+
+            {/* Assign User Modal */}
+            {isAssignModalOpen && (
+                <AssignUserModal
+                    isOpen={isAssignModalOpen}
+                    onClose={() => setIsAssignModalOpen(false)}
+                    users={adminUsers}
+                    assignedTo={assignedTo}
+                    onAssign={async (userId) => {
+                        setAssignedTo(userId);
+                        try {
+                            const response = await fetch(`/api/bookings/${booking.id}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    assignedTo: userId || null
+                                }),
+                            });
+                            if (response.ok) {
+                                toast.success(t('toast.assignmentSuccess'));
+                                window.location.reload();
+                            } else {
+                                toast.error(t('toast.assignmentFailed'));
+                            }
+                        } catch (error) {
+                            console.error('Error updating assignment:', error);
+                            toast.error(t('toast.assignmentFailed'));
+                        }
+                    }}
+                    isLoading={isAdminUsersLoading}
+                />
+            )}
         </div>
     );
 }
 
-function CommentItem({ contact }: { contact: any }) {
+function CommentItem({ contact, t, commonT }: { contact: any, t: any, commonT: any }) {
     const isSystem = contact.type === 'system';
 
     // Helper to generate consistent color from name
@@ -1055,12 +1082,12 @@ function CommentItem({ contact }: { contact: any }) {
                     {isSystem && (
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">
                             <CheckCircle2 className="w-2.5 h-2.5" />
-                            System
+                            {t('system')}
                         </span>
                     )}
                     <span className="text-muted-foreground text-xs flex items-center gap-1.5 ml-auto sm:ml-0">
                         <span className="hidden sm:inline">•</span>
-                        {contact.date} at {contact.time}
+                        {contact.date} {commonT('at')} {contact.time}
                     </span>
                 </div>
                 <p className={cn(

@@ -10,10 +10,11 @@ import { VenueService } from '@/services/venue.service';
 import { SettingsService } from '@/services/settings.service';
 import type { Venue } from '@/services/venue.service';
 import { toast } from 'sonner';
-import { useSettingsTranslation } from '@/lib/i18n/client';
+import { useSettingsTranslation, useCommonTranslation } from '@/lib/i18n/client';
 
 export function SettingsPage({ user }: { user?: any }) {
   const t = useSettingsTranslation();
+  const commonT = useCommonTranslation();
   const userRole = user?.role;
   const canUpdateSettings = hasPermission(userRole, Permission.UPDATE_SETTINGS);
 
@@ -52,7 +53,7 @@ export function SettingsPage({ user }: { user?: any }) {
       }
     } catch (error) {
       console.error('Error loading settings:', error);
-      toast.error('Failed to load settings');
+      toast.error(t('toast.loadFailed'));
     } finally {
       setIsLoadingSettings(false);
     }
@@ -78,14 +79,14 @@ export function SettingsPage({ user }: { user?: any }) {
       });
 
       if (result) {
-        toast.success('Settings saved successfully');
+        toast.success(t('toast.saveSuccess'));
         setHasChanges(false);
       } else {
-        toast.error('Failed to save settings');
+        toast.error(t('toast.saveFailed'));
       }
     } catch (error) {
       console.error('Error saving settings:', error);
-      toast.error('Failed to save settings');
+      toast.error(t('toast.saveFailed'));
     } finally {
       setIsSavingSettings(false);
     }
@@ -149,7 +150,7 @@ export function SettingsPage({ user }: { user?: any }) {
           await loadVenues();
           setShowVenueModal(false);
         } else {
-          toast.error('Failed to update venue. A venue with this name may already exist.');
+          toast.error(t('toast.venueUpdateFailed'));
         }
       } else {
         // Add new venue
@@ -158,7 +159,7 @@ export function SettingsPage({ user }: { user?: any }) {
           await loadVenues();
           setShowVenueModal(false);
         } else {
-          toast.error('Failed to add venue. A venue with this name may already exist.');
+          toast.error(t('toast.venueAddFailed'));
         }
       }
     } finally {
@@ -167,16 +168,16 @@ export function SettingsPage({ user }: { user?: any }) {
   };
 
   const handleDeleteVenue = async (venue: Venue) => {
-    if (!confirm(`Are you sure you want to delete "${venue.name}"?`)) {
+    if (!confirm(commonT('message.deleteConfirm'))) {
       return;
     }
 
     const success = await VenueService.deleteLocation(venue.id);
     if (success) {
       await loadVenues();
-      toast.success('Venue deleted successfully');
+      toast.success(t('toast.venueDeleteSuccess'));
     } else {
-      toast.error('Failed to delete venue');
+      toast.error(t('toast.venueDeleteFailed'));
     }
   };
 
@@ -190,7 +191,7 @@ export function SettingsPage({ user }: { user?: any }) {
               {t('title')}
             </h1>
             <p className="text-muted-foreground mt-1" style={{ fontSize: 'var(--text-base)' }}>
-              Configure your system-wide settings
+              {t('description')}
             </p>
           </div>
           {hasChanges && canUpdateSettings && (
@@ -200,7 +201,7 @@ export function SettingsPage({ user }: { user?: any }) {
               className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Save className="w-4 h-4" />
-              {isSavingSettings ? 'Saving...' : 'Save Changes'}
+              {isSavingSettings ? commonT('saving') : commonT('saveChanges')}
             </button>
           )}
         </div>
@@ -270,7 +271,7 @@ export function SettingsPage({ user }: { user?: any }) {
                           </p>
                         )}
                         <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mt-2 opacity-60 block">
-                          Venue Location
+                          {t('venueLocation')}
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200">
@@ -278,7 +279,7 @@ export function SettingsPage({ user }: { user?: any }) {
                           onClick={() => handleEditVenue(venue)}
                           className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors cursor-pointer"
                           disabled={!canUpdateSettings}
-                          title="Edit Venue"
+                          title={t('editVenue')}
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
@@ -286,7 +287,7 @@ export function SettingsPage({ user }: { user?: any }) {
                           onClick={() => handleDeleteVenue(venue)}
                           className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                           disabled={!canUpdateSettings}
-                          title="Delete Venue"
+                          title={t('deleteVenue')}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -313,13 +314,13 @@ export function SettingsPage({ user }: { user?: any }) {
               {/* Language Field */}
               <div>
                 <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                  Language
+                  {t('language')}
                 </label>
                 <StatusDropdown
                   options={languageOptions}
                   value={language}
                   onChange={(value) => setLanguage(value)}
-                  placeholder="Select language"
+                  placeholder={t('selectLanguage')}
                   className="w-full"
                   disabled={!canUpdateSettings}
                 />
@@ -328,13 +329,13 @@ export function SettingsPage({ user }: { user?: any }) {
               {/* Time Zone Field */}
               <div>
                 <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                  Time Zone
+                  {t('timeZone')}
                 </label>
                 <StatusDropdown
                   options={timeZoneOptions}
                   value={timeZone}
                   onChange={(value) => setTimeZone(value)}
-                  placeholder="Select time zone"
+                  placeholder={t('selectTimeZone')}
                   className="w-full"
                   disabled={!canUpdateSettings}
                 />
@@ -343,13 +344,13 @@ export function SettingsPage({ user }: { user?: any }) {
               {/* Date Format Field */}
               <div className="col-span-2">
                 <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                  Date Format
+                  {t('dateFormat')}
                 </label>
                 <StatusDropdown
                   options={dateFormatOptions}
                   value={dateFormat}
                   onChange={(value) => setDateFormat(value)}
-                  placeholder="Select date format"
+                  placeholder={t('selectDateFormat')}
                   className="w-full"
                   disabled={!canUpdateSettings}
                 />
@@ -364,7 +365,7 @@ export function SettingsPage({ user }: { user?: any }) {
                 <DollarSign className="w-5 h-5 text-primary" />
               </div>
               <h3 className="text-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                Currency
+                 {t('currency')}
               </h3>
             </div>
 
@@ -372,13 +373,13 @@ export function SettingsPage({ user }: { user?: any }) {
               {/* Currency Field */}
               <div>
                 <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                  Currency
+                  {t('currency')}
                 </label>
                 <StatusDropdown
                   options={currencyOptions}
                   value={currency}
                   onChange={(value) => setCurrency(value)}
-                  placeholder="Select currency"
+                  placeholder={t('selectCurrency')}
                   className="w-full"
                   disabled={!canUpdateSettings}
                 />
@@ -408,7 +409,7 @@ export function SettingsPage({ user }: { user?: any }) {
                   className={`text-foreground ${canUpdateSettings ? 'cursor-pointer' : 'cursor-default'}`}
                   style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}
                 >
-                  Show currency symbol in reports
+                   {t('showCurrencySymbol')}
                 </label>
               </div>
             </div>

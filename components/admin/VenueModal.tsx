@@ -134,7 +134,7 @@ export function VenueModal({
           {/* Body */}
           <div className="p-6 space-y-4">
             <ValidatedInput
-              label="Venue Name"
+              label={t('venue.nameLabel')}
               type="text"
               value={name}
               onChange={(e) => {
@@ -142,7 +142,7 @@ export function VenueModal({
                 if (errors.name) setErrors({ ...errors, name: undefined });
               }}
               onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-              placeholder="e.g., Main Hall, Garden Terrace"
+              placeholder={t('venue.namePlaceholder')}
               maxLength={100}
               showCharacterCount
               error={errors.name}
@@ -152,18 +152,18 @@ export function VenueModal({
             />
 
             <ValidatedTextarea
-              label="Description"
+              label={tCommon('description')}
               value={description}
               onChange={(e) => {
                 setDescription(e.target.value);
                 if (errors.description) setErrors({ ...errors, description: undefined });
               }}
-              placeholder="Describe this venue location..."
+              placeholder={t('venue.descriptionPlaceholder')}
               rows={3}
               maxLength={500}
               showCharacterCount
               error={errors.description}
-              helperText="Optional: Add details about capacity, ambiance, or features"
+              helperText={t('venue.descriptionHelper')}
               disabled={isSaving || isLoading}
             />
           </div>
@@ -188,12 +188,12 @@ export function VenueModal({
               {isSaving ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Saving...
+                  {tCommon('saving')}
                 </>
               ) : (
                 <>
                   <Check className="w-4 h-4" />
-                  {venue ? 'Update' : 'Add'} Venue
+                  {venue ? t('venue.update') : t('venue.add')}
                 </>
               )}
             </button>

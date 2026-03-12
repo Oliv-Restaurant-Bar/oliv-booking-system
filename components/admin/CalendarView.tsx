@@ -5,7 +5,8 @@ import { ChevronLeft, ChevronRight, Users, Clock, Check, MapPin, Calendar as Cal
 import { cn } from '@/lib/utils';
 import { BookingStatusBadge } from './BookingStatusBadge';
 
-
+import { useTranslations, useLocale } from 'next-intl';
+import { useCommonTranslation } from '@/lib/i18n/client';
 // Date utilities
 const parseEventDate = (dateStr: string): Date => {
   // Try to parse various date formats
@@ -97,6 +98,9 @@ interface BookingMiniCardProps {
 }
 
 function BookingMiniCard({ booking, onClick, showDate = true }: BookingMiniCardProps) {
+  const t = useTranslations('admin.bookings');
+  const locale = useLocale();
+
   return (
     <div
       className="p-3 bg-background border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
@@ -149,7 +153,7 @@ function BookingMiniCard({ booking, onClick, showDate = true }: BookingMiniCardP
         <div className="flex items-center justify-between text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
           <div className="flex items-center gap-2">
             <Users className="w-3 h-3 flex-shrink-0" />
-            <span>{booking.guests} guests</span>
+            <span>{t('calendar.guests', { count: booking.guests })}</span>
             <span>•</span>
             <span className="font-medium text-foreground">{booking.amount}</span>
           </div>
@@ -158,9 +162,9 @@ function BookingMiniCard({ booking, onClick, showDate = true }: BookingMiniCardP
               e.stopPropagation();
               onClick();
             }}
-            className="px-2 py-1 border-2 border-border bg-transparent text-foreground hover:bg-secondary hover:text-secondary-foreground hover:border-secondary rounded-md transition-colors text-xs font-medium min-h-[24px] h-6"
+            className="px-2 py-1 border-2 border-border bg-transparent text-foreground hover:bg-secondary hover:text-secondary-foreground hover:border-secondary rounded-md transition-colors text-xs font-medium min-h-[24px] h-6 cursor-pointer"
           >
-            View
+            {t('calendar.view')}
           </button>
         </div>
       </div>
@@ -169,6 +173,10 @@ function BookingMiniCard({ booking, onClick, showDate = true }: BookingMiniCardP
 }
 
 function DayBookingsModal({ isOpen, onClose, date, bookings, onOpenBooking }: DayBookingsModalProps) {
+  const t = useTranslations('admin.bookings');
+  const commonT = useCommonTranslation();
+  const locale = useLocale();
+
   if (!isOpen || !date) return null;
 
   return (
@@ -180,10 +188,10 @@ function DayBookingsModal({ isOpen, onClose, date, bookings, onOpenBooking }: Da
         <div className="flex items-center justify-between p-5 border-b border-border bg-muted/30">
           <div>
             <h2 className="text-xl font-bold text-foreground">
-              {bookings.length} {bookings.length === 1 ? 'Booking' : 'Bookings'}
+              {bookings.length} {bookings.length === 1 ? t('calendar.booking') : t('calendar.bookings')}
             </h2>
             <p className="text-sm text-muted-foreground">
-              {date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+              {date.toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
             </p>
           </div>
           <button
@@ -208,9 +216,9 @@ function DayBookingsModal({ isOpen, onClose, date, bookings, onOpenBooking }: Da
         <div className="p-4 border-t border-border bg-muted/10 flex justify-end">
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-secondary text-secondary-foreground font-semibold rounded-xl hover:bg-secondary/80 transition-colors"
+            className="px-6 py-2 bg-secondary text-secondary-foreground font-semibold rounded-xl hover:bg-secondary/80 transition-colors cursor-pointer"
           >
-            Close
+            {commonT('close')}
           </button>
         </div>
       </div>
@@ -219,6 +227,11 @@ function DayBookingsModal({ isOpen, onClose, date, bookings, onOpenBooking }: Da
 }
 
 export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
+  const t = useTranslations('admin.bookings');
+  const commonT = useCommonTranslation();
+  const monthT = useTranslations('admin.bookings.months');
+  const locale = useLocale();
+
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isDayModalOpen, setIsDayModalOpen] = useState(false);
@@ -304,7 +317,21 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + direction, 1));
   };
 
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const dayNames = [
+    t('calendar.days.sun'),
+    t('calendar.days.mon'),
+    t('calendar.days.tue'),
+    t('calendar.days.wed'),
+    t('calendar.days.thu'),
+    t('calendar.days.fri'),
+    t('calendar.days.sat')
+  ];
+
+  const formatMonthYearTranslate = (date: Date): string => {
+    const monthKey = ['january', 'february', 'march', 'april', 'may', 'june',
+      'july', 'august', 'september', 'october', 'november', 'december'][date.getMonth()];
+    return `${monthT(monthKey)} ${date.getFullYear()}`;
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
@@ -313,7 +340,7 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
         {/* Calendar Header */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-foreground">
-            {formatMonthYear(currentMonth)}
+            {formatMonthYearTranslate(currentMonth)}
           </h3>
           <div className="flex gap-2">
             <button
@@ -411,7 +438,7 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
                   ))}
                   {dayBookings.length > 2 && (
                     <div className="text-xs text-muted-foreground px-1.5 py-0.5">
-                      +{dayBookings.length - 2} show more
+                      {t('calendar.showMore', { count: dayBookings.length - 2 })}
                     </div>
                   )}
                 </div>
@@ -425,12 +452,12 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
       <div className="lg:col-span-1">
         <div className="bg-card border border-border rounded-xl p-4 sticky top-4">
           <h3 className="text-lg font-semibold text-foreground mb-4">
-            10 Upcoming Bookings
+            {upcomingBookings.length} {t('calendar.upcomingBookings')}
           </h3>
 
           {upcomingBookings.length === 0 ? (
             <div className="text-center py-8">
-              <div className="text-muted-foreground text-sm">No upcoming bookings</div>
+              <div className="text-muted-foreground text-sm">{t('calendar.noUpcomingBookings')}</div>
             </div>
           ) : (
             <div className="space-y-3 overflow-y-auto max-h-170 pr-1">

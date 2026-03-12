@@ -125,6 +125,7 @@ export async function createMenuItem(input: {
   ingredients?: string;
   allergens?: string[];
   additives?: string[];
+  averageConsumption?: number;
   nutritionalInfo?: {
     servingSize: string;
     calories: string;

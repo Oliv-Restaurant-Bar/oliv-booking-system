@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Download, Calendar, TrendingUp, Users, DollarSign, ShoppingBag } from 'lucide-react';
+import { Download, Calendar, Users } from 'lucide-react';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 import { TrendingItems } from './TrendingItems';
@@ -51,16 +51,6 @@ export function ReportsPage({ user }: { user?: any }) {
 
     fetchReportsData();
   }, [selectedYear]);
-
-  // Calculate summary KPIs with safe defaults for empty arrays
-  const totalBookings = Math.floor(monthlyReport.reduce((sum, month) => sum + (month.totalBookings || 0), 0));
-  const totalRevenue = monthlyReport.reduce((sum, month) => sum + (month.totalRevenue || 0), 0);
-  const avgBookingValue = totalBookings > 0 ? totalRevenue / totalBookings : 0;
-  const topContact = bookingsByContacts.length > 0
-    ? bookingsByContacts.reduce((max, contact) =>
-      (contact.totalRevenue || 0) > (max.totalRevenue || 0) ? contact : max
-    )
-    : null;
 
   return (
     <div className="min-h-full bg-background flex flex-col">
@@ -143,7 +133,7 @@ export function ReportsPage({ user }: { user?: any }) {
             </div>
 
             {/* Monthly Booking Report */}
-            <MonthlyReportLayout2 data={monthlyReport} user={user} selectedYear={selectedYear} onYearChange={setSelectedYear} />
+            <MonthlyReportLayout2 data={monthlyReport} user={user} selectedYear={selectedYear} onYearChange={setSelectedYear} currencySymbol={currencySymbol} />
           </>
         )}
 

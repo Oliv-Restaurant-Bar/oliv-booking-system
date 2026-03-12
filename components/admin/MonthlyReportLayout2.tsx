@@ -10,6 +10,8 @@ import { ChevronDown, ChevronUp, Download } from 'lucide-react';
 import { YearDropdown } from './YearDropdown';
 import * as XLSX from 'xlsx';
 import { Permission, hasPermission } from '@/lib/auth/rbac';
+import { useTranslations } from 'next-intl';
+import { useCommonTranslation } from '@/lib/i18n/client';
 
 interface MonthData {
   month: string;
@@ -25,7 +27,12 @@ interface MonthData {
   noShow: number;
 }
 
-export function MonthlyReportLayout2({ data, user, selectedYear, onYearChange }: { data: MonthData[]; user?: any; selectedYear: string; onYearChange: (year: string) => void }) {
+export function MonthlyReportLayout2({ data, user, selectedYear, onYearChange, currencySymbol = 'CHF' }: { data: MonthData[]; user?: any; selectedYear: string; onYearChange: (year: string) => void; currencySymbol?: string }) {
+  const t = useTranslations('admin.reports');
+  const commonT = useCommonTranslation();
+  const statusT = useTranslations('bookingStatus');
+  const monthT = useTranslations('admin.bookings.months');
+  
   const userRole = user?.role;
   const canExport = hasPermission(userRole, Permission.EXPORT_REPORTS);
 
@@ -44,17 +51,17 @@ export function MonthlyReportLayout2({ data, user, selectedYear, onYearChange }:
   const handleExport = () => {
     // Export monthly report to XLSX
     const excelData = data.map(month => ({
-      'Month': month.month,
-      'Total Bookings': month.totalBookings,
-      'Total Revenue': month.totalRevenue,
-      'Average Revenue': month.avgRevenue,
-      'New': month.new,
-      'Touchbase': month.touchbase,
-      'Confirmed': month.confirmed,
-      'Declined': month.declined,
-      'Unresponsive': month.unresponsive,
-      'Completed': month.completed,
-      'No Show': month.noShow,
+      [commonT('month')]: monthT(month.month.toLowerCase()),
+      [t('bookingsLabel')]: month.totalBookings,
+      [t('revenue')]: month.totalRevenue,
+      [t('avgRevenueLabel')]: month.avgRevenue,
+      [statusT('new')]: month.new,
+      [statusT('touchbase')]: month.touchbase,
+      [statusT('confirmed')]: month.confirmed,
+      [statusT('declined')]: month.declined,
+      [statusT('unresponsive')]: month.unresponsive,
+      [statusT('completed')]: month.completed,
+      [statusT('noShow')]: month.noShow,
     }));
 
     // Create worksheet
@@ -73,7 +80,7 @@ export function MonthlyReportLayout2({ data, user, selectedYear, onYearChange }:
       {/* Header with Title, Year Dropdown, and Export Button */}
       <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
         <h3 className="text-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-          Monthly Booking Report
+          {t('monthlyBookingReport')}
         </h3>
         <div className="flex items-center gap-3">
           {/* Year Dropdown - Using consistent dropdown styling */}
@@ -91,7 +98,7 @@ export function MonthlyReportLayout2({ data, user, selectedYear, onYearChange }:
               style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
             >
               <Download className="w-4 h-4" />
-              Export
+              {t('export')}
             </button>
           )}
         </div>
@@ -108,7 +115,7 @@ export function MonthlyReportLayout2({ data, user, selectedYear, onYearChange }:
               <div className="p-4">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
-                    {month.month}
+                    {monthT(month.month.toLowerCase())}
                   </h4>
                   {/* Toggle button - Only visible on mobile */}
                   <button
@@ -126,15 +133,15 @@ export function MonthlyReportLayout2({ data, user, selectedYear, onYearChange }:
                 {/* Bookings & Revenue - Always Visible */}
                 <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
                   <div>
-                    <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Bookings</p>
+                    <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>{commonT('bookings')}</p>
                     <p className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-bold)' }}>
                       {Math.floor(month.totalBookings)}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Revenue</p>
+                    <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>{t('revenue')}</p>
                     <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      CHF {month.totalRevenue.toLocaleString()}
+                      {currencySymbol} {month.totalRevenue.toLocaleString()}
                     </p>
                   </div>
                 </div>
@@ -142,49 +149,49 @@ export function MonthlyReportLayout2({ data, user, selectedYear, onYearChange }:
                 {/* Collapsible Content - Hidden on mobile unless expanded, always visible on tablet+ */}
                 <div className={`space-y-2 ${isExpanded ? 'block' : 'hidden md:block'}`}>
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Avg Revenue</span>
+                    <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>{t('avgRevenueLabel')}</span>
                     <span className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      CHF {month.avgRevenue.toLocaleString()}
+                      {currencySymbol} {month.avgRevenue.toLocaleString()}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>New</span>
+                    <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>{statusT('new')}</span>
                     <span className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
                       {month.new}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Touchbase</span>
+                    <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>{statusT('touchbase')}</span>
                     <span className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
                       {month.touchbase}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Confirmed</span>
+                    <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>{statusT('confirmed')}</span>
                     <span className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
                       {month.confirmed}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Declined</span>
+                    <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>{statusT('declined')}</span>
                     <span className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
                       {month.declined}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Unresponsive</span>
+                    <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>{statusT('unresponsive')}</span>
                     <span className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
                       {month.unresponsive}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Completed</span>
+                    <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>{statusT('completed')}</span>
                     <span className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
                       {month.completed}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>No show</span>
+                    <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>{statusT('noShow')}</span>
                     <span className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
                       {month.noShow}
                     </span>

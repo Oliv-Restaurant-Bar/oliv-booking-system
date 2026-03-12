@@ -11,6 +11,7 @@ import { CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { KITCHEN_PDF_STATUS_CONFIG, type KitchenPdfSentStatus } from '@/lib/booking-status';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 
 interface KitchenPdfStatusBadgeProps {
   status: KitchenPdfSentStatus;
@@ -29,6 +30,7 @@ export function KitchenPdfStatusBadge({
   status,
   compact = false,
 }: KitchenPdfStatusBadgeProps) {
+  const t = useTranslations('kitchenPdf');
   const config = KITCHEN_PDF_STATUS_CONFIG[status];
   const Icon = statusIcons[status];
 
@@ -58,7 +60,7 @@ export function KitchenPdfStatusBadge({
       )}
     >
       <Icon className="w-4 h-4" />
-      <span style={{ fontSize: 'var(--text-small)' }}>{config.label}</span>
+      <span style={{ fontSize: 'var(--text-small)' }}>{t(status)}</span>
     </Badge>
   );
 }

@@ -634,3 +634,92 @@ export function SkeletonMenuConfig() {
     </div>
   );
 }
+
+/**
+ * Wizard Skeleton - For menu wizard loading state with sidebar
+ */
+export function SkeletonWizard() {
+  return (
+    <>
+      {/* Mobile Step Indicator */}
+      <div className="lg:hidden sticky top-20 z-40 bg-primary text-primary-foreground px-4 py-3">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <Skeleton className="h-4 w-20 bg-primary-foreground/30" />
+            <Skeleton className="h-5 w-48 bg-primary-foreground/30" />
+          </div>
+          <div className="flex items-center gap-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-1.5 flex-1 bg-primary-foreground/20 rounded-full" />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content - Two Column Layout */}
+      <div className="flex-1 flex flex-col lg:flex-row">
+        {/* Left Sidebar */}
+        <aside className="hidden lg:block lg:w-[25%] bg-primary text-primary-foreground p-6 lg:p-8 lg:fixed lg:left-0 lg:top-20 lg:h-[calc(100vh-5rem)]">
+          <div className="max-w-md mx-auto lg:mx-0">
+            {/* Title */}
+            <div className="mb-8">
+              <Skeleton className="h-8 w-64 bg-primary-foreground/20 mb-2" />
+              <Skeleton className="h-4 w-full bg-primary-foreground/20" />
+            </div>
+
+            {/* Vertical Steps */}
+            <div className="space-y-6">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="relative flex items-start gap-3">
+                  {/* Connecting Line */}
+                  {i < 2 && (
+                    <div className="absolute left-5 top-10 -bottom-6 w-0.5 -translate-x-1/2 bg-primary-foreground/20" />
+                  )}
+
+                  {/* Step Circle */}
+                  <Skeleton className="w-10 h-10 rounded-full bg-primary-foreground/20 flex-shrink-0" />
+
+                  {/* Step Content */}
+                  <div className="flex-1 pt-1.5">
+                    <Skeleton className="h-5 w-32 bg-primary-foreground/20 mb-1" />
+                    <Skeleton className="h-3.5 w-40 bg-primary-foreground/20" />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Progress Summary */}
+            <div className="mt-6 p-3 bg-primary-foreground/10 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <Skeleton className="h-3.5 w-32 bg-primary-foreground/20" />
+                <Skeleton className="h-3.5 w-16 bg-primary-foreground/20" />
+              </div>
+              <div className="h-2 bg-primary-foreground/20 rounded-full overflow-hidden">
+                <Skeleton className="h-full w-1/3 bg-primary-foreground/30 rounded-full" />
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        {/* Right Content Area */}
+        <main className="w-full lg:w-[75%] lg:ml-[25%] bg-background p-4 lg:p-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="bg-card rounded-lg p-5 lg:p-8 border border-border">
+              {/* Content Skeleton */}
+              <div className="space-y-6">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-4 w-96" />
+                <div className="space-y-4 pt-4">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-32 w-full" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </>
+  );
+}

@@ -242,6 +242,7 @@ export const menuItems = pgTable(
       scale: 2,
     }).notNull(),
     pricingType: text("pricing_type", { enum: pricingTypeEnum }).notNull().default("per_person"),
+    averageConsumption: integer("average_consumption"),
     imageUrl: text("image_url"),
     isActive: boolean("is_active").notNull().default(true),
     variants: jsonb("variants"),
