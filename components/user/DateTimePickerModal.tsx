@@ -136,7 +136,7 @@ export function DateTimePickerModal({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: 'spring', duration: 0.5 }}
-              className="bg-card rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden border border-border max-h-[90vh]"
+              className="bg-card rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden border border-border max-h-[90vh]"
               style={{ fontFamily: 'var(--font-family)' }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -233,7 +233,7 @@ export function DateTimePickerModal({
                 </div>
 
                 {/* Right: Time Slots */}
-                <div className="w-full md:w-64 bg-muted px-6 py-4 overflow-y-auto max-h-[575px]">
+                <div className="w-full md:w-48 bg-muted px-5 py-4 overflow-y-auto max-h-[500px]">
                   <h3 className="text-sm font-semibold text-muted-foreground mb-3">
                     Time
                   </h3>
