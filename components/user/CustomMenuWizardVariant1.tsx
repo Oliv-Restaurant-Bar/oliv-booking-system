@@ -592,8 +592,8 @@ export function CustomMenuWizard() {
         newErrors.guestCount = 'Number of guests is required';
       } else if (parseInt(eventDetails.guestCount) < 1) {
         newErrors.guestCount = 'Must have at least 1 guest';
-      } else if (parseInt(eventDetails.guestCount) > 1000) {
-        newErrors.guestCount = 'Number of guests cannot exceed 1,000';
+      } else if (parseInt(eventDetails.guestCount) > 10000) {
+        newErrors.guestCount = 'Number of guests cannot exceed 10,000';
       }
     }
 
@@ -673,8 +673,8 @@ export function CustomMenuWizard() {
       newErrors.guestCount = 'Number of guests is required';
     } else if (parseInt(eventDetails.guestCount) < 1) {
       newErrors.guestCount = 'Must have at least 1 guest';
-    } else if (parseInt(eventDetails.guestCount) > 1000) {
-      newErrors.guestCount = 'Number of guests cannot exceed 1,000';
+    } else if (parseInt(eventDetails.guestCount) > 10000) {
+      newErrors.guestCount = 'Number of guests cannot exceed 10,000';
     }
 
     // Validate occasion (optional)
@@ -760,7 +760,7 @@ export function CustomMenuWizard() {
       isDateValid &&
       eventDetails.guestCount !== '' &&
       parseInt(eventDetails.guestCount) >= 1 &&
-      parseInt(eventDetails.guestCount) <= 1000
+      parseInt(eventDetails.guestCount) <= 10000
     );
   }, [eventDetails.name, eventDetails.email, eventDetails.telephone, eventDetails.street, eventDetails.plz, eventDetails.location, eventDetails.eventDate, eventDetails.eventTime, eventDetails.guestCount]);
 
@@ -1665,10 +1665,10 @@ export function CustomMenuWizard() {
                                 {eventDetails.eventDate && eventDetails.eventTime
                                   ? `${new Date(eventDetails.eventDate).toLocaleDateString('de-CH', { day: '2-digit', month: 'short', year: 'numeric' })} um ${eventDetails.eventTime}`
                                   : eventDetails.eventDate
-                                  ? new Date(eventDetails.eventDate).toLocaleDateString('de-CH', { day: '2-digit', month: 'short', year: 'numeric' })
-                                  : eventDetails.eventTime
-                                  ? eventDetails.eventTime
-                                  : 'Date & Time'
+                                    ? new Date(eventDetails.eventDate).toLocaleDateString('de-CH', { day: '2-digit', month: 'short', year: 'numeric' })
+                                    : eventDetails.eventTime
+                                      ? eventDetails.eventTime
+                                      : 'Date & Time'
                                 }
                               </span>
                               <Calendar className="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors" />
