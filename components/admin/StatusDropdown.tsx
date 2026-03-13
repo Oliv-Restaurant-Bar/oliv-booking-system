@@ -90,7 +90,7 @@ export function StatusDropdown({
 
       {/* Dropdown Menu - Matching admin dropdown style */}
       {isOpen && (
-        <div ref={menuRef} className="absolute left-0 right-0 mt-2 bg-card rounded-lg shadow-lg border border-border overflow-hidden z-50">
+        <div ref={menuRef} className="absolute right-0 mt-2 min-w-full w-max max-w-[250px] bg-card rounded-lg shadow-lg border border-border overflow-hidden z-50">
           {options.map((option, index) => (
             <button
               key={option.value}
@@ -108,7 +108,7 @@ export function StatusDropdown({
                 />
               )}
               {option.icon && <option.icon className="w-4 h-4" />}
-              <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+              <span className="text-foreground whitespace-nowrap" style={{ fontSize: 'var(--text-base)' }}>
                 {option.label}
               </span>
             </button>

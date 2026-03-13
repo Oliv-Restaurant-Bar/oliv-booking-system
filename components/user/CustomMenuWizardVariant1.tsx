@@ -19,6 +19,7 @@ import { ValidatedInput } from '@/components/ui/validated-input';
 import { ValidatedTextarea } from '@/components/ui/validated-textarea';
 import { customerNameSchema, customerBusinessSchema, customerPhoneSchema, customerStreetSchema, customerPlzSchema, customerLocationSchema, customerOccasionSchema, customerSpecialRequestsSchema, userEmailSchema } from '@/lib/validation/schemas';
 import { toast } from 'sonner';
+import { formatDateWithLocale } from '@/lib/utils/date';
 
 interface EventDetails {
   name: string;
@@ -1503,10 +1504,13 @@ export function CustomMenuWizard() {
                               setEventDetails({ ...eventDetails, name: e.target.value });
                               if (errors.name) setErrors({ ...errors, name: undefined });
                             }}
+                            onBlur={() => {
+                              if (!touched.name) setTouched({ ...touched, name: true });
+                            }}
                             placeholder="Max Mustermann"
                             maxLength={100}
                             showCharacterCount
-                            error={errors.name}
+                            error={displayErrors.name}
                             required
                             className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                           />
@@ -1519,10 +1523,13 @@ export function CustomMenuWizard() {
                               setEventDetails({ ...eventDetails, business: e.target.value });
                               if (errors.business) setErrors({ ...errors, business: undefined });
                             }}
+                            onBlur={() => {
+                              if (!touched.business) setTouched({ ...touched, business: true });
+                            }}
                             placeholder="Musterfirma AG"
                             maxLength={100}
                             showCharacterCount
-                            error={errors.business}
+                            error={displayErrors.business}
                             helperText="Optional"
                             className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                           />
@@ -1535,10 +1542,13 @@ export function CustomMenuWizard() {
                               setEventDetails({ ...eventDetails, email: e.target.value });
                               if (errors.email) setErrors({ ...errors, email: undefined });
                             }}
+                            onBlur={() => {
+                              if (!touched.email) setTouched({ ...touched, email: true });
+                            }}
                             placeholder="max@firma.ch"
                             maxLength={255}
                             showCharacterCount
-                            error={errors.email}
+                            error={displayErrors.email}
                             helperText="Must be a valid email address"
                             required
                             className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
@@ -1551,7 +1561,7 @@ export function CustomMenuWizard() {
                             onChange={(e) => {
                               const value = e.target.value.replace(/[^0-9+\s]/g, '');
                               setEventDetails({ ...eventDetails, telephone: value });
-                              if (!touched.telephone) setTouched({ ...touched, telephone: true });
+                              if (errors.telephone) setErrors({ ...errors, telephone: undefined });
                             }}
                             onBlur={() => {
                               if (!touched.telephone) setTouched({ ...touched, telephone: true });
@@ -1580,7 +1590,7 @@ export function CustomMenuWizard() {
                             value={eventDetails.street}
                             onChange={(e) => {
                               setEventDetails({ ...eventDetails, street: e.target.value });
-                              if (!touched.street) setTouched({ ...touched, street: true });
+                              if (errors.street) setErrors({ ...errors, street: undefined });
                             }}
                             onBlur={() => {
                               if (!touched.street) setTouched({ ...touched, street: true });
@@ -1602,7 +1612,7 @@ export function CustomMenuWizard() {
                               onChange={(e) => {
                                 const value = e.target.value.replace(/[^0-9]/g, '');
                                 setEventDetails({ ...eventDetails, plz: value });
-                                if (!touched.plz) setTouched({ ...touched, plz: true });
+                                if (errors.plz) setErrors({ ...errors, plz: undefined });
                               }}
                               onBlur={() => {
                                 if (!touched.plz) setTouched({ ...touched, plz: true });
@@ -1613,7 +1623,7 @@ export function CustomMenuWizard() {
                               error={displayErrors.plz}
                               helperText="Min. 4 characters"
                               required
-                            // className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
+                              className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                             />
 
                             <ValidatedInput
@@ -1622,7 +1632,7 @@ export function CustomMenuWizard() {
                               value={eventDetails.location}
                               onChange={(e) => {
                                 setEventDetails({ ...eventDetails, location: e.target.value });
-                                if (!touched.location) setTouched({ ...touched, location: true });
+                                if (errors.location) setErrors({ ...errors, location: undefined });
                               }}
                               onBlur={() => {
                                 if (!touched.location) setTouched({ ...touched, location: true });
@@ -1630,10 +1640,10 @@ export function CustomMenuWizard() {
                               placeholder="Bern"
                               maxLength={50}
                               showCharacterCount
-                              error={errors.location}
+                              error={displayErrors.location}
                               helperText="Min. 2 characters"
                               required
-                            // className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
+                              className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                             />
                           </div>
                         </div>
@@ -1687,17 +1697,23 @@ export function CustomMenuWizard() {
                             <Input
                               type="number"
                               value={eventDetails.guestCount}
-                              onChange={(e) => setEventDetails({ ...eventDetails, guestCount: e.target.value })}
-                              className={`w-full px-4 py-2.5 bg-background border rounded-lg transition-colors ${errors.guestCount ? 'border-destructive' : 'border-border focus:border-primary'
+                              onChange={(e) => {
+                                setEventDetails({ ...eventDetails, guestCount: e.target.value });
+                                if (errors.guestCount) setErrors({ ...errors, guestCount: undefined });
+                              }}
+                              onBlur={() => {
+                                if (!touched.guestCount) setTouched({ ...touched, guestCount: true });
+                              }}
+                              className={`w-full px-4 py-2.5 bg-background border rounded-lg transition-colors ${displayErrors.guestCount ? 'border-destructive' : 'border-border focus:border-primary'
                                 }`}
                               placeholder="10"
                               min="1"
                               max="10000"
                               style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
                             />
-                            {errors.guestCount && (
+                            {displayErrors.guestCount && (
                               <p className="text-destructive mt-1" style={{ fontSize: 'var(--text-small)' }}>
-                                {errors.guestCount}
+                                {displayErrors.guestCount}
                               </p>
                             )}
                           </div>
@@ -1710,12 +1726,15 @@ export function CustomMenuWizard() {
                               setEventDetails({ ...eventDetails, occasion: e.target.value });
                               if (errors.occasion) setErrors({ ...errors, occasion: undefined });
                             }}
+                            onBlur={() => {
+                              if (!touched.occasion) setTouched({ ...touched, occasion: true });
+                            }}
                             placeholder="e.g. company party"
                             maxLength={100}
                             showCharacterCount
-                            error={errors.occasion}
+                            error={displayErrors.occasion}
                             helperText="Optional"
-                          // className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
+                            className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                           />
                         </div>
                       </div>
@@ -1733,11 +1752,14 @@ export function CustomMenuWizard() {
                             setEventDetails({ ...eventDetails, specialRequests: e.target.value });
                             if (errors.specialRequests) setErrors({ ...errors, specialRequests: undefined });
                           }}
+                          onBlur={() => {
+                            if (!touched.specialRequests) setTouched({ ...touched, specialRequests: true });
+                          }}
                           placeholder="e.g. 2 people vegetarian, 1 person gluten-free..."
                           rows={4}
                           maxLength={1000}
                           showCharacterCount
-                          error={errors.specialRequests}
+                          error={displayErrors.specialRequests}
                           helperText="Optional"
                           className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                         />
@@ -1813,7 +1835,15 @@ export function CustomMenuWizard() {
                                 label="Billing Street & Nr."
                                 type="text"
                                 value={eventDetails.billingStreet}
-                                onChange={(e) => setEventDetails({ ...eventDetails, billingStreet: e.target.value, billingStreetError: undefined })}
+                                onChange={(e) => {
+                                  setEventDetails({ ...eventDetails, billingStreet: e.target.value, billingStreetError: undefined });
+                                }}
+                                onBlur={() => {
+                                  // Validate billing street on blur if filled
+                                  if (eventDetails.billingStreet.trim().length > 0 && eventDetails.billingStreet.trim().length < 5) {
+                                    setEventDetails({ ...eventDetails, billingStreetError: 'Street address must be at least 5 characters' });
+                                  }
+                                }}
                                 placeholder="Street and house number"
                                 maxLength={100}
                                 showCharacterCount
@@ -1830,6 +1860,12 @@ export function CustomMenuWizard() {
                                     const value = e.target.value.replace(/[^0-9]/g, '');
                                     setEventDetails({ ...eventDetails, billingPlz: value, billingPlzError: undefined });
                                   }}
+                                  onBlur={() => {
+                                    // Validate billing PLZ on blur if filled
+                                    if (eventDetails.billingPlz.length > 0 && eventDetails.billingPlz.length < 4) {
+                                      setEventDetails({ ...eventDetails, billingPlzError: 'Postal code must be at least 4 characters' });
+                                    }
+                                  }}
                                   placeholder="3000"
                                   maxLength={10}
                                   showCharacterCount
@@ -1841,7 +1877,15 @@ export function CustomMenuWizard() {
                                   label="Location"
                                   type="text"
                                   value={eventDetails.billingLocation}
-                                  onChange={(e) => setEventDetails({ ...eventDetails, billingLocation: e.target.value, billingLocationError: undefined })}
+                                  onChange={(e) => {
+                                    setEventDetails({ ...eventDetails, billingLocation: e.target.value, billingLocationError: undefined });
+                                  }}
+                                  onBlur={() => {
+                                    // Validate billing location on blur if filled
+                                    if (eventDetails.billingLocation.trim().length > 0 && eventDetails.billingLocation.trim().length < 2) {
+                                      setEventDetails({ ...eventDetails, billingLocationError: 'Location must be at least 2 characters' });
+                                    }
+                                  }}
                                   placeholder="Bern"
                                   maxLength={50}
                                   showCharacterCount

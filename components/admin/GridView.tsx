@@ -1,10 +1,12 @@
-import { Mail, Calendar, Users, Phone, Clock, User } from 'lucide-react';
+import { Mail, Calendar, Users, Phone, Banknote, User } from 'lucide-react';
 import { KitchenPdfStatusBadge } from './KitchenPdfStatusBadge';
 import { BookingStatusBadge } from './BookingStatusBadge';
+import { Tooltip } from '@/components/user/Tooltip';
 import type { KitchenPdfStatus } from '@/services/kitchen-pdf.service';
-import { formatDistanceToNow } from 'date-fns';
+import { formatRelativeTime } from '@/lib/utils/date';
 import { useAdminTranslation, useCommonTranslation, useBookingTranslation } from '@/lib/i18n/client';
 import { useTranslations } from 'next-intl';
+import { useSystemTimezone } from '@/lib/hooks/useSystemTimezone';
 
 interface GridViewProps {
   bookings: Array<{
@@ -44,6 +46,7 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
   const commonT = useCommonTranslation();
   const bookingT = useBookingTranslation();
   const calendarT = useTranslations('admin.bookings.calendar');
+  const { timezone } = useSystemTimezone();
 
   if (bookings.length === 0) {
     return (
@@ -64,16 +67,6 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
           {/* Header */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center text-white flex-shrink-0"
-                style={{
-                  backgroundColor: booking.customer.avatarColor,
-                  fontSize: 'var(--text-base)',
-                  fontWeight: 'var(--font-weight-semibold)'
-                }}
-              >
-                {booking.customer.avatar}
-              </div>
               <div>
                 <h4
                   className="text-foreground"
@@ -136,29 +129,44 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <User className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                <span className="text-muted-foreground truncate" style={{ fontSize: 'var(--text-small)' }}>
-                  {booking.assignedTo ? booking.assignedTo.name : bookingT('notAssignedYet')}
-                  {booking.createdAt && (
-                    <span className="ml-1 opacity-60 font-normal">
-                      • {formatDistanceToNow(new Date(booking.createdAt), { addSuffix: true })}
+                {booking.assignedTo ? (
+                  <span className="text-muted-foreground truncate" style={{ fontSize: 'var(--text-small)' }}>
+                    {booking.assignedTo.name}
+                    {booking.createdAt && (
+                      <span className="ml-1 opacity-60 font-normal">
+                        • {formatRelativeTime(booking.createdAt, timezone)}
+                      </span>
+                    )}
+                  </span>
+                ) : (
+                  <Tooltip title={bookingT('tooltips.notAssignedYet')} position="top">
+                    <span className="text-muted-foreground truncate" style={{ fontSize: 'var(--text-small)' }}>
+                      {bookingT('notAssignedYet')}
+                      {booking.createdAt && (
+                        <span className="ml-1 opacity-60 font-normal">
+                          • {formatRelativeTime(booking.createdAt, timezone)}
+                        </span>
+                      )}
                     </span>
-                  )}
-                </span>
+                  </Tooltip>
+                )}
               </div>
               {booking.event.location && (
                 <div className="flex items-center gap-1.5 text-primary font-medium" style={{ fontSize: 'var(--text-small)' }}>
                   <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                  {booking.event.location}
+                  {booking.event.location.slice(0, 20)}{booking.event.location.length > 20 ? '...' : ''}
                 </div>
               )}
               <div className="flex items-center gap-2 flex-shrink-0">
-                <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                <span
-                  className="text-foreground"
-                  style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}
-                >
-                  {booking.amount}
-                </span>
+                <Banknote className="w-3.5 h-3.5 text-muted-foreground" />
+                <Tooltip title={t('bookings.tooltips.amount')} position="top">
+                  <span
+                    className="text-foreground"
+                    style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}
+                  >
+                    {booking.amount}
+                  </span>
+                </Tooltip>
               </div>
             </div>
           </div>

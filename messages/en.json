@@ -441,7 +441,7 @@
       "lock": "Lock",
       "unlock": "Unlock",
       "lockedMessage": "Booking is Locked",
-      "lockedDescription": "Clients cannot edit this booking. You can still make changes as an admin.",
+      "lockedDescription": "Clients cannot edit this booking.",
       "customerInfo": "Customer Information",
       "eventDetails": "Event Details",
       "venueLocation": "Venue Location",
@@ -453,6 +453,7 @@
       "kitchenNotesPlaceholder": "Enter notes specifically for the kitchen staff (will be included in PDF)...",
       "notAssignedYet": "Not Assigned Yet",
       "address": "Address",
+      "billingAddress": "Billing Address",
       "additionalInfo": "Additional Information",
       "internalNotes": "Internal Notes",
       "clientFilledField": "This field is filled by the client during booking",
@@ -490,6 +491,11 @@
         "unlockFailed": "Failed to unlock booking",
         "assignmentSuccess": "Assignment updated successfully",
         "assignmentFailed": "Failed to update assignment"
+      },
+      "tooltips": {
+        "amount": "Total amount for this booking",
+        "notAssignedYet": "No team member has been assigned to this booking yet",
+        "notAssigned": "No venue assigned"
       },
       "calendar": {
         "days": {

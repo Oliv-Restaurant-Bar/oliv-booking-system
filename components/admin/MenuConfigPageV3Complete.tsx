@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { GripVertical, Edit2, MoreVertical, Plus, ChevronDown, ChevronRight, Trash2, Eye, EyeOff, Search, UtensilsCrossed, ListPlus, Upload, X, Copy, Settings, Check, Users } from 'lucide-react';
 import { useMenuConfigTranslation, useCommonTranslation } from '@/lib/i18n/client';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
@@ -13,6 +13,20 @@ import { Tooltip } from '../user/Tooltip';
 import { NativeRadio } from '../ui/NativeRadio';
 import { toast } from 'sonner';
 import { SkeletonMenuConfig } from '@/components/ui/skeleton-loaders';
+import {
+  menuCategoryNameSchema,
+  menuCategoryDescriptionSchema,
+  menuItemNameSchema,
+  menuItemDescriptionSchema,
+  menuItemPriceSchema,
+  menuItemIngredientsSchema,
+  menuItemVariantNameSchema,
+  menuItemVariantPriceSchema,
+  nutritionalInfoValueSchema,
+  addonGroupNameSchema,
+  addonItemNameSchema,
+  addonItemPriceSchema,
+} from '@/lib/validation/schemas';
 import {
   DndContext,
   closestCenter,
@@ -335,6 +349,227 @@ export function MenuConfigPage({ user }: { user?: any }) {
       sodium: '',
     },
   });
+
+  // Validation states for category form
+  const [categoryErrors, setCategoryErrors] = useState<{
+    name?: string;
+    description?: string;
+  }>({});
+
+  const [categoryTouched, setCategoryTouched] = useState<{
+    name?: boolean;
+    description?: boolean;
+  }>({});
+
+  // Validation states for menu item form
+  const [menuItemErrors, setMenuItemErrors] = useState<{
+    name?: string;
+    description?: string;
+    price?: string;
+    ingredients?: string;
+    variants?: { [key: number]: { name?: string; price?: string } };
+    nutritionalInfo?: {
+      servingSize?: string;
+      calories?: string;
+      protein?: string;
+      carbs?: string;
+      fat?: string;
+      fiber?: string;
+      sugar?: string;
+      sodium?: string;
+    };
+  }>({});
+
+  const [menuItemTouched, setMenuItemTouched] = useState<{
+    name?: boolean;
+    description?: boolean;
+    price?: boolean;
+    ingredients?: boolean;
+    variants?: { [key: number]: { name?: boolean; price?: boolean } };
+    nutritionalInfo?: {
+      servingSize?: boolean;
+      calories?: boolean;
+      protein?: boolean;
+      carbs?: boolean;
+      fat?: boolean;
+      fiber?: boolean;
+      sugar?: boolean;
+      sodium?: boolean;
+    };
+  }>({});
+
+  // Validation states for addon group form
+  const [addonGroupErrors, setAddonGroupErrors] = useState<{
+    name?: string;
+  }>({});
+
+  const [addonGroupTouched, setAddonGroupTouched] = useState<{
+    name?: boolean;
+  }>({});
+
+  // Validation states for addon item form
+  const [addonItemErrors, setAddonItemErrors] = useState<{
+    name?: string;
+    price?: string;
+  }>({});
+
+  const [addonItemTouched, setAddonItemTouched] = useState<{
+    name?: boolean;
+    price?: boolean;
+  }>({});
+
+  // Real-time validation for category form
+  const categoryRealtimeErrors = useMemo(() => {
+    const newErrors: typeof categoryErrors = {};
+
+    if (categoryTouched.name) {
+      const nameResult = menuCategoryNameSchema.safeParse(newCategory.name);
+      if (!nameResult.success) newErrors.name = nameResult.error.errors[0].message;
+    }
+
+    if (categoryTouched.description) {
+      const descResult = menuCategoryDescriptionSchema.safeParse(newCategory.description);
+      if (!descResult.success) newErrors.description = descResult.error.errors[0].message;
+    }
+
+    return newErrors;
+  }, [categoryTouched, newCategory]);
+
+  const displayCategoryErrors = useMemo(() => {
+    return { ...categoryRealtimeErrors, ...categoryErrors };
+  }, [categoryRealtimeErrors, categoryErrors]);
+
+  // Real-time validation for menu item form
+  const menuItemRealtimeErrors = useMemo(() => {
+    const newErrors: typeof menuItemErrors = {};
+
+    if (menuItemTouched.name) {
+      const nameResult = menuItemNameSchema.safeParse(newMenuItem.name);
+      if (!nameResult.success) newErrors.name = nameResult.error.errors[0].message;
+    }
+
+    if (menuItemTouched.description) {
+      const descResult = menuItemDescriptionSchema.safeParse(newMenuItem.description);
+      if (!descResult.success) newErrors.description = descResult.error.errors[0].message;
+    }
+
+    if (menuItemTouched.price && newMenuItem.price !== '') {
+      const priceNum = parseFloat(newMenuItem.price);
+      const priceResult = menuItemPriceSchema.safeParse(priceNum);
+      if (!priceResult.success) newErrors.price = priceResult.error.errors[0].message;
+    }
+
+    if (menuItemTouched.ingredients) {
+      const ingredientsResult = menuItemIngredientsSchema.safeParse(newMenuItem.ingredients);
+      if (!ingredientsResult.success) newErrors.ingredients = ingredientsResult.error.errors[0].message;
+    }
+
+    // Validate variants
+    if (menuItemTouched.variants) {
+      const variantErrors: { [key: number]: { name?: string; price?: string } } = {};
+      newMenuItem.variants.forEach((variant, index) => {
+        if (menuItemTouched.variants?.[index]?.name) {
+          const nameResult = menuItemVariantNameSchema.safeParse(variant.name);
+          if (!nameResult.success) {
+            variantErrors[index] = { ...variantErrors[index], name: nameResult.error.errors[0].message };
+          }
+        }
+        if (menuItemTouched.variants?.[index]?.price) {
+          const priceResult = menuItemVariantPriceSchema.safeParse(variant.price);
+          if (!priceResult.success) {
+            variantErrors[index] = { ...variantErrors[index], price: priceResult.error.errors[0].message };
+          }
+        }
+      });
+      if (Object.keys(variantErrors).length > 0) {
+        newErrors.variants = variantErrors;
+      }
+    }
+
+    // Validate nutritional info
+    if (menuItemTouched.nutritionalInfo) {
+      const nutritionErrors: typeof menuItemErrors.nutritionalInfo = {};
+      if (menuItemTouched.nutritionalInfo?.servingSize) {
+        const result = nutritionalInfoValueSchema.safeParse(newMenuItem.nutritionalInfo.servingSize);
+        if (!result.success) nutritionErrors.servingSize = result.error.errors[0].message;
+      }
+      if (menuItemTouched.nutritionalInfo?.calories) {
+        const result = nutritionalInfoValueSchema.safeParse(newMenuItem.nutritionalInfo.calories);
+        if (!result.success) nutritionErrors.calories = result.error.errors[0].message;
+      }
+      if (menuItemTouched.nutritionalInfo?.protein) {
+        const result = nutritionalInfoValueSchema.safeParse(newMenuItem.nutritionalInfo.protein);
+        if (!result.success) nutritionErrors.protein = result.error.errors[0].message;
+      }
+      if (menuItemTouched.nutritionalInfo?.carbs) {
+        const result = nutritionalInfoValueSchema.safeParse(newMenuItem.nutritionalInfo.carbs);
+        if (!result.success) nutritionErrors.carbs = result.error.errors[0].message;
+      }
+      if (menuItemTouched.nutritionalInfo?.fat) {
+        const result = nutritionalInfoValueSchema.safeParse(newMenuItem.nutritionalInfo.fat);
+        if (!result.success) nutritionErrors.fat = result.error.errors[0].message;
+      }
+      if (menuItemTouched.nutritionalInfo?.fiber) {
+        const result = nutritionalInfoValueSchema.safeParse(newMenuItem.nutritionalInfo.fiber);
+        if (!result.success) nutritionErrors.fiber = result.error.errors[0].message;
+      }
+      if (menuItemTouched.nutritionalInfo?.sugar) {
+        const result = nutritionalInfoValueSchema.safeParse(newMenuItem.nutritionalInfo.sugar);
+        if (!result.success) nutritionErrors.sugar = result.error.errors[0].message;
+      }
+      if (menuItemTouched.nutritionalInfo?.sodium) {
+        const result = nutritionalInfoValueSchema.safeParse(newMenuItem.nutritionalInfo.sodium);
+        if (!result.success) nutritionErrors.sodium = result.error.errors[0].message;
+      }
+      if (Object.keys(nutritionErrors).length > 0) {
+        newErrors.nutritionalInfo = nutritionErrors;
+      }
+    }
+
+    return newErrors;
+  }, [menuItemTouched, newMenuItem]);
+
+  const displayMenuItemErrors = useMemo(() => {
+    return { ...menuItemRealtimeErrors, ...menuItemErrors };
+  }, [menuItemRealtimeErrors, menuItemErrors]);
+
+  // Real-time validation for addon group form
+  const addonGroupRealtimeErrors = useMemo(() => {
+    const newErrors: typeof addonGroupErrors = {};
+
+    if (addonGroupTouched.name) {
+      const nameResult = addonGroupNameSchema.safeParse(newGroup.name);
+      if (!nameResult.success) newErrors.name = nameResult.error.errors[0].message;
+    }
+
+    return newErrors;
+  }, [addonGroupTouched, newGroup]);
+
+  const displayAddonGroupErrors = useMemo(() => {
+    return { ...addonGroupRealtimeErrors, ...addonGroupErrors };
+  }, [addonGroupRealtimeErrors, addonGroupErrors]);
+
+  // Real-time validation for addon item form
+  const addonItemRealtimeErrors = useMemo(() => {
+    const newErrors: typeof addonItemErrors = {};
+
+    if (addonItemTouched.name) {
+      const nameResult = addonItemNameSchema.safeParse(newAddonItem.name);
+      if (!nameResult.success) newErrors.name = nameResult.error.errors[0].message;
+    }
+
+    if (addonItemTouched.price && newAddonItem.price !== '') {
+      const priceNum = parseFloat(newAddonItem.price);
+      const priceResult = addonItemPriceSchema.safeParse(priceNum);
+      if (!priceResult.success) newErrors.price = priceResult.error.errors[0].message;
+    }
+
+    return newErrors;
+  }, [addonItemTouched, newAddonItem]);
+
+  const displayAddonItemErrors = useMemo(() => {
+    return { ...addonItemRealtimeErrors, ...addonItemErrors };
+  }, [addonItemRealtimeErrors, addonItemErrors]);
 
   // Fetch menu data from database on component mount
   useEffect(() => {
@@ -1928,12 +2163,21 @@ export function MenuConfigPage({ user }: { user?: any }) {
                     type="text"
                     maxLength={100}
                     value={newCategory.name}
-                    onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                    onChange={(e) => {
+                      setNewCategory({ ...newCategory, name: e.target.value });
+                      if (categoryErrors.name) setCategoryErrors({ ...categoryErrors, name: undefined });
+                    }}
+                    onBlur={() => {
+                      if (!categoryTouched.name) setCategoryTouched({ ...categoryTouched, name: true });
+                    }}
                     placeholder={t('placeholders.categoryName')}
-                    className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                    className={`w-full px-4 py-2 bg-input-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring ${displayCategoryErrors.name ? 'border-destructive' : 'border-border'}`}
                     style={{ fontSize: 'var(--text-base)' }}
                   />
-                  <p className="text-muted-foreground text-xs mt-1 text-right">{newCategory.name.length}/100</p>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-destructive text-xs">{displayCategoryErrors.name}</p>
+                    <p className="text-muted-foreground text-xs text-right">{newCategory.name.length}/100</p>
+                  </div>
                 </div>
 
                 <div>
@@ -1943,13 +2187,22 @@ export function MenuConfigPage({ user }: { user?: any }) {
                   <textarea
                     value={newCategory.description}
                     maxLength={500}
-                    onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
+                    onChange={(e) => {
+                      setNewCategory({ ...newCategory, description: e.target.value });
+                      if (categoryErrors.description) setCategoryErrors({ ...categoryErrors, description: undefined });
+                    }}
+                    onBlur={() => {
+                      if (!categoryTouched.description) setCategoryTouched({ ...categoryTouched, description: true });
+                    }}
                     placeholder={t('placeholders.categoryDesc')}
                     rows={3}
-                    className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                    className={`w-full px-4 py-2 bg-input-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none ${displayCategoryErrors.description ? 'border-destructive' : 'border-border'}`}
                     style={{ fontSize: 'var(--text-base)' }}
                   />
-                  <p className="text-muted-foreground text-xs mt-1 text-right">{newCategory.description.length}/500</p>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-destructive text-xs">{displayCategoryErrors.description}</p>
+                    <p className="text-muted-foreground text-xs text-right">{newCategory.description.length}/500</p>
+                  </div>
                 </div>
 
                 <div>
@@ -2307,12 +2560,21 @@ export function MenuConfigPage({ user }: { user?: any }) {
                     type="text"
                     maxLength={100}
                     value={newMenuItem.name}
-                    onChange={(e) => setNewMenuItem({ ...newMenuItem, name: e.target.value })}
+                    onChange={(e) => {
+                      setNewMenuItem({ ...newMenuItem, name: e.target.value });
+                      if (menuItemErrors.name) setMenuItemErrors({ ...menuItemErrors, name: undefined });
+                    }}
+                    onBlur={() => {
+                      if (!menuItemTouched.name) setMenuItemTouched({ ...menuItemTouched, name: true });
+                    }}
                     placeholder="e.g., Margherita Pizza"
-                    className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                    className={`w-full px-4 py-2 bg-input-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring ${displayMenuItemErrors.name ? 'border-destructive' : 'border-border'}`}
                     style={{ fontSize: 'var(--text-base)' }}
                   />
-                  <p className="text-muted-foreground text-xs mt-1 text-right">{newMenuItem.name.length}/100</p>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-destructive text-xs">{displayMenuItemErrors.name}</p>
+                    <p className="text-muted-foreground text-xs text-right">{newMenuItem.name.length}/100</p>
+                  </div>
                 </div>
 
                 <div>
@@ -2322,13 +2584,22 @@ export function MenuConfigPage({ user }: { user?: any }) {
                   <textarea
                     value={newMenuItem.description}
                     maxLength={500}
-                    onChange={(e) => setNewMenuItem({ ...newMenuItem, description: e.target.value })}
+                    onChange={(e) => {
+                      setNewMenuItem({ ...newMenuItem, description: e.target.value });
+                      if (menuItemErrors.description) setMenuItemErrors({ ...menuItemErrors, description: undefined });
+                    }}
+                    onBlur={() => {
+                      if (!menuItemTouched.description) setMenuItemTouched({ ...menuItemTouched, description: true });
+                    }}
                     placeholder="Describe this menu item"
                     rows={3}
-                    className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                    className={`w-full px-4 py-2 bg-input-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none ${displayMenuItemErrors.description ? 'border-destructive' : 'border-border'}`}
                     style={{ fontSize: 'var(--text-base)' }}
                   />
-                  <p className="text-muted-foreground text-xs mt-1 text-right">{newMenuItem.description.length}/500</p>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-destructive text-xs">{displayMenuItemErrors.description}</p>
+                    <p className="text-muted-foreground text-xs text-right">{newMenuItem.description.length}/500</p>
+                  </div>
                 </div>
 
                 <div>

@@ -441,7 +441,7 @@
       "lock": "Sperren",
       "unlock": "Entsperren",
       "lockedMessage": "Buchung ist gesperrt",
-      "lockedDescription": "Kunden können diese Buchung nicht bearbeiten. Sie können als Admin weiterhin Änderungen vornehmen.",
+      "lockedDescription": "Kunden können diese Buchung nicht bearbeiten.",
       "customerInfo": "Kundeninformationen",
       "eventDetails": "Veranstaltungsdetails",
       "venueLocation": "Veranstaltungsort",
@@ -453,6 +453,7 @@
       "kitchenNotesPlaceholder": "Geben Sie Notizen speziell für das Küchenpersonal ein (werden im PDF enthalten sein)...",
       "notAssignedYet": "Noch nicht zugewiesen",
       "address": "Adresse",
+      "billingAddress": "Rechnungsadresse",
       "additionalInfo": "Zusätzliche Informationen",
       "internalNotes": "Interne Notizen",
       "clientFilledField": "Dieses Feld wird vom Kunden bei der Buchung ausgefüllt",
@@ -490,6 +491,11 @@
         "unlockFailed": "Buchung konnte nicht entsperrt werden",
         "assignmentSuccess": "Zuweisung erfolgreich aktualisiert",
         "assignmentFailed": "Zuweisung konnte nicht aktualisiert werden"
+      },
+      "tooltips": {
+        "amount": "Gesamtbetrag für diese Buchung",
+        "notAssignedYet": "Dieser Buchung wurde noch kein Teammitglied zugewiesen",
+        "notAssigned": "Kein Venue zugewiesen"
       },
       "calendar": {
         "days": {

@@ -105,6 +105,7 @@ async function testBookingEmail() {
     eventTime: "19:00",
     guestCount: 10,
     estimatedTotal: "4500.00",
+    billingAddress: "Billing Street 123, 8001 Zurich",
     status: "confirmed" as const,
     specialRequests: "Vegetarische Optionen benötigt",
     allergyDetails: ["Nüsse", "Laktose"],

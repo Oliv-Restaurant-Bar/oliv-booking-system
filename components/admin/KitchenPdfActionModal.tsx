@@ -5,6 +5,7 @@ import { Mail, Download, Users, X, Loader2, CheckSquare, ChevronLeft, Send } fro
 import { cn } from '@/lib/utils';
 import { jsPDF } from 'jspdf';
 import { toast } from 'sonner';
+import { toReadableDate, getSystemTimezoneSync } from '@/lib/utils/date';
 
 interface KitchenPdfActionModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ interface KitchenPdfActionModalProps {
       location?: string;
     };
     guests: number;
+    billingAddress?: string;
     menuItems?: Array<{
       item: string;
       category: string;
@@ -48,7 +50,7 @@ export function KitchenPdfActionModal({
 
   // Use last 8 characters of UUID for a shorter ID
   const shortId = booking.id.slice(-8);
-  const documentName = `Booking – Kitchen Sheet`; // Removed ID from title as per client preference
+  const documentName = `Booking - ${booking.customer.name}`; // Format: Booking - Customer Name
 
   const toggleSection = (section: 'email') => {
     setExpandedSection(prev => prev === section ? null : section);
@@ -78,17 +80,17 @@ export function KitchenPdfActionModal({
       }
 
       doc.setFontSize(22);
-      doc.setTextColor(255, 255, 255);
+      doc.setTextColor(38, 45, 57);
       doc.setFont("helvetica", "bold");
       doc.text("KITCHEN SHEET", margin, 34);
 
       doc.setFontSize(11);
-      doc.setTextColor(255, 255, 255);
+      doc.setTextColor(38, 45, 57);
       doc.setFont("helvetica", "bold");
       doc.text("INTERNAL USE ONLY", pageWidth - margin, 20, { align: 'right' });
 
       doc.setFontSize(9);
-      doc.setTextColor(230, 230, 230);
+      doc.setTextColor(38, 45, 57);
       doc.setFont("helvetica", "normal");
       doc.text(`Generated: ${new Date().toLocaleDateString('de-CH')}`, pageWidth - margin, 34, { align: 'right' });
 
@@ -98,38 +100,54 @@ export function KitchenPdfActionModal({
     drawHeader();
 
     // --- Two Column Info Section ---
+    const columnWidth = (contentWidth / 2) - 5;
+    const leftColX = margin;
+    const rightColX = pageWidth / 2 + 5;
+    
     doc.setFontSize(14);
     doc.setTextColor(15, 23, 42);
     doc.setFont("helvetica", "bold");
-
-    // Left Column: Customer
-    doc.text("CUSTOMER DETAILS", margin, yPos);
-    doc.setFontSize(11);
+    
+    // Headers on the same line
+    doc.text("CUSTOMER DETAILS", leftColX, yPos);
+    doc.text("EVENT DETAILS", rightColX, yPos);
+    
+    doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    yPos += 8;
-    doc.text(`Name: ${booking.customer.name}`, margin + 5, yPos);
-    yPos += 6;
-    doc.text(`Guests: ${booking.guests}`, margin + 5, yPos);
+    const detailLineHeight = 6;
+    let customerY = yPos + 8;
+    let eventY = yPos + 8;
 
-    // Right Column: Event (Reset yPos for same row)
-    const rightColX = pageWidth / 2 + 10;
-    let eventYPos = yPos - 14;
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("EVENT DETAILS", rightColX, eventYPos);
+    // --- Left Column Content ---
+    const nameLines = doc.splitTextToSize(`Name: ${booking.customer.name}`, columnWidth);
+    doc.text(nameLines, leftColX + 2, customerY);
+    customerY += (nameLines.length * detailLineHeight);
+    
+    doc.text(`Guests: ${booking.guests}`, leftColX + 2, customerY);
+    customerY += detailLineHeight;
+    
+    if (booking.billingAddress) {
+      const addressLines = doc.splitTextToSize(`Billing Address: ${booking.billingAddress}`, columnWidth);
+      doc.text(addressLines, leftColX + 2, customerY);
+      customerY += (addressLines.length * detailLineHeight);
+    }
 
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    eventYPos += 8;
-    doc.text(`Date: ${booking.event.date}`, rightColX + 5, eventYPos);
-    eventYPos += 6;
-    doc.text(`Time: ${booking.event.time}`, rightColX + 5, eventYPos);
-    eventYPos += 6;
-    doc.text(`Occasion: ${booking.event.occasion}`, rightColX + 5, eventYPos);
-    eventYPos += 6;
-    doc.text(`Venue: ${booking.event.location || 'Restaurant Oliv'}`, rightColX + 5, eventYPos);
+    // --- Right Column Content ---
+    doc.text(`Date: ${booking.event.date}`, rightColX + 2, eventY);
+    eventY += detailLineHeight;
+    doc.text(`Time: ${booking.event.time}`, rightColX + 2, eventY);
+    eventY += detailLineHeight;
+    
+    const occasionLines = doc.splitTextToSize(`Occasion: ${booking.event.occasion}`, columnWidth);
+    doc.text(occasionLines, rightColX + 2, eventY);
+    eventY += (occasionLines.length * detailLineHeight);
+    
+    const locationLines = doc.splitTextToSize(`Venue: ${booking.event.location || 'Restaurant Oliv'}`, columnWidth);
+    doc.text(locationLines, rightColX + 2, eventY);
+    eventY += (locationLines.length * detailLineHeight);
 
-    yPos = Math.max(yPos, eventYPos + 6) + 15;
+    // Synchronize Y position for next section
+    yPos = Math.max(customerY, eventY) + 15;
 
     // --- Menu Selection Table ---
     doc.setFontSize(14);
@@ -138,17 +156,21 @@ export function KitchenPdfActionModal({
 
     yPos += 10;
 
-    // Table Header
+    // Table Header Settings (3-column layout)
+    const colX_Item = margin + 2;
+    const colX_Guests = margin + 130;
+    const colX_Done = margin + 160;
+
+    // Header Background
     doc.setFillColor(241, 245, 249); // slate-100
     doc.rect(margin, yPos - 6, contentWidth, 10, 'F');
 
     doc.setFontSize(9);
     doc.setTextColor(71, 85, 105); // slate-600
     doc.setFont("helvetica", "bold");
-    doc.text("ITEM NAME", margin + 2, yPos);
-    doc.text("CATEGORY", margin + 85, yPos);
-    doc.text("GUESTS", margin + 135, yPos);
-    doc.text("DONE", margin + 165, yPos);
+    doc.text("ITEM NAME", colX_Item, yPos);
+    doc.text("GUESTS", colX_Guests, yPos, { align: 'center' });
+    doc.text("DONE", colX_Done, yPos, { align: 'center' });
 
     yPos += 10;
     doc.setTextColor(15, 23, 42);
@@ -156,41 +178,90 @@ export function KitchenPdfActionModal({
     doc.setFont("helvetica", "normal");
 
     const menuItems = booking.menuItems || [];
-    if (menuItems.length > 0) {
-      menuItems.forEach((item, index) => {
-        // Page break logic
-        if (yPos > 260) {
-          doc.addPage();
-          drawHeader();
-          yPos += 10;
-          doc.setFillColor(241, 245, 249);
-          doc.rect(margin, yPos - 6, contentWidth, 10, 'F');
-          doc.setFontSize(9);
-          doc.setTextColor(71, 85, 105);
-          doc.setFont("helvetica", "bold");
-          doc.text("ITEM NAME", margin + 2, yPos);
-          doc.text("CATEGORY", margin + 85, yPos);
-          doc.text("GUESTS", margin + 135, yPos);
-          doc.text("DONE", margin + 165, yPos);
-          yPos += 10;
-          doc.setTextColor(15, 23, 42);
-          doc.setFontSize(10);
-          doc.setFont("helvetica", "normal");
+    
+    // Group items by category
+    const groupedItems: Record<string, typeof menuItems> = {};
+    menuItems.forEach(item => {
+      const cat = item.category || 'Other';
+      if (!groupedItems[cat]) groupedItems[cat] = [];
+      groupedItems[cat].push(item);
+    });
+
+    const drawTableHeader = (title: string) => {
+      doc.addPage();
+      drawHeader();
+      yPos = 60;
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text(title, margin, yPos);
+      yPos += 10;
+      
+      doc.setFillColor(241, 245, 249);
+      doc.rect(margin, yPos - 6, contentWidth, 10, 'F');
+      doc.setFontSize(9);
+      doc.setTextColor(71, 85, 105);
+      doc.setFont("helvetica", "bold");
+      doc.text("ITEM NAME", colX_Item, yPos);
+      doc.text("GUESTS", colX_Guests, yPos, { align: 'center' });
+      doc.text("DONE", colX_Done, yPos, { align: 'center' });
+      yPos += 10;
+      doc.setTextColor(15, 23, 42);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+    };
+
+    if (Object.keys(groupedItems).length > 0) {
+      Object.entries(groupedItems).forEach(([category, items]) => {
+        // Category Header
+        if (yPos + 15 > 275) {
+          drawTableHeader("MENU SELECTION (CONT.)");
         }
 
-        doc.text(item.item, margin + 2, yPos);
-        doc.text(item.category, margin + 85, yPos);
-        doc.text(String(booking.guests), margin + 140, yPos);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(15, 23, 42);
+        doc.text(category.toUpperCase(), colX_Item, yPos);
+        yPos += 7;
+        
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
 
-        // Checkbox box (Better alignment)
-        doc.setDrawColor(203, 213, 225); // slate-300
-        doc.rect(margin + 168, yPos - 3.5, 4, 4);
+        items.forEach((item) => {
+          const itemMaxWidth = 120;
+          const itemLines = doc.splitTextToSize(item.item, itemMaxWidth);
+          const lineHeight = 5;
+          const rowHeight = Math.max(itemLines.length * lineHeight, 10);
 
-        // Row separator
-        doc.setDrawColor(241, 245, 249);
-        doc.line(margin, yPos + 3, margin + contentWidth, yPos + 3);
+          // Page break logic
+          if (yPos + rowHeight > 275) {
+            drawTableHeader("MENU SELECTION (CONT.)");
+            // Re-draw category if we broke page right after category header or mid-items
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(11);
+            doc.text(`${category.toUpperCase()} (CONT.)`, colX_Item, yPos);
+            yPos += 7;
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+          }
 
-        yPos += 10;
+          // Draw Item Name (Indented)
+          doc.text(itemLines, colX_Item + 5, yPos);
+
+          // Draw Guests (Center aligned)
+          doc.text(String(booking.guests), colX_Guests, yPos, { align: 'center' });
+
+          // Checkbox box (Center aligned)
+          doc.setDrawColor(203, 213, 225);
+          doc.rect(colX_Done - 3, yPos - 3.5, 6, 6); // slightly larger checkbox
+
+          // Row separator
+          doc.setDrawColor(241, 245, 249);
+          doc.line(margin, yPos + rowHeight - 6, margin + contentWidth, yPos + rowHeight - 6);
+
+          yPos += rowHeight;
+        });
+        
+        yPos += 5; // Spacing between categories
       });
     } else {
       doc.setFont("helvetica", "italic");
@@ -204,7 +275,7 @@ export function KitchenPdfActionModal({
     if (booking.allergies && booking.allergies.trim().toLowerCase() !== 'none' && booking.allergies.trim()) {
       if (yPos > 230) { doc.addPage(); drawHeader(); yPos += 10; }
       yPos += 5;
-      
+
       doc.setFillColor(254, 242, 242); // red-50
       const allergyLines = doc.splitTextToSize(booking.allergies, contentWidth - 10);
       const allergyBoxHeight = (allergyLines.length * 6) + 16;
@@ -231,7 +302,7 @@ export function KitchenPdfActionModal({
     if (booking.notes && booking.notes.trim()) {
       yPos += 10;
       if (yPos > 240) { doc.addPage(); drawHeader(); yPos += 10; }
-      
+
       doc.setFontSize(13);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(15, 23, 42);
@@ -277,7 +348,7 @@ export function KitchenPdfActionModal({
       doc.setFontSize(8);
       doc.setTextColor(148, 163, 184);
       doc.text(
-        `Generated on ${new Date().toLocaleString('de-CH')} | Page ${i} of ${totalPages} | Oliv Booking System`,
+        `Generated on ${toReadableDate(new Date(), getSystemTimezoneSync())} | Page ${i} of ${totalPages} | Oliv Booking System`,
         pageWidth / 2,
         pageHeight - 10,
         { align: 'center' }

@@ -10,11 +10,12 @@ import { VenueService } from '@/services/venue.service';
 import { SettingsService } from '@/services/settings.service';
 import type { Venue } from '@/services/venue.service';
 import { toast } from 'sonner';
-import { useSettingsTranslation, useCommonTranslation } from '@/lib/i18n/client';
+import { useSettingsTranslation, useCommonTranslation, useMessageTranslation } from '@/lib/i18n/client';
 
 export function SettingsPage({ user }: { user?: any }) {
   const t = useSettingsTranslation();
   const commonT = useCommonTranslation();
+  const messageT = useMessageTranslation();
   const userRole = user?.role;
   const canUpdateSettings = hasPermission(userRole, Permission.UPDATE_SETTINGS);
 
@@ -168,7 +169,7 @@ export function SettingsPage({ user }: { user?: any }) {
   };
 
   const handleDeleteVenue = async (venue: Venue) => {
-    if (!confirm(commonT('message.deleteConfirm'))) {
+    if (!confirm(messageT('deleteConfirm'))) {
       return;
     }
 

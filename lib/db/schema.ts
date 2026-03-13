@@ -178,6 +178,7 @@ export const bookings = pgTable(
     guestCount: integer("guest_count").notNull(),
     allergyDetails: jsonb("allergy_details").$type<string[]>(),
     specialRequests: text("special_requests"),
+    billingAddress: text("billing_address"),
     estimatedTotal: decimal("estimated_total", { precision: 10, scale: 2 }),
     requiresDeposit: boolean("requires_deposit").notNull().default(false),
     status: text("status", { enum: bookingStatusEnum })
@@ -217,6 +218,7 @@ export const menuCategories = pgTable(
     sortOrder: integer("sort_order").notNull().default(0),
     isActive: boolean("is_active").notNull().default(true),
     guestCount: boolean("guest_count").notNull().default(false),
+    deletedAt: timestamp("deleted_at"),  // Soft delete timestamp
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
@@ -263,6 +265,7 @@ export const menuItems = pgTable(
       sodium: string;
     }>(),
     sortOrder: integer("sort_order").notNull().default(0),
+    deletedAt: timestamp("deleted_at"),  // Soft delete timestamp
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
@@ -310,6 +313,7 @@ export const addons = pgTable(
     price: decimal("price", { precision: 10, scale: 2 }).notNull(),
     pricingType: text("pricing_type", { enum: pricingTypeEnum }).notNull(),
     isActive: boolean("is_active").notNull().default(true),
+    deletedAt: timestamp("deleted_at"),  // Soft delete timestamp
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => ({

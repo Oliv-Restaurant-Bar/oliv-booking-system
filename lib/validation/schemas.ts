@@ -73,7 +73,12 @@ export const bookingKitchenNotesSchema = z.string()
 
 export const bookingGuestCountSchema = z.number()
   .min(1, 'Guest count must be at least 1')
-  .max(1000, 'Guest count cannot exceed 1000');
+  .max(10000, 'Guest count cannot exceed 10000');
+
+export const bookingBillingAddressSchema = z.string()
+  .max(500, 'Billing address cannot exceed 500 characters')
+  .optional()
+  .transform(val => val?.trim() || '');
 
 export const bookingCommentSchema = z.string()
   .min(1, 'Comment cannot be empty')
@@ -205,3 +210,58 @@ export const wizardEventDetailsSchema = z.object({
 });
 
 export type WizardEventDetails = z.infer<typeof wizardEventDetailsSchema>;
+
+// Menu validation schemas
+export const menuCategoryNameSchema = z.string()
+  .min(2, 'Category name must be at least 2 characters')
+  .max(100, 'Category name cannot exceed 100 characters')
+  .trim();
+
+export const menuCategoryDescriptionSchema = z.string()
+  .max(500, 'Description cannot exceed 500 characters')
+  .transform(val => val.trim());
+
+export const menuItemNameSchema = z.string()
+  .min(2, 'Item name must be at least 2 characters')
+  .max(100, 'Item name cannot exceed 100 characters')
+  .trim();
+
+export const menuItemDescriptionSchema = z.string()
+  .max(500, 'Description cannot exceed 500 characters')
+  .transform(val => val.trim());
+
+export const menuItemPriceSchema = z.number()
+  .min(0, 'Price must be at least 0')
+  .max(100000, 'Price cannot exceed 100,000');
+
+export const menuItemIngredientsSchema = z.string()
+  .max(1000, 'Ingredients cannot exceed 1000 characters')
+  .transform(val => val.trim());
+
+export const menuItemVariantNameSchema = z.string()
+  .min(1, 'Variant name is required')
+  .max(100, 'Variant name cannot exceed 100 characters')
+  .trim();
+
+export const menuItemVariantPriceSchema = z.number()
+  .min(0, 'Variant price must be at least 0')
+  .max(100000, 'Variant price cannot exceed 100,000');
+
+export const nutritionalInfoValueSchema = z.string()
+  .max(50, 'Value cannot exceed 50 characters')
+  .transform(val => val.trim());
+
+export const addonGroupNameSchema = z.string()
+  .min(2, 'Addon group name must be at least 2 characters')
+  .max(100, 'Addon group name cannot exceed 100 characters')
+  .trim();
+
+export const addonItemNameSchema = z.string()
+  .min(2, 'Addon item name must be at least 2 characters')
+  .max(100, 'Addon item name cannot exceed 100 characters')
+  .trim();
+
+export const addonItemPriceSchema = z.number()
+  .min(0, 'Addon price must be at least 0')
+  .max(100000, 'Addon price cannot exceed 100,000');
+

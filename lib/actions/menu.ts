@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { menuCategories, menuItems, menuItemDependencies, addons, addonGroups, addonItems, categoryAddonGroups, itemAddonGroups } from "@/lib/db/schema";
-import { eq, asc, and } from "drizzle-orm";
+import { eq, asc, and, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
 import { requireAuth, requirePermissionWrapper } from "@/lib/auth/rbac-middleware";
@@ -63,7 +63,11 @@ export async function deleteMenuCategory(id: string) {
     // Require DELETE_MENU_CATEGORY permission
     await requirePermissionWrapper(Permission.DELETE_MENU_CATEGORY);
 
-    await db.delete(menuCategories).where(eq(menuCategories.id, id));
+    // Soft delete: Set deleted_at timestamp instead of actually deleting
+    await db
+      .update(menuCategories)
+      .set({ deletedAt: new Date(), updatedAt: new Date() })
+      .where(eq(menuCategories.id, id));
 
     revalidatePath("/admin/menu-config");
 
@@ -79,7 +83,7 @@ export async function getMenuCategories() {
     const categories = await db
       .select()
       .from(menuCategories)
-      .where(eq(menuCategories.isActive, true))
+      .where(and(eq(menuCategories.isActive, true), isNull(menuCategories.deletedAt)))
       .orderBy(asc(menuCategories.sortOrder));
 
     return { success: true, data: categories };
@@ -98,6 +102,7 @@ export async function getAllMenuCategories() {
     const categories = await db
       .select()
       .from(menuCategories)
+      .where(isNull(menuCategories.deletedAt))  // Exclude deleted
       .orderBy(asc(menuCategories.sortOrder));
 
     return { success: true, data: categories };
@@ -200,7 +205,11 @@ export async function deleteMenuItem(id: string) {
     // Require DELETE_MENU_ITEM permission
     await requirePermissionWrapper(Permission.DELETE_MENU_ITEM);
 
-    await db.delete(menuItems).where(eq(menuItems.id, id));
+    // Soft delete: Set deleted_at timestamp instead of actually deleting
+    await db
+      .update(menuItems)
+      .set({ deletedAt: new Date(), updatedAt: new Date() })
+      .where(eq(menuItems.id, id));
 
     revalidatePath("/admin/menu-config");
 
@@ -213,7 +222,10 @@ export async function deleteMenuItem(id: string) {
 
 export async function getMenuItems(categoryId?: string) {
   try {
-    const conditions = [eq(menuItems.isActive, true)];
+    const conditions = [
+      eq(menuItems.isActive, true),
+      isNull(menuItems.deletedAt)  // Exclude deleted
+    ];
 
     if (categoryId) {
       conditions.push(eq(menuItems.categoryId, categoryId));
@@ -241,7 +253,11 @@ export async function getAllMenuItems(categoryId?: string) {
     const items = await db
       .select()
       .from(menuItems)
-      .where(categoryId ? eq(menuItems.categoryId, categoryId) : undefined)
+      .where(
+        categoryId
+          ? and(eq(menuItems.categoryId, categoryId), isNull(menuItems.deletedAt))
+          : isNull(menuItems.deletedAt)
+      )
       .orderBy(asc(menuItems.sortOrder));
 
     return { success: true, data: items };
@@ -330,7 +346,11 @@ export async function deleteAddon(id: string) {
     // Require DELETE_ADDON permission
     await requirePermissionWrapper(Permission.DELETE_ADDON);
 
-    await db.delete(addons).where(eq(addons.id, id));
+    // Soft delete: Set deleted_at timestamp instead of actually deleting
+    await db
+      .update(addons)
+      .set({ deletedAt: new Date() })
+      .where(eq(addons.id, id));
 
     revalidatePath("/admin/menu-config");
 
@@ -346,7 +366,7 @@ export async function getAddons() {
     const addonList = await db
       .select()
       .from(addons)
-      .where(eq(addons.isActive, true));
+      .where(and(eq(addons.isActive, true), isNull(addons.deletedAt)));
 
     return { success: true, data: addonList };
   } catch (error) {

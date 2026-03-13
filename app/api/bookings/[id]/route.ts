@@ -23,6 +23,7 @@ export async function GET(
         b.allergy_details,
         b.special_requests,
         b.internal_notes,
+        b.billing_address,
         b.estimated_total,
         b.status,
         b.location,
@@ -72,6 +73,7 @@ export async function GET(
         LEFT JOIN menu_items mi ON bi.item_id = mi.id
         LEFT JOIN menu_categories mc ON mi.category_id = mc.id
         WHERE bi.item_type = 'menu_item' AND bi.booking_id = ${id}
+        -- IMPORTANT: Do NOT filter deleted items - we want to show historical data
       `);
 
       const itemsRows = 'rows' in bookingItemsResult ? bookingItemsResult.rows : bookingItemsResult;
@@ -176,6 +178,7 @@ export async function GET(
         address: address,
         business: business,
       },
+      billingAddress: booking.billing_address || '',
       event: {
         date: booking.event_date
           ? new Date(booking.event_date).toLocaleDateString('en-US', {

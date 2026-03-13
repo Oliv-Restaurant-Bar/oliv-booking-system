@@ -9,6 +9,7 @@ import { KitchenPdfStatusBadge } from './KitchenPdfStatusBadge';
 import { KitchenPdfActionModal } from './KitchenPdfActionModal';
 import { KitchenPdfService, type KitchenPdfStatus } from '@/services/kitchen-pdf.service';
 import { VenueService } from '@/services/venue.service';
+import { Tooltip } from '@/components/user/Tooltip';
 import { toast } from 'sonner';
 import { Permission, hasPermission } from '@/lib/auth/rbac';
 import { AssignUserModal } from './AssignUserModal';
@@ -18,6 +19,8 @@ import { ValidatedTextarea } from '@/components/ui/validated-textarea';
 import { bookingKitchenNotesSchema, bookingCommentSchema } from '@/lib/validation/schemas';
 import { useBookingTranslation, useCommonTranslation, useButtonTranslation } from '@/lib/i18n/client';
 import { useTranslations } from 'next-intl';
+import { toReadableDate } from '@/lib/utils/date';
+import { useSystemTimezone } from '@/lib/hooks/useSystemTimezone';
 
 export interface Booking {
     id: string;
@@ -40,6 +43,7 @@ export interface Booking {
     };
     guests: number;
     amount: string;
+    billingAddress?: string;
     status: string;
     notes?: string;
     allergies?: string | string[];
@@ -80,6 +84,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     const commonT = useCommonTranslation();
     const buttonT = useButtonTranslation();
     const statusT = useTranslations('bookingStatus');
+    const { timezone } = useSystemTimezone();
 
     const [booking, setBooking] = useState<Booking | null>(initialBooking || null);
     const [loading, setLoading] = useState(!initialBooking);
@@ -117,6 +122,11 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     const [assignedTo, setAssignedTo] = useState<string>((initialBooking as any)?.assignedTo?.id || '');
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
 
+    // Track initial values to detect changes
+    const [initialKitchenNotes, setInitialKitchenNotes] = useState<string>(initialBooking?.kitchenNotes || '');
+    const [initialAssignedTo, setInitialAssignedTo] = useState<string>((initialBooking as any)?.assignedTo?.id || '');
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
+
     // Validation errors
     const [errors, setErrors] = useState<{
         kitchenNotes?: string;
@@ -137,8 +147,19 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             setSelectedVenue(initialBooking.event?.location || '');
             setKitchenPdfStatus(initialBooking.kitchenPdf);
             setAssignedTo((initialBooking as any).assignedTo?.id || '');
+            // Update initial values for change tracking
+            setInitialKitchenNotes(initialBooking.kitchenNotes || '');
+            setInitialAssignedTo((initialBooking as any).assignedTo?.id || '');
+            setHasUnsavedChanges(false);
         }
     }, [initialBooking]);
+
+    // Track changes to kitchen notes and assignment
+    useEffect(() => {
+        const notesChanged = kitchenNotes !== initialKitchenNotes;
+        const assignmentChanged = assignedTo !== initialAssignedTo;
+        setHasUnsavedChanges(notesChanged || assignmentChanged);
+    }, [kitchenNotes, assignedTo, initialKitchenNotes, initialAssignedTo]);
 
     // Always fetch fresh booking data from API to avoid stale list data
     useEffect(() => {
@@ -158,6 +179,10 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                     setSelectedVenue(data.event?.location || data.location || '');
                     setAssignedTo(data.assignedTo?.id || '');
                     setKitchenPdfStatus(data.kitchenPdf);
+                    // Update initial values for change tracking
+                    setInitialKitchenNotes(data.kitchenNotes || '');
+                    setInitialAssignedTo(data.assignedTo?.id || '');
+                    setHasUnsavedChanges(false);
                 }
             } catch (error) {
                 console.error('Error fetching booking:', error);
@@ -443,6 +468,10 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             });
             if (response.ok) {
                 toast.success(t('toast.saveSuccess'));
+                // Update initial values to match current values
+                setInitialKitchenNotes(kitchenNotes);
+                setInitialAssignedTo(assignedTo);
+                setHasUnsavedChanges(false);
                 window.location.reload();
             } else {
                 toast.error(t('toast.saveFailed'));
@@ -457,7 +486,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
     const handlePdfActionComplete = async (action: 'email' | 'download', data?: { emails?: string[]; notes?: string }) => {
         setIsPdfActionModalOpen(false);
-        const documentName = KitchenPdfService.getDocumentName(bookingId);
+        const customerName = booking?.customer?.name || 'Unknown';
+        const documentName = `Booking - ${customerName}`;
         const now = new Date();
         const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
         const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -588,7 +618,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                             </button>
                         )}
 
-                        {canViewAudit && (
+                        {/* {canViewAudit && (
                             <button
                                 onClick={() => setShowAuditHistory(!showAuditHistory)}
                                 className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex items-center gap-2 cursor-pointer"
@@ -597,12 +627,12 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                 <History className="w-4 h-4" />
                                 {showAuditHistory ? t('hideHistory') : t('showHistory')}
                             </button>
-                        )}
+                        )} */}
 
                         {canEditBooking && !isLocked && (
                             <button
                                 onClick={handleCopyEditLink}
-                                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 cursor-pointer"
+                                className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors flex items-center gap-2 cursor-pointer"
                                 style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
                             >
                                 <Link className="w-4 h-4" />
@@ -617,7 +647,13 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                 style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
                             >
                                 <UserPlus className="w-4 h-4" />
-                                {assignedTo ? adminUsers.find(u => u.id === assignedTo)?.name || commonT('success') : t('notAssignedYet')}
+                                {assignedTo ? (
+                                    adminUsers.find(u => u.id === assignedTo)?.name || commonT('success')
+                                ) : (
+                                    <Tooltip title={t('tooltips.notAssignedYet')} position="top">
+                                        <span>{t('notAssignedYet')}</span>
+                                    </Tooltip>
+                                )}
                             </button>
                         )}
 
@@ -700,6 +736,10 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                 <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('address')}</label>
                                 <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.address || '-'}</p>
                             </div>
+                            <div className="sm:col-span-2 space-y-1">
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('billingAddress')}</label>
+                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.billingAddress || '-'}</p>
+                            </div>
                         </div>
                     </div>
 
@@ -753,7 +793,9 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         ))}
                                     </select>
                                 ) : (
-                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{selectedVenue || t('notAssigned')}</p>
+                                    <Tooltip title={t('tooltips.notAssigned')} position="top">
+                                        <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{selectedVenue || t('notAssigned')}</p>
+                                    </Tooltip>
                                 )}
                             </div>
                         </div>
@@ -827,7 +869,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                 <div className="flex justify-end pt-2">
                                     <button
                                         onClick={handleSaveChanges}
-                                        disabled={isSaving}
+                                        disabled={isSaving || !hasUnsavedChanges}
                                         className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm hover:shadow-md"
                                         style={{ fontSize: 'var(--text-base)' }}
                                     >
@@ -868,117 +910,118 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                             <p className="text-muted-foreground text-xs mt-1">{t('clientFilledField')}</p>
                         </div>
                     </div>
-                </div>
 
-                {/* Comments Section */}
-                <div className="bg-card border border-border rounded-xl p-6">
-                    <div className="flex items-center justify-between mb-5">
-                        <h3 className="text-foreground flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                            <MessageSquare className="w-5 h-5 text-primary" /> {t('commentsActivity')}
-                        </h3>
-                        <span className="px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-xs font-medium border border-border">
-                            {comments.length} {t('items')}
-                        </span>
-                    </div>
-                    <div className="space-y-4">
-                        <div className="max-h-[500px] overflow-y-auto pr-2 space-y-4 -mr-2 scrollbar-thin">
-                            {comments.length === 0 ? (
-                                <div className="text-center py-8 bg-muted/20 rounded-lg border border-dashed border-border">
-                                    <MessageSquare className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-                                    <p className="text-muted-foreground text-sm">{t('noComments')}</p>
+
+                    {/* Comments Section */}
+                    <div className="bg-card border border-border rounded-xl p-6">
+                        <div className="flex items-center justify-between mb-5">
+                            <h3 className="text-foreground flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                <MessageSquare className="w-5 h-5 text-primary" /> {t('commentsActivity')}
+                            </h3>
+                            <span className="px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-xs font-medium border border-border">
+                                {comments.length} {t('items')}
+                            </span>
+                        </div>
+                        <div className="space-y-4">
+                            <div className="max-h-[500px] overflow-y-auto pr-2 space-y-4 -mr-2 scrollbar-thin">
+                                {comments.length === 0 ? (
+                                    <div className="text-center py-8 bg-muted/20 rounded-lg border border-dashed border-border">
+                                        <MessageSquare className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                                        <p className="text-muted-foreground text-sm">{t('noComments')}</p>
+                                    </div>
+                                ) : (
+                                    comments.map((contact, index) => (
+                                        <CommentItem key={index} contact={contact} t={t} commonT={commonT} />
+                                    ))
+                                )}
+                            </div>
+
+                            {canEditBooking && (
+                                <div className="space-y-3 pt-4 border-t border-border/50">
+                                    <ValidatedTextarea
+                                        value={newComment}
+                                        onChange={(e) => {
+                                            setNewComment(e.target.value);
+                                            if (errors.comment) setErrors({ ...errors, comment: undefined });
+                                        }}
+                                        placeholder={t('commentPlaceholder')}
+                                        rows={3}
+                                        maxLength={500}
+                                        showCharacterCount
+                                        error={errors.comment}
+                                    />
+                                    <div className="flex justify-end">
+                                        <button
+                                            onClick={handleAddComment}
+                                            disabled={!newComment.trim()}
+                                            className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                                            style={{ fontSize: 'var(--text-base)' }}
+                                        >
+                                            <Send className="w-4 h-4" /> {t('addComment')}
+                                        </button>
+                                    </div>
                                 </div>
-                            ) : (
-                                comments.map((contact, index) => (
-                                    <CommentItem key={index} contact={contact} t={t} commonT={commonT} />
-                                ))
                             )}
                         </div>
-
-                        {canEditBooking && (
-                            <div className="space-y-3 pt-4 border-t border-border/50">
-                                <ValidatedTextarea
-                                    value={newComment}
-                                    onChange={(e) => {
-                                        setNewComment(e.target.value);
-                                        if (errors.comment) setErrors({ ...errors, comment: undefined });
-                                    }}
-                                    placeholder={t('commentPlaceholder')}
-                                    rows={3}
-                                    maxLength={500}
-                                    showCharacterCount
-                                    error={errors.comment}
-                                />
-                                <div className="flex justify-end">
-                                    <button
-                                        onClick={handleAddComment}
-                                        disabled={!newComment.trim()}
-                                        className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                                        style={{ fontSize: 'var(--text-base)' }}
-                                    >
-                                        <Send className="w-4 h-4" /> {t('addComment')}
-                                    </button>
-                                </div>
-                            </div>
-                        )}
                     </div>
-                </div>
 
-                {/* Audit History */}
-                {showAuditHistory && (
-                    <div className="bg-card border border-border rounded-xl p-6">
-                        <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                            <History className="w-5 h-5 text-primary" /> {t('auditHistory')}
-                        </h3>
-                        {auditLoading ? (
-                            <div className="text-center py-8 text-muted-foreground">{commonT('loading')}</div>
-                        ) : auditLogs.length === 0 ? (
-                            <div className="text-center py-8 text-muted-foreground">{t('noChanges')}</div>
-                        ) : (
-                            <div className="space-y-4">
-                                {auditLogs.map((log) => (
-                                    <div key={log.id} className="bg-background border border-border rounded-lg p-4">
-                                        <div className="flex items-start justify-between mb-3">
-                                            <div className="flex items-center gap-2">
-                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white flex-shrink-0 ${log.actor_type === 'admin' ? 'bg-primary' : 'bg-secondary'}`}>
-                                                    {log.actor_label.charAt(0)}
+                    {/* Audit History */}
+                    {/* {showAuditHistory && (
+                        <div className="bg-card border border-border rounded-xl p-6">
+                            <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                <History className="w-5 h-5 text-primary" /> {t('auditHistory')}
+                            </h3>
+                            {auditLoading ? (
+                                <div className="text-center py-8 text-muted-foreground">{commonT('loading')}</div>
+                            ) : auditLogs.length === 0 ? (
+                                <div className="text-center py-8 text-muted-foreground">{t('noChanges')}</div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {auditLogs.map((log) => (
+                                        <div key={log.id} className="bg-background border border-border rounded-lg p-4">
+                                            <div className="flex items-start justify-between mb-3">
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white flex-shrink-0 ${log.actor_type === 'admin' ? 'bg-primary' : 'bg-secondary'}`}>
+                                                        {log.actor_label.charAt(0)}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{log.actor_label}</p>
+                                                        {log.admin_name && <p className="text-muted-foreground text-sm">{log.admin_email}</p>}
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{log.actor_label}</p>
-                                                    {log.admin_name && <p className="text-muted-foreground text-sm">{log.admin_email}</p>}
-                                                </div>
+                                                <span className="text-muted-foreground text-sm">{toReadableDate(log.created_at, timezone)}</span>
                                             </div>
-                                            <span className="text-muted-foreground text-sm">{new Date(log.created_at).toLocaleString()}</span>
+                                            <div className="space-y-2">
+                                                {log.changes.map((change: any, idx: number) => (
+                                                    <div key={idx} className="flex items-center gap-2 text-sm">
+                                                        <span className="text-muted-foreground">{change.field.replace(/([A-Z])/g, ' $1').replace(/^./, (str: string) => str.toUpperCase())}:</span>
+                                                        <span className={`line-through ${change.from ? 'text-red-500' : 'text-muted-foreground'}`}>{change.from === null || change.from === undefined ? 'None' : String(change.from)}</span>
+                                                        <span className="text-muted-foreground">→</span>
+                                                        <span className="text-green-500 font-medium">{change.to === null || change.to === undefined ? 'None' : String(change.to)}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
-                                        <div className="space-y-2">
-                                            {log.changes.map((change: any, idx: number) => (
-                                                <div key={idx} className="flex items-center gap-2 text-sm">
-                                                    <span className="text-muted-foreground">{change.field.replace(/([A-Z])/g, ' $1').replace(/^./, (str: string) => str.toUpperCase())}:</span>
-                                                    <span className={`line-through ${change.from ? 'text-red-500' : 'text-muted-foreground'}`}>{change.from === null || change.from === undefined ? 'None' : String(change.from)}</span>
-                                                    <span className="text-muted-foreground">→</span>
-                                                    <span className="text-green-500 font-medium">{change.to === null || change.to === undefined ? 'None' : String(change.to)}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )} */}
 
-                {/* Save Button */}
-                {canEditBooking && (
-                    <div className="pb-4">
-                        <button
-                            onClick={handleSaveChanges}
-                            disabled={isSaving}
-                            className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                            style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}
-                        >
-                            {isSaving ? commonT('loading') : t('saveChanges')}
-                        </button>
-                    </div>
-                )}
+                    {/* Save Button
+                    {canEditBooking && (
+                        <div className="pb-4">
+                            <button
+                                onClick={handleSaveChanges}
+                                disabled={isSaving}
+                                className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}
+                            >
+                                {isSaving ? commonT('loading') : t('saveChanges')}
+                            </button>
+                        </div>
+                    )} */}
+                </div>
 
             </div>
 
@@ -990,6 +1033,10 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                     onActionComplete={handlePdfActionComplete}
                     booking={{
                         ...booking,
+                        event: {
+                            ...booking.event,
+                            location: selectedVenue
+                        },
                         allergies: typeof allergies === 'string' ? allergies : (Array.isArray(allergies) ? (allergies as string[]).join(', ') : ''),
                         notes: notes,
                         kitchenNotes: kitchenNotes,
@@ -1020,6 +1067,9 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                             });
                             if (response.ok) {
                                 toast.success(t('toast.assignmentSuccess'));
+                                // Update initial values to match current values
+                                setInitialAssignedTo(userId);
+                                setHasUnsavedChanges(false);
                                 window.location.reload();
                             } else {
                                 toast.error(t('toast.assignmentFailed'));

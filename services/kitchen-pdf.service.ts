@@ -179,10 +179,15 @@ export class KitchenPdfService {
    * Get the document name for a booking.
    *
    * @param bookingId - The booking ID
-   * @returns Document name (e.g., "Booking #1234 – Kitchen Sheet")
+   * @param customerName - Optional customer name for the filename
+   * @returns Document name (e.g., "Booking - Customer Name" or "Booking #1234 – Kitchen Sheet")
    */
-  static getDocumentName(bookingId: string): string {
-    // Use last 8 characters of UUID for a shorter ID
+  static getDocumentName(bookingId: string, customerName?: string): string {
+    // If customer name is provided, use "Booking - Customer Name" format
+    if (customerName) {
+      return `Booking - ${customerName}`;
+    }
+    // Fallback to ID-based format
     const shortId = bookingId.slice(-8);
     return `Booking #${shortId} – Kitchen Sheet`;
   }
@@ -191,11 +196,12 @@ export class KitchenPdfService {
    * Create initial kitchen PDF status for a booking.
    *
    * @param bookingId - The booking ID
+   * @param customerName - Optional customer name for the filename
    * @returns Initial status object
    */
-  static createInitialStatus(bookingId: string): KitchenPdfStatus {
+  static createInitialStatus(bookingId: string, customerName?: string): KitchenPdfStatus {
     return {
-      documentName: this.getDocumentName(bookingId),
+      documentName: this.getDocumentName(bookingId, customerName),
       sentStatus: 'not_sent',
       sendAttempts: 0,
     };

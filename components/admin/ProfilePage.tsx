@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { User, Mail, Phone, Shield, Camera, Lock, Check, X, Eye, EyeOff } from 'lucide-react';
 import { Modal } from '../user/Modal';
 import { Button } from '../user/Button';
@@ -108,6 +108,20 @@ export function ProfilePage({ session }: ProfilePageProps) {
     confirmPassword?: string;
   }>({});
 
+  // Touched fields for real-time validation
+  const [profileTouched, setProfileTouched] = useState<{
+    firstName?: boolean;
+    lastName?: boolean;
+    email?: boolean;
+    phone?: boolean;
+  }>({});
+
+  const [passwordTouched, setPasswordTouched] = useState<{
+    currentPassword?: boolean;
+    newPassword?: boolean;
+    confirmPassword?: boolean;
+  }>({});
+
   // Check if form values differ from original profile data
   const hasFormChanged = () => {
     return (
@@ -123,6 +137,65 @@ export function ProfilePage({ session }: ProfilePageProps) {
   useEffect(() => {
     setHasChanges(hasFormChanged());
   }, [editForm, profileData]);
+
+  // Real-time validation errors for profile form
+  const profileRealtimeErrors = useMemo(() => {
+    const newErrors: typeof profileErrors = {};
+
+    if (profileTouched.firstName) {
+      const firstNameResult = userFirstNameSchema.safeParse(editForm.firstName);
+      if (!firstNameResult.success) newErrors.firstName = firstNameResult.error.errors[0].message;
+    }
+
+    if (profileTouched.lastName) {
+      const lastNameResult = userLastNameSchema.safeParse(editForm.lastName);
+      if (!lastNameResult.success) newErrors.lastName = lastNameResult.error.errors[0].message;
+    }
+
+    if (profileTouched.email) {
+      const emailResult = userEmailSchema.safeParse(editForm.email);
+      if (!emailResult.success) newErrors.email = emailResult.error.errors[0].message;
+    }
+
+    if (profileTouched.phone && editForm.phone) {
+      const phoneResult = userPhoneSchema.safeParse(editForm.phone);
+      if (!phoneResult.success) newErrors.phone = phoneResult.error.errors[0].message;
+    }
+
+    return newErrors;
+  }, [profileTouched, editForm]);
+
+  // Merge real-time errors with submit errors for profile
+  const displayProfileErrors = useMemo(() => {
+    return { ...profileRealtimeErrors, ...profileErrors };
+  }, [profileRealtimeErrors, profileErrors]);
+
+  // Real-time validation errors for password form
+  const passwordRealtimeErrors = useMemo(() => {
+    const newErrors: typeof passwordErrors = {};
+
+    if (passwordTouched.currentPassword && !passwordForm.currentPassword) {
+      newErrors.currentPassword = 'Current password is required';
+    }
+
+    if (passwordTouched.newPassword) {
+      const passwordResult = userPasswordSchema.safeParse(passwordForm.newPassword);
+      if (!passwordResult.success) newErrors.newPassword = passwordResult.error.errors[0].message;
+    }
+
+    if (passwordTouched.confirmPassword && passwordForm.confirmPassword) {
+      if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+        newErrors.confirmPassword = 'Passwords do not match';
+      }
+    }
+
+    return newErrors;
+  }, [passwordTouched, passwordForm]);
+
+  // Merge real-time errors with submit errors for password
+  const displayPasswordErrors = useMemo(() => {
+    return { ...passwordRealtimeErrors, ...passwordErrors };
+  }, [passwordRealtimeErrors, passwordErrors]);
 
   // Format role for display
   const formatRole = (role: string) => {
@@ -140,6 +213,7 @@ export function ProfilePage({ session }: ProfilePageProps) {
       phone: profileData.phone,
     });
     setProfileErrors({});
+    setProfileTouched({});
     setHasChanges(false);
     setIsEditProfileModalOpen(true);
   };
@@ -280,6 +354,7 @@ export function ProfilePage({ session }: ProfilePageProps) {
           confirmPassword: '',
         });
         setPasswordErrors({});
+        setPasswordTouched({});
       } else {
         toast.error(result.error || 'Failed to change password');
       }
@@ -444,13 +519,15 @@ export function ProfilePage({ session }: ProfilePageProps) {
                     if (passwordErrors.currentPassword) setPasswordErrors({ ...passwordErrors, currentPassword: undefined });
                   }}
                   onBlur={() => {
+                    // Mark field as touched
+                    if (!passwordTouched.currentPassword) setPasswordTouched({ ...passwordTouched, currentPassword: true });
                     // If current password matches new password, show error on new password field
                     if (passwordForm.currentPassword && passwordForm.newPassword && passwordForm.currentPassword === passwordForm.newPassword) {
                       setPasswordErrors({ ...passwordErrors, newPassword: 'New password must be different from current password' });
                     }
                   }}
                   placeholder={t('enterCurrentPassword')}
-                  error={passwordErrors.currentPassword}
+                  error={displayPasswordErrors.currentPassword}
                   showPasswordToggle
                   required
                 />
@@ -465,6 +542,8 @@ export function ProfilePage({ session }: ProfilePageProps) {
                     if (passwordErrors.newPassword) setPasswordErrors({ ...passwordErrors, newPassword: undefined });
                   }}
                   onBlur={() => {
+                    // Mark field as touched
+                    if (!passwordTouched.newPassword) setPasswordTouched({ ...passwordTouched, newPassword: true });
                     // Show error on blur if new password matches current password
                     if (passwordForm.newPassword && passwordForm.newPassword === passwordForm.currentPassword) {
                       setPasswordErrors({ ...passwordErrors, newPassword: 'New password must be different from current password' });
@@ -473,7 +552,7 @@ export function ProfilePage({ session }: ProfilePageProps) {
                   placeholder={t('enterNewPassword')}
                   maxLength={100}
                   showCharacterCount
-                  error={passwordErrors.newPassword}
+                  error={displayPasswordErrors.newPassword}
                   helperText={t('passwordHelp')}
                   showPasswordToggle
                   required
@@ -487,8 +566,12 @@ export function ProfilePage({ session }: ProfilePageProps) {
                     setPasswordForm({ ...passwordForm, confirmPassword: e.target.value });
                     if (passwordErrors.confirmPassword) setPasswordErrors({ ...passwordErrors, confirmPassword: undefined });
                   }}
+                  onBlur={() => {
+                    // Mark field as touched
+                    if (!passwordTouched.confirmPassword) setPasswordTouched({ ...passwordTouched, confirmPassword: true });
+                  }}
                   placeholder={t('confirmNewPassword')}
-                  error={passwordErrors.confirmPassword}
+                  error={displayPasswordErrors.confirmPassword}
                   showPasswordToggle
                   required
                 />
@@ -552,10 +635,13 @@ export function ProfilePage({ session }: ProfilePageProps) {
                 setEditForm({ ...editForm, firstName: e.target.value });
                 if (profileErrors.firstName) setProfileErrors({ ...profileErrors, firstName: undefined });
               }}
+              onBlur={() => {
+                if (!profileTouched.firstName) setProfileTouched({ ...profileTouched, firstName: true });
+              }}
               placeholder={t('placeholders.firstName')}
               maxLength={20}
               showCharacterCount
-              error={profileErrors.firstName}
+              error={displayProfileErrors.firstName}
               helperText={t('characterLimits.firstName')}
               required
             />
@@ -568,10 +654,13 @@ export function ProfilePage({ session }: ProfilePageProps) {
                 setEditForm({ ...editForm, lastName: e.target.value });
                 if (profileErrors.lastName) setProfileErrors({ ...profileErrors, lastName: undefined });
               }}
+              onBlur={() => {
+                if (!profileTouched.lastName) setProfileTouched({ ...profileTouched, lastName: true });
+              }}
               placeholder={t('placeholders.lastName')}
               maxLength={20}
               showCharacterCount
-              error={profileErrors.lastName}
+              error={displayProfileErrors.lastName}
               helperText={t('characterLimits.lastName')}
               required
             />
@@ -585,10 +674,13 @@ export function ProfilePage({ session }: ProfilePageProps) {
               setEditForm({ ...editForm, email: e.target.value });
               if (profileErrors.email) setProfileErrors({ ...profileErrors, email: undefined });
             }}
+            onBlur={() => {
+              if (!profileTouched.email) setProfileTouched({ ...profileTouched, email: true });
+            }}
             placeholder={t('placeholders.email')}
             maxLength={255}
             showCharacterCount
-            error={profileErrors.email}
+            error={displayProfileErrors.email}
             helperText={t('characterLimits.email')}
             required
           />
@@ -603,10 +695,13 @@ export function ProfilePage({ session }: ProfilePageProps) {
               setEditForm({ ...editForm, phone: value });
               if (profileErrors.phone) setProfileErrors({ ...profileErrors, phone: undefined });
             }}
+            onBlur={() => {
+              if (!profileTouched.phone) setProfileTouched({ ...profileTouched, phone: true });
+            }}
             placeholder={t('placeholders.phone')}
             maxLength={20}
             showCharacterCount
-            error={profileErrors.phone}
+            error={displayProfileErrors.phone}
             helperText={t('characterLimits.phone')}
           />
         </div>

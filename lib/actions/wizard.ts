@@ -158,6 +158,11 @@ export async function submitWizardForm(data: WizardFormData) {
       // Build internal notes (Address, Business, Occasion)
       const addressParts = [data.street, data.plz, data.location].filter(Boolean);
       const fullAddress = addressParts.length > 0 ? addressParts.join(', ') : '';
+
+      // Build billing address from separate fields
+      const billingAddressParts = [data.billingStreet, data.billingPlz, data.billingLocation].filter(Boolean);
+      const billingAddress = billingAddressParts.length > 0 ? billingAddressParts.join(', ') : '';
+
       const internalNotesParts = [
         `Business: ${data.business || 'N/A'}`,
         `Occasion: ${data.occasion || 'N/A'}`,
@@ -171,6 +176,7 @@ export async function submitWizardForm(data: WizardFormData) {
         guestCount: data.guestCount,
         allergyDetails: data.allergyDetails || [],
         specialRequests: data.specialRequests || null,
+        billingAddress: billingAddress || null,
         estimatedTotal: estimatedTotal.toString(),
         requiresDeposit: estimatedTotal > 1000,
         internalNotes: internalNotesParts.join('\n'),
@@ -307,6 +313,11 @@ export async function submitWizardForm(data: WizardFormData) {
     // Build internal notes
     const addressParts = [data.street, data.plz, data.location].filter(Boolean);
     const fullAddress = addressParts.length > 0 ? addressParts.join(', ') : '';
+
+    // Build billing address from separate fields
+    const billingAddressParts = [data.billingStreet, data.billingPlz, data.billingLocation].filter(Boolean);
+    const billingAddress = billingAddressParts.length > 0 ? billingAddressParts.join(', ') : '';
+
     const internalNotesParts = [
       `Business: ${data.business || 'N/A'}`,
       `Occasion: ${data.occasion || 'N/A'}`,
@@ -323,6 +334,7 @@ export async function submitWizardForm(data: WizardFormData) {
       guestCount: data.guestCount,
       allergyDetails: data.allergyDetails || [],
       specialRequests: data.specialRequests || null,
+      billingAddress: billingAddress || null,
       estimatedTotal: estimatedTotal.toString(),
       requiresDeposit: estimatedTotal > 1000,
       status: "pending",

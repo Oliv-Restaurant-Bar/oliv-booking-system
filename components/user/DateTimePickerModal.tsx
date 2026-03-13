@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -22,6 +22,21 @@ const TIME_SLOTS = [
   '22:00', '22:30'
 ];
 
+// Helper to parse time slot string to hours and minutes
+const parseTimeSlot = (timeSlot: string): { hours: number; minutes: number } => {
+  const [hours, minutes] = timeSlot.split(':').map(Number);
+  return { hours, minutes };
+};
+
+// Helper to check if a specific date + time combination is at least 24 hours in the future
+const isDateTimeAvailable = (dateKey: string, timeSlot: string, minDate: Date): boolean => {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  const { hours, minutes } = parseTimeSlot(timeSlot);
+
+  const selectedDateTime = new Date(year, month - 1, day, hours, minutes);
+  return selectedDateTime >= minDate;
+};
+
 export function DateTimePickerModal({
   isOpen,
   onClose,
@@ -34,6 +49,54 @@ export function DateTimePickerModal({
   const [selectedDate, setSelectedDate] = useState<string>(initialDate || '');
   const [selectedTime, setSelectedTime] = useState<string>(initialTime || '');
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const modalRef = useRef<HTMLDivElement>(null);
+  const firstFocusableRef = useRef<HTMLButtonElement>(null);
+  const lastFocusableRef = useRef<HTMLButtonElement>(null);
+
+  // Focus management when modal opens/closes
+  useEffect(() => {
+    if (isOpen && firstFocusableRef.current) {
+      firstFocusableRef.current.focus();
+    }
+  }, [isOpen]);
+
+  // Trap focus within modal
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstFocusableRef.current) {
+          e.preventDefault();
+          lastFocusableRef.current?.focus();
+        }
+      } else {
+        if (document.activeElement === lastFocusableRef.current) {
+          e.preventDefault();
+          firstFocusableRef.current?.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleTab);
+    return () => document.removeEventListener('keydown', handleTab);
+  }, [isOpen]);
+
+  // Handle ESC key to close modal
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
 
   // Get calendar days for current month
   const calendarDays = useMemo(() => {
@@ -81,10 +144,30 @@ export function DateTimePickerModal({
     return date.toISOString().split('T')[0];
   };
 
-  const isDateDisabled = (date: Date) => {
+  // Check if a date has ANY available time slots
+  const hasAvailableTimeSlots = (date: Date): boolean => {
     const dateKey = formatDateKey(date);
-    const minDateKey = minDate.toISOString().split('T')[0];
-    return dateKey < minDateKey;
+    const minDateKey = formatDateKey(minDate);
+
+    // If date is before min date, no slots available
+    if (dateKey < minDateKey) return false;
+
+    // If date is more than 1 day after min date, all slots are available
+    const dayAfterMinDate = new Date(minDate);
+    dayAfterMinDate.setDate(dayAfterMinDate.getDate() + 1);
+    if (dateKey >= formatDateKey(dayAfterMinDate)) return true;
+
+    // For the day of minDate, check if any time slot is available
+    return TIME_SLOTS.some(timeSlot => isDateTimeAvailable(dateKey, timeSlot, minDate));
+  };
+
+  const isDateDisabled = (date: Date) => {
+    return !hasAvailableTimeSlots(date);
+  };
+
+  const isTimeSlotDisabled = (timeSlot: string): boolean => {
+    if (!selectedDate) return false;
+    return !isDateTimeAvailable(selectedDate, timeSlot, minDate);
   };
 
   const isDateSelected = (date: Date) => {
@@ -104,17 +187,39 @@ export function DateTimePickerModal({
       const dateKey = formatDateKey(date);
       setSelectedDate(dateKey);
       onSelectDate(dateKey);
+
+      // If the previously selected time is not available for this date, clear it
+      if (selectedTime && isTimeSlotDisabled(selectedTime)) {
+        setSelectedTime('');
+        onSelectTime('');
+      }
     }
   };
 
   const handleTimeSelect = (time: string) => {
-    setSelectedTime(time);
-    onSelectTime(time);
+    if (!isTimeSlotDisabled(time)) {
+      setSelectedTime(time);
+      onSelectTime(time);
+    }
   };
 
   const monthNames = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
     'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
   const dayNames = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+
+  // Get disabled time slots for the selected date
+  const getDisabledTimeSlots = () => {
+    if (!selectedDate) return new Set<string>();
+    const disabled = new Set<string>();
+    TIME_SLOTS.forEach(slot => {
+      if (isTimeSlotDisabled(slot)) {
+        disabled.add(slot);
+      }
+    });
+    return disabled;
+  };
+
+  const disabledTimeSlots = getDisabledTimeSlots();
 
   return (
     <AnimatePresence>
@@ -127,11 +232,18 @@ export function DateTimePickerModal({
             exit={{ opacity: 0 }}
             onClick={onClose}
             className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+            aria-hidden="true"
           />
 
           {/* Modal */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="datetime-picker-title"
+          >
             <motion.div
+              ref={modalRef}
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -143,12 +255,14 @@ export function DateTimePickerModal({
               {/* Header */}
               <div className="px-6 py-5 border-b border-border" style={{ backgroundColor: 'var(--primary)' }}>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold" style={{ color: 'var(--primary-foreground)' }}>
-                    Date & Time
+                  <h2 id="datetime-picker-title" className="text-xl font-semibold" style={{ color: 'var(--primary-foreground)' }}>
+                    Datum & Uhrzeit
                   </h2>
                   <button
+                    ref={firstFocusableRef}
                     onClick={onClose}
                     className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                    aria-label="Schließen"
                   >
                     <X className="w-5 h-5 text-white" />
                   </button>
@@ -159,6 +273,7 @@ export function DateTimePickerModal({
                   <button
                     onClick={goToPrevMonth}
                     className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                    aria-label="Vorheriger Monat"
                   >
                     <ChevronLeft className="w-5 h-5 text-white" />
                   </button>
@@ -168,6 +283,7 @@ export function DateTimePickerModal({
                   <button
                     onClick={goToNextMonth}
                     className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                    aria-label="Nächster Monat"
                   >
                     <ChevronRight className="w-5 h-5 text-white" />
                   </button>
@@ -179,19 +295,24 @@ export function DateTimePickerModal({
                 {/* Left: Calendar */}
                 <div className="flex-1 px-6 py-4 border-r border-border">
                   {/* Day Headers */}
-                  <div className="grid grid-cols-7 gap-1 mb-2">
+                  <div className="grid grid-cols-7 gap-1 mb-2" role="row">
                     {dayNames.map(day => (
-                      <div key={day} className="text-center text-sm font-medium text-muted-foreground py-2">
+                      <div key={day} className="text-center text-sm font-medium text-muted-foreground py-2" role="columnheader">
                         {day}
                       </div>
                     ))}
                   </div>
 
                   {/* Calendar Days */}
-                  <div className="grid grid-cols-7 gap-1">
+                  <div className="grid grid-cols-7 gap-1" role="grid" aria-label="Kalender">
                     {calendarDays.map((dayObj, index) => {
                       const disabled = isDateDisabled(dayObj.date);
                       const selected = isDateSelected(dayObj.date);
+                      const dateLabel = dayObj.date.toLocaleDateString('de-CH', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      });
 
                       return (
                         <motion.button
@@ -200,6 +321,10 @@ export function DateTimePickerModal({
                           whileTap={{ scale: disabled ? 1 : 0.95 }}
                           onClick={() => handleDateSelect(dayObj.date)}
                           disabled={disabled}
+                          role="gridcell"
+                          aria-label={dateLabel}
+                          aria-selected={selected}
+                          aria-disabled={disabled}
                           className={`
                             aspect-square rounded-xl text-sm font-medium transition-all relative
                             ${disabled
@@ -235,37 +360,56 @@ export function DateTimePickerModal({
                 {/* Right: Time Slots */}
                 <div className="w-full md:w-48 bg-muted px-5 py-4 overflow-y-auto max-h-[500px]">
                   <h3 className="text-sm font-semibold text-muted-foreground mb-3">
-                    Time
+                    Uhrzeit
                   </h3>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2" role="listbox" aria-label="Verfügbare Uhrzeiten">
                     {TIME_SLOTS.map(time => {
                       const isSelected = time === selectedTime;
+                      const isDisabled = isTimeSlotDisabled(time);
+
                       return (
                         <motion.button
                           key={time}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
+                          whileHover={{ scale: isDisabled ? 1 : 1.02 }}
+                          whileTap={{ scale: isDisabled ? 1 : 0.98 }}
                           onClick={() => handleTimeSelect(time)}
+                          disabled={isDisabled}
+                          role="option"
+                          aria-selected={isSelected}
+                          aria-disabled={isDisabled}
                           className={`
-                            px-4 py-3 rounded-xl text-sm font-semibold transition-all text-left
-                            ${isSelected
-                              ? ' text-white shadow-lg border-0'
-                              : 'bg-card text-foreground border-2 border-border hover:border-primary hover:shadow-md'
+                            px-4 py-3 rounded-xl text-sm font-semibold transition-all text-left relative
+                            ${isDisabled
+                              ? 'text-muted-foreground/40 cursor-not-allowed bg-card/30 border-2 border-border/30'
+                              : isSelected
+                                ? ' text-white shadow-lg border-0'
+                                : 'bg-card text-foreground border-2 border-border hover:border-primary hover:shadow-md'
                             }
                           `}
-                          style={isSelected ? { backgroundColor: 'var(--primary)' } : { borderRadius: 'var(--radius)' }}
+                          style={isSelected && !isDisabled ? { backgroundColor: 'var(--primary)' } : { borderRadius: 'var(--radius)' }}
                         >
-                          {time}
+                          <span className={isDisabled ? 'line-through' : ''}>{time}</span>
+                          {isDisabled && (
+                            <span className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-xl text-xs text-muted-foreground">
+                              -
+                            </span>
+                          )}
                         </motion.button>
                       );
                     })}
                   </div>
+                  {selectedDate && disabledTimeSlots.size > 0 && (
+                    <p className="text-xs text-muted-foreground mt-3 italic">
+                      Graue Zeiten sind nicht verfügbar (mind. 24h im Voraus)
+                    </p>
+                  )}
                 </div>
               </div>
 
               {/* Footer */}
               <div className="px-auto py-4 bg-muted border-t border-border">
                 <button
+                  ref={lastFocusableRef}
                   onClick={onClose}
                   className="w-full py-3.5 rounded-xl font-semibold text-base bg-card text-foreground border border-border hover:bg-accent hover:shadow-sm transition-all"
                   style={{ borderRadius: 'var(--radius)' }}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { User, Mail, Shield, Search, MoreVertical, Edit2, Trash2, Plus, X, Check, Users, Eye, RefreshCw, Download } from 'lucide-react';
 import { Modal } from '../user/Modal';
 import { ConfirmationModal } from '../user/ConfirmationModal';
@@ -15,6 +15,8 @@ import { canModifyUser } from '@/lib/auth/rbac';
 import { userFirstNameSchema, userLastNameSchema, userEmailSchema, userPasswordSchema } from '@/lib/validation/schemas';
 import { useTranslation as useGenericTranslation, useCommonTranslation, useButtonTranslation, useMessageTranslation } from '@/lib/i18n/client';
 import { useLocale } from 'next-intl';
+import { formatDateWithLocale } from '@/lib/utils/date';
+import { useSystemTimezone } from '@/lib/hooks/useSystemTimezone';
 
 interface User {
   id: string;
@@ -32,6 +34,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
   const buttonT = useButtonTranslation();
   const messageT = useMessageTranslation();
   const locale = useLocale();
+  const { timezone } = useSystemTimezone();
 
   const [users, setUsers] = useState<User[]>([]);
 
@@ -55,6 +58,14 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
   const [formRole, setFormRole] = useState<User['role']>('read_only');
   const [formStatus, setFormStatus] = useState<User['status']>('Active');
   const [formPassword, setFormPassword] = useState('');
+
+  // Touched fields for real-time validation
+  const [touched, setTouched] = useState<{
+    firstName?: boolean;
+    lastName?: boolean;
+    email?: boolean;
+    password?: boolean;
+  }>({});
 
   // Validation errors
   const [errors, setErrors] = useState<{
@@ -131,6 +142,38 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
     return 0;
   });
 
+  // Real-time validation errors for touched fields
+  const realtimeErrors = useMemo(() => {
+    const newErrors: typeof errors = {};
+
+    if (touched.firstName) {
+      const firstNameResult = userFirstNameSchema.safeParse(formFirstName);
+      if (!firstNameResult.success) newErrors.firstName = firstNameResult.error.errors[0].message;
+    }
+
+    if (touched.lastName) {
+      const lastNameResult = userLastNameSchema.safeParse(formLastName);
+      if (!lastNameResult.success) newErrors.lastName = lastNameResult.error.errors[0].message;
+    }
+
+    if (touched.email) {
+      const emailResult = userEmailSchema.safeParse(formEmail);
+      if (!emailResult.success) newErrors.email = emailResult.error.errors[0].message;
+    }
+
+    if (touched.password && formPassword) {
+      const passwordResult = userPasswordSchema.safeParse(formPassword);
+      if (!passwordResult.success) newErrors.password = passwordResult.error.errors[0].message;
+    }
+
+    return newErrors;
+  }, [touched, formFirstName, formLastName, formEmail, formPassword]);
+
+  // Merge real-time errors with submit errors (submit errors take precedence)
+  const displayErrors = useMemo(() => {
+    return { ...realtimeErrors, ...errors };
+  }, [realtimeErrors, errors]);
+
   // Reset form
   const resetForm = () => {
     setFormFirstName('');
@@ -140,6 +183,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
     setFormStatus('Active');
     setFormPassword('');
     setErrors({});
+    setTouched({});
   };
 
   // Validate form fields
@@ -365,7 +409,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
                     [commonT('email')]: user.email,
                     [t('userRole')]: getRoleLabel(user.role),
                     [commonT('status')]: getStatusLabel(user.status),
-                    [t('createdAt')]: new Date(user.createdAt).toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' }),
+                    [t('createdAt')]: formatDateWithLocale(user.createdAt, locale, { year: 'numeric', month: 'short', day: 'numeric' }, timezone),
                   }));
 
                   // Create worksheet
@@ -484,11 +528,11 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
                           </span>
                         </td>
                         <td className="px-4 py-4 text-muted-foreground hidden lg:table-cell" style={{ fontSize: 'var(--text-base)' }}>
-                          {new Date(user.createdAt).toLocaleDateString(locale, {
+                          {formatDateWithLocale(user.createdAt, locale, {
                             year: 'numeric',
                             month: 'short',
                             day: 'numeric'
-                          })}
+                          }, timezone)}
                         </td>
                         {/* Actions column - show edit/delete based on permissions */}
                         <td className="px-6 py-4">
@@ -567,10 +611,13 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
                 setFormFirstName(e.target.value);
                 if (errors.firstName) setErrors({ ...errors, firstName: undefined });
               }}
+              onBlur={() => {
+                if (!touched.firstName) setTouched({ ...touched, firstName: true });
+              }}
               placeholder={t('placeholders.firstName')}
               maxLength={20}
               showCharacterCount
-              error={errors.firstName}
+              error={displayErrors.firstName}
               helperText={t('characterLimits.firstName')}
               required
             />
@@ -583,10 +630,13 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
                 setFormLastName(e.target.value);
                 if (errors.lastName) setErrors({ ...errors, lastName: undefined });
               }}
+              onBlur={() => {
+                if (!touched.lastName) setTouched({ ...touched, lastName: true });
+              }}
               placeholder={t('placeholders.lastName')}
               maxLength={20}
               showCharacterCount
-              error={errors.lastName}
+              error={displayErrors.lastName}
               helperText={t('characterLimits.lastName')}
               required
             />
@@ -600,10 +650,13 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
               setFormEmail(e.target.value);
               if (errors.email) setErrors({ ...errors, email: undefined });
             }}
+            onBlur={() => {
+              if (!touched.email) setTouched({ ...touched, email: true });
+            }}
             placeholder={t('placeholders.email')}
             maxLength={255}
             showCharacterCount
-            error={errors.email}
+            error={displayErrors.email}
             helperText={t('characterLimits.email')}
             required
           />
@@ -616,10 +669,13 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
               setFormPassword(e.target.value);
               if (errors.password) setErrors({ ...errors, password: undefined });
             }}
+            onBlur={() => {
+              if (!touched.password) setTouched({ ...touched, password: true });
+            }}
             placeholder={t('placeholders.password')}
             maxLength={100}
             showCharacterCount
-            error={errors.password}
+            error={displayErrors.password}
             helperText={t('characterLimits.password')}
             showPasswordToggle
           />
@@ -681,10 +737,13 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
                 setFormFirstName(e.target.value);
                 if (errors.firstName) setErrors({ ...errors, firstName: undefined });
               }}
+              onBlur={() => {
+                if (!touched.firstName) setTouched({ ...touched, firstName: true });
+              }}
               placeholder={t('placeholders.firstName')}
               maxLength={20}
               showCharacterCount
-              error={errors.firstName}
+              error={displayErrors.firstName}
               helperText={t('characterLimits.firstName')}
               required
             />
@@ -697,10 +756,13 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
                 setFormLastName(e.target.value);
                 if (errors.lastName) setErrors({ ...errors, lastName: undefined });
               }}
+              onBlur={() => {
+                if (!touched.lastName) setTouched({ ...touched, lastName: true });
+              }}
               placeholder={t('placeholders.lastName')}
               maxLength={20}
               showCharacterCount
-              error={errors.lastName}
+              error={displayErrors.lastName}
               helperText={t('characterLimits.lastName')}
               required
             />
@@ -714,10 +776,13 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
               setFormEmail(e.target.value);
               if (errors.email) setErrors({ ...errors, email: undefined });
             }}
+            onBlur={() => {
+              if (!touched.email) setTouched({ ...touched, email: true });
+            }}
             placeholder={t('placeholders.email')}
             maxLength={255}
             showCharacterCount
-            error={errors.email}
+            error={displayErrors.email}
             helperText={t('characterLimits.email')}
             required
           />
