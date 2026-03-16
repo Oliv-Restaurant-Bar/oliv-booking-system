@@ -1657,7 +1657,7 @@ export function CustomMenuWizard() {
                               setTouched({ ...touched, telephone: true });
                               if (errors.telephone) setErrors({ ...errors, telephone: undefined });
                             }}
-                            placeholder="07X XXX XX XX"
+                            placeholder="07XXXXXXXX"
                             maxLength={20}
                             showCharacterCount
                             error={displayErrors.telephone}
