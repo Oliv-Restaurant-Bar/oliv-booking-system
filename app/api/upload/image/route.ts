@@ -121,10 +121,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to upload image' }, { status: 500 });
   }
 }
-
-// Edge: Disable body parsing for file uploads
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
