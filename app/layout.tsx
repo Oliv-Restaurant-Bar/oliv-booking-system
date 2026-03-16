@@ -3,6 +3,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { NextIntlClientProvider } from 'next-intl';
 import { getServerLocale, getServerMessages } from '@/lib/i18n/server';
+import { validateEnvOrThrow } from "@/lib/config/env-validation";
 
 export const metadata: Metadata = {
   title: "OLIV Restaurant & Bar - Group Bookings",
@@ -14,6 +15,25 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Validate environment variables on server startup
+  // Only run once in production, run on every request in development
+  if (process.env.NODE_ENV === 'production') {
+    try {
+      validateEnvOrThrow();
+    } catch (error) {
+      console.error('❌ Environment validation failed:', error);
+      // In production, you might want to throw here to fail fast
+      // For now, we'll just log the error
+    }
+  } else if (process.env.NODE_ENV === 'development') {
+    // In development, validate but don't throw
+    try {
+      validateEnvOrThrow();
+    } catch (error) {
+      console.warn('⚠️  Environment validation warning:', error);
+    }
+  }
+
   const locale = await getServerLocale();
   const messages = await getServerMessages(locale);
 

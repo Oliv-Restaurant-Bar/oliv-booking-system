@@ -43,9 +43,31 @@ export async function updateMenuCategory(id: string, updates: Partial<typeof men
     // Require EDIT_MENU_CATEGORY permission
     await requirePermissionWrapper(Permission.EDIT_MENU_CATEGORY);
 
+    // ✅ SECURITY FIX: Whitelist allowed fields to prevent mass assignment
+    const allowedFields: Array<'name' | 'nameDe' | 'description' | 'descriptionDe' | 'sortOrder' | 'isActive'> = [
+      'name',
+      'nameDe',
+      'description',
+      'descriptionDe',
+      'sortOrder',
+      'isActive',
+    ];
+
+    const sanitizedUpdates: any = {};
+    for (const field of allowedFields) {
+      if (field in updates) {
+        sanitizedUpdates[field] = updates[field];
+      }
+    }
+
+    // Prevent changing immutable fields
+    delete (sanitizedUpdates as any).id;
+    delete (sanitizedUpdates as any).createdAt;
+    delete (sanitizedUpdates as any).deletedAt;
+
     const [category] = await db
       .update(menuCategories)
-      .set({ ...updates, updatedAt: new Date() })
+      .set({ ...sanitizedUpdates, updatedAt: new Date() })
       .where(eq(menuCategories.id, id))
       .returning();
 
@@ -544,9 +566,32 @@ export async function updateAddonGroup(id: string, updates: Partial<typeof addon
     // Require EDIT_ADDON permission
     await requirePermissionWrapper(Permission.EDIT_ADDON);
 
+    // ✅ SECURITY FIX: Whitelist allowed fields to prevent mass assignment
+    const allowedFields: Array<'name' | 'nameDe' | 'description' | 'descriptionDe' | 'minSelect' | 'maxSelect' | 'isActive'> = [
+      'name',
+      'nameDe',
+      'description',
+      'descriptionDe',
+      'minSelect',
+      'maxSelect',
+      'isActive',
+    ];
+
+    const sanitizedUpdates: Record<string, any> = {};
+    for (const field of allowedFields) {
+      if (field in updates) {
+        sanitizedUpdates[field] = updates[field as keyof typeof updates];
+      }
+    }
+
+    // Prevent changing immutable fields
+    delete (sanitizedUpdates as any).id;
+    delete (sanitizedUpdates as any).createdAt;
+    delete (sanitizedUpdates as any).deletedAt;
+
     const [addonGroup] = await db
       .update(addonGroups)
-      .set({ ...updates, updatedAt: new Date() })
+      .set({ ...sanitizedUpdates, updatedAt: new Date() })
       .where(eq(addonGroups.id, id))
       .returning();
 

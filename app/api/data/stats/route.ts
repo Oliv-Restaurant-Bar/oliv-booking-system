@@ -2,9 +2,14 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { bookings, leads, menuItems, addons } from "@/lib/db/schema";
 import { sql, eq, and, gte, count } from "drizzle-orm";
+import { requirePermissionWrapper } from "@/lib/auth/rbac-middleware";
+import { Permission } from "@/lib/auth/rbac";
 
 export async function GET() {
   try {
+    // Require authentication and permission
+    await requirePermissionWrapper(Permission.VIEW_DASHBOARD);
+
     // Get total bookings count
     const [bookingsCount] = await db
       .select({ count: count() })
@@ -54,6 +59,12 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Error fetching stats:", error);
+
+    // Handle authorization errors
+    if (error instanceof Error && error.name === "AuthorizationError") {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
+
     return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 });
   }
 }

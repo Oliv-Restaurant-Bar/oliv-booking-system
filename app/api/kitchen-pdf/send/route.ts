@@ -1,30 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth/server';
 import { db } from '@/lib/db';
-import { bookings, kitchenPdfLogs, leads } from '@/lib/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { bookings, kitchenPdfLogs } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { sendKitchenPdfEmail } from '@/lib/actions/email';
+import { requirePermissionWrapper } from "@/lib/auth/rbac-middleware";
+import { Permission } from "@/lib/auth/rbac";
+import { randomUUID } from 'crypto';
 
 // Validation schema
 const sendSchema = z.object({
-  bookingId: z.string().uuid(),
-  documentName: z.string(),
-  sentBy: z.string(),
-  pdfBase64: z.string(), // Now expects clean base64 (without data URI prefix)
-  emails: z.array(z.string().email()),
+  bookingId: z.string().uuid('Invalid booking ID'),
+  documentName: z.string().min(1, 'Document name is required').max(255, 'Document name too long'),
+  sentBy: z.string().optional(),
+  pdfBase64: z.string().min(1, 'PDF data is required'),
+  emails: z.array(z.string().email('Invalid email address')).min(1, 'At least one email is required').max(10, 'Too many email addresses'),
 });
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getSession();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // REQUIRE PERMISSION
+    await requirePermissionWrapper(Permission.VIEW_BOOKING_DETAILS);
 
     const body = await request.json();
-    const { bookingId, documentName, sentBy } = sendSchema.parse(body);
+    const { bookingId, documentName, sentBy, pdfBase64, emails } = sendSchema.parse(body);
 
     // Check if booking exists
     const booking = await db.query.bookings.findFirst({
@@ -48,60 +48,75 @@ export async function POST(request: NextRequest) {
         // Return the existing response (idempotent)
         return NextResponse.json({
           success: true,
-          documentName: existingLog.documentName,
-          sentAt: existingLog.sentAt,
-          messageId: existingLog.id,
-          kitchenEmail: existingLog.recipientEmail,
-          alreadySent: true,
+          message: 'Kitchen PDF already sent',
+          data: existingLog
         });
       }
     }
 
-    // Get recipient emails from request body
-    const recipientEmails = body.emails;
+    // Get session info
+    const session = await getSession();
+    const senderName = session?.user?.name || sentBy || 'Admin';
+    const senderId = session?.user?.id || 'unknown';
 
-    // Send the email with the PDF attachment
-    const emailResult = await sendKitchenPdfEmail({
-      bookingId,
-      recipientEmails,
-      documentName,
-      pdfBase64: body.pdfBase64,
-      customerName: booking.leadId ? (await db.query.leads.findFirst({ where: eq(leads.id, booking.leadId) }))?.contactName || "Customer" : "Customer",
-      eventDate: (booking.eventDate as any) instanceof Date
-        ? (booking.eventDate as unknown as Date).toLocaleDateString('de-CH')
-        : String(booking.eventDate),
-    });
+    // Get customer data from booking
+    const customerName = booking.leadId ? 'Customer' : 'Direct Booking';
+    const eventDate = booking.eventDate ? new Date(booking.eventDate).toLocaleDateString('de-CH') : 'N/A';
 
-    if (!emailResult.success) {
-      throw new Error(emailResult.error || 'Failed to send kitchen PDF email');
+    // Send the email to all recipients
+    let lastError: string | undefined;
+    for (const email of emails) {
+      const result = await sendKitchenPdfEmail({
+        bookingId,
+        recipientEmails: [email],
+        documentName,
+        pdfBase64,
+        customerName,
+        eventDate,
+      });
+
+      if (!result.success) {
+        lastError = result.error;
+        console.error(`Failed to send kitchen PDF to ${email}:`, result.error);
+      }
     }
 
-    const sentAt = new Date();
+    if (lastError) {
+      return NextResponse.json(
+        { error: 'Failed to send one or more emails', details: lastError },
+        { status: 500 }
+      );
+    }
 
-    // Log the send action to the database
-    const messageId = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    await db.insert(kitchenPdfLogs).values({
-      id: messageId,
+    // Log the send
+    const [log] = await db.insert(kitchenPdfLogs).values({
+      id: randomUUID(),
       bookingId,
       documentName,
-      sentAt,
-      sentBy: body.sentBy || 'Admin',
-      recipientEmail: recipientEmails.join(', '),
+      sentAt: new Date(),
+      sentBy: senderId,
+      recipientEmail: emails.join(', '),
       status: 'sent',
-      idempotencyKey: idempotencyKey,
-    });
+      idempotencyKey: idempotencyKey || null,
+    }).returning();
 
     return NextResponse.json({
       success: true,
-      documentName,
-      sentAt,
-      messageId,
-      kitchenEmail: recipientEmails.join(', '),
+      message: 'Kitchen PDF sent successfully',
+      data: log
     });
-
   } catch (error) {
     console.error('Error sending kitchen PDF:', error);
 
+    // Handle authorization errors
+    if (error instanceof Error && error.name === "AuthorizationError") {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 403 }
+      );
+    }
+
+    // Handle validation errors
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.errors },

@@ -3,17 +3,16 @@ import { getSession } from '@/lib/auth/server';
 import { db } from '@/lib/db';
 import { kitchenPdfLogs } from '@/lib/db/schema';
 import { eq, desc } from 'drizzle-orm';
+import { requirePermissionWrapper } from "@/lib/auth/rbac-middleware";
+import { Permission } from "@/lib/auth/rbac";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ bookingId: string }> }
 ) {
   try {
-    const session = await getSession();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // ✅ SECURITY FIX: Require proper permission
+    await requirePermissionWrapper(Permission.VIEW_BOOKING_DETAILS);
 
     const { bookingId } = await params;
 
@@ -33,6 +32,15 @@ export async function GET(
 
   } catch (error) {
     console.error('Error fetching kitchen PDF history:', error);
+
+    // Handle authorization errors
+    if (error instanceof Error && error.name === "AuthorizationError") {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 403 }
+      );
+    }
+
     return NextResponse.json(
       { error: 'Failed to fetch send history' },
       { status: 500 }

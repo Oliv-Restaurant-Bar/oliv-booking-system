@@ -34,6 +34,21 @@ export async function validateBookingSecret(
       .limit(1);
 
     if (!booking || !booking.editSecret) {
+      // Use constant-time comparison even for missing secrets
+      // This prevents timing attacks that could detect existence of bookings
+      const dummyBuffer = Buffer.alloc(64, 'a');
+      const inputBuffer = Buffer.from(secret || '', 'utf8').slice(0, 64);
+
+      // Pad input buffer to match dummy buffer length
+      const padded = Buffer.alloc(64);
+      inputBuffer.copy(padded);
+
+      try {
+        const crypto = await import('crypto');
+        crypto.timingSafeEqual(dummyBuffer, padded);
+      } catch {
+        // Ignore - we just want constant-time execution
+      }
       return false;
     }
 
@@ -43,17 +58,31 @@ export async function validateBookingSecret(
     const storedBuffer = Buffer.from(booking.editSecret, 'utf8');
 
     // Ensure buffers are same length before comparison
-    if (secretBuffer.length !== storedBuffer.length) {
-      return false;
-    }
-
-    // Use timing-safe comparison
+    // Use constant-time comparison for length check
     const crypto = await import('crypto');
+
+    // Create a fixed-size buffer for comparison
+    const MAX_SECRET_LENGTH = 128;
+    const normalizedSecret = Buffer.alloc(MAX_SECRET_LENGTH);
+    const normalizedStored = Buffer.alloc(MAX_SECRET_LENGTH);
+
+    // Copy buffers (will truncate if too long, pad if too short)
+    secretBuffer.copy(normalizedSecret, 0, 0, Math.min(secretBuffer.length, MAX_SECRET_LENGTH));
+    storedBuffer.copy(normalizedStored, 0, 0, Math.min(storedBuffer.length, MAX_SECRET_LENGTH));
+
+    // Now do constant-time comparison
     try {
-      return crypto.timingSafeEqual(secretBuffer, storedBuffer);
-    } catch {
-      // Fallback for Node versions that don't support timingSafeEqual with these buffer types
-      return secret === booking.editSecret;
+      const match = crypto.timingSafeEqual(normalizedSecret, normalizedStored);
+
+      // Verify lengths match after timing-safe comparison
+      if (secretBuffer.length !== storedBuffer.length) {
+        return false;
+      }
+
+      return match;
+    } catch (error) {
+      // If timingSafeEqual fails, it means lengths don't match
+      return false;
     }
   } catch (error) {
     console.error("Error validating booking secret:", error);

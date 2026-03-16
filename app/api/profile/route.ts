@@ -3,6 +3,21 @@ import { db } from "@/lib/db";
 import { adminUser } from "@/lib/db/schema";
 import { eq, and, or, ne } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth/rbac-middleware";
+import { z } from 'zod';
+import { auth } from "@/lib/auth";
+
+// Validation schemas
+const updateProfileSchema = z.object({
+  firstName: z.string().min(1, 'First name is required').max(50, 'First name too long'),
+  lastName: z.string().min(1, 'Last name is required').max(50, 'Last name too long'),
+  email: z.string().email('Invalid email format').max(255, 'Email too long'),
+  avatar: z.string().url('Invalid avatar URL').optional().nullable(),
+});
+
+const updateEmailSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newEmail: z.string().email('Invalid email format').max(255, 'Email too long'),
+});
 
 // GET /api/profile - Get current user profile
 export async function GET(request: NextRequest) {
@@ -51,82 +66,145 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { firstName, lastName, email, avatar } = body;
 
-    // Validate required fields
-    if (!firstName?.trim() || !lastName?.trim() || !email?.trim()) {
-      return NextResponse.json(
-        { error: "First name, last name, and email are required" },
-        { status: 400 }
-      );
-    }
+    // Check if email is being changed
+    const isEmailChange = body.email && body.email !== session.user.email;
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim())) {
-      return NextResponse.json(
-        { error: "Invalid email format" },
-        { status: 400 }
-      );
-    }
+    if (isEmailChange) {
+      // Email change requires password verification
+      if (!body.currentPassword) {
+        return NextResponse.json(
+          { error: "Current password required to change email", field: "currentPassword" },
+          { status: 400 }
+        );
+      }
 
-    const userId = session.user.id;
-    const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+      // Validate email change request
+      const { currentPassword, newEmail } = updateEmailSchema.parse({
+        currentPassword: body.currentPassword,
+        newEmail: body.email,
+      });
 
-    // Check if user exists
-    const existingUser = await db.query.adminUser.findFirst({
-      where: eq(adminUser.id, userId),
-    });
+      // Verify current password
+      try {
+        const result = await auth.api.signInEmail({
+          body: {
+            email: session.user.email,
+            password: currentPassword,
+          },
+        });
 
-    if (!existingUser) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
+        if (!result || !result.user) {
+          return NextResponse.json(
+            { error: "Current password is incorrect", field: "currentPassword" },
+            { status: 401 }
+          );
+        }
+      } catch (error) {
+        console.error("Error verifying password:", error);
+        return NextResponse.json(
+          { error: "Failed to verify password" },
+          { status: 500 }
+        );
+      }
 
-    // Check if email is being changed and if it conflicts with another user
-    if (email && email.trim() !== existingUser.email) {
+      // Check if new email already exists
       const emailConflict = await db.query.adminUser.findFirst({
         where: and(
-          eq(adminUser.email, email.trim()),
-          ne(adminUser.id, userId)
+          eq(adminUser.email, newEmail.trim()),
+          ne(adminUser.id, session.user.id)
         ),
       });
 
       if (emailConflict) {
         return NextResponse.json(
-          { error: "Email already in use by another user" },
+          { error: "Email already in use by another user", field: "email" },
+          { status: 409 }
+        );
+      }
+
+      // TODO: Send verification email to new address
+      // For now, just update the email
+      const userId = session.user.id;
+      const [updatedUser] = await db
+        .update(adminUser)
+        .set({
+          email: newEmail.trim(),
+          updatedAt: new Date(),
+        })
+        .where(eq(adminUser.id, userId))
+        .returning();
+
+      return NextResponse.json({
+        success: true,
+        message: "Email updated successfully",
+        user: {
+          id: updatedUser.id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          role: updatedUser.role,
+          image: updatedUser.image,
+        },
+      });
+    } else {
+      // Regular profile update (name, avatar only)
+      const { firstName, lastName, email, avatar } = updateProfileSchema.parse(body);
+
+      const userId = session.user.id;
+      const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+
+      // Check if email is being changed without password
+      if (email && email.trim() !== session.user.email) {
+        return NextResponse.json(
+          { error: "Password required to change email", field: "currentPassword" },
           { status: 400 }
         );
       }
+
+      // Check if user exists
+      const existingUser = await db.query.adminUser.findFirst({
+        where: eq(adminUser.id, userId),
+      });
+
+      if (!existingUser) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      }
+
+      // Update user profile
+      const [updatedUser] = await db
+        .update(adminUser)
+        .set({
+          name: fullName,
+          image: avatar || null,
+          updatedAt: new Date(),
+        })
+        .where(eq(adminUser.id, userId))
+        .returning();
+
+      return NextResponse.json({
+        success: true,
+        message: "Profile updated successfully",
+        user: {
+          id: updatedUser.id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          role: updatedUser.role,
+          image: updatedUser.image,
+        },
+      });
     }
-
-    // Update user profile
-    const [updatedUser] = await db
-      .update(adminUser)
-      .set({
-        name: fullName,
-        email: email.trim(),
-        image: avatar || null,
-        updatedAt: new Date(),
-      })
-      .where(eq(adminUser.id, userId))
-      .returning();
-
-    return NextResponse.json({
-      success: true,
-      message: "Profile updated successfully",
-      user: {
-        id: updatedUser.id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        role: updatedUser.role,
-        image: updatedUser.image,
-      },
-    });
   } catch (error) {
     console.error("Error updating profile:", error);
 
     if (error instanceof Error && error.name === "AuthorizationError") {
       return NextResponse.json({ error: error.message }, { status: 403 });
+    }
+
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid request data', details: error.errors },
+        { status: 400 }
+      );
     }
 
     return NextResponse.json(

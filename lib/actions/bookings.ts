@@ -177,7 +177,10 @@ export async function createBooking(input: CreateBookingInput & { leadEmail?: st
 
     revalidatePath("/admin/bookings");
 
-    return { success: true, data: { ...booking, editSecret } };
+    // SECURITY: Never return editSecret in API responses
+    // It should only be sent via email
+    const { editSecret: _, ...safeBookingData } = booking;
+    return { success: true, data: safeBookingData };
   } catch (error) {
     console.error("Error creating booking:", error);
     return { success: false, error: "Failed to create booking" };

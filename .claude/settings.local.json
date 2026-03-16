@@ -55,7 +55,9 @@
       "Bash(psql $DATABASE_URL -f drizzle/migration_add_item_names_to_booking_items.sql)",
       "Bash(cd \"D:\\\\Oliv-Booking-System\" && npx eslint components/user/CustomMenuWizardVariant1.tsx --max-warnings=0)",
       "Bash(cd \"D:\\\\Oliv-Booking-System\\\\components\\\\admin\" && cp MenuConfigPageV3Complete.tsx MenuConfigPageV3Complete.tsx.backup)",
-      "Bash(cd \"D:\\\\Oliv-Booking-System\\\\components\\\\admin\" && mv MenuConfigPageV3Complete.tsx MenuConfigPageV3Complete.tsx.old && mv MenuConfigPageRefactored.tsx MenuConfigPageV3Complete.tsx)"
+      "Bash(cd \"D:\\\\Oliv-Booking-System\\\\components\\\\admin\" && mv MenuConfigPageV3Complete.tsx MenuConfigPageV3Complete.tsx.old && mv MenuConfigPageRefactored.tsx MenuConfigPageV3Complete.tsx)",
+      "Bash(node:*)",
+      "Bash(cd:*)"
     ]
   }
 }

@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getMenuItems, getMenuCategories, getAddons } from "@/lib/actions/menu";
 
+/**
+ * GET /api/data/menu
+ * Public endpoint for fetching menu data (used by booking wizard)
+ * No authentication required - this is customer-facing
+ */
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;

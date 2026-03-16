@@ -4,6 +4,8 @@ import { db } from '@/lib/db';
 import { venues } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { requirePermissionWrapper } from "@/lib/auth/rbac-middleware";
+import { Permission } from "@/lib/auth/rbac";
 
 // PUT /api/venues/[id] - Update a venue
 const updateVenueSchema = z.object({
@@ -16,11 +18,8 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getSession();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // REQUIRE PROPER PERMISSION USING RBAC SYSTEM
+    await requirePermissionWrapper(Permission.CREATE_MENU_ITEM);
 
     const { id } = await params;
     const body = await request.json();
@@ -62,6 +61,14 @@ export async function PUT(
   } catch (error) {
     console.error('Error updating venue:', error);
 
+    // Handle authorization errors
+    if (error instanceof Error && error.name === "AuthorizationError") {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 403 }
+      );
+    }
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.errors },
@@ -82,11 +89,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getSession();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // REQUIRE PROPER PERMISSION USING RBAC SYSTEM
+    await requirePermissionWrapper(Permission.CREATE_MENU_ITEM);
 
     const { id } = await params;
 
@@ -111,6 +115,15 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting venue:', error);
+
+    // Handle authorization errors
+    if (error instanceof Error && error.name === "AuthorizationError") {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 403 }
+      );
+    }
+
     return NextResponse.json(
       { error: 'Failed to delete venue' },
       { status: 500 }

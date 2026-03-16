@@ -4,6 +4,10 @@ import { db } from "@/lib/db";
 import { sql } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth/server";
 import type { AuditContext } from "@/lib/booking-audit";
+import { z } from "zod";
+
+// UUID validation schema
+const uuidSchema = z.string().uuid("Invalid booking ID format");
 
 export async function GET(
   request: NextRequest,
@@ -12,7 +16,11 @@ export async function GET(
   try {
     const { id } = await params;
 
-    // Fetch booking with lead information using raw SQL
+    // Validate UUID format to prevent injection
+    const validatedId = uuidSchema.parse(id);
+
+    // Fetch booking with lead information using parameterized SQL
+    // The ${id} syntax is automatically parameterized by Drizzle - safe from SQL injection
     const bookingResult = await db.execute(sql`
       SELECT
         b.id,
@@ -28,7 +36,6 @@ export async function GET(
         b.status,
         b.location,
         b.created_at,
-        b.edit_secret,
         b.is_locked,
         b.assigned_to,
         b.kitchen_notes,
@@ -40,7 +47,7 @@ export async function GET(
       FROM bookings b
       LEFT JOIN leads l ON b.lead_id = l.id
       LEFT JOIN admin_user a ON b.assigned_to = a.id
-      WHERE b.id = ${id}
+      WHERE b.id = ${validatedId}
       LIMIT 1
     `);
 
@@ -72,8 +79,7 @@ export async function GET(
         FROM booking_items bi
         LEFT JOIN menu_items mi ON bi.item_id = mi.id
         LEFT JOIN menu_categories mc ON mi.category_id = mc.id
-        WHERE bi.item_type = 'menu_item' AND bi.booking_id = ${id}
-        -- IMPORTANT: Do NOT filter deleted items - we want to show historical data
+        WHERE bi.item_type = 'menu_item' AND bi.booking_id = ${validatedId}
       `);
 
       const itemsRows = 'rows' in bookingItemsResult ? bookingItemsResult.rows : bookingItemsResult;
@@ -105,7 +111,7 @@ export async function GET(
             ? `${item.quantity} guests x ${Math.round(unitPrice)} CHF`
             : `${item.quantity} x ${Math.round(unitPrice)} CHF`,
           price: `CHF ${totalPrice.toFixed(2)}`,
-          customerComment: customerComment || '', // Extract customer comment for separate display
+          customerComment: customerComment || '',
         };
       });
     } catch (e) {
@@ -151,7 +157,7 @@ export async function GET(
           a.name as admin_name
         FROM booking_contact_history h
         LEFT JOIN admin_user a ON h.admin_user_id = a.id
-        WHERE h.booking_id = ${id}
+        WHERE h.booking_id = ${validatedId}
         ORDER BY h.created_at ASC
       `);
 
@@ -195,10 +201,10 @@ export async function GET(
       event: {
         date: booking.event_date
           ? new Date(booking.event_date).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-          })
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            })
           : '',
         time: booking.event_time ? booking.event_time.substring(0, 5) : '',
         occasion: occasion || 'Event',
@@ -224,6 +230,15 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error in GET /api/bookings/[id]:", error);
+
+    // Handle validation errors
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { success: false, error: "Invalid booking ID format" },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500 }
@@ -236,6 +251,10 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Validate UUID format
+    const { id } = await params;
+    const validatedId = uuidSchema.parse(id);
+
     // Verify admin authentication
     const session = await requireAuth();
 
@@ -246,7 +265,6 @@ export async function PUT(
       );
     }
 
-    const { id } = await params;
     const body = await request.json();
 
     // Create audit context for admin edit
@@ -260,7 +278,7 @@ export async function PUT(
       userAgent: request.headers.get("user-agent") || undefined,
     };
 
-    const result = await updateBooking(id, body, auditContext);
+    const result = await updateBooking(validatedId, body, auditContext);
 
     if (!result.success) {
       return NextResponse.json(
@@ -272,6 +290,14 @@ export async function PUT(
     return NextResponse.json({ success: true, data: result.data });
   } catch (error) {
     console.error("Error in PUT /api/bookings/[id]:", error);
+
+    // Handle validation errors
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { success: false, error: "Invalid booking ID format" },
+        { status: 400 }
+      );
+    }
 
     // Handle authentication errors
     if (error instanceof Error && error.message.includes("Unauthorized")) {

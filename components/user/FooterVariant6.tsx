@@ -12,7 +12,7 @@ export function FooterVariant6() {
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
               <span className="text-primary-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-bold)' }}>O</span>
             </div>
-            <span className="text-secondary-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-bold)' }}>Olive</span>
+            <span className="text-secondary-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-bold)' }}>Oliv</span>
           </div>
 
           {/* Center: Terms and Privacy Links */}
@@ -27,7 +27,7 @@ export function FooterVariant6() {
 
           {/* Right: Copyright */}
           <p className="text-secondary-foreground/60" style={{ fontSize: 'var(--text-small)' }}>
-            © {new Date().getFullYear()} Olive Catering. All rights reserved.
+            © {new Date().getFullYear()} Oliv Catering. All rights reserved.
           </p>
         </div>
       </div>

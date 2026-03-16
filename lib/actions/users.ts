@@ -73,12 +73,36 @@ export async function updateAdminUser(id: string, updates: Partial<typeof adminU
       return { success: false, error: "User not found" };
     }
 
+    // ✅ SECURITY FIX: Whitelist allowed fields to prevent mass assignment
+    const allowedFields: Array<'name' | 'email' | 'role' | 'emailVerified' | 'image'> = [
+      'name',
+      'email',
+      'role',
+      'emailVerified',
+      'image',
+    ];
+
+    const sanitizedUpdates: any = {};
+
+    for (const field of allowedFields) {
+      if (field in updates) {
+        sanitizedUpdates[field] = updates[field];
+      }
+    }
+
+    // Prevent changing ID (should never be allowed)
+    delete (sanitizedUpdates as any).id;
+    // Prevent changing password through this function (use dedicated changePassword)
+    delete (sanitizedUpdates as any).password;
+    // Prevent changing createdAt (immutable)
+    delete (sanitizedUpdates as any).createdAt;
+
     // Super admins can modify any user including other super admins
     if (currentUserRole === 'super_admin') {
       // Allow all modifications for super admins
       const [user] = await db
         .update(adminUser)
-        .set({ ...updates, updatedAt: new Date() })
+        .set({ ...sanitizedUpdates, updatedAt: new Date() })
         .where(eq(adminUser.id, id))
         .returning();
 
@@ -93,15 +117,15 @@ export async function updateAdminUser(id: string, updates: Partial<typeof adminU
     }
 
     // If changing role, check if the new role is allowed
-    if (updates.role && updates.role !== targetUser.role) {
-      if (!canModifyUser(currentUserRole, id, currentUserId, updates.role as any)) {
+    if (sanitizedUpdates.role && sanitizedUpdates.role !== targetUser.role) {
+      if (!canModifyUser(currentUserRole, id, currentUserId, sanitizedUpdates.role as any)) {
         return { success: false, error: "You cannot assign a role equal to or higher than your own" };
       }
     }
 
     const [user] = await db
       .update(adminUser)
-      .set({ ...updates, updatedAt: new Date() })
+      .set({ ...sanitizedUpdates, updatedAt: new Date() })
       .where(eq(adminUser.id, id))
       .returning();
 

@@ -28,8 +28,20 @@ export const userEmailSchema = z.string()
   .trim();
 
 export const userPasswordSchema = z.string()
-  .min(8, 'Password must be at least 8 characters')
-  .max(100, 'Password cannot exceed 100 characters');
+  .min(12, 'Password must be at least 12 characters long')
+  .max(100, 'Password cannot exceed 100 characters')
+  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter (A-Z)')
+  .regex(/[a-z]/, 'Password must contain at least one lowercase letter (a-z)')
+  .regex(/[0-9]/, 'Password must contain at least one number (0-9)')
+  .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character (!@#$%^&*(),.?":{}|<>)')
+  .refine(
+    (password) => !/(.)\1{2,}/.test(password),
+    'Password cannot contain the same character repeated 3 or more times in a row'
+  )
+  .refine(
+    (password) => !/password|123456|qwerty|admin/i.test(password),
+    'Password cannot contain common or predictable patterns'
+  );
 
 export const userPhoneSchema = z.string()
   .max(20, 'Phone number cannot exceed 20 characters')
@@ -187,22 +199,19 @@ export const customerSpecialRequestsSchema = z.string()
   .transform(val => val.trim());
 
 export const wizardEventDetailsSchema = z.object({
-  name: customerNameSchema,
+  contactName: customerNameSchema,
   business: customerBusinessSchema.optional(),
-  email: userEmailSchema,
-  telephone: customerPhoneSchema,
+  contactEmail: userEmailSchema,
+  contactPhone: customerPhoneSchema,
   street: customerStreetSchema,
   plz: customerPlzSchema,
   location: customerLocationSchema,
   eventDate: z.string().min(1, 'Event date is required'),
   eventTime: z.string().min(1, 'Event time is required'),
-  guestCount: z.string().refine(val => {
-    const num = parseInt(val);
-    return !isNaN(num) && num >= 1 && num <= 1000;
-  }, 'Guest count must be between 1 and 1000'),
+  guestCount: z.number().min(1, 'Guest count must be at least 1').max(1000, 'Guest count cannot exceed 1000'),
   occasion: customerOccasionSchema.optional(),
   specialRequests: customerSpecialRequestsSchema.optional(),
-  paymentMethod: z.enum(['on_bill', 'invoice', 'cash', 'card']),
+  paymentMethod: z.enum(['on_bill', 'invoice', 'cash', 'card', 'cash_card', '']),
   useSameAddressForBilling: z.boolean().optional(),
   billingStreet: customerStreetSchema.optional(),
   billingPlz: customerPlzSchema.optional(),

@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
 import { requirePermissionWrapper } from "@/lib/auth/rbac-middleware";
 import { Permission } from "@/lib/auth/rbac";
+import { checkLeadRateLimit } from "@/lib/utils/rate-limit";
 
 export interface CreateLeadInput {
   contactName: string;
@@ -21,8 +22,18 @@ export interface CreateLeadInput {
 export async function createLead(input: CreateLeadInput) {
   try {
     // Lead creation from the website doesn't require admin permission,
-    // but we might want to track this if it's from the admin panel.
-    // For now, we'll allow public creation.
+    // but we need to implement rate limiting to prevent abuse.
+
+    // ✅ SECURITY FIX: Rate limit by email to prevent spam/abuse
+    const rateLimitResult = await checkLeadRateLimit(input.contactEmail);
+
+    if (!rateLimitResult.success) {
+      console.warn(`Rate limit exceeded for ${input.contactEmail}`);
+      return {
+        success: false,
+        error: rateLimitResult.error || "Too many submissions. Please try again later."
+      };
+    }
 
     // @ts-ignore - Drizzle ORM type compatibility issue
     const [lead] = await db.insert(leads).values({

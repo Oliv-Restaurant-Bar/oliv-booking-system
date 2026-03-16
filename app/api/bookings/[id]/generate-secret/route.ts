@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ensureBookingSecret } from "@/lib/booking-security";
-import { requireAuth } from "@/lib/auth/server";
-import { db } from "@/lib/db";
-import { adminUser } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { requirePermissionWrapper } from "@/lib/auth/rbac-middleware";
+import { Permission } from "@/lib/auth/rbac";
 
 /**
  * POST /api/bookings/[id]/generate-secret
@@ -14,37 +12,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Verify admin authentication
-    const session = await requireAuth();
-
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    // Fetch user role from database
-    const [userWithRole] = await db
-      .select({ role: adminUser.role })
-      .from(adminUser)
-      .where(eq(adminUser.id, session.user.id))
-      .limit(1);
-
-    if (!userWithRole) {
-      return NextResponse.json(
-        { success: false, error: "User not found" },
-        { status: 404 }
-      );
-    }
-
-    // Check if user has admin+ role
-    if (userWithRole.role !== "super_admin" && userWithRole.role !== "admin") {
-      return NextResponse.json(
-        { success: false, error: "Insufficient permissions" },
-        { status: 403 }
-      );
-    }
+    // ✅ SECURITY FIX: Use RBAC for consistency
+    await requirePermissionWrapper(Permission.EDIT_BOOKING);
 
     const { id } = await params;
 
@@ -58,10 +27,11 @@ export async function POST(
   } catch (error) {
     console.error("Error generating edit secret:", error);
 
-    if (error instanceof Error && error.message.includes("Unauthorized")) {
+    // Handle authorization errors
+    if (error instanceof Error && error.name === "AuthorizationError") {
       return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { success: false, error: error.message },
+        { status: 403 }
       );
     }
 

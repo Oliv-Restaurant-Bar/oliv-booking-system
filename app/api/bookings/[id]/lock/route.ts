@@ -1,69 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { lockBooking, unlockBooking } from "@/lib/actions/bookings";
 import { getBookingById } from "@/lib/actions/bookings";
-import { requireAuth } from "@/lib/auth/server";
-import { db } from "@/lib/db";
-import { adminUser } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { requirePermissionWrapper } from "@/lib/auth/rbac-middleware";
+import { Permission } from "@/lib/auth/rbac";
+import { z } from 'zod';
+
+// Validation schema
+const lockActionSchema = z.object({
+  action: z.enum(['lock', 'unlock'], {
+    errorMap: () => ({ message: "Action must be 'lock' or 'unlock'" })
+  }),
+});
 
 /**
  * POST /api/bookings/[id]/lock
- * Lock or unlock a booking (admin only)
- * Body: { action: "lock" | "unlock" }
+ * Lock or unlock a booking (requires EDIT_BOOKING permission)
  */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Verify admin authentication
-    const session = await requireAuth();
-
-    if (!session?.user) {
-      console.log("Lock API: No session found");
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    // Fetch user from database to get the role
-    const [userWithRole] = await db
-      .select({ role: adminUser.role, name: adminUser.name })
-      .from(adminUser)
-      .where(eq(adminUser.id, session.user.id))
-      .limit(1);
-
-    if (!userWithRole) {
-      console.log("Lock API: User not found in database");
-      return NextResponse.json(
-        { success: false, error: "User not found" },
-        { status: 404 }
-      );
-    }
-
-    const userRole = userWithRole.role;
-    console.log("Lock API: User role from DB =", userRole);
-
-    // Check if user has admin+ role
-    if (userRole !== "super_admin" && userRole !== "admin") {
-      console.log("Lock API: Insufficient permissions for role:", userRole);
-      return NextResponse.json(
-        { success: false, error: "Insufficient permissions", role: userRole },
-        { status: 403 }
-      );
-    }
+    // REQUIRE PROPER PERMISSION USING RBAC SYSTEM
+    await requirePermissionWrapper(Permission.EDIT_BOOKING);
 
     const { id } = await params;
     const body = await request.json();
-    const { action } = body;
-
-    if (action !== "lock" && action !== "unlock") {
-      return NextResponse.json(
-        { success: false, error: "Invalid action. Use 'lock' or 'unlock'" },
-        { status: 400 }
-      );
-    }
+    const { action } = lockActionSchema.parse(body);
 
     // Verify booking exists
     const bookingResult = await getBookingById(id);
@@ -74,8 +37,11 @@ export async function POST(
       );
     }
 
-    const adminUserId = session.user.id;
-    const adminUserName = session.user.name || "Admin";
+    // Get user info from session
+    const { getCurrentUser } = await import("@/lib/auth/rbac-middleware");
+    const session = await getCurrentUser();
+    const adminUserId = session?.user?.id || "unknown";
+    const adminUserName = session?.user?.name || "Admin";
 
     // Lock or unlock the booking
     let result;
@@ -102,11 +68,19 @@ export async function POST(
   } catch (error) {
     console.error("Error in POST /api/bookings/[id]/lock:", error);
 
-    // Handle authentication errors
-    if (error instanceof Error && error.message.includes("Unauthorized")) {
+    // Handle authorization errors
+    if (error instanceof Error && error.name === "AuthorizationError") {
       return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { success: false, error: error.message },
+        { status: 403 }
+      );
+    }
+
+    // Handle validation errors
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { success: false, error: "Invalid request data", details: error.errors },
+        { status: 400 }
       );
     }
 

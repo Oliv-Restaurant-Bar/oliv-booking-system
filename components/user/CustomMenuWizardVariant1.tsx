@@ -924,7 +924,7 @@ export function CustomMenuWizard() {
       guestCount: parseInt(eventDetails.guestCount) || 0,
       occasion: eventDetails.occasion,
       specialRequests: eventDetails.specialRequests,
-      paymentMethod: eventDetails.paymentMethod || 'cash_card',
+      paymentMethod: eventDetails.paymentMethod || 'cash',
       useSameAddressForBilling: eventDetails.useSameAddressForBilling ?? true,
       billingStreet: billingStreet || '',
       billingPlz: billingPlz || '',
@@ -942,9 +942,12 @@ export function CustomMenuWizard() {
     setIsSubmitting(false);
 
     if (result.success) {
-      // Store booking ID and edit secret for editing later
+      // Store booking ID
       setBookingId(result.data?.bookingId || null);
-      setEditSecret(result.data?.editSecret || null);
+
+      // SECURITY: editSecret is NO LONGER returned here for security reasons
+      // It's sent via email only. Users must use the link from their email to edit.
+      setEditSecret(null);
 
       // Use the inquiry number from the server response
       setInquiryNumber(result.data?.inquiryNumber || `INQ-${Math.floor(Math.random() * 9000) + 1000}`);

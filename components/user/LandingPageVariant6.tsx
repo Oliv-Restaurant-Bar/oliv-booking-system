@@ -13,8 +13,8 @@ export function LandingPageVariant6() {
       <HeaderVariant6 />
       <HeroVariant6 />
       <HowItWorksVariant6 />
-      <WhyOliveVariant6 />
-      <Gallery />
+      {/* <WhyOliveVariant6 />
+      <Gallery /> */}
       <CTASectionVariant1 />
       <FooterVariant6 />
     </div>

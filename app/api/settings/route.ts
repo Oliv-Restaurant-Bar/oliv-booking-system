@@ -4,6 +4,9 @@ import { db } from '@/lib/db';
 import { systemSettings } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { requirePermissionWrapper } from "@/lib/auth/rbac-middleware";
+import { Permission } from "@/lib/auth/rbac";
+import { randomUUID } from 'crypto';
 
 // GET /api/settings - Fetch system settings
 export async function GET() {
@@ -52,11 +55,8 @@ const updateSettingsSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getSession();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // REQUIRE ADMIN PERMISSION
+    await requirePermissionWrapper(Permission.UPDATE_SETTINGS);
 
     const body = await request.json();
     const updates = updateSettingsSchema.parse(body);
@@ -70,7 +70,6 @@ export async function POST(request: NextRequest) {
         .update(systemSettings)
         .set({
           ...updates,
-          updatedAt: new Date(),
         })
         .where(eq(systemSettings.id, existingSettings.id))
         .returning();
@@ -81,14 +80,13 @@ export async function POST(request: NextRequest) {
       const [created] = await db
         .insert(systemSettings)
         .values({
-          id: 'system',
+          id: randomUUID(),
           language: updates.language || 'English',
           timeZone: updates.timeZone || 'Europe/Zurich',
           dateFormat: updates.dateFormat || 'DD/MM/YYYY',
           currency: updates.currency || 'CHF',
           showCurrencySymbol: updates.showCurrencySymbol ?? true,
-          updatedBy: updates.updatedBy || session.user.id,
-          updatedAt: new Date(),
+          updatedBy: updates.updatedBy || 'system',
         })
         .returning();
 
@@ -96,6 +94,14 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error('Error updating settings:', error);
+
+    // Handle authorization errors
+    if (error instanceof Error && error.name === "AuthorizationError") {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 403 }
+      );
+    }
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

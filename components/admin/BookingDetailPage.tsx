@@ -335,27 +335,17 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         };
 
         try {
-            const response = await fetch(`/api/bookings/${booking.id}`);
-            if (response.ok) {
-                const data = await response.json();
-                if (data.editSecret) {
+            // SECURITY: editSecret is no longer returned in booking API responses
+            // Admins must generate it via the generate-secret endpoint
+            const generateResponse = await fetch(`/api/bookings/${booking.id}/generate-secret`, { method: 'POST' });
+            if (generateResponse.ok) {
+                const generateData = await generateResponse.json();
+                if (generateData.success && generateData.editSecret) {
                     const baseUrl = window.location.origin;
-                    const editLink = `${baseUrl}/booking/${booking.id}/edit/${data.editSecret}`;
+                    const editLink = `${baseUrl}/booking/${booking.id}/edit/${generateData.editSecret}`;
                     await copyToClipboard(editLink);
-                    toast.success(t('toast.copyLinkSuccess'));
+                    toast.success(t('toast.generateLinkSuccess'));
                     return;
-                }
-
-                const generateResponse = await fetch(`/api/bookings/${booking.id}/generate-secret`, { method: 'POST' });
-                if (generateResponse.ok) {
-                    const generateData = await generateResponse.json();
-                    if (generateData.success && generateData.editSecret) {
-                        const baseUrl = window.location.origin;
-                        const editLink = `${baseUrl}/booking/${booking.id}/edit/${generateData.editSecret}`;
-                        await copyToClipboard(editLink);
-                        toast.success(t('toast.generateLinkSuccess'));
-                        return;
-                    }
                 }
             }
             toast.error(t('toast.generateLinkFailed'));

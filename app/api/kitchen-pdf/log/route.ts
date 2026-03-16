@@ -4,6 +4,8 @@ import { db } from '@/lib/db';
 import { bookings, kitchenPdfLogs } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { requirePermissionWrapper } from "@/lib/auth/rbac-middleware";
+import { Permission } from "@/lib/auth/rbac";
 
 // Validation schema
 const logSchema = z.object({
@@ -16,11 +18,8 @@ const logSchema = z.object({
 
 export async function POST(request: NextRequest) {
     try {
-        const session = await getSession();
-
-        if (!session?.user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        // ✅ SECURITY FIX: Require proper permission
+        await requirePermissionWrapper(Permission.VIEW_BOOKING_DETAILS);
 
         const body = await request.json();
         const { bookingId, documentName, sentBy, status, recipientEmail } = logSchema.parse(body);
@@ -57,6 +56,14 @@ export async function POST(request: NextRequest) {
 
     } catch (error) {
         console.error('Error logging kitchen PDF action:', error);
+
+        // Handle authorization errors
+        if (error instanceof Error && error.name === "AuthorizationError") {
+            return NextResponse.json(
+                { error: error.message },
+                { status: 403 }
+            );
+        }
 
         if (error instanceof z.ZodError) {
             return NextResponse.json(

@@ -9,6 +9,8 @@ import { ensureBookingSecret, validateBookingSecret } from "@/lib/booking-securi
 import { sendThankYouEmail, sendUnlockRequestedNotification } from "@/lib/actions/email";
 import { logBookingChange } from "@/lib/booking-audit";
 import { sendEmail } from "@/lib/email/zeptomail";
+import { wizardEventDetailsSchema } from "@/lib/validation/schemas";
+import { ZodError } from "zod";
 
 export interface WizardFormData {
   contactName: string;
@@ -45,6 +47,52 @@ export async function submitWizardForm(data: WizardFormData) {
     console.log('========================================');
     console.log('Booking ID:', data.bookingId);
     console.log('Edit Mode:', !!data.bookingId);
+
+    // VALIDATE INPUT DATA
+    try {
+      wizardEventDetailsSchema.parse(data);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        console.error('❌ Validation Error:', error.errors);
+        return {
+          success: false,
+          error: 'Invalid form data',
+          validationErrors: error.errors
+        };
+      }
+      throw error;
+    }
+
+    // Additional validation for selected items
+    if (!data.selectedItems || data.selectedItems.length === 0) {
+      return {
+        success: false,
+        error: 'Please select at least one menu item'
+      };
+    }
+
+    // Validate item IDs format (UUID)
+    const invalidItemIds = data.selectedItems.filter(itemId =>
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(itemId)
+    );
+
+    if (invalidItemIds.length > 0) {
+      return {
+        success: false,
+        error: 'Invalid menu item IDs detected'
+      };
+    }
+
+    // Validate booking ID if provided
+    if (data.bookingId && data.bookingId !== 'null' && data.bookingId !== '') {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(data.bookingId)) {
+        return {
+          success: false,
+          error: 'Invalid booking ID format'
+        };
+      }
+    }
 
     // COMMON LOGIC: Fetch menu items, categories, and calculate totals
     const allMenuItems = await db
@@ -183,41 +231,48 @@ export async function submitWizardForm(data: WizardFormData) {
         updatedAt: new Date(),
       };
 
-      await db.update(bookings)
-        .set(updateData)
-        .where(eq(bookings.id, data.bookingId));
+      // 🔒 CRITICAL FIX: Use database transaction for atomicity
+      // This prevents race conditions where delete succeeds but insert fails
+      await db.transaction(async (tx) => {
+        // Update booking
+        await tx.update(bookings)
+          .set(updateData)
+          .where(eq(bookings.id, data.bookingId!));
 
-      // Update lead info if leadId exists
-      if (booking.leadId) {
-        await db.update(leads)
-          .set({
-            contactName: data.contactName,
-            contactEmail: data.contactEmail,
-            contactPhone: data.contactPhone,
-            // @ts-ignore - Drizzle ORM type compatibility issue
-            eventDate: data.eventDate,
-            eventTime: eventTime,
-            guestCount: data.guestCount,
-            updatedAt: new Date(),
-          })
-          .where(eq(leads.id, booking.leadId));
-      }
+        // Update lead info if leadId exists
+        if (booking.leadId) {
+          await tx.update(leads)
+            .set({
+              contactName: data.contactName,
+              contactEmail: data.contactEmail,
+              contactPhone: data.contactPhone,
+              // @ts-ignore - Drizzle ORM type compatibility issue
+              eventDate: data.eventDate,
+              eventTime: eventTime,
+              guestCount: data.guestCount,
+              updatedAt: new Date(),
+            })
+            .where(eq(leads.id, booking.leadId));
+        }
 
-      // Update booking items (relational sync)
-      console.log('  → Syncing booking items for update...');
-      await db.delete(bookingItems).where(eq(bookingItems.bookingId, data.bookingId));
+        // Update booking items (relational sync) - ATOMIC WITHIN TRANSACTION
+        console.log('  → Syncing booking items for update...');
+        await tx.delete(bookingItems).where(eq(bookingItems.bookingId, data.bookingId!));
 
-      for (const item of itemsToCreate) {
-        await db.insert(bookingItems).values({
-          id: randomUUID(),
-          bookingId: data.bookingId,
-          itemType: "menu_item",
-          itemId: item.itemId,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          notes: (item as any).notes,
-        });
-      }
+        // All inserts must succeed - if any fail, entire transaction rolls back
+        for (const item of itemsToCreate) {
+          await tx.insert(bookingItems).values({
+            id: randomUUID(),
+            bookingId: data.bookingId!,
+            itemType: "menu_item",
+            itemId: item.itemId,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            notes: (item as any).notes,
+          });
+        }
+      });
+      // Transaction complete - all updates committed atomically
 
       const editSecret = await ensureBookingSecret(data.bookingId);
 
@@ -285,7 +340,7 @@ export async function submitWizardForm(data: WizardFormData) {
         success: true,
         data: {
           bookingId: data.bookingId,
-          editSecret: editSecret,
+          // SECURITY: editSecret is NOT returned here - it's sent via email only
           inquiryNumber: booking.leadId ? booking.leadId.substring(0, 8).toUpperCase() : 'INQ-UNKNOWN',
           estimatedTotal: estimatedTotal,
         },
@@ -416,7 +471,7 @@ export async function submitWizardForm(data: WizardFormData) {
       data: {
         leadId: lead.id,
         bookingId: booking.id,
-        editSecret: editSecret,
+        // SECURITY: editSecret is NOT returned here - it's sent via email only
         inquiryNumber: lead.id.substring(0, 8).toUpperCase(),
         estimatedTotal: estimatedTotal,
       },

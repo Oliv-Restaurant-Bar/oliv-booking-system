@@ -1,5 +1,6 @@
 import type { Booking, Lead } from "@/lib/db/schema";
 import type { EmailType } from "@/lib/db/schema";
+import { sanitizeBookingDetails, sanitizeText, sanitizeEmailContent } from "@/lib/utils/sanitize";
 
 /**
  * Template mapper for ZeptoMail dashboard templates
@@ -47,7 +48,13 @@ export function getBookingConfirmedDepositTemplateData(
   estimatedTotal: number
 ): TemplateData {
   const lead = booking.lead;
-  const customerName = lead?.contactName || "Gast";
+  const customerName = sanitizeText(lead?.contactName) || "Gast";
+
+  // ✅ SECURITY FIX: Sanitize user-provided content
+  const sanitized = sanitizeBookingDetails({
+    specialRequests: booking.specialRequests,
+    allergyDetails: booking.allergyDetails,
+  });
 
   return {
     customer_name: customerName,
@@ -58,10 +65,8 @@ export function getBookingConfirmedDepositTemplateData(
     deposit_amount: formatCHF(estimatedTotal * 0.3),
     deposit_percentage: "30",
     booking_id: generateShortBookingId(booking.id),
-    special_requests: booking.specialRequests || "Keine",
-    allergy_details: Array.isArray(booking.allergyDetails)
-      ? booking.allergyDetails.join(", ") || "Keine"
-      : booking.allergyDetails || "Keine",
+    special_requests: sanitized.specialRequests,
+    allergy_details: sanitized.allergyDetails,
   };
 }
 
@@ -74,7 +79,13 @@ export function getBookingConfirmedNoDepositTemplateData(
   bookingEditUrl?: string
 ): TemplateData {
   const lead = booking.lead;
-  const customerName = lead?.contactName || "Gast";
+  const customerName = sanitizeText(lead?.contactName) || "Gast";
+
+  // ✅ SECURITY FIX: Sanitize user-provided content
+  const sanitized = sanitizeBookingDetails({
+    specialRequests: booking.specialRequests,
+    allergyDetails: booking.allergyDetails,
+  });
 
   return {
     customer_name: customerName,
@@ -83,10 +94,8 @@ export function getBookingConfirmedNoDepositTemplateData(
     guest_count: booking.guestCount,
     estimated_total: formatCHF(estimatedTotal),
     booking_edit_url: bookingEditUrl || "https://oliv-restaurant.ch",
-    special_requests: booking.specialRequests || "Keine",
-    allergy_details: Array.isArray(booking.allergyDetails)
-      ? booking.allergyDetails.join(", ") || "Keine"
-      : booking.allergyDetails || "Keine",
+    special_requests: sanitized.specialRequests,
+    allergy_details: sanitized.allergyDetails,
   };
 }
 
@@ -98,7 +107,13 @@ export function getThankYouDepositTemplateData(
   estimatedTotal: number
 ): TemplateData {
   const lead = booking.lead;
-  const customerName = lead?.contactName || "Gast";
+  const customerName = sanitizeText(lead?.contactName) || "Gast";
+
+  // ✅ SECURITY FIX: Sanitize user-provided content
+  const sanitized = sanitizeBookingDetails({
+    specialRequests: booking.specialRequests,
+    allergyDetails: booking.allergyDetails,
+  });
 
   return {
     customer_name: customerName,
@@ -109,10 +124,8 @@ export function getThankYouDepositTemplateData(
     deposit_amount: formatCHF(estimatedTotal * 0.3),
     deposit_percentage: "30",
     booking_id: generateShortBookingId(booking.id),
-    special_requests: booking.specialRequests || "Keine",
-    allergy_details: Array.isArray(booking.allergyDetails)
-      ? booking.allergyDetails.join(", ") || "Keine"
-      : booking.allergyDetails || "Keine",
+    special_requests: sanitized.specialRequests,
+    allergy_details: sanitized.allergyDetails,
   };
 }
 
@@ -125,7 +138,13 @@ export function getThankYouNoDepositTemplateData(
   bookingEditUrl?: string
 ): TemplateData {
   const lead = booking.lead;
-  const customerName = lead?.contactName || "Gast";
+  const customerName = sanitizeText(lead?.contactName) || "Gast";
+
+  // ✅ SECURITY FIX: Sanitize user-provided content
+  const sanitized = sanitizeBookingDetails({
+    specialRequests: booking.specialRequests,
+    allergyDetails: booking.allergyDetails,
+  });
 
   return {
     customer_name: customerName,
@@ -134,10 +153,8 @@ export function getThankYouNoDepositTemplateData(
     guest_count: booking.guestCount,
     estimated_total: formatCHF(estimatedTotal),
     booking_edit_url: bookingEditUrl || "https://oliv-restaurant.ch",
-    special_requests: booking.specialRequests || "Keine",
-    allergy_details: Array.isArray(booking.allergyDetails)
-      ? booking.allergyDetails.join(", ") || "Keine"
-      : booking.allergyDetails || "Keine",
+    special_requests: sanitized.specialRequests,
+    allergy_details: sanitized.allergyDetails,
   };
 }
 
@@ -190,10 +207,16 @@ export function getBookingReminderTemplateData(
   estimatedTotal?: number
 ): TemplateData {
   const lead = booking.lead;
-  const customerName = lead?.contactName || "Gast";
+  const customerName = sanitizeText(lead?.contactName) || "Gast";
 
   const DEPOSIT_THRESHOLD = 5000;
   const requiresDeposit = estimatedTotal && estimatedTotal >= DEPOSIT_THRESHOLD;
+
+  // ✅ SECURITY FIX: Sanitize user-provided content
+  const sanitized = sanitizeBookingDetails({
+    specialRequests: booking.specialRequests,
+    allergyDetails: booking.allergyDetails,
+  });
 
   return {
     customer_name: customerName,
@@ -203,10 +226,8 @@ export function getBookingReminderTemplateData(
     estimated_total: estimatedTotal ? formatCHF(estimatedTotal) : "0.00",
     deposit_amount: requiresDeposit ? formatCHF((estimatedTotal || 0) * 0.3) : "0.00",
     deposit_percentage: "30",
-    special_requests: booking.specialRequests || "Keine",
-    allergy_details: Array.isArray(booking.allergyDetails)
-      ? booking.allergyDetails.join(", ") || "Keine"
-      : booking.allergyDetails || "Keine",
+    special_requests: sanitized.specialRequests,
+    allergy_details: sanitized.allergyDetails,
   };
 }
 
