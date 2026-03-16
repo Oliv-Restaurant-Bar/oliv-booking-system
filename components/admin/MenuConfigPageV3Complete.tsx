@@ -29,7 +29,7 @@ interface MenuConfigPageProps {
 export function MenuConfigPage({ user }: MenuConfigPageProps) {
   const t = useMenuConfigTranslation();
   const ct = useCommonTranslation();
-  
+
   // Use custom hook for state and logic
   const {
     loading,

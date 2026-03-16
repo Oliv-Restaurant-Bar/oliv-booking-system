@@ -63,7 +63,7 @@ export function CustomMenuWizard() {
     guestCount: '',
     occasion: '',
     specialRequests: '',
-    paymentMethod: 'on_bill',
+    paymentMethod: 'cash_card',
     useSameAddressForBilling: true,
     billingStreet: '',
     billingPlz: '',
@@ -185,7 +185,7 @@ export function CustomMenuWizard() {
                   guestCount: booking.guestCount?.toString() || '',
                   occasion: booking.occasion || '',
                   specialRequests: booking.specialRequests || '',
-                  paymentMethod: booking.paymentMethod || 'on_bill',
+                  paymentMethod: booking.paymentMethod || 'cash_card',
                   useSameAddressForBilling: booking.useSameAddressForBilling ?? true,
                   billingStreet: booking.billingStreet || '',
                   billingPlz: booking.billingPlz || '',
@@ -900,6 +900,17 @@ export function CustomMenuWizard() {
     console.log('Booking ID:', bookingId);
 
     // Submit to server
+    // If using same address for billing, copy main address to billing fields
+    const billingStreet = eventDetails.useSameAddressForBilling
+      ? eventDetails.street
+      : eventDetails.billingStreet;
+    const billingPlz = eventDetails.useSameAddressForBilling
+      ? eventDetails.plz
+      : eventDetails.billingPlz;
+    const billingLocation = eventDetails.useSameAddressForBilling
+      ? eventDetails.location
+      : eventDetails.billingLocation;
+
     const result = await submitWizardForm({
       contactName: eventDetails.name,
       contactEmail: eventDetails.email,
@@ -913,11 +924,11 @@ export function CustomMenuWizard() {
       guestCount: parseInt(eventDetails.guestCount) || 0,
       occasion: eventDetails.occasion,
       specialRequests: eventDetails.specialRequests,
-      paymentMethod: eventDetails.paymentMethod || 'on_bill',
+      paymentMethod: eventDetails.paymentMethod || 'cash_card',
       useSameAddressForBilling: eventDetails.useSameAddressForBilling ?? true,
-      billingStreet: eventDetails.billingStreet || '',
-      billingPlz: eventDetails.billingPlz || '',
-      billingLocation: eventDetails.billingLocation || '',
+      billingStreet: billingStreet || '',
+      billingPlz: billingPlz || '',
+      billingLocation: billingLocation || '',
       selectedItems,
       itemQuantities,
       itemGuestCounts, // Pass per-item guest counts
@@ -1056,8 +1067,14 @@ export function CustomMenuWizard() {
     if (!isAlreadySelected && item.addonGroups) {
       item.addonGroups.forEach(group => {
         if (group.isRequired && group.items.length > 0) {
-          // Select ALL items by default if it's required included items
-          defaultAddOns.push(...group.items.map(i => i.id));
+          // For single-select groups (radio buttons), select only the first item
+          if (group.maxSelect === 1) {
+            defaultAddOns.push(group.items[0].id);
+          } else {
+            // For multi-select groups (checkboxes), select the minimum required
+            const itemsToSelect = Math.min(group.minSelect || 1, group.items.length);
+            defaultAddOns.push(...group.items.slice(0, itemsToSelect).map(i => i.id));
+          }
         }
       });
     }
@@ -1137,16 +1154,25 @@ export function CustomMenuWizard() {
   };
 
   const toggleTempAddOn = (addOnId: string, groupId?: string, maxSelect?: number) => {
-    // Prevent unchecking if it's part of a required group
-    if (groupId && detailsModalItem?.addonGroups) {
-      const group = detailsModalItem.addonGroups.find(g => g.id === groupId);
-      if (group?.isRequired) {
-        return; // Do nothing, required items cannot be toggled
-      }
-    }
-
     setTempAddOns(prev => {
-      if (prev.includes(addOnId)) {
+      const isRemoving = prev.includes(addOnId);
+
+      // Check if removing would violate minimum selection requirement for required multi-select groups
+      if (isRemoving && groupId && detailsModalItem?.addonGroups) {
+        const group = detailsModalItem.addonGroups.find(g => g.id === groupId);
+        if (group?.isRequired && (group.maxSelect || 1) > 1) {
+          const alreadySelectedInGroup = prev.filter(id =>
+            group.items.some((item: any) => item.id === id)
+          );
+          const minRequired = group.minSelect || 1;
+          if (alreadySelectedInGroup.length <= minRequired) {
+            toast.error(`You must select at least ${minRequired} option${minRequired > 1 ? 's' : ''} from ${group.name}`);
+            return prev;
+          }
+        }
+      }
+
+      if (isRemoving) {
         return prev.filter(id => id !== addOnId);
       } else {
         // Look up group dynamically
@@ -1242,6 +1268,16 @@ export function CustomMenuWizard() {
 
     const addOns = itemAddOns[item.id] || [];
     const addOnsPrice = addOns.reduce((total, addOnId) => {
+      // First check addonGroups structure (new format)
+      if (item.addonGroups && item.addonGroups.length > 0) {
+        for (const group of item.addonGroups) {
+          const groupAddOn = group.items.find(i => i.id === addOnId);
+          if (groupAddOn) {
+            return total + (groupAddOn.price || 0);
+          }
+        }
+      }
+      // Fallback to legacy addOns structure
       const addOn = item.addOns?.find(ao => ao.id === addOnId);
       return total + (addOn?.price || 0);
     }, 0);
@@ -1284,6 +1320,16 @@ export function CustomMenuWizard() {
     const quantity = itemQuantities[item.id] || 1;
     const addOns = itemAddOns[item.id] || [];
     const addOnsPrice = addOns.reduce((total, addOnId) => {
+      // First check addonGroups structure (new format)
+      if (item.addonGroups && item.addonGroups.length > 0) {
+        for (const group of item.addonGroups) {
+          const groupAddOn = group.items.find(i => i.id === addOnId);
+          if (groupAddOn) {
+            return total + (groupAddOn.price || 0);
+          }
+        }
+      }
+      // Fallback to legacy addOns structure
       const addOn = item.addOns?.find(ao => ao.id === addOnId);
       return total + (addOn?.price || 0);
     }, 0);
@@ -1546,7 +1592,8 @@ export function CustomMenuWizard() {
                               if (errors.name) setErrors({ ...errors, name: undefined });
                             }}
                             onBlur={() => {
-                              if (!touched.name) setTouched({ ...touched, name: true });
+                              setTouched({ ...touched, name: true });
+                              if (errors.name) setErrors({ ...errors, name: undefined });
                             }}
                             placeholder="Max Mustermann"
                             maxLength={100}
@@ -1565,7 +1612,8 @@ export function CustomMenuWizard() {
                               if (errors.business) setErrors({ ...errors, business: undefined });
                             }}
                             onBlur={() => {
-                              if (!touched.business) setTouched({ ...touched, business: true });
+                              setTouched({ ...touched, business: true });
+                              if (errors.business) setErrors({ ...errors, business: undefined });
                             }}
                             placeholder="Musterfirma AG"
                             maxLength={100}
@@ -1584,7 +1632,8 @@ export function CustomMenuWizard() {
                               if (errors.email) setErrors({ ...errors, email: undefined });
                             }}
                             onBlur={() => {
-                              if (!touched.email) setTouched({ ...touched, email: true });
+                              setTouched({ ...touched, email: true });
+                              if (errors.email) setErrors({ ...errors, email: undefined });
                             }}
                             placeholder="max@firma.ch"
                             maxLength={255}
@@ -1605,9 +1654,10 @@ export function CustomMenuWizard() {
                               if (errors.telephone) setErrors({ ...errors, telephone: undefined });
                             }}
                             onBlur={() => {
-                              if (!touched.telephone) setTouched({ ...touched, telephone: true });
+                              setTouched({ ...touched, telephone: true });
+                              if (errors.telephone) setErrors({ ...errors, telephone: undefined });
                             }}
-                            placeholder="+41 31 123 45 67"
+                            placeholder="07X XXX XX XX"
                             maxLength={20}
                             showCharacterCount
                             error={displayErrors.telephone}
@@ -1634,7 +1684,8 @@ export function CustomMenuWizard() {
                               if (errors.street) setErrors({ ...errors, street: undefined });
                             }}
                             onBlur={() => {
-                              if (!touched.street) setTouched({ ...touched, street: true });
+                              setTouched({ ...touched, street: true });
+                              if (errors.street) setErrors({ ...errors, street: undefined });
                             }}
                             placeholder="Musterstrasse 123"
                             maxLength={100}
@@ -1656,7 +1707,8 @@ export function CustomMenuWizard() {
                                 if (errors.plz) setErrors({ ...errors, plz: undefined });
                               }}
                               onBlur={() => {
-                                if (!touched.plz) setTouched({ ...touched, plz: true });
+                                setTouched({ ...touched, plz: true });
+                                if (errors.plz) setErrors({ ...errors, plz: undefined });
                               }}
                               placeholder="3000"
                               maxLength={10}
@@ -1676,7 +1728,8 @@ export function CustomMenuWizard() {
                                 if (errors.location) setErrors({ ...errors, location: undefined });
                               }}
                               onBlur={() => {
-                                if (!touched.location) setTouched({ ...touched, location: true });
+                                setTouched({ ...touched, location: true });
+                                if (errors.location) setErrors({ ...errors, location: undefined });
                               }}
                               placeholder="Bern"
                               maxLength={50}
@@ -1743,7 +1796,8 @@ export function CustomMenuWizard() {
                                 if (errors.guestCount) setErrors({ ...errors, guestCount: undefined });
                               }}
                               onBlur={() => {
-                                if (!touched.guestCount) setTouched({ ...touched, guestCount: true });
+                                setTouched({ ...touched, guestCount: true });
+                                if (errors.guestCount) setErrors({ ...errors, guestCount: undefined });
                               }}
                               className={`w-full px-4 py-2.5 bg-background border rounded-lg transition-colors ${displayErrors.guestCount ? 'border-destructive' : 'border-border focus:border-primary'
                                 }`}
@@ -1768,7 +1822,8 @@ export function CustomMenuWizard() {
                               if (errors.occasion) setErrors({ ...errors, occasion: undefined });
                             }}
                             onBlur={() => {
-                              if (!touched.occasion) setTouched({ ...touched, occasion: true });
+                              setTouched({ ...touched, occasion: true });
+                              if (errors.occasion) setErrors({ ...errors, occasion: undefined });
                             }}
                             placeholder="e.g. company party"
                             maxLength={100}
@@ -1794,7 +1849,8 @@ export function CustomMenuWizard() {
                             if (errors.specialRequests) setErrors({ ...errors, specialRequests: undefined });
                           }}
                           onBlur={() => {
-                            if (!touched.specialRequests) setTouched({ ...touched, specialRequests: true });
+                            setTouched({ ...touched, specialRequests: true });
+                            if (errors.specialRequests) setErrors({ ...errors, specialRequests: undefined });
                           }}
                           placeholder="e.g. 2 people vegetarian, 1 person gluten-free..."
                           rows={4}
@@ -1817,22 +1873,6 @@ export function CustomMenuWizard() {
                         </p>
                         <div className="space-y-3">
                           <label
-                            className={`flex items-center gap-3 cursor-pointer p-4 rounded-lg border-2 transition-all ${eventDetails.paymentMethod === 'on_bill' ? 'border-primary bg-primary/5' : 'border-border hover:border-border/80'}`}
-                            style={{ borderRadius: 'var(--radius)' }}
-                          >
-                            <NativeRadio
-                              name="paymentMethod"
-                              checked={eventDetails.paymentMethod === 'on_bill'}
-                              onChange={() => setEventDetails({ ...eventDetails, paymentMethod: 'on_bill' })}
-                            />
-                            <div className="flex-1">
-                              <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                                On Invoice
-                              </span>
-                            </div>
-                          </label>
-
-                          <label
                             className={`flex items-center gap-3 cursor-pointer p-4 rounded-lg border-2 transition-all ${eventDetails.paymentMethod === 'cash_card' ? 'border-primary bg-primary/5' : 'border-border hover:border-border/80'}`}
                             style={{ borderRadius: 'var(--radius)' }}
                           >
@@ -1847,97 +1887,142 @@ export function CustomMenuWizard() {
                               </span>
                             </div>
                           </label>
-                        </div>
-                      </div>
 
-                      {/* Billing Address Section */}
-                      <div className="bg-muted/30 rounded-lg p-5 border border-border" style={{ borderRadius: 'var(--radius-card)' }}>
-                        <h4 className="text-foreground mb-4 flex items-center gap-2" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
-                          <Building2 className="w-4 h-4 text-primary" />
-                          Billing Address
-                        </h4>
-                        <p className="text-muted-foreground mb-4" style={{ fontSize: 'var(--text-base)' }}>
-                          Specify where the invoice should be sent
-                        </p>
-                        <div className="bg-background/50 border border-border rounded-lg p-4 space-y-4" style={{ borderRadius: 'var(--radius)' }}>
-                          <label className="flex items-center gap-3 cursor-pointer">
-                            <NativeCheckbox
-                              checked={eventDetails.useSameAddressForBilling}
-                              onChange={(e) => setEventDetails({ ...eventDetails, useSameAddressForBilling: e.target.checked })}
+                          <label
+                            className={`flex items-center gap-3 cursor-pointer p-4 rounded-lg border-2 transition-all ${eventDetails.paymentMethod === 'on_bill' ? 'border-primary bg-primary/5' : 'border-border hover:border-border/80'}`}
+                            style={{ borderRadius: 'var(--radius)' }}
+                          >
+                            <NativeRadio
+                              name="paymentMethod"
+                              checked={eventDetails.paymentMethod === 'on_bill'}
+                              onChange={() => setEventDetails({ ...eventDetails, paymentMethod: 'on_bill' })}
                             />
-                            <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                              Use same address for billing
-                            </span>
-                          </label>
-
-                          {!eventDetails.useSameAddressForBilling && (
-                            <div className="space-y-4 mt-4 pt-4 border-t border-border">
-                              <ValidatedInput
-                                label="Billing Street & Nr."
-                                type="text"
-                                value={eventDetails.billingStreet}
-                                onChange={(e) => {
-                                  setEventDetails({ ...eventDetails, billingStreet: e.target.value, billingStreetError: undefined });
-                                }}
-                                onBlur={() => {
-                                  // Validate billing street on blur if filled
-                                  if (eventDetails.billingStreet.trim().length > 0 && eventDetails.billingStreet.trim().length < 5) {
-                                    setEventDetails({ ...eventDetails, billingStreetError: 'Street address must be at least 5 characters' });
-                                  }
-                                }}
-                                placeholder="Street and house number"
-                                maxLength={100}
-                                showCharacterCount
-                                helperText="Optional"
-                                error={eventDetails.billingStreetError}
-                              />
-
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <ValidatedInput
-                                  label="PLZ"
-                                  type="text"
-                                  value={eventDetails.billingPlz}
-                                  onChange={(e) => {
-                                    const value = e.target.value.replace(/[^0-9]/g, '');
-                                    setEventDetails({ ...eventDetails, billingPlz: value, billingPlzError: undefined });
-                                  }}
-                                  onBlur={() => {
-                                    // Validate billing PLZ on blur if filled
-                                    if (eventDetails.billingPlz.length > 0 && eventDetails.billingPlz.length < 4) {
-                                      setEventDetails({ ...eventDetails, billingPlzError: 'Postal code must be at least 4 characters' });
-                                    }
-                                  }}
-                                  placeholder="3000"
-                                  maxLength={10}
-                                  showCharacterCount
-                                  helperText="Optional"
-                                  error={eventDetails.billingPlzError}
-                                />
-
-                                <ValidatedInput
-                                  label="Location"
-                                  type="text"
-                                  value={eventDetails.billingLocation}
-                                  onChange={(e) => {
-                                    setEventDetails({ ...eventDetails, billingLocation: e.target.value, billingLocationError: undefined });
-                                  }}
-                                  onBlur={() => {
-                                    // Validate billing location on blur if filled
-                                    if (eventDetails.billingLocation.trim().length > 0 && eventDetails.billingLocation.trim().length < 2) {
-                                      setEventDetails({ ...eventDetails, billingLocationError: 'Location must be at least 2 characters' });
-                                    }
-                                  }}
-                                  placeholder="Bern"
-                                  maxLength={50}
-                                  showCharacterCount
-                                  helperText="Optional"
-                                  error={eventDetails.billingLocationError}
-                                />
-                              </div>
+                            <div className="flex-1">
+                              <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                                On Invoice
+                              </span>
                             </div>
-                          )}
+                          </label>
                         </div>
                       </div>
+
+                      {/* Billing Address Section - Only show when Invoice is selected */}
+                      {eventDetails.paymentMethod === 'on_bill' && (
+                        <div className="bg-muted/30 rounded-lg p-5 border border-border" style={{ borderRadius: 'var(--radius-card)' }}>
+                          <h4 className="text-foreground mb-4 flex items-center gap-2" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
+                            <Building2 className="w-4 h-4 text-primary" />
+                            Billing Address
+                          </h4>
+                          <p className="text-muted-foreground mb-4" style={{ fontSize: 'var(--text-base)' }}>
+                            Specify where the invoice should be sent
+                          </p>
+                          <div className="bg-background/50 border border-border rounded-lg p-4 space-y-4" style={{ borderRadius: 'var(--radius)' }}>
+                            <label className="flex items-center gap-3 cursor-pointer">
+                              <NativeCheckbox
+                                checked={eventDetails.useSameAddressForBilling}
+                                onChange={(e) => setEventDetails({ ...eventDetails, useSameAddressForBilling: e.target.checked })}
+                              />
+                              <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                Use same address for billing
+                              </span>
+                            </label>
+
+                            <div className="space-y-4 mt-4 pt-4 border-t border-border">
+                              {eventDetails.useSameAddressForBilling ? (
+                                // Read-only display of main address
+                                <div className="space-y-3">
+                                  <div>
+                                    <label className="text-sm text-muted-foreground mb-1 block">Street & Nr.</label>
+                                    <div className="px-3 py-2 bg-muted/50 rounded-md text-foreground border border-border">
+                                      {eventDetails.street || 'Not provided'}
+                                    </div>
+                                  </div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                      <label className="text-sm text-muted-foreground mb-1 block">PLZ</label>
+                                      <div className="px-3 py-2 bg-muted/50 rounded-md text-foreground border border-border">
+                                        {eventDetails.plz || 'Not provided'}
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <label className="text-sm text-muted-foreground mb-1 block">Location</label>
+                                      <div className="px-3 py-2 bg-muted/50 rounded-md text-foreground border border-border">
+                                        {eventDetails.location || 'Not provided'}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                // Editable billing address fields
+                                <>
+                                  <ValidatedInput
+                                    label="Billing Street & Nr."
+                                    type="text"
+                                    value={eventDetails.billingStreet}
+                                    onChange={(e) => {
+                                      setEventDetails({ ...eventDetails, billingStreet: e.target.value, billingStreetError: undefined });
+                                    }}
+                                    onBlur={() => {
+                                      // Validate billing street on blur if filled
+                                      if (eventDetails.billingStreet.trim().length > 0 && eventDetails.billingStreet.trim().length < 5) {
+                                        setEventDetails({ ...eventDetails, billingStreetError: 'Street address must be at least 5 characters' });
+                                      }
+                                    }}
+                                    placeholder="Street and house number"
+                                    maxLength={100}
+                                    showCharacterCount
+                                    helperText="Optional"
+                                    error={eventDetails.billingStreetError}
+                                  />
+
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <ValidatedInput
+                                      label="PLZ"
+                                      type="text"
+                                      value={eventDetails.billingPlz}
+                                      onChange={(e) => {
+                                        const value = e.target.value.replace(/[^0-9]/g, '');
+                                        setEventDetails({ ...eventDetails, billingPlz: value, billingPlzError: undefined });
+                                      }}
+                                      onBlur={() => {
+                                        // Validate billing PLZ on blur if filled
+                                        if (eventDetails.billingPlz.length > 0 && eventDetails.billingPlz.length < 4) {
+                                          setEventDetails({ ...eventDetails, billingPlzError: 'Postal code must be at least 4 characters' });
+                                        }
+                                      }}
+                                      placeholder="3000"
+                                      maxLength={10}
+                                      showCharacterCount
+                                      helperText="Optional"
+                                      error={eventDetails.billingPlzError}
+                                    />
+
+                                    <ValidatedInput
+                                      label="Location"
+                                      type="text"
+                                      value={eventDetails.billingLocation}
+                                      onChange={(e) => {
+                                        setEventDetails({ ...eventDetails, billingLocation: e.target.value, billingLocationError: undefined });
+                                      }}
+                                      onBlur={() => {
+                                        // Validate billing location on blur if filled
+                                        if (eventDetails.billingLocation.trim().length > 0 && eventDetails.billingLocation.trim().length < 2) {
+                                          setEventDetails({ ...eventDetails, billingLocationError: 'Location must be at least 2 characters' });
+                                        }
+                                      }}
+                                      placeholder="Bern"
+                                      maxLength={50}
+                                      showCharacterCount
+                                      helperText="Optional"
+                                      error={eventDetails.billingLocationError}
+                                    />
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -4457,13 +4542,21 @@ export function CustomMenuWizard() {
       {/* Date & Time Picker Modal */}
       <DateTimePickerModal
         isOpen={isDateTimePickerOpen}
-        onClose={() => setIsDateTimePickerOpen(false)}
+        onClose={() => {
+          setIsDateTimePickerOpen(false);
+          // Mark fields as touched when modal closes to trigger validation
+          if (eventDetails.eventDate || eventDetails.eventTime) {
+            setTouched(prev => ({ ...prev, eventDate: true, eventTime: true }));
+          }
+        }}
         onSelectDate={(date) => {
           setEventDetails({ ...eventDetails, eventDate: date });
+          setTouched(prev => ({ ...prev, eventDate: true }));
           if (errors.eventDate) setErrors({ ...errors, eventDate: undefined });
         }}
         onSelectTime={(time) => {
           setEventDetails({ ...eventDetails, eventTime: time });
+          setTouched(prev => ({ ...prev, eventTime: true }));
           if (errors.eventTime) setErrors({ ...errors, eventTime: undefined });
         }}
         initialDate={eventDetails.eventDate}

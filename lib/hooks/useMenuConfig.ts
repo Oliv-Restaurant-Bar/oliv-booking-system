@@ -495,7 +495,7 @@ export function useMenuConfig() {
       if (editingCategoryId) {
         const result = await updateMenuCategory(editingCategoryId, categoryData);
         if (result.success) {
-          setCategories(categories.map(cat => cat.id === editingCategoryId ? { ...cat, ...categoryData, image: newCategory.imageUrl } : cat));
+          await fetchMenuData(); // Refresh from server to get latest data
           toast.success('Category updated successfully');
         } else {
           toast.error(result.error || 'Failed to update category');
@@ -503,7 +503,7 @@ export function useMenuConfig() {
       } else {
         const result = await createMenuCategory({ ...categoryData, sortOrder: categories.length });
         if (result.success && result.data) {
-          setCategories([...categories, { ...categoryData, id: result.data.id, image: newCategory.imageUrl, items: [], isActive: true, isExpanded: false, guestCount: false, assignedAddonGroups: [] }]);
+          await fetchMenuData(); // Refresh from server to get latest data
           toast.success('Category created successfully');
         } else {
           toast.error(result.error || 'Failed to create category');
@@ -545,16 +545,8 @@ export function useMenuConfig() {
       if (editingMenuItemId) {
         const result = await updateMenuItem(editingMenuItemId, itemData);
         if (result.success) {
-          setCategories(categories.map(cat => {
-            if (cat.id === activeCategoryId) {
-              return {
-                ...cat,
-                items: cat.items.map(item => item.id === editingMenuItemId ? { ...item, ...itemData, image: newMenuItem.imageUrl, price: itemData.pricePerPerson } : item)
-              };
-            }
-            return cat;
-          }));
           await updateItemAddonGroups(editingMenuItemId, newMenuItem.assignedAddonGroups);
+          await fetchMenuData(); // Refresh from server to get latest data
           toast.success('Menu item updated successfully');
         } else {
           toast.error(result.error || 'Failed to update menu item');
@@ -562,14 +554,8 @@ export function useMenuConfig() {
       } else {
         const result = await createMenuItem(itemData);
         if (result.success && result.data) {
-          const newItem = { ...itemData, id: result.data.id, image: newMenuItem.imageUrl, price: itemData.pricePerPerson, assignedAddonGroups: newMenuItem.assignedAddonGroups };
-          setCategories(categories.map(cat => {
-            if (cat.id === activeCategoryId) {
-              return { ...cat, items: [...cat.items, newItem] };
-            }
-            return cat;
-          }));
           await updateItemAddonGroups(result.data.id, newMenuItem.assignedAddonGroups);
+          await fetchMenuData(); // Refresh from server to get latest data
           toast.success('Menu item created successfully');
         } else {
           toast.error(result.error || 'Failed to create menu item');
@@ -598,13 +584,13 @@ export function useMenuConfig() {
       if (editingGroupId) {
         const result = await updateAddonGroup(editingGroupId, groupData);
         if (result.success) {
-          setAddonGroups(addonGroups.map(g => g.id === editingGroupId ? { ...g, ...groupData, isRequired: groupData.minSelect > 0 } : g));
+          await fetchMenuData(); // Refresh from server to get latest data
           toast.success('Group updated successfully');
         }
       } else {
         const result = await createAddonGroup(groupData);
         if (result.success && result.data) {
-          setAddonGroups([...addonGroups, { ...groupData, id: result.data.id, isRequired: groupData.minSelect > 0, items: [], isExpanded: false, isActive: true }]);
+          await fetchMenuData(); // Refresh from server to get latest data
           toast.success('Group created successfully');
         }
       }
@@ -630,24 +616,13 @@ export function useMenuConfig() {
         // @ts-ignore - price string vs number mismatch mid-refactor
         const result = await updateAddonItem(editingAddonItemId, itemData);
         if (result.success) {
-          setAddonGroups(addonGroups.map(g => {
-            if (g.id === currentGroupId) {
-              return { ...g, items: g.items.map(i => i.id === editingAddonItemId ? { ...i, ...itemData, price: Number(itemData.price) } : i) };
-            }
-            return g;
-          }));
+          await fetchMenuData(); // Refresh from server to get latest data
           toast.success('Item updated successfully');
         }
       } else {
         const result = await createAddonItem(itemData);
         if (result.success && result.data) {
-          const newItem = { ...itemData, id: result.data.id, price: Number(itemData.price) };
-          setAddonGroups(addonGroups.map(g => {
-            if (g.id === currentGroupId) {
-              return { ...g, items: [...g.items, newItem] };
-            }
-            return g;
-          }));
+          await fetchMenuData(); // Refresh from server to get latest data
           toast.success('Item created successfully');
         }
       }
