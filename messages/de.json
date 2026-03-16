@@ -40,6 +40,8 @@
     "download": "Herunterladen",
     "item": "Artikel",
     "items": "Artikel",
+    "noItems": "Keine Artikel gefunden",
+    "addFirstItem": "Fügen Sie Ihren ersten Artikel hinzu",
     "choice": "Auswahl",
     "addon": "Zusatz",
     "select": "Wählen",
@@ -595,11 +597,15 @@
         "editItem": "Menüartikel bearbeiten",
         "addItem": "Neuen Artikel hinzufügen",
         "editGroup": "Gruppe bearbeiten",
-        "addGroup": "Neue Gruppe hinzufügen"
+        "addGroup": "Neue Gruppe hinzufügen",
+        "main": "Menü-Konfiguration",
+        "subtitle": "Konfigurieren und verwalten Sie Ihre Restaurant-Menüartikel, Kategorien und Optionsgruppen."
       },
       "tabs": {
         "items": "Menükategorien",
-        "addons": "Optionen & Addons"
+        "addons": "Optionen & Addons",
+        "menuItems": "Menükategorien",
+        "choices": "Optionen & Addons"
       },
       "buttons": {
         "addCategory": "Neue Kategorie hinzufügen",

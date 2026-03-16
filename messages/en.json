@@ -40,6 +40,8 @@
     "download": "Download",
     "item": "item",
     "items": "items",
+    "noItems": "No items found",
+    "addFirstItem": "Add your first item",
     "choice": "Choice",
     "addon": "Addon",
     "select": "Select",
@@ -595,11 +597,15 @@
         "editItem": "Edit Menu Item",
         "addItem": "Add New Item",
         "editGroup": "Edit Group",
-        "addGroup": "Add New Group"
+        "addGroup": "Add New Group",
+        "main": "Menu Configuration",
+        "subtitle": "Configure and manage your restaurant menu items, categories and choice groups."
       },
       "tabs": {
         "items": "Menu Categories",
-        "addons": "Choices & Addons"
+        "addons": "Choices & Addons",
+        "menuItems": "Menu Categories",
+        "choices": "Choices & Addons"
       },
       "buttons": {
         "addCategory": "Add New Category",

@@ -52,7 +52,10 @@
       "Bash(python -c \"import os; os.rename\\(r'D:\\\\internships\\\\EnactOn\\\\oliv\\\\New folder \\(2\\)\\\\components\\\\user\\\\categorypill.tsx', r'D:\\\\internships\\\\EnactOn\\\\oliv\\\\New folder \\(2\\)\\\\components\\\\user\\\\CategoryPill.tsx'\\)\")",
       "Bash(taskkill /F /PID 47932)",
       "Bash(cmd.exe //c \"taskkill //F //PID 47932\")",
-      "Bash(psql $DATABASE_URL -f drizzle/migration_add_item_names_to_booking_items.sql)"
+      "Bash(psql $DATABASE_URL -f drizzle/migration_add_item_names_to_booking_items.sql)",
+      "Bash(cd \"D:\\\\Oliv-Booking-System\" && npx eslint components/user/CustomMenuWizardVariant1.tsx --max-warnings=0)",
+      "Bash(cd \"D:\\\\Oliv-Booking-System\\\\components\\\\admin\" && cp MenuConfigPageV3Complete.tsx MenuConfigPageV3Complete.tsx.backup)",
+      "Bash(cd \"D:\\\\Oliv-Booking-System\\\\components\\\\admin\" && mv MenuConfigPageV3Complete.tsx MenuConfigPageV3Complete.tsx.old && mv MenuConfigPageRefactored.tsx MenuConfigPageV3Complete.tsx)"
     ]
   }
 }

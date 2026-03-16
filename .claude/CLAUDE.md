@@ -171,4 +171,3 @@ After running `npm run db:seed`, the default admin account is:
 
 Before marking a task complete:
 1. Run `npx tsc --noEmit` to check for TypeScript errors
-2. Run `npm run lint` to check for linting errors

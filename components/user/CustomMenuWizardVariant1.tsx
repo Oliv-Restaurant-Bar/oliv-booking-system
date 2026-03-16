@@ -1088,6 +1088,47 @@ export function CustomMenuWizard() {
   };
 
   const closeDetailsModal = () => {
+    // If editing an existing item, save changes before closing
+    if (detailsModalItem && selectedItems.includes(detailsModalItem.id)) {
+      const itemId = detailsModalItem.id;
+
+      // Set quantity and guest count based on pricing type
+      if (isPerPerson(detailsModalItem)) {
+        // Per-person items: Always quantity=1, use guest count
+        setItemQuantities(prev => ({ ...prev, [itemId]: 1 }));
+        setItemGuestCounts(prev => ({ ...prev, [itemId]: tempGuestCount || parseInt(eventDetails.guestCount) || 1 }));
+      } else {
+        // Flat-rate items: Use quantity, remove guest count if exists
+        setItemQuantities(prev => ({ ...prev, [itemId]: tempQuantity }));
+        // Remove guest count for flat-rate items
+        setItemGuestCounts(prev => {
+          const updated = { ...prev };
+          delete updated[itemId];
+          return updated;
+        });
+      }
+
+      // Update add-ons
+      setItemAddOns(prev => ({ ...prev, [itemId]: tempAddOns }));
+
+      // Update variant
+      if (tempVariant) {
+        setItemVariants(prev => ({ ...prev, [itemId]: tempVariant }));
+      }
+
+      // Update comment
+      if (tempComment.trim()) {
+        setItemComments(prev => ({ ...prev, [itemId]: tempComment }));
+      } else {
+        // Remove comment if empty
+        setItemComments(prev => {
+          const updated = { ...prev };
+          delete updated[itemId];
+          return updated;
+        });
+      }
+    }
+
     setDetailsModalItem(null);
     setTempQuantity(1);
     setTempAddOns([]);
