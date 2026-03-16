@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Send, User, CalendarDays, UtensilsCrossed, MessageSquare, Link, Lock, Unlock, History, FileText, RefreshCw, UserPlus, CheckCircle2, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -820,7 +820,19 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     {booking.menuItems && booking.menuItems.length > 0 ? (
                                         booking.menuItems.map((item: any, index: number) => (
                                             <tr key={index} className="border-t border-border">
-                                                <td className="px-4 py-3 text-foreground" style={{ fontSize: 'var(--text-base)' }}>{item.item || item.name}</td>
+                                                <td className="px-4 py-3 text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                                    <div className="flex flex-col gap-1">
+                                                        <span>{item.item || item.name}</span>
+                                                        {item.customerComment && (
+                                                            <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-500">
+                                                                <MessageSquare className="w-3 h-3 flex-shrink-0" />
+                                                                <span className="text-[11px] italic leading-tight">
+                                                                    Notes: {item.customerComment}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </td>
                                                 <td className="px-4 py-3 text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>{item.category}</td>
                                                 <td className="px-4 py-3 text-foreground" style={{ fontSize: 'var(--text-base)' }}>{item.quantity}</td>
                                                 <td className="px-4 py-3 text-right text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>{item.price}</td>

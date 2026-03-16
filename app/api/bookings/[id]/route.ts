@@ -79,20 +79,33 @@ export async function GET(
       const itemsRows = 'rows' in bookingItemsResult ? bookingItemsResult.rows : bookingItemsResult;
       menuItems = (itemsRows as any[]).map((item: any) => {
         const isPerPerson = item.pricing_type === 'per_person' || item.category_guest_count === true;
-        const effectiveGuestCount = isPerPerson ? (booking.guest_count || 1) : 1;
         const unitPrice = Number(item.unit_price);
-        const totalPrice = unitPrice * item.quantity * effectiveGuestCount;
+        const totalPrice = unitPrice * item.quantity;
 
-        // Include notes (variant/comment) in the item name if present
-        const displayName = item.notes ? `${item.item_name} (${item.notes})` : item.item_name;
+        // Parse notes to extract variant and customer comment
+        let variant = '';
+        let customerComment = '';
+        if (item.notes) {
+          const variantMatch = item.notes.match(/Variant: ([^|]+)/);
+          const commentMatch = item.notes.match(/Comment: ([^|]+)/);
+          if (variantMatch) variant = variantMatch[1].trim();
+          if (commentMatch) customerComment = commentMatch[1].trim();
+        }
+
+        // Build display name with variant info only
+        let displayName = item.item_name;
+        if (variant) {
+          displayName += ` (${variant})`;
+        }
 
         return {
           item: displayName || 'Unknown Item',
           category: item.category_name || 'Unknown',
           quantity: isPerPerson
-            ? `${effectiveGuestCount} guests x ${Math.round(unitPrice)} CHF`
+            ? `${item.quantity} guests x ${Math.round(unitPrice)} CHF`
             : `${item.quantity} x ${Math.round(unitPrice)} CHF`,
           price: `CHF ${totalPrice.toFixed(2)}`,
+          customerComment: customerComment || '', // Extract customer comment for separate display
         };
       });
     } catch (e) {

@@ -29,6 +29,7 @@ interface KitchenPdfActionModalProps {
       category: string;
       quantity: string;
       price: string;
+      customerComment?: string;
     }>;
     allergies?: string;
     notes?: string;
@@ -259,6 +260,34 @@ export function KitchenPdfActionModal({
           doc.line(margin, yPos + rowHeight - 6, margin + contentWidth, yPos + rowHeight - 6);
 
           yPos += rowHeight;
+
+          // Display customer comment if present
+          if (item.customerComment && item.customerComment.trim()) {
+            if (yPos + 10 > 275) {
+              drawTableHeader("MENU SELECTION (CONT.)");
+              // Re-draw category if we broke page
+              doc.setFont("helvetica", "bold");
+              doc.setFontSize(11);
+              doc.text(`${category.toUpperCase()} (CONT.)`, colX_Item, yPos);
+              yPos += 7;
+              doc.setFont("helvetica", "normal");
+              doc.setFontSize(10);
+            }
+
+            // Integrated customer note (indented and subtle)
+            const commentLines = doc.splitTextToSize(`Notes: ${item.customerComment}`, itemMaxWidth - 10);
+            const commentHeight = (commentLines.length * 4) + 2;
+
+            doc.setTextColor(180, 83, 9); // amber-700 (slightly darker for PDF readability)
+            doc.setFont("helvetica", "italic");
+            doc.setFontSize(8.5);
+            doc.text(commentLines, colX_Item + 10, yPos - 1); // Indent more and move up
+
+            yPos += commentHeight;
+            doc.setTextColor(15, 23, 42); // Reset color
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+          }
         });
         
         yPos += 5; // Spacing between categories
