@@ -43,14 +43,22 @@ export const auth = betterAuth({
     // Explicit cookie configuration for production
     cookies: {
       sessionToken: {
+        name: "oliv-auth.session_token",
         attributes: {
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'lax',
+          httpOnly: true,
+          path: '/',
+          // Don't set domain - let browser use current domain
         },
       },
     },
-    // Add trusted origins for production
-    trustedOrigins: process.env.NEXT_PUBLIC_APP_URL ? [process.env.NEXT_PUBLIC_APP_URL] : ['http://localhost:3000'],
+    // Add trusted origins for production - include both domains
+    trustedOrigins: [
+      process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+      "https://oliv-booking-system.vercel.app",
+      "https://oliv-booking-system-d4hq7kyl2-enacton-techs-projects.vercel.app",
+    ].filter(Boolean),
   },
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
