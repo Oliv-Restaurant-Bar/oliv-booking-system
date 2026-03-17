@@ -58,7 +58,8 @@
       "beverages": "Drink",
       "desserts": "Dessert",
       "starters": "Appetizer"
-    }
+    },
+    "currencySymbol": "€"
   },
   "nav": {
     "home": "Home",
@@ -186,6 +187,7 @@
     "passwordChanged": "Password changed successfully",
     "profileUpdated": "Profile updated successfully",
     "saveChanges": "Save Changes",
+    "saving": "Saving...",
     "characterLimits": {
       "firstName": "2-20 characters",
       "lastName": "2-20 characters",
@@ -628,7 +630,9 @@
         "price": "Price",
         "addSettings": "Add Settings",
         "addAddons": "Add Addons",
-        "addVariant": "Add Variant"
+        "addVariant": "Add Variant",
+        "uploading": "Uploading...",
+        "uploadImageDesc": "Click to browse or drag and drop"
       },
       "labels": {
         "categoryName": "Category Name",
@@ -639,6 +643,7 @@
         "pricingType": "Pricing Type",
         "averageConsumption": "Average Consumption",
         "itemImage": "Item Image",
+        "imagePreview": "Image Preview",
         "active": "Active",
         "comboItem": "Combo Item",
         "groupName": "Group Name",
@@ -660,6 +665,8 @@
         "selectCategory": "Select Category",
         "chooseCategory": "Choose a category",
         "pricingMode": "Pricing Mode",
+        "pricingModePrice": "Price",
+        "pricingModeVariants": "Variants",
         "isCombo": "Is Combo Pack",
         "itemSettingsOpt": "Item Settings (Optional)",
         "addonsOpt": "Addons & Choices (Optional)",
@@ -698,6 +705,8 @@
         "itemName": "e.g., Margherita Pizza",
         "itemDesc": "Describe this menu item",
         "averageConsumption": "e.g., 3 (1 bottle serves 3 people)",
+        "averageConsumptionShort": "e.g., 3",
+        "price": "0.00",
         "variantName": "Variant name (e.g., Small, Medium)",
         "groupName": "e.g., Size, Toppings, Extras",
         "addonName": "e.g., Extra Cheese",

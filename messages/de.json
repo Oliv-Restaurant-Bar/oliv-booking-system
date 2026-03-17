@@ -58,7 +58,8 @@
       "beverages": "Getränk",
       "desserts": "Dessert",
       "starters": "Vorspeise"
-    }
+    },
+    "currencySymbol": "€"
   },
   "nav": {
     "home": "Startseite",
@@ -186,6 +187,7 @@
     "passwordChanged": "Passwort erfolgreich geändert",
     "profileUpdated": "Profil erfolgreich aktualisiert",
     "saveChanges": "Änderungen speichern",
+    "saving": "Wird gespeichert...",
     "characterLimits": {
       "firstName": "2-20 Zeichen",
       "lastName": "2-20 Zeichen",
@@ -627,7 +629,10 @@
         "saveChanges": "Änderungen speichern",
         "price": "Preis",
         "addSettings": "Einstellungen hinzufügen",
-        "addAddons": "Optionen hinzufügen"
+        "addAddons": "Optionen hinzufügen",
+        "addVariant": "Variante hinzufügen",
+        "uploading": "Wird hochgeladen...",
+        "uploadImageDesc": "Klicken zum Durchsuchen oder Drag & Drop"
       },
       "labels": {
         "categoryName": "Kategoriename",
@@ -638,6 +643,7 @@
         "pricingType": "Preistyp",
         "averageConsumption": "Durchschnittlicher Verbrauch",
         "itemImage": "Artikelbild",
+        "imagePreview": "Bildvorschau",
         "active": "Aktiv",
         "comboItem": "Kombi-Artikel",
         "groupName": "Gruppenname",
@@ -659,6 +665,8 @@
         "selectCategory": "Kategorie wählen",
         "chooseCategory": "Kategorie auswählen",
         "pricingMode": "Preismodus",
+        "pricingModePrice": "Preis",
+        "pricingModeVariants": "Varianten",
         "isCombo": "Ist Kombipaket",
         "itemSettingsOpt": "Artikeleinstellungen (Optional)",
         "addonsOpt": "Optionen & Auswahl (Optional)",
@@ -697,6 +705,8 @@
         "itemName": "z.B. Pizza Margherita",
         "itemDesc": "Diesen Menüartikel beschreiben",
         "averageConsumption": "z.B. 3 (1 Flasche für 3 Personen)",
+        "averageConsumptionShort": "z.B. 3",
+        "price": "0.00",
         "variantName": "Variantenname (z.B. Klein, Mittel)",
         "groupName": "z.B. Grösse, Beläge, Extras",
         "addonName": "z.B. Extra Käse",

@@ -237,7 +237,7 @@ export function AddMenuItemModal({
                 step="1"
                 value={newMenuItem.averageConsumption}
                 onChange={(e) => setNewMenuItem({ ...newMenuItem, averageConsumption: e.target.value })}
-                placeholder="e.g., 3"
+                placeholder={t('placeholders.averageConsumptionShort')}
                 className="flex-1 px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                 style={{ fontSize: 'var(--text-base)' }}
               />
@@ -262,7 +262,7 @@ export function AddMenuItemModal({
                 setNewMenuItem({ ...newMenuItem, variants: [] });
               }}
             >
-              Price
+              {t('labels.pricingModePrice')}
             </span>
 
             <button
@@ -291,7 +291,7 @@ export function AddMenuItemModal({
                 setNewMenuItem({ ...newMenuItem, price: '' });
               }}
             >
-              Variants
+              {t('labels.pricingModeVariants')}
             </span>
           </div>
         </div>
@@ -302,14 +302,14 @@ export function AddMenuItemModal({
               {t('labels.price')} *
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>€</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>{ct('currencySymbol')}</span>
               <input
                 type="number"
                 step="0.01"
                 min="0"
                 value={newMenuItem.price}
                 onChange={(e) => setNewMenuItem({ ...newMenuItem, price: e.target.value })}
-                placeholder="0.00"
+                placeholder={t('placeholders.price')}
                 className="w-full pl-8 pr-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                 style={{ fontSize: 'var(--text-base)' }}
               />
@@ -350,14 +350,14 @@ export function AddMenuItemModal({
                 <div className="w-full h-48 rounded-lg overflow-hidden bg-muted">
                   <ImageWithFallback
                     src={newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl}
-                    alt="Preview"
+                    alt={t('labels.imagePreview')}
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <label className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity cursor-pointer flex items-center justify-center gap-2">
                   <Upload className="w-4 h-4" />
                   <span style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                    {uploadingImage ? 'Uploading...' : t('buttons.changeImage')}
+                    {uploadingImage ? t('buttons.uploading') : t('buttons.changeImage')}
                   </span>
                   <input
                     type="file"
@@ -384,10 +384,10 @@ export function AddMenuItemModal({
                   <Upload className="w-8 h-8 text-primary" />
                 </div>
                 <span className="text-foreground mb-1" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                  {uploadingImage ? 'Uploading...' : t('buttons.uploadImage')}
+                  {uploadingImage ? t('buttons.uploading') : t('buttons.uploadImage')}
                 </span>
                 <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                  Click to browse or drag and drop
+                  {t('buttons.uploadImageDesc')}
                 </span>
                 <input
                   type="file"
@@ -438,7 +438,7 @@ export function AddMenuItemModal({
               <div className="space-y-2 mt-3">
                 {newMenuItem.variants.map((variant, index) => (
                   <div key={variant.id} className="space-y-1">
-                    <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                    <div className="flex gap-2 p-3 bg-muted rounded-lg">
                       <div className="flex-1">
                         <input
                           type="text"
@@ -451,31 +451,35 @@ export function AddMenuItemModal({
                         />
                         <p className="text-muted-foreground text-[10px] mt-0.5 text-right">{variant.name.length}/100</p>
                       </div>
-                      <div className="relative w-32 flex-shrink-0">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>€</span>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={variant.price}
-                          onChange={(e) => updateVariant(index, 'price', parseFloat(e.target.value) || 0)}
-                          placeholder="0.00"
-                          className="w-full pl-8 pr-3 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-                          style={{ fontSize: 'var(--text-base)' }}
-                        />
+                      <div className="w-32 flex-shrink-0">
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>{ct('currencySymbol')}</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={variant.price}
+                            onChange={(e) => updateVariant(index, 'price', parseFloat(e.target.value) || 0)}
+                            placeholder={t('placeholders.price')}
+                            className="w-full pl-8 pr-3 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                            style={{ fontSize: 'var(--text-base)' }}
+                          />
+                        </div>
                       </div>
-                      <div className="relative w-40 flex-shrink-0">
-                        <input
-                          type="number"
-                          min="0"
-                          value={variant.averageConsumption || ''}
-                          onChange={(e) => updateVariant(index, 'averageConsumption', e.target.value ? parseInt(e.target.value) : undefined)}
-                          placeholder={t('labels.peoplePerUnitAbbr')}
-                          className="w-full px-3 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-                          style={{ fontSize: 'var(--text-base)' }}
-                        />
-                        <p className="text-muted-foreground text-[10px] mt-0.5 text-right">{t('labels.peoplePerUnit')}</p>
-                      </div>
+                      {newMenuItem.pricingType === 'billed_by_consumption' && (
+                        <div className="relative w-40 flex-shrink-0">
+                          <input
+                            type="number"
+                            min="0"
+                            value={variant.averageConsumption || ''}
+                            onChange={(e) => updateVariant(index, 'averageConsumption', e.target.value ? parseInt(e.target.value) : undefined)}
+                            placeholder={t('labels.peoplePerUnitAbbr')}
+                            className="w-full px-3 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                            style={{ fontSize: 'var(--text-base)' }}
+                          />
+                          <p className="text-muted-foreground text-[10px] mt-0.5 text-right">{t('labels.peoplePerUnit')}</p>
+                        </div>
+                      )}
                       <button
                         type="button"
                         onClick={() => removeVariant(index)}
@@ -674,14 +678,14 @@ export function AddMenuItemModal({
               </h4>
               <div className="grid grid-cols-2 gap-4">
                 {[
-                  { id: 'servingSize', label: t('nutrition.servingSize'), placeholder: 'e.g., 100g' },
-                  { id: 'calories', label: t('nutrition.calories'), placeholder: 'e.g., 250 kcal' },
-                  { id: 'protein', label: t('nutrition.protein'), placeholder: 'e.g., 15g' },
-                  { id: 'carbs', label: t('nutrition.carbs'), placeholder: 'e.g., 30g' },
-                  { id: 'fat', label: t('nutrition.fat'), placeholder: 'e.g., 10g' },
-                  { id: 'fiber', label: t('nutrition.fiber'), placeholder: 'e.g., 5g' },
-                  { id: 'sugar', label: t('nutrition.sugar'), placeholder: 'e.g., 8g' },
-                  { id: 'sodium', label: t('nutrition.sodium'), placeholder: 'e.g., 500mg' },
+                  { id: 'servingSize', label: t('nutrition.servingSize') },
+                  { id: 'calories', label: t('nutrition.calories') },
+                  { id: 'protein', label: t('nutrition.protein') },
+                  { id: 'carbs', label: t('nutrition.carbs') },
+                  { id: 'fat', label: t('nutrition.fat') },
+                  { id: 'fiber', label: t('nutrition.fiber') },
+                  { id: 'sugar', label: t('nutrition.sugar') },
+                  { id: 'sodium', label: t('nutrition.sodium') },
                 ].map((info) => (
                   <div key={info.id}>
                     <label className="block text-muted-foreground mb-1.5" style={{ fontSize: 'var(--text-small)' }}>
@@ -695,7 +699,7 @@ export function AddMenuItemModal({
                         ...newMenuItem,
                         nutritionalInfo: { ...newMenuItem.nutritionalInfo, [info.id]: e.target.value }
                       })}
-                      placeholder={info.placeholder}
+                      placeholder={t(`placeholders.nutrition.${info.id}`)}
                       className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                       style={{ fontSize: 'var(--text-base)' }}
                     />
