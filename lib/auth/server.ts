@@ -3,9 +3,11 @@ import { auth } from "./index";
 
 export async function getSession() {
   try {
+    const headerList = await headers();
+    
     // Call Better Auth's getSession with all request headers
     const session = await auth.api.getSession({
-      headers: await headers(),
+      headers: headerList,
     });
 
     return session;
