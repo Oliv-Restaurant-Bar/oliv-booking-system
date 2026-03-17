@@ -45,7 +45,8 @@ export const auth = betterAuth({
       sessionToken: {
         name: "oliv-auth.session_token",
         attributes: {
-          secure: process.env.NODE_ENV === 'production',
+          // DON'T set secure flag - let browser decide based on protocol
+          // secure: process.env.NODE_ENV === 'production',
           sameSite: 'lax',
           httpOnly: true,
           path: '/',
