@@ -5,20 +5,18 @@ export async function getSession() {
   try {
     const cookieStore = await cookies();
 
-    // Build a proper headers object from cookies
-    const headers: Record<string, string> = {};
+    // Get the session token directly
+    const sessionToken = cookieStore.get("oliv-auth.session_token")?.value;
 
-    // Add cookies as a header
-    const allCookies = cookieStore.getAll();
-    if (allCookies.length > 0) {
-      headers.cookie = allCookies
-        .map((c) => `${c.name}=${c.value}`)
-        .join("; ");
+    if (!sessionToken) {
+      return null;
     }
 
-    // Call Better Auth's getSession with proper headers
+    // Use Better Auth's built-in method to validate session
     const session = await auth.api.getSession({
-      headers: headers as HeadersInit,
+      headers: {
+        cookie: `oliv-auth.session_token=${sessionToken}`,
+      } as HeadersInit,
     });
 
     return session;

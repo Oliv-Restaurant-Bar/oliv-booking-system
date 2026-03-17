@@ -32,11 +32,11 @@ export default function AdminLoginPage() {
         throw new Error(data.message || "Login failed");
       }
 
-      // Small delay to ensure cookie is set
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Wait for cookie to be set and redirect
+      await new Promise(resolve => setTimeout(resolve, 500));
 
-      router.push("/admin");
-      router.refresh();
+      // Use window.location for full page reload to ensure cookies are set
+      window.location.href = "/admin";
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
