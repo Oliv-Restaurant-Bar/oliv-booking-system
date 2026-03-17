@@ -1,13 +1,24 @@
-import { headers } from "next/headers";
+import { cookies } from "next/headers";
 import { auth } from "./index";
 
 export async function getSession() {
   try {
-    const headerList = await headers();
-    
-    // Call Better Auth's getSession with all request headers
+    const cookieStore = await cookies();
+
+    // Build a proper headers object from cookies
+    const headers: Record<string, string> = {};
+
+    // Add cookies as a header
+    const allCookies = cookieStore.getAll();
+    if (allCookies.length > 0) {
+      headers.cookie = allCookies
+        .map((c) => `${c.name}=${c.value}`)
+        .join("; ");
+    }
+
+    // Call Better Auth's getSession with proper headers
     const session = await auth.api.getSession({
-      headers: headerList,
+      headers: headers as HeadersInit,
     });
 
     return session;

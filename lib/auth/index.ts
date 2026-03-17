@@ -4,9 +4,7 @@ import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 
 export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL || 
-           process.env.NEXT_PUBLIC_APP_URL || 
-           (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"),
+  baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: {
@@ -40,7 +38,6 @@ export const auth = betterAuth({
     crossSubDomainCookies: {
       enabled: false,
     },
-    trustHost: true,
     // Disable sign-up
     disableSignUp: true,
   },
@@ -48,7 +45,8 @@ export const auth = betterAuth({
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // 1 day
     cookieCache: {
-      enabled: false, // Disable to debug SyntaxError
+      enabled: true,
+      maxAge: 5 * 60, // 5 minutes
     },
   },
 });
