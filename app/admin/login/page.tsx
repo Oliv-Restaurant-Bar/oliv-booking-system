@@ -13,13 +13,24 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false); // Prevent double-clicks
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Prevent multiple simultaneous login attempts
+    if (isLoggingIn) {
+      console.log("⚠️ Login already in progress, ignoring click");
+      return;
+    }
+
     setError("");
     setLoading(true);
+    setIsLoggingIn(true);
 
     try {
+      console.log("🔐 Login attempt for:", email);
+
       const response = await fetch("/api/auth/sign-in/email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -32,15 +43,34 @@ export default function AdminLoginPage() {
         throw new Error(data.message || "Login failed");
       }
 
-      // Wait for cookie to be set and redirect
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Get the response data to verify login was successful
+      const data = await response.json();
 
-      // Use window.location for full page reload to ensure cookies are set
-      window.location.href = "/admin";
+      console.log("✅ Login response received:", {
+        hasUser: !!data.user,
+        hasToken: !!data.token,
+        redirect: data.redirect,
+      });
+
+      if (data.user) {
+        console.log("⏳ Waiting for cookies to be set...");
+
+        // Wait for browser to process cookies
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        console.log("🚀 Redirecting to /admin");
+
+        // Now redirect
+        window.location.href = "/admin";
+      } else {
+        throw new Error("Login failed - no user data returned");
+      }
     } catch (err) {
+      console.error("❌ Login error:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
+      setIsLoggingIn(false);
     }
   };
 
@@ -108,10 +138,10 @@ export default function AdminLoginPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || isLoggingIn}
             className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-medium hover:bg-secondary hover:text-secondary-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? t('signingIn') : t('signInBtn')}
+            {loading || isLoggingIn ? t('signingIn') : t('signInBtn')}
           </button>
         </form>
 
