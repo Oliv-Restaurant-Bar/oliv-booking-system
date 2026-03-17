@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { useTranslations } from 'next-intl';
+import { toast } from "sonner";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -13,14 +14,12 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoggingIn, setIsLoggingIn] = useState(false); // Prevent double-clicks
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Prevent multiple simultaneous login attempts
     if (isLoggingIn) {
-      console.log("⚠️ Login already in progress, ignoring click");
       return;
     }
 
@@ -29,8 +28,6 @@ export default function AdminLoginPage() {
     setIsLoggingIn(true);
 
     try {
-      console.log("🔐 Login attempt for:", email);
-
       const response = await fetch("/api/auth/sign-in/email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -45,21 +42,11 @@ export default function AdminLoginPage() {
 
       const data = await response.json();
 
-      console.log("✅ Login response received:", {
-        hasUser: !!data.user,
-        hasToken: !!data.token,
-        redirect: data.redirect,
-      });
-
       if (data.user) {
-        console.log("⏳ Waiting for cookies to be set...");
-
-        // Wait for browser to process cookies and store them
+        // Wait for browser to process cookies
         await new Promise(resolve => setTimeout(resolve, 2000));
 
         // Verify cookie is set by making a test request
-        console.log("🔍 Verifying cookie was set...");
-
         try {
           const testResponse = await fetch("/api/auth/get-session", {
             credentials: "include",
@@ -67,29 +54,33 @@ export default function AdminLoginPage() {
 
           if (testResponse.ok) {
             const sessionData = await testResponse.json();
-            console.log("✅ Cookie verified, session exists:", !!sessionData);
 
-            // Only redirect if we confirm the session exists
-            console.log("🚀 Redirecting to /admin");
-            window.location.href = "/admin";
+            if (sessionData) {
+              // Show success toast
+              toast.success("Login successful! Redirecting...");
+
+              // Redirect to dashboard
+              setTimeout(() => {
+                window.location.href = "/admin";
+              }, 500);
+            } else {
+              // Session doesn't exist yet, wait longer
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              window.location.href = "/admin";
+            }
           } else {
-            console.log("⚠️ Cookie not set yet, waiting longer...");
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            console.log("🚀 Redirecting to /admin after extended wait");
-            window.location.href = "/admin";
+            throw new Error("Session verification failed");
           }
         } catch (testError) {
-          console.log("⚠️ Could not verify cookie, redirecting anyway");
-          console.log("🚀 Redirecting to /admin");
+          // If verification fails, still redirect (session might be valid)
           window.location.href = "/admin";
         }
       } else {
         throw new Error("Login failed - no user data returned");
       }
     } catch (err) {
-      console.error("❌ Login error:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
-      setIsLoggingIn(false); // Allow retry on error
+      setIsLoggingIn(false);
     } finally {
       setLoading(false);
     }
