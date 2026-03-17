@@ -40,6 +40,17 @@ export const auth = betterAuth({
     },
     // Disable sign-up
     disableSignUp: true,
+    // Explicit cookie configuration for production
+    cookies: {
+      sessionToken: {
+        attributes: {
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+        },
+      },
+    },
+    // Add trusted origins for production
+    trustedOrigins: process.env.NEXT_PUBLIC_APP_URL ? [process.env.NEXT_PUBLIC_APP_URL] : ['http://localhost:3000'],
   },
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
