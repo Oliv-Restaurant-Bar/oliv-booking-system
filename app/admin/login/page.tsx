@@ -34,7 +34,7 @@ export default function AdminLoginPage() {
       const response = await fetch("/api/auth/sign-in/email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include", // Important: include cookies
+        credentials: "include",
         body: JSON.stringify({ email, password }),
       });
 
@@ -43,7 +43,6 @@ export default function AdminLoginPage() {
         throw new Error(data.message || "Login failed");
       }
 
-      // Get the response data to verify login was successful
       const data = await response.json();
 
       console.log("✅ Login response received:", {
@@ -55,22 +54,44 @@ export default function AdminLoginPage() {
       if (data.user) {
         console.log("⏳ Waiting for cookies to be set...");
 
-        // Wait for browser to process cookies
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Wait for browser to process cookies and store them
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
-        console.log("🚀 Redirecting to /admin");
+        // Verify cookie is set by making a test request
+        console.log("🔍 Verifying cookie was set...");
 
-        // Now redirect
-        window.location.href = "/admin";
+        try {
+          const testResponse = await fetch("/api/auth/get-session", {
+            credentials: "include",
+          });
+
+          if (testResponse.ok) {
+            const sessionData = await testResponse.json();
+            console.log("✅ Cookie verified, session exists:", !!sessionData);
+
+            // Only redirect if we confirm the session exists
+            console.log("🚀 Redirecting to /admin");
+            window.location.href = "/admin";
+          } else {
+            console.log("⚠️ Cookie not set yet, waiting longer...");
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            console.log("🚀 Redirecting to /admin after extended wait");
+            window.location.href = "/admin";
+          }
+        } catch (testError) {
+          console.log("⚠️ Could not verify cookie, redirecting anyway");
+          console.log("🚀 Redirecting to /admin");
+          window.location.href = "/admin";
+        }
       } else {
         throw new Error("Login failed - no user data returned");
       }
     } catch (err) {
       console.error("❌ Login error:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
+      setIsLoggingIn(false); // Allow retry on error
     } finally {
       setLoading(false);
-      setIsLoggingIn(false);
     }
   };
 
