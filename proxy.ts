@@ -18,12 +18,15 @@ export async function proxy(request: NextRequest) {
 
   // Protect all admin routes
   if (pathname.startsWith("/admin")) {
-    // Check for session cookie
-    const sessionCookie = request.cookies.get("oliv-auth.session_token")?.value;
+    // Check for session cookie (try both regular and __Secure prefix)
+    const sessionCookie = request.cookies.get("oliv-auth.session_token")?.value ||
+                          request.cookies.get("__Secure-oliv-auth.session_token")?.value;
 
     console.log("🔍 Proxy: Admin route check:", {
       hasCookie: !!sessionCookie,
       cookiePreview: sessionCookie ? `${sessionCookie.substring(0, 10)}...` : 'none',
+      hasRegularCookie: !!request.cookies.get("oliv-auth.session_token")?.value,
+      hasSecureCookie: !!request.cookies.get("__Secure-oliv-auth.session_token")?.value,
     });
 
     if (!sessionCookie) {
