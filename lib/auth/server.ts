@@ -8,7 +8,15 @@ export async function getSession() {
     // Get the session token directly
     const sessionToken = cookieStore.get("oliv-auth.session_token")?.value;
 
+    console.log("🔍 getSession Debug:", {
+      hasCookie: !!sessionToken,
+      cookiePreview: sessionToken ? `${sessionToken.substring(0, 10)}...` : 'none',
+      env: process.env.NODE_ENV,
+      appUrl: process.env.NEXT_PUBLIC_APP_URL,
+    });
+
     if (!sessionToken) {
+      console.log("❌ No session token found");
       return null;
     }
 
@@ -19,9 +27,15 @@ export async function getSession() {
       } as HeadersInit,
     });
 
+    console.log("✅ Session result:", {
+      hasSession: !!session,
+      hasUser: !!session?.user,
+      userEmail: session?.user?.email,
+    });
+
     return session;
   } catch (error) {
-    console.error("Error getting session:", error);
+    console.error("❌ Error getting session:", error);
     return null;
   }
 }

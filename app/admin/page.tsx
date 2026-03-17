@@ -10,9 +10,18 @@ import { getServerLocale, getTranslation } from "@/lib/i18n/server";
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboardPage() {
+  console.log("🔍 AdminDashboardPage: Fetching session...");
+
   const session = await getSession();
 
+  console.log("🔍 AdminDashboardPage: Session result:", {
+    hasSession: !!session,
+    hasUser: !!session?.user,
+    userEmail: session?.user?.email,
+  });
+
   if (!session) {
+    console.log("❌ AdminDashboardPage: No session, redirecting to login");
     redirect("/admin/login");
   }
 
