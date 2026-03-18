@@ -1,0 +1,642 @@
+import React, { useState, useEffect } from 'react';
+import { X, Minus, Plus, ShoppingCart, AlertTriangle, Sparkles } from 'lucide-react';
+import { MenuItem } from './menuItemsData';
+import { EventDetails } from '@/lib/types';
+import { DietaryIcon } from './DietaryIcon';
+import { NativeRadio } from '@/components/ui/NativeRadio';
+import { NativeCheckbox } from '@/components/ui/NativeCheckbox';
+import { Input } from '@/components/ui/input';
+import { ValidatedTextarea } from '@/components/ui/validated-textarea';
+import { toast } from 'sonner';
+
+interface ItemDetailsModalProps {
+  item: MenuItem | null;
+  onClose: () => void;
+  onConfirm: (itemId: string, data: {
+    quantity: number;
+    guestCount: number | null;
+    addOns: string[];
+    variant: string;
+    comment: string;
+  }) => void;
+  eventDetails: EventDetails;
+  selectedItems: string[];
+  itemQuantities: Record<string, number>;
+  itemGuestCounts: Record<string, number>;
+  itemAddOns: Record<string, string[]>;
+  itemVariants: Record<string, string>;
+  itemComments: Record<string, string>;
+  isPerPerson: (item: MenuItem) => boolean;
+  isConsumption: (item: MenuItem) => boolean;
+  calculateRecommendedQuantity: (item: MenuItem, itemId?: string) => number | null;
+}
+
+export function ItemDetailsModal({
+  item,
+  onClose,
+  onConfirm,
+  eventDetails,
+  selectedItems,
+  itemQuantities,
+  itemGuestCounts,
+  itemAddOns,
+  itemVariants,
+  itemComments,
+  isPerPerson,
+  isConsumption,
+  calculateRecommendedQuantity,
+}: ItemDetailsModalProps) {
+  const [tempQuantity, setTempQuantity] = useState(1);
+  const [tempGuestCount, setTempGuestCount] = useState<number | null>(null);
+  const [tempAddOns, setTempAddOns] = useState<string[]>([]);
+  const [tempVariant, setTempVariant] = useState('');
+  const [tempComment, setTempComment] = useState('');
+
+  useEffect(() => {
+    if (item) {
+      const isAlreadySelected = selectedItems.includes(item.id);
+
+      // Initialize add-ons
+      let defaultAddOns = isAlreadySelected ? (itemAddOns[item.id] || []) : [];
+      if (!isAlreadySelected && item.addonGroups) {
+        item.addonGroups.forEach(group => {
+          if (group.isRequired && group.items.length > 0) {
+            if (group.maxSelect === 1) {
+              defaultAddOns.push(group.items[0].id);
+            } else {
+              const itemsToSelect = Math.min(group.minSelect || 1, group.items.length);
+              defaultAddOns.push(...group.items.slice(0, itemsToSelect).map(i => i.id));
+            }
+          }
+        });
+      }
+      setTempAddOns(defaultAddOns);
+
+      // Initialize variant
+      const defaultVariantId = item.variants?.[0]?.id || '';
+      setTempVariant(isAlreadySelected ? (itemVariants[item.id] || defaultVariantId) : defaultVariantId);
+
+      // Initialize comment
+      setTempComment(isAlreadySelected ? (itemComments[item.id] || '') : '');
+
+      // Initialize quantity and guest count
+      if (isPerPerson(item)) {
+        const totalGuestCount = parseInt(eventDetails.guestCount) || 1;
+        setTempGuestCount(isAlreadySelected ? (itemGuestCounts[item.id] || totalGuestCount) : totalGuestCount);
+        setTempQuantity(1);
+      } else if (isConsumption(item)) {
+        const recommended = calculateRecommendedQuantity(item, item.id);
+        setTempQuantity(isAlreadySelected ? (itemQuantities[item.id] || recommended || 1) : (recommended || 1));
+        setTempGuestCount(null);
+      } else {
+        setTempQuantity(isAlreadySelected ? (itemQuantities[item.id] || 1) : 1);
+        setTempGuestCount(null);
+      }
+    }
+  }, [item, selectedItems, itemQuantities, itemGuestCounts, itemAddOns, itemVariants, itemComments, eventDetails.guestCount]);
+
+  if (!item) return null;
+
+  const toggleTempAddOn = (addOnId: string, groupId?: string, maxSelect?: number) => {
+    setTempAddOns(prev => {
+      const isRemoving = prev.includes(addOnId);
+
+      if (isRemoving && groupId && item.addonGroups) {
+        const group = item.addonGroups.find(g => g.id === groupId);
+        if (group?.isRequired && (group.maxSelect || 1) > 1) {
+          const alreadySelectedInGroup = prev.filter(id =>
+            group.items.some((i: any) => i.id === id)
+          );
+          const minRequired = group.minSelect || 1;
+          if (alreadySelectedInGroup.length <= minRequired) {
+            toast.error(`You must select at least ${minRequired} option${minRequired > 1 ? 's' : ''} from ${group.name}`);
+            return prev;
+          }
+        }
+      }
+
+      if (isRemoving) {
+        return prev.filter(id => id !== addOnId);
+      } else {
+        let isSingleSelect = false;
+        let groupItemIds: string[] = [];
+        let maxSelectLimit = 1;
+
+        if (groupId && item.addonGroups) {
+          const group = item.addonGroups.find(g => g.id === groupId);
+          if (group) {
+            maxSelectLimit = group.maxSelect || 1;
+            if (maxSelectLimit === 1) {
+              isSingleSelect = true;
+              groupItemIds = group.items.map(i => i.id);
+            } else {
+              const alreadySelectedInGroup = prev.filter(id =>
+                group.items.some((i: any) => i.id === id)
+              );
+              if (alreadySelectedInGroup.length >= maxSelectLimit) {
+                toast.error(`You can select maximum ${maxSelectLimit} option${maxSelectLimit > 1 ? 's' : ''} from ${group.name}`);
+                return prev;
+              }
+            }
+          }
+        }
+
+        if (isSingleSelect && groupItemIds.length > 0) {
+          return [...prev.filter(id => !groupItemIds.includes(id)), addOnId];
+        }
+
+        return [...prev, addOnId];
+      }
+    });
+  };
+
+  const handleAddToCart = () => {
+    onConfirm(item.id, {
+      quantity: tempQuantity,
+      guestCount: tempGuestCount,
+      addOns: tempAddOns,
+      variant: tempVariant,
+      comment: tempComment,
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div
+        className="bg-card rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        style={{ borderRadius: 'var(--radius-card)' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Modal Header */}
+        <div className="sticky top-0 bg-card border-b border-border px-6 py-4 flex items-center justify-between z-10">
+          <div className="flex items-center gap-3">
+            <DietaryIcon type={item.dietaryType} size="md" />
+            <div>
+              <h3 className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
+                {item.name}
+              </h3>
+              <p className="text-primary mt-1" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                CHF {item.price.toFixed(2)}
+                {item.pricingType === 'billed_by_consumption' && (
+                  <span className="text-muted-foreground ml-2" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-normal)' }}>
+                    (Billed by consumption)
+                  </span>
+                )}
+                {item.pricingType === 'flat_fee' && (
+                  <span className="text-muted-foreground ml-2" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-normal)' }}>
+                    (Flat fee)
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center hover:bg-muted rounded-lg transition-colors"
+            style={{ borderRadius: 'var(--radius)' }}
+          >
+            <X className="w-5 h-5 text-muted-foreground" />
+          </button>
+        </div>
+
+        {/* Modal Content */}
+        <div className="p-6">
+          {/* Item Image */}
+          <div className="mb-6 rounded-lg overflow-hidden" style={{ borderRadius: 'var(--radius-card)' }}>
+            <img
+              src={item.image}
+              alt={item.name}
+              className="w-full h-64 object-cover"
+            />
+          </div>
+
+          {/* Description */}
+          <div className="mb-6">
+            <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
+              {item.description}
+            </p>
+          </div>
+
+          {/* Recommendation for consumption-based items */}
+          {isConsumption(item) && (() => {
+            const avgConsumption = (() => {
+              if (tempVariant && item.variants) {
+                const variant = item.variants.find(v => v.id === tempVariant);
+                if (variant?.averageConsumption) return variant.averageConsumption;
+              }
+              return item.averageConsumption;
+            })();
+            if (!avgConsumption) return null;
+            const guestCount = parseInt(eventDetails.guestCount) || 0;
+            if (guestCount === 0) return null;
+            const recommended = Math.ceil(guestCount / avgConsumption);
+            return (
+              <div className="mb-4 p-3 bg-amber-50 rounded-lg border border-amber-500/30">
+                <div className="flex items-start gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-900/80 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">
+                      Recommended for {eventDetails.guestCount} guests:{' '}
+                      <span className="text-amber-900/80 font-semibold">
+                        {recommended} units
+                      </span>
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Based on {avgConsumption} people per unit
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Size/Variant Selection */}
+          {item.variants && item.variants.length > 0 && (
+            <div className="mb-6">
+              <h4 className="text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                Choose Size
+              </h4>
+              <div className="space-y-3">
+                {item.variants.map((variant) => {
+                  const isSelected = tempVariant === variant.id;
+                  return (
+                    <label
+                      key={variant.id}
+                      className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all ${isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-border/80'
+                        }`}
+                      style={{ borderRadius: 'var(--radius)' }}
+                    >
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="relative flex items-center justify-center">
+                          <NativeRadio
+                            name="variant"
+                            checked={isSelected}
+                            onChange={() => setTempVariant(variant.id)}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                            {variant.name}
+                          </span>
+                          {variant.description && (
+                            <span className="text-muted-foreground ml-2" style={{ fontSize: 'var(--text-small)' }}>
+                              ({variant.description})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-foreground ml-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                        CHF {variant.price.toFixed(2)}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Dietary Information Tags */}
+          {item.dietaryTags && item.dietaryTags.length > 0 && (
+            <div className="mb-6">
+              <h4 className="text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                Dietary Information
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {item.dietaryTags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20"
+                    style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Allergen Information */}
+          {((item.allergens && item.allergens.length > 0) || (item.additives && item.additives.length > 0)) && (
+            <div className="mb-6 p-4 bg-destructive/5 border border-destructive/20 rounded-lg flex gap-3" style={{ borderRadius: 'var(--radius)' }}>
+              <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-foreground mb-1" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
+                  Allergen & Additive Information
+                </p>
+                {item.allergens && item.allergens.length > 0 && (
+                  <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                    Contains: {item.allergens.join(', ')}
+                  </p>
+                )}
+                {item.additives && item.additives.length > 0 && (
+                  <p className="text-muted-foreground mt-1" style={{ fontSize: 'var(--text-small)' }}>
+                    Additives: {item.additives.join(', ')}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Addon Groups */}
+          {(() => {
+            const requiredGroups = item.addonGroups?.filter(g => g.isRequired) || [];
+            const optionalGroups = item.addonGroups?.filter(g => !g.isRequired) || [];
+
+            return (
+              <>
+                {requiredGroups.length > 0 && (
+                  <div className="mb-6">
+                    <h4 className="text-foreground mb-4" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                      Choices
+                    </h4>
+                    <div className="space-y-6">
+                      {requiredGroups.map((group) => (
+                        <div key={group.id} className="mb-4 last:mb-0">
+                          {group.name && (
+                            <p className="text-foreground mb-2" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
+                              {group.name}
+                            </p>
+                          )}
+                          <div className="space-y-3">
+                            {group.items.map((addOn) => {
+                              const isChecked = tempAddOns.includes(addOn.id);
+                              return (
+                                <label
+                                  key={addOn.id}
+                                  className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all ${isChecked ? 'border-primary bg-primary/5' : 'border-border hover:border-border/80'
+                                    }`}
+                                  style={{ borderRadius: 'var(--radius)' }}
+                                >
+                                  <div className="flex items-center gap-3 flex-1">
+                                    <div className="relative flex items-center justify-center">
+                                      {group.maxSelect > 1 ? (
+                                        <NativeCheckbox
+                                          checked={isChecked}
+                                          onChange={() => toggleTempAddOn(addOn.id, group.id, group.maxSelect)}
+                                        />
+                                      ) : (
+                                        <NativeRadio
+                                          name={`choice-${group.id}`}
+                                          checked={isChecked}
+                                          onChange={() => toggleTempAddOn(addOn.id, group.id, group.maxSelect)}
+                                        />
+                                      )}
+                                    </div>
+                                    <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                                      {addOn.name}
+                                    </span>
+                                  </div>
+                                  <span className="text-foreground ml-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                                    CHF {addOn.price.toFixed(2)}
+                                  </span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {optionalGroups.length > 0 && (
+                  <div className="mb-6">
+                    <h4 className="text-foreground mb-4" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                      Addons
+                    </h4>
+                    <div className="space-y-6">
+                      {optionalGroups.map((group) => (
+                        <div key={group.id} className="mb-4 last:mb-0">
+                          {group.name && (
+                            <p className="text-foreground mb-2" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
+                              {group.name}
+                            </p>
+                          )}
+                          <div className="space-y-3">
+                            {group.items.map((addOn) => {
+                              const isChecked = tempAddOns.includes(addOn.id);
+                              return (
+                                <label
+                                  key={addOn.id}
+                                  className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all ${isChecked ? 'border-primary bg-primary/5' : 'border-border hover:border-border/80'
+                                    }`}
+                                  style={{ borderRadius: 'var(--radius)' }}
+                                >
+                                  <div className="flex items-center gap-3 flex-1">
+                                    <div className="relative flex items-center justify-center">
+                                      {group.maxSelect > 1 ? (
+                                        <NativeCheckbox
+                                          checked={isChecked}
+                                          onChange={() => toggleTempAddOn(addOn.id, group.id, group.maxSelect)}
+                                        />
+                                      ) : (
+                                        <NativeRadio
+                                          name={`choice-${group.id}`}
+                                          checked={isChecked}
+                                          onChange={() => toggleTempAddOn(addOn.id, group.id, group.maxSelect)}
+                                        />
+                                      )}
+                                    </div>
+                                    <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                                      {addOn.name}
+                                    </span>
+                                  </div>
+                                  <span className="text-foreground ml-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                                    +CHF {addOn.price.toFixed(2)}
+                                  </span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
+
+          {/* Legacy Optional Addons */}
+          {!(item.addonGroups && item.addonGroups.length > 0) && (
+            item.addOns && item.addOns.length > 0 && (
+              <div className="mb-6">
+                <h4 className="text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                  Addons
+                </h4>
+                <div className="space-y-3">
+                  {item.addOns.map((addOn) => {
+                    const isChecked = tempAddOns.includes(addOn.id);
+                    return (
+                      <label
+                        key={addOn.id}
+                        className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all ${isChecked ? 'border-primary bg-primary/5' : 'border-border hover:border-border/80'
+                          }`}
+                        style={{ borderRadius: 'var(--radius)' }}
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          <div className="relative flex items-center justify-center">
+                            <NativeCheckbox
+                              checked={isChecked}
+                              onChange={() => toggleTempAddOn(addOn.id)}
+                            />
+                          </div>
+                          <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                            {addOn.name}
+                          </span>
+                        </div>
+                        <span className="text-foreground ml-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                          +CHF {addOn.price.toFixed(2)}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )
+          )}
+
+          {/* Additional Comments */}
+          <div className="mb-6">
+            <h4 className="text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+              Additional Comments
+            </h4>
+            <ValidatedTextarea
+              value={tempComment}
+              onChange={(e) => setTempComment(e.target.value)}
+              placeholder="Any special instructions or dietary requirements..."
+              rows={3}
+              maxLength={500}
+              showCharacterCount
+              helperText="Optional"
+            />
+          </div>
+        </div>
+
+        {/* Modal Footer */}
+        <div className="sticky bottom-0 bg-card border-t border-border px-6 py-4">
+          <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-4">
+            {/* Left: Quantity and Guest Count Selectors */}
+            <div className="flex items-center gap-6">
+              {isPerPerson(item) ? (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+                    <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Guests:</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          const currentVal = tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1);
+                          setTempGuestCount(Math.max(1, currentVal - 1));
+                        }}
+                        className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-foreground bg-card"
+                        style={{ borderRadius: 'var(--radius)' }}
+                        disabled={(tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1)) <= 1}
+                      >
+                        <Minus className="w-5 h-5" />
+                      </button>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1)}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          if (!isNaN(val) && val >= 1) {
+                            setTempGuestCount(val);
+                          }
+                        }}
+                        className="w-16 sm:w-20 h-10 text-center border-2 border-border text-foreground rounded-lg focus:border-primary focus:outline-none transition-colors bg-card"
+                        style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+                      />
+                      <button
+                        onClick={() => {
+                          const currentVal = tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1);
+                          setTempGuestCount(currentVal + 1);
+                        }}
+                        className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors bg-card"
+                        style={{ borderRadius: 'var(--radius)' }}
+                      >
+                        <Plus className="w-5 h-5" />
+                      </button>
+                    </div>
+                    <span className="text-muted-foreground whitespace-nowrap" style={{ fontSize: 'var(--text-small)' }}>
+                      / {parseInt(eventDetails.guestCount) || 1}
+                    </span>
+                  </div>
+                  {(tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1)) > (parseInt(eventDetails.guestCount) || 1) && (
+                    <div className="flex items-center gap-2 text-destructive">
+                      <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                      <span style={{ fontSize: 'var(--text-small)' }}>
+                        Guests exceed total event guests ({parseInt(eventDetails.guestCount) || 1})
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setTempQuantity(Math.max(1, tempQuantity - 1))}
+                    className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-foreground bg-card"
+                    style={{ borderRadius: 'var(--radius)' }}
+                    disabled={tempQuantity <= 1}
+                  >
+                    <Minus className="w-5 h-5" />
+                  </button>
+                  <span className="text-foreground min-w-[2rem] text-center" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                    {tempQuantity}
+                  </span>
+                  <button
+                    onClick={() => setTempQuantity(tempQuantity + 1)}
+                    className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors bg-card"
+                    style={{ borderRadius: 'var(--radius)' }}
+                  >
+                    <Plus className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Right: Add to Cart Button with Total */}
+            <button
+              onClick={handleAddToCart}
+              className="flex-shrink-0 w-full sm:w-auto flex items-center justify-center gap-3 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
+            >
+              <ShoppingCart className="w-5 h-5" />
+              <span style={{ fontWeight: 'var(--font-weight-medium)' }}>Add to Cart</span>
+              <span style={{ fontWeight: 'var(--font-weight-bold)' }}>
+                {(() => {
+                  let basePrice = item.price;
+                  if (tempVariant && item.variants) {
+                    const variant = item.variants.find(v => v.id === tempVariant);
+                    if (variant) basePrice = variant.price;
+                  }
+                  let addOnsTotal = 0;
+
+                  if (item.addonGroups && item.addonGroups.length > 0) {
+                    tempAddOns.forEach(addOnId => {
+                      for (const group of item.addonGroups!) {
+                        const groupAddOn = group.items.find(i => i.id === addOnId);
+                        if (groupAddOn) {
+                          addOnsTotal += groupAddOn.price;
+                          break;
+                        }
+                      }
+                    });
+                  } else if (item.addOns && item.addOns.length > 0) {
+                    tempAddOns.forEach(addOnId => {
+                      const addOn = item.addOns?.find(ao => ao.id === addOnId);
+                      if (addOn) addOnsTotal += addOn.price;
+                    });
+                  }
+
+                  const multiplier = isPerPerson(item) ? (tempGuestCount || parseInt(eventDetails.guestCount) || 1) : tempQuantity;
+                  return ((basePrice + addOnsTotal) * multiplier).toFixed(2);
+                })()}
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

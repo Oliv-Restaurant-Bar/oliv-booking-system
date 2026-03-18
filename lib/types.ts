@@ -77,3 +77,26 @@ export interface NutritionalInfo {
   sugar: string;
   sodium: string;
 }
+
+export interface EventDetails {
+  name: string;
+  business: string;
+  email: string;
+  telephone: string;
+  street: string;
+  plz: string;
+  location: string;
+  eventDate: string;
+  eventTime: string;
+  guestCount: string;
+  occasion: string;
+  specialRequests: string;
+  paymentMethod: string;
+  useSameAddressForBilling: boolean;
+  billingStreet: string;
+  billingPlz: string;
+  billingLocation: string;
+  billingStreetError?: string;
+  billingPlzError?: string;
+  billingLocationError?: string;
+}

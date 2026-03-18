@@ -208,7 +208,7 @@ export const wizardEventDetailsSchema = z.object({
   location: customerLocationSchema,
   eventDate: z.string().min(1, 'Event date is required'),
   eventTime: z.string().min(1, 'Event time is required'),
-  guestCount: z.number().min(1, 'Guest count must be at least 1').max(1000, 'Guest count cannot exceed 1000'),
+  guestCount: z.number().min(1, 'Guest count must be at least 1').max(10000, 'Guest count cannot exceed 10000'),
   occasion: customerOccasionSchema.optional(),
   specialRequests: customerSpecialRequestsSchema.optional(),
   paymentMethod: z.enum(['on_bill', 'invoice', 'cash', 'card', 'cash_card', '']),
