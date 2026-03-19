@@ -280,7 +280,7 @@ export function ChoicesAddonsTab({
                     {/* Price */}
                     <div className="text-right flex-shrink-0">
                       <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                        €{Number(item.price || 0).toFixed(2)}
+                        {ct('currencySymbol')}{Number(item.price || 0).toFixed(2)}
                       </p>
                     </div>
 

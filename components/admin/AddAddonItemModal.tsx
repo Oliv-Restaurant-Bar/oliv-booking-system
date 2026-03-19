@@ -77,7 +77,7 @@ export function AddAddonItemModal({
 
         <div>
           <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-            {t('labels.price')} (€) *
+            {t('labels.price')} ({ct('currencySymbol')}) *
             <span className="text-muted-foreground ml-2" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-normal)' }}>
               ({t('labels.priceHint')})
             </span>

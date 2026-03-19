@@ -259,7 +259,13 @@ export async function getMenuItems(categoryId?: string) {
       .where(and(...conditions))
       .orderBy(asc(menuItems.sortOrder));
 
-    return { success: true, data: items };
+    const mappedItems = items.map(item => ({
+      ...item,
+      price: parseFloat(item.pricePerPerson),
+      image: item.imageUrl
+    }));
+
+    return { success: true, data: mappedItems };
   } catch (error) {
     console.error("Error fetching menu items:", error);
     return { success: false, error: "Failed to fetch menu items", data: [] };
@@ -282,7 +288,13 @@ export async function getAllMenuItems(categoryId?: string) {
       )
       .orderBy(asc(menuItems.sortOrder));
 
-    return { success: true, data: items };
+    const mappedItems = items.map(item => ({
+      ...item,
+      price: parseFloat(item.pricePerPerson),
+      image: item.imageUrl
+    }));
+
+    return { success: true, data: mappedItems };
   } catch (error) {
     console.error("Error fetching all menu items:", error);
     return { success: false, error: "Failed to fetch all menu items", data: [] };
@@ -297,7 +309,13 @@ export async function getMenuItemById(id: string) {
       return { success: false, error: "Menu item not found", data: null };
     }
 
-    return { success: true, data: item };
+    const mappedItem = {
+      ...item,
+      price: parseFloat(item.pricePerPerson),
+      image: item.imageUrl
+    };
+
+    return { success: true, data: mappedItem };
   } catch (error) {
     console.error("Error fetching menu item:", error);
     return { success: false, error: "Failed to fetch menu item", data: null };
@@ -750,7 +768,12 @@ export async function getAddonItems(addonGroupId?: string) {
     // @ts-ignore - neon-http doesn't support orderBy in this context
     const items = await query.orderBy(asc(addonItems.sortOrder));
 
-    return { success: true, data: items };
+    const mappedItems = items.map(item => ({
+      ...item,
+      price: parseFloat(item.price)
+    }));
+
+    return { success: true, data: mappedItems };
   } catch (error) {
     console.error("Error fetching addon items:", error);
     return { success: false, error: "Failed to fetch addon items", data: [] };
@@ -772,7 +795,12 @@ export async function getAllAddonItems(addonGroupId?: string) {
     // @ts-ignore - neon-http doesn't support orderBy in this context
     const items = await query.orderBy(asc(addonItems.sortOrder));
 
-    return { success: true, data: items };
+    const mappedItems = items.map(item => ({
+      ...item,
+      price: parseFloat(item.price)
+    }));
+
+    return { success: true, data: mappedItems };
   } catch (error) {
     console.error("Error fetching all addon items:", error);
     return { success: false, error: "Failed to fetch all addon items", data: [] };

@@ -405,7 +405,7 @@ export function MenuCategoriesTab({
                                               className="px-2 py-0.5 bg-secondary text-secondary-foreground rounded"
                                               style={{ fontSize: 'var(--text-small)' }}
                                             >
-                                              {variant.name}: €{Number(variant.price || 0).toFixed(2)}
+                                              {variant.name}: {ct('currencySymbol')}{Number(variant.price || 0).toFixed(2)}
                                             </span>
                                           ))}
                                         </div>
@@ -414,7 +414,7 @@ export function MenuCategoriesTab({
                                     {/* Price */}
                                     <div className="text-right flex-shrink-0">
                                       <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                        €{Number(item.price || 0).toFixed(2)}
+                                        {ct('currencySymbol')}{Number(item.price || 0).toFixed(2)}
                                       </p>
                                     </div>
 

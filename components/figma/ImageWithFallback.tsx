@@ -13,13 +13,21 @@ export function ImageWithFallback(props: React.ImgHTMLAttributes<HTMLImageElemen
 
   const { src, alt, style, className, ...rest } = props
 
-  return didError ? (
+  // Handle empty or null src
+  const isValidSrc = typeof src === 'string' && src.trim() !== ''
+
+  return (didError || !isValidSrc) ? (
     <div
       className={`inline-block bg-gray-100 text-center align-middle ${className ?? ''}`}
       style={style}
     >
       <div className="flex items-center justify-center w-full h-full">
-        <img src={ERROR_IMG_SRC} alt="Error loading image" {...rest} data-original-url={src} />
+        {/* If src was present but errored, we can track it, otherwise it's just missing */}
+        {isValidSrc ? (
+          <img src={ERROR_IMG_SRC} alt="Error loading image" {...rest} data-original-url={src} />
+        ) : (
+          <img src={ERROR_IMG_SRC} alt="No image provided" {...rest} />
+        )}
       </div>
     </div>
   ) : (
