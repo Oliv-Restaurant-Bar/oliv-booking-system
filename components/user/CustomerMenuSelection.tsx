@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingCart, Users, Lock, Check, Plus, X, AlertTriangle } from 'lucide-react';
+import { ShoppingCart, Users, Lock, Check, Plus, X, AlertTriangle, ChevronLeft, ChevronRight, Search, Edit2 } from 'lucide-react';
 import { MenuItem } from './menuItemsData';
 import { EventDetails } from '@/lib/types';
 import { DietaryIcon } from './DietaryIcon';
@@ -9,7 +9,6 @@ import { MenuCart } from './MenuCart';
 interface CustomerMenuSelectionProps {
   selectedCategory: string;
   categories: string[];
-  visitedCategories: string[];
   eventDetails: EventDetails;
   itemGuestCounts: Record<string, number>;
   loadingMenu: boolean;
@@ -36,7 +35,6 @@ interface CustomerMenuSelectionProps {
   getFlatRateSubtotal: () => number;
   getPerPersonSubtotal: () => number;
   getConsumptionSubtotal: () => number;
-  isCategoryLocked: (category: string) => boolean;
   getSelectedItemsByCategory: (category: string) => MenuItem[];
   handleCategoryChange: (category: string) => void;
   categoryHasCombo: boolean;
@@ -46,14 +44,16 @@ interface CustomerMenuSelectionProps {
   openDetailsModal: (item: MenuItem) => void;
   removeFromCart: (itemId: string) => void;
   isLastCategory: () => boolean;
-  allCategoriesVisited: () => boolean;
   calculateRecommendedQuantity: (item: MenuItem, itemId?: string) => number | null;
+  handleStep2Navigation: () => void;
+  onEditDateTime?: () => void;
+  includeBeveragePrices: boolean;
+  setIncludeBeveragePrices: (value: boolean) => void;
 }
 
 export function CustomerMenuSelection({
   selectedCategory,
   categories,
-  visitedCategories,
   eventDetails,
   itemGuestCounts,
   loadingMenu,
@@ -80,7 +80,6 @@ export function CustomerMenuSelection({
   getFlatRateSubtotal,
   getPerPersonSubtotal,
   getConsumptionSubtotal,
-  isCategoryLocked,
   getSelectedItemsByCategory,
   handleCategoryChange,
   categoryHasCombo,
@@ -90,134 +89,174 @@ export function CustomerMenuSelection({
   openDetailsModal,
   removeFromCart,
   isLastCategory,
-  allCategoriesVisited,
   calculateRecommendedQuantity,
+  handleStep2Navigation,
+  onEditDateTime,
+  includeBeveragePrices,
+  setIncludeBeveragePrices,
 }: CustomerMenuSelectionProps) {
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const tabsScrollRef = React.useRef<HTMLDivElement>(null);
+  const [isStuck, setIsStuck] = React.useState(false);
+  const sentinelRef = React.useRef<HTMLDivElement>(null);
+  const sectionRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
+  const isManualScrolling = React.useRef(false);
+
+  // Detect when sticky bar becomes stuck
+  React.useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsStuck(!entry.isIntersecting),
+      { threshold: 0, rootMargin: "-1px 0px 0px 0px" }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
+
+  // Intersection Observer for scroll tracking
+  React.useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (isManualScrolling.current) return;
+
+        // Find the most visible section (the one closest to the top of the viewport)
+        const visibleEntry = entries.find(entry => entry.isIntersecting);
+        if (visibleEntry) {
+          setSelectedCategory(visibleEntry.target.id);
+        }
+      },
+      {
+        rootMargin: "-120px 0px -80% 0px", // Adjust based on sticky header height
+        threshold: 0
+      }
+    );
+
+    Object.values(sectionRefs.current).forEach(section => {
+      if (section) observer.observe(section);
+    });
+
+    return () => observer.disconnect();
+  }, [categories, menuItems, searchQuery]);
+
+  const handleTabClick = (category: string) => {
+    isManualScrolling.current = true;
+    setSelectedCategory(category);
+
+    const section = sectionRefs.current[category];
+    if (section) {
+      const yOffset = -110; // Sticky header offset
+      const y = section.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+
+    // Reset manual scroll flag after animation
+    setTimeout(() => {
+      isManualScrolling.current = false;
+    }, 1000);
+  };
+
   return (
-    <div>
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0" style={{ borderRadius: 'var(--radius)' }}>
-            <ShoppingCart className="w-5 h-5 text-primary" />
-          </div>
-          <h3 className="text-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-            Choose your menu
-          </h3>
-        </div>
-        <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
-          Select dishes from our curated categories
-        </p>
-        <div className="mt-4 flex items-center gap-2 text-sm" style={{ fontSize: 'var(--text-small)' }}>
-          <span className="text-muted-foreground">
-            Browse through all {categories.length} categories step-by-step
-          </span>
-          <span className="text-primary font-medium">
-            • {visitedCategories.length} of {categories.length} visited
-          </span>
-        </div>
-      </div>
-
-      {/* Guest Count & Pricing Info Bar - Only show for food categories */}
-      {!['Technology', 'Decoration', 'Furniture', 'Miscellaneous'].includes(selectedCategory) && (
-        <div className="mb-4 bg-secondary border-l-4 border-primary flex items-center gap-2 px-3 py-2" style={{ borderRadius: 'var(--radius)' }}>
-          <Users className="w-4 h-4 text-primary flex-shrink-0" />
-          <span className="text-secondary-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-            {eventDetails.guestCount || '0'} {parseInt(eventDetails.guestCount) === 1 ? 'guest' : 'guests'}
-          </span>
-          <span className="text-secondary-foreground/50 mx-1" style={{ fontSize: 'var(--text-small)' }}>
-            |
-          </span>
-          <span className="text-secondary-foreground/70" style={{ fontSize: 'var(--text-small)' }}>
-            {selectedCategory === 'Beverages'
-              ? 'Charged by consumption • Per-person pricing available'
-              : 'All items apply per person'}
-          </span>
-        </div>
-      )}
-
-      {loadingMenu ? (
-        <div className="text-center py-16">
-          <p className="text-muted-foreground">Loading menu...</p>
-        </div>
-      ) : menuItems.length === 0 ? (
-        <div className="text-center py-16">
-          <p className="text-muted-foreground">No menu items available. Please contact us directly.</p>
-        </div>
-      ) : (
-        <>
-          {/* Category Pills - Horizontal Scroll */}
-          <div className="mb-6">
-            <div className="flex overflow-x-auto gap-2 pb-4 -mx-2 px-2 sm:mx-0 sm:px-0 scrollbar-hide">
-              {categories.map((category) => {
-                const isActive = selectedCategory === category;
-                const isVisited = visitedCategories.includes(category);
-                const isLocked = isCategoryLocked(category);
-                const categoryItemCount = getSelectedItemsByCategory(category).length;
-
-                return (
-                  <button
-                    key={category}
-                    ref={(el) => { categoryRefs.current[category] = el; }}
-                    onClick={() => handleCategoryChange(category)}
-                    disabled={isLocked}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all flex-shrink-0 whitespace-nowrap ${isActive
-                      ? 'bg-primary text-primary-foreground hover:bg-secondary hover:text-secondary-foreground'
-                      : isLocked
-                        ? 'bg-muted/10 text-muted-foreground cursor-not-allowed opacity-50'
-                        : isVisited
-                          ? 'bg-muted/50 text-foreground hover:bg-muted hover:text-foreground border border-border'
-                          : 'bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }`}
-                    style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                  >
-                    {isLocked && <Lock className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />}
-                    {isVisited && !isActive && !isLocked && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
-                    <span className='truncate max-w-[150px]'>{category}</span>
-                    {categoryItemCount > 0 && !isLocked && (
-                      <span className={`px-2 py-0.5 rounded-full text-xs ${isActive ? 'bg-secondary-foreground/20 text-secondary-foreground' : 'bg-primary/10 text-primary'
-                        }`}>
-                        {categoryItemCount}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+    <div className="font-['Hanken_Grotesk',sans-serif] bg-[#f7f7f8] min-h-screen flex">
+      {/* Left Column: Menu Content */}
+      <div className="flex-1 min-w-0 pb-[100px]">
+        <div className="max-w-[1020px] mx-auto px-6">
+          {/* Title Section */}
+          <div className="pt-6 pb-2">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="size-[36px] rounded-xl bg-[#9dae91]/10 flex items-center justify-center">
+                <ShoppingCart className="w-5 h-5 text-[#9dae91]" />
+              </div>
+              <h1 className="font-bold text-[32px] text-[#2c2f34]">Choose your menu</h1>
+            </div>
+            <p className="text-[15px] text-[#6b7280] mb-0.5">Select dishes from our curated categories</p>
+            <div className="flex items-center gap-1.5 text-[13px] text-[#9dae91]">
+              <span>Select as many items as you like from each category</span>
             </div>
           </div>
 
-          {/* Two Column Layout: Menu Items + Cart */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            {/* Menu Items - 2 columns on desktop */}
-            <div className="lg:col-span-2">
-              {/* Category Hero Image */}
-              <div className="mb-5 relative h-48 rounded-lg overflow-hidden" style={{ borderRadius: 'var(--radius-card)' }}>
-                <img
-                  src={
-                    selectedCategory === 'Appetizers' ? 'https://images.unsplash.com/photo-1558679582-4d81ce75993a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080' :
-                      selectedCategory === 'Salads' ? 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080' :
-                        selectedCategory === 'Soups' ? 'https://images.unsplash.com/photo-1547592166-23ac45744acd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080' :
-                          selectedCategory === 'Pasta' ? 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080' :
-                            selectedCategory === 'Mains' ? 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080' :
-                              selectedCategory === 'Seafood' ? 'https://images.unsplash.com/photo-1615141982883-c7ad0e69fd62?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080' :
-                                selectedCategory === 'Cheese' ? 'https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080' :
-                                  'https://images.unsplash.com/photo-1563805042-7684c019e1cb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080'
-                  }
-                  alt={selectedCategory}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
-                  <div className="p-6">
-                    <h4 className="text-white mb-1 line-clamp-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      {selectedCategory}
-                    </h4>
-                    <p className="text-white/90" style={{ fontSize: 'var(--text-small)' }}>
-                      {menuItems.filter(item => item.category === selectedCategory).length} items available
-                    </p>
-                  </div>
+          {/* Sentinel to detect sticky state */}
+          <div ref={sentinelRef} className="h-0" />
+
+          {/* Sticky Search + Tabs Area */}
+          <div className={`sticky top-0 z-40 transition-all duration-200 -mx-6 px-6 pb-1 pt-1 border-b border-[#f3f4f6] ${isStuck
+            ? "bg-white shadow-sm"
+            : "bg-transparent"
+            }`}>
+            <div>
+              {/* Search Bar */}
+              <div className="py-2">
+                <div className="relative">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9ca3af]" />
+                  <input
+                    type="text"
+                    placeholder="Search for dishes..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full h-[42px] bg-white border border-[#e5e7eb] rounded-full pl-10 pr-4 text-[14px] text-[#2c2f34] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#9dae91]/40 transition-all"
+                  />
                 </div>
               </div>
 
+              {/* Category Tabs */}
+              <div className="flex items-center gap-1 pb-4 border-b border-[#e5e7eb]">
+                <button
+                  onClick={() => {
+                    const el = tabsScrollRef.current;
+                    if (el) el.scrollBy({ left: -200, behavior: "smooth" });
+                  }}
+                  className="shrink-0 size-[32px] flex items-center justify-center rounded-full border border-[#e5e7eb] bg-white hover:bg-[#f3f4f6] transition-colors cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4 text-[#6b7280]" />
+                </button>
+                <div ref={tabsScrollRef} className="flex items-center gap-1.5 overflow-auto flex-1 no-scrollbar" style={{ scrollbarWidth: "none" }}>
+                  {categories.map((category) => {
+                    const isActive = selectedCategory === category;
+                    const categoryItemCount = getSelectedItemsByCategory(category).length;
+
+                    return (
+                      <button
+                        key={category}
+                        ref={(el) => { categoryRefs.current[category] = el; }}
+                        onClick={() => handleTabClick(category)}
+                        className={`h-[36px] px-4 rounded-[10px] flex items-center shrink-0 transition-all cursor-pointer ${isActive
+                          ? "bg-[#9dae91] text-[#2c2f34]"
+                          : "bg-transparent text-[#9ca3af] hover:text-[#2c2f34]"
+                          }`}
+                      >
+                        <span className={`text-[14px] ${isActive ? "font-semibold" : "font-medium"}`}>
+                          {category}
+                          {categoryItemCount > 0 && (
+                            <span className="ml-1 opacity-60">({categoryItemCount})</span>
+                          )}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={() => {
+                    const el = tabsScrollRef.current;
+                    if (el) el.scrollBy({ left: 200, behavior: "smooth" });
+                  }}
+                  className="shrink-0 size-[32px] flex items-center justify-center rounded-full border border-[#e5e7eb] bg-white hover:bg-[#f3f4f6] transition-colors cursor-pointer"
+                >
+                  <ChevronRight className="w-4 h-4 text-[#6b7280]" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {loadingMenu ? (
+            <div className="text-center py-16">
+              <p className="text-muted-foreground">Loading menu...</p>
+            </div>
+          ) : menuItems.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-muted-foreground">No menu items available. Please contact us directly.</p>
+            </div>
+          ) : (
+            <div className="mt-4">
               {categoryHasCombo && (
                 <div className="mb-6 flex items-center justify-center">
                   <div className="bg-muted/30 p-1 rounded-xl border border-border flex justify-center gap-1 shadow-sm w-full">
@@ -243,178 +282,165 @@ export function CustomerMenuSelection({
                 </div>
               )}
 
-              {/* Menu Items Grid - Vertical card layout */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {menuItems
-                  .filter(item => {
-                    if (item.category !== selectedCategory) return false;
-                    if (categoryHasCombo) {
-                      const mode = categoryFilterMode[selectedCategory] || 'combo';
+              <div className="flex flex-col gap-6">
+                {categories.map((cat) => {
+                  const filteredItems = menuItems.filter(item => {
+                    if (item.category !== cat) return false;
+                    const matchesSearch = searchQuery.trim() === '' ||
+                      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      item.description.toLowerCase().includes(searchQuery.toLowerCase());
+
+                    if (!matchesSearch) return false;
+
+                    if (categoryHasCombo && cat === selectedCategory) {
+                      const mode = categoryFilterMode[cat] || 'combo';
                       return mode === 'combo' ? item.isCombo : !item.isCombo;
                     }
                     return true;
-                  })
-                  .map((item) => {
-                    const isSelected = selectedItems.includes(item.id);
+                  });
 
-                    return (
-                      <div
-                        key={item.id}
-                        className={`bg-card border rounded-lg overflow-hidden transition-all flex flex-col ${isSelected ? 'border-primary shadow-sm' : 'border-border hover:border-primary/50'
-                          }`}
-                        style={{ borderRadius: 'var(--radius-card)' }}
-                      >
-                        {/* Item Image */}
-                        <div className="w-full aspect-[3/2] flex-shrink-0 relative overflow-hidden bg-muted">
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                            className="absolute inset-0 w-full h-full object-cover"
-                          />
-                          {isSelected && (
-                            <div className="absolute top-2 right-2 w-7 h-7 bg-primary rounded-full flex items-center justify-center shadow">
-                              <Check className="w-4 h-4 text-primary-foreground" />
-                            </div>
-                          )}
-                        </div>
+                  if (filteredItems.length === 0) return null;
 
-                        {/* Item Content */}
-                        <div className="flex-1 p-4 flex flex-col">
-                          <div className="flex items-start gap-2 mb-2">
-                            {item.dietaryType !== 'none' && (
-                              <div className="flex-shrink-0 mt-0.5">
-                                <DietaryIcon type={item.dietaryType} size="sm" />
-                              </div>
-                            )}
-                            <div className="flex-1">
-                              <div className="flex flex-col gap-1">
-                                <h5 className="text-foreground line-clamp-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                  {item.name}
-                                </h5>
-                                {isConsumption(item) && (
-                                  <div className="flex">
-                                    <span
-                                      className="px-2 py-0.5 rounded text-xs font-medium"
-                                      style={{
-                                        backgroundColor: 'var(--consumption-badge-bg)',
-                                        color: 'var(--consumption-badge-text)'
-                                      }}
-                                    >
-                                      Pay by consumption
+                  return (
+                    <div
+                      key={cat}
+                      id={cat}
+                      ref={(el) => { sectionRefs.current[cat] = el; }}
+                      className="mb-6 scroll-mt-[120px]"
+                    >
+                      <div className="flex items-baseline justify-between mb-3 border-b border-[#f3f4f6]/60 pb-1.5">
+                        <h2 className="font-bold text-[20px] text-[#2c2f34]">{cat}</h2>
+                        <span className="font-normal text-[12px] text-[#9ca3af]">{filteredItems.length} items</span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {filteredItems.map((item) => {
+                          const isSelected = selectedItems.includes(item.id);
+
+                          return (
+                            <div
+                              key={item.id}
+                              className={`bg-white rounded-[16px] border overflow-hidden flex flex-row h-[140px] transition-all hover:shadow-md cursor-pointer group ${isSelected ? "border-[#9dae91] shadow-[0_0_0_1px_#9dae91]" : "border-[#e5e7eb]"
+                                }`}
+                              onClick={() => openDetailsModal(item)}
+                            >
+                              {item.image && (
+                                <div className="w-[140px] shrink-0 bg-[#f3f4f6] overflow-hidden">
+                                  <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                </div>
+                              )}
+                              <div className="flex-1 flex flex-col justify-between min-w-0 px-[16px] py-[16px]">
+                                <div>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    {item.dietaryType !== 'none' && (
+                                      <div className="shrink-0">
+                                        <DietaryIcon type={item.dietaryType} size="sm" />
+                                      </div>
+                                    )}
+                                    <h3 className="font-semibold text-[14px] text-[#2c2f34] truncate">{item.name}</h3>
+                                    {isSelected && (
+                                      <div className="shrink-0 size-[18px] rounded-full bg-[#9dae91] flex items-center justify-center">
+                                        <Check className="w-2.5 h-2.5 text-white" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <p className="font-normal text-[12px] text-[#6b7280] line-clamp-2 leading-[1.3]">{item.description}</p>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex flex-col">
+                                    <span className="font-semibold text-[15px] text-[#2c2f34]">
+                                      CHF {item.price.toFixed(2)}
+                                    </span>
+                                    <span className="text-[11px] text-[#9ca3af]">
+                                      {isConsumption(item) ? 'billed by consumption' : isFlatFee(item) ? 'flat fee' : 'per person'}
                                     </span>
                                   </div>
-                                )}
+
+                                  {isSelected ? (
+                                    <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                      <button
+                                        onClick={() => openDetailsModal(item)}
+                                        className="size-[32px] rounded-[10px] border border-[#e5e7eb] flex items-center justify-center cursor-pointer hover:bg-[#f9fafb] transition-colors"
+                                        title="Edit"
+                                      >
+                                        <Edit2 className="w-3.5 h-3.5 text-[#6b7280]" />
+                                      </button>
+                                      <button
+                                        onClick={() => removeFromCart(item.id)}
+                                        className="size-[32px] rounded-[10px] border border-[#e5e7eb] flex items-center justify-center cursor-pointer hover:bg-[#fef2f2] hover:border-[#fecaca] transition-colors text-[#9ca3af] hover:text-[#ef4444]"
+                                        title="Remove"
+                                      >
+                                        <X className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openDetailsModal(item);
+                                      }}
+                                      className="bg-[#9dae91] h-[34px] px-4 rounded-[10px] flex items-center gap-1.5 cursor-pointer hover:opacity-90 transition-opacity"
+                                    >
+                                      <Plus className="w-3.5 h-3.5 text-[#262D39]" />
+                                      <span className="font-medium text-[13px] text-[#262d39]">Add</span>
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          <p className="text-muted-foreground mb-2 flex-1" style={{ fontSize: 'var(--text-small)' }}>
-                            {item.description}
-                          </p>
-
-                          <div className="flex flex-col gap-0.5 mb-3">
-                            <p className="text-primary" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                              {item.category === 'Beverages'
-                                ? `CHF ${item.price.toFixed(2)}/bottle`
-                                : (item.variants && item.variants.length > 0 && item.price === 0)
-                                  ? `From CHF ${item.variants[0].price.toFixed(2)}`
-                                  : (item.variants && item.variants.length > 0 ? 'From ' : '') + `CHF ${item.price.toFixed(2)}`}
-                            </p>
-                            <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                              {isConsumption(item) ? 'billed by consumption' :
-                                isFlatFee(item) ? 'flat fee' : 'per person'}
-                            </span>
-                          </div>
-
-                          {!isSelected ? (
-                            <Button
-                              onClick={() => openDetailsModal(item)}
-                              variant="primary"
-                              size="sm"
-                              icon={Plus}
-                              className="w-full"
-                            >
-                              Add
-                            </Button>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <Button
-                                onClick={() => openDetailsModal(item)}
-                                variant="outline"
-                                size="sm"
-                                className="flex-1"
-                              >
-                                Edit
-                              </Button>
-                              <Button
-                                onClick={() => removeFromCart(item.id)}
-                                variant="outline"
-                                size="sm"
-                                className="w-10 h-10 p-0 bg-destructive/10 text-destructive border-none hover:bg-destructive/20 flex-shrink-0"
-                              >
-                                <X className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          )}
-                        </div>
+                          );
+                        })}
                       </div>
-                    );
-                  })}
+                    </div>
+                  );
+                })}
               </div>
 
-              {/* Warning Message - Show if on last category but not all visited */}
-              {isLastCategory() && !allCategoriesVisited() && (
-                <div className="mt-5 p-4 bg-primary/10 border border-primary/20 rounded-lg flex items-start gap-3" style={{ borderRadius: 'var(--radius-card)' }}>
-                  <AlertTriangle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-foreground mb-1" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      Please browse all categories
-                    </p>
-                    <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                      You've visited {visitedCategories.length} of {categories.length} categories. Please explore all menu sections before continuing to the summary.
-                    </p>
-                  </div>
-                </div>
-              )}
+              {/* Warning Message Removed */}
             </div>
-
-            {/* Cart Summary Column */}
-            <div className="lg:col-span-1">
-              <MenuCart
-                selectedItems={selectedItems}
-                menuItems={menuItems}
-                itemQuantities={itemQuantities}
-                itemVariants={itemVariants}
-                itemAddOns={itemAddOns}
-                itemComments={itemComments}
-                isCartCollapsed={isCartCollapsed}
-                setIsCartCollapsed={setIsCartCollapsed}
-                eventDetails={eventDetails}
-                itemGuestCounts={itemGuestCounts}
-                getItemPerPersonPrice={getItemPerPersonPrice}
-                getPerPersonSubtotal={getPerPersonSubtotal}
-                getFlatRateSubtotal={getFlatRateSubtotal}
-                getConsumptionSubtotal={getConsumptionSubtotal}
-                calculateRecommendedQuantity={calculateRecommendedQuantity}
-                openDetailsModal={openDetailsModal}
-                removeFromCart={removeFromCart}
-                isConsumption={isConsumption}
-                isFlatFee={isFlatFee}
-                isPerPerson={isPerPerson}
-              />
-            </div>
-          </div>
+          )}
 
           {/* Error Message for Step 2 */}
           {step2Error && (
-            <div className="mt-5 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-3" style={{ borderRadius: 'var(--radius-card)' }}>
-              <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
-              <p className="text-destructive" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                {step2Error}
-              </p>
+            <div className="mt-8 p-6 bg-[#fdf2f2] border border-[#fbd5d5] rounded-2xl flex items-start gap-4">
+              <AlertTriangle className="w-6 h-6 text-[#ef4444] shrink-0 mt-0.5" />
+              <p className="text-[#c81e1e] font-medium text-[16px]">{step2Error}</p>
             </div>
           )}
-        </>
-      )}
+        </div>
+      </div>
+
+      {/* Right Column: Sidebar Cart */}
+      <div className="hidden lg:flex w-[380px] shrink-0 border-l border-[#e5e7eb] bg-white sticky top-0 h-screen overflow-hidden flex-col z-[50]">
+        <MenuCart
+          selectedItems={selectedItems}
+          menuItems={menuItems}
+          itemQuantities={itemQuantities}
+          itemVariants={itemVariants}
+          itemAddOns={itemAddOns}
+          itemComments={itemComments}
+          isCartCollapsed={isCartCollapsed}
+          setIsCartCollapsed={setIsCartCollapsed}
+          eventDetails={eventDetails}
+          itemGuestCounts={itemGuestCounts}
+          getItemPerPersonPrice={getItemPerPersonPrice}
+          getPerPersonSubtotal={getPerPersonSubtotal}
+          getFlatRateSubtotal={getFlatRateSubtotal}
+          getConsumptionSubtotal={getConsumptionSubtotal}
+          calculateRecommendedQuantity={calculateRecommendedQuantity}
+          openDetailsModal={openDetailsModal}
+          removeFromCart={removeFromCart}
+          setItemQuantities={setItemQuantities}
+          onContinue={handleStep2Navigation}
+          onEditDateTime={onEditDateTime}
+          isConsumption={isConsumption}
+          isFlatFee={isFlatFee}
+          isPerPerson={isPerPerson}
+          isDrawer={true} // Add this to handle scroll properly inside sidebar
+          includeBeveragePrices={includeBeveragePrices}
+          setIncludeBeveragePrices={setIncludeBeveragePrices}
+        />
+      </div>
     </div>
   );
 }

@@ -13,8 +13,7 @@ export function HeaderVariant6() {
   const navigation = [
     { name: t('header.home'), href: '#hero' },
     { name: t('header.howItWorks'), href: '#how-it-works' },
-    { name: t('header.whyOlive'), href: '#why-olive' },
-    { name: t('header.gallery'), href: '#gallery' },
+    { name: t('header.gallery'), href: '#cta' },
   ];
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -27,7 +26,7 @@ export function HeaderVariant6() {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border/50 shadow-sm">
+    <header className="bg-card/80 backdrop-blur-xl border-b border-border/50 shadow-sm">
       <nav className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo with Badge */}

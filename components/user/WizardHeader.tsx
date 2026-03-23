@@ -1,40 +1,46 @@
 'use client';
 
-import { ArrowLeft, Sparkles } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
 
-export function WizardHeader() {
+interface WizardHeaderProps {
+  onBack?: () => void;
+}
+
+export function WizardHeader({ onBack }: WizardHeaderProps) {
   return (
-    <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border/50 shadow-sm">
+    <header className="bg-white border-b border-[#f3f4f6]">
       <nav className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-16 relative">
           {/* Back Button */}
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors group"
-          >
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-            <span style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-              Back
-            </span>
-          </Link>
+          {onBack ? (
+             <button
+              onClick={onBack}
+              className="flex items-center gap-1.5 text-[#9ca3af] hover:text-[#2c2f34] transition-colors group z-10 cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span className="text-[13px] font-medium">Back</span>
+            </button>
+          ) : (
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 text-[#9ca3af] hover:text-[#2c2f34] transition-colors group z-10"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span className="text-[13px] font-medium">Back</span>
+            </Link>
+          )}
 
           {/* Logo - Centered */}
-          <div className="absolute left-1/2 -translate-x-1/2">
-            <Link href="/" className="flex items-center">
-              <Image
-                src="/assets/oliv-logo.png"
-                alt="Olive Restaurant & Bar"
-                width={120}
-                height={40}
-                className="h-10 w-auto"
-              />
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <Link href="/" className="pointer-events-auto flex flex-col items-center">
+              <span className="text-[20px] font-light tracking-[0.3em] text-[#2c2f34] uppercase leading-none mb-0.5">O l i v</span>
+              <span className="text-[7px] font-medium tracking-[0.4em] text-[#9ca3af] uppercase">Restaurant & Bar</span>
             </Link>
           </div>
 
-          {/* Spacer for alignment */}
-          <div className="w-20"></div>
+          {/* Spacer/Right alignment element if needed */}
+          <div className="w-10"></div>
         </div>
       </nav>
     </header>

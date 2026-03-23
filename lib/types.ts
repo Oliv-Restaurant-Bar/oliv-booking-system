@@ -91,6 +91,7 @@ export interface EventDetails {
   guestCount: string;
   occasion: string;
   specialRequests: string;
+  reference: string;
   paymentMethod: string;
   useSameAddressForBilling: boolean;
   billingStreet: string;

@@ -1,49 +1,110 @@
 'use client';
 
-import { ArrowRight, Sparkles } from 'lucide-react';
-import { Button } from './Button';
+import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
+import Link from "next/link";
 import { useLandingTranslation } from '@/lib/i18n/client';
+
+const imgDiningWarm = "https://cdn.picflow.com/assets/images/9bb36043-7b02-4db1-ba3d-f1abaeea4fc0/base/9bb36043-7b02-4db1-ba3d-f1abaeea4fc0.jpg";
+const GOLD = "#9dae91";
+const DARK = "#262d39";
 
 export function CTASectionVariant1() {
   const t = useLandingTranslation();
   return (
-    <section id="cta" className="py-[50px] bg-background">
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden bg-primary rounded-3xl p-12 lg:p-16" style={{ borderRadius: 'var(--radius-card)' }}>
-          <div className="absolute inset-0 opacity-10">
-            <div style={{ backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`, backgroundSize: '40px 40px' }} className="absolute inset-0" />
-          </div>
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary-foreground/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary-foreground/10 rounded-full translate-y-1/2 -translate-x-1/2" />
+    <section className="bg-[#fafafa] py-28" id="cta">
+      <div className="max-w-[1440px] mx-auto px-6 lg:px-12">
+        <div className="grid grid-cols-12">
+          <div className="col-span-12">
+            <div
+              className="relative rounded-[20px] overflow-hidden"
+              style={{ background: DARK }}
+            >
+              {/* Background image */}
+              <div className="absolute inset-0">
+                <ImageWithFallback
+                  src={imgDiningWarm}
+                  alt="Olive catering event"
+                  className="w-full h-full object-cover opacity-25"
+                />
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: `linear-gradient(135deg, ${DARK} 30%, rgba(38,45,57,0.7) 60%, rgba(157,174,145,0.15) 100%)`,
+                  }}
+                />
+              </div>
 
-          <div className="relative max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-foreground/20 backdrop-blur-sm rounded-full mb-6">
-              <Sparkles className="w-4 h-4 text-primary-foreground" />
-              <span className="text-primary-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-                {t('cta.title')}
-              </span>
-            </div>
+              {/* Decorative elements */}
+              <div
+                className="absolute -top-20 -right-20 size-[300px] rounded-full opacity-[0.06]"
+                style={{ backgroundColor: GOLD }}
+              />
+              <div
+                className="absolute -bottom-32 -left-32 size-[400px] rounded-full opacity-[0.04]"
+                style={{ backgroundColor: GOLD }}
+              />
 
-            <h2 className="text-primary-foreground mb-6" style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)', fontWeight: 'var(--font-weight-semibold)', lineHeight: '1.2' }}>
-              {t('cta.subtitle')}
-              <br />
-              {t('cta.description')}
-            </h2>
+              {/* Content */}
+              <div className="relative z-10 py-24 px-8 flex flex-col items-center text-center">
+                {/* Badge */}
+                <div
+                  className="inline-flex items-center gap-[10px] px-5 py-[9px] rounded-full border mb-8"
+                  style={{
+                    borderColor: "rgba(157,174,145,0.4)",
+                    background: "rgba(157,174,145,0.1)",
+                    backdropFilter: "blur(8px)",
+                  }}
+                >
+                  <span
+                    className="font-['Hanken_Grotesk',sans-serif] font-semibold text-[12px] tracking-[0.14em] uppercase"
+                    style={{ color: GOLD }}
+                  >
+                    Ready to Begin?
+                  </span>
+                </div>
 
-            <p className="text-primary-foreground/90 mb-8 max-w-2xl mx-auto" style={{ fontSize: 'var(--text-h4)' }}>
-              {t('cta.body')}
-            </p>
+                <h2
+                  className="font-['Hanken_Grotesk',sans-serif] font-semibold text-white max-w-[680px]"
+                  style={{
+                    fontSize: "clamp(28px, 3.5vw, 48px)",
+                    lineHeight: 1.15,
+                    letterSpacing: "-0.02em",
+                  }}
+                >
+                  {t('cta.subtitle')} <span style={{ color: GOLD }}>Minutes</span>
+                </h2>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button
-                variant="secondary"
-                size="lg"
-                icon={ArrowRight}
-                iconPosition="right"
-                to="/wizard"
-              >
-                {t('cta.button')}
-              </Button>
+                <p
+                  className="font-['Hanken_Grotesk',sans-serif] font-normal text-[rgba(255,255,255,0.65)] max-w-[540px] mt-6"
+                  style={{ fontSize: "clamp(15px, 1.2vw, 17px)", lineHeight: 1.7 }}
+                >
+                  {t('cta.body')}
+                </p>
+
+                {/* CTA buttons */}
+                <div className="flex flex-wrap items-center justify-center gap-4 mt-10">
+                  <Link
+                    href="/wizard"
+                    className="h-[52px] px-8 rounded-[8px] font-['Hanken_Grotesk',sans-serif] font-medium text-[15px] flex items-center gap-2 transition-all duration-200 hover:brightness-110 active:scale-[0.97]"
+                    style={{ backgroundColor: GOLD, color: DARK }}
+                  >
+                    {t('cta.button')}
+                  </Link>
+                  <a
+                    href="https://images.romystreit.com/raumforum-oliv-24/snrf6ty9je"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="h-[52px] px-8 rounded-[8px] font-['Hanken_Grotesk',sans-serif] font-medium text-[15px] text-white flex items-center gap-2 transition-all duration-200 hover:bg-[rgba(255,255,255,0.12)]"
+                    style={{
+                      background: "rgba(255,255,255,0.08)",
+                      border: "1.5px solid rgba(255,255,255,0.22)",
+                      backdropFilter: "blur(8px)",
+                    }}
+                  >
+                    View Gallery
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
         </div>

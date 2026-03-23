@@ -39,6 +39,7 @@ export function CustomMenuWizard() {
     guestCount: '',
     occasion: '',
     specialRequests: '',
+    reference: '',
     paymentMethod: 'cash_card',
     useSameAddressForBilling: true,
     billingStreet: '',
@@ -55,7 +56,6 @@ export function CustomMenuWizard() {
   const [itemVariants, setItemVariants] = useState<Record<string, string>>({});
   const [itemComments, setItemComments] = useState<Record<string, string>>({});
   const [selectedCategory, setSelectedCategory] = useState('Appetizers');
-  const [visitedCategories, setVisitedCategories] = useState<string[]>([]);
   const [isCartCollapsed, setIsCartCollapsed] = useState(true);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [showCartFab, setShowCartFab] = useState(true);
@@ -75,6 +75,7 @@ export function CustomMenuWizard() {
     occasion: false,
     specialRequests: false,
     business: false,
+    reference: false,
   } as Record<keyof EventDetails, boolean>);
 
   // Refs for category pill auto-scroll
@@ -154,6 +155,7 @@ export function CustomMenuWizard() {
                   guestCount: booking.guestCount?.toString() || '',
                   occasion: booking.occasion || '',
                   specialRequests: booking.specialRequests || '',
+                  reference: booking.reference || '',
                   paymentMethod: booking.paymentMethod || 'cash_card',
                   useSameAddressForBilling: booking.useSameAddressForBilling ?? true,
                   billingStreet: booking.billingStreet || '',
@@ -381,6 +383,7 @@ export function CustomMenuWizard() {
                       id: gi.id,
                       name: gi.name,
                       price: Number(gi.price) || 0,
+                      description: gi.description || gi.ingredients || '',
                     }));
 
                     return {
@@ -412,7 +415,6 @@ export function CustomMenuWizard() {
           setCategoryData(categoryDataMap);
           if (categoryNames.length > 0) {
             setSelectedCategory(categoryNames[0]);
-            setVisitedCategories([categoryNames[0]]);
             // Initialize all categories as collapsed (closed by default)
             const initialCollapsedState = categoryNames.reduce((acc: Record<string, boolean>, cat: string) => {
               acc[cat] = true;
@@ -455,30 +457,9 @@ export function CustomMenuWizard() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [selectedItems.length]);
 
-  // Check if category is locked (more than 1 ahead of visited categories)
-  const isCategoryLocked = (category: string) => {
-    if (visitedCategories.includes(category)) {
-      return false; // Already visited, always accessible
-    }
-    const categoryIndex = categories.indexOf(category);
-    const maxVisitedIndex = Math.max(
-      ...visitedCategories.map((c) => categories.indexOf(c)),
-    );
-    // Lock if trying to skip ahead (more than 1 position beyond max visited)
-    return categoryIndex > maxVisitedIndex + 1;
-  };
-
-  // Handle category change and track visited categories
+  // Handle category change 
   const handleCategoryChange = (category: string) => {
-    // Prevent jumping to locked categories
-    if (isCategoryLocked(category)) {
-      return;
-    }
-
     setSelectedCategory(category);
-    if (!visitedCategories.includes(category)) {
-      setVisitedCategories(prev => [...prev, category]);
-    }
   };
 
   const steps = [
@@ -820,24 +801,10 @@ export function CustomMenuWizard() {
     return selectedCategory === categories[categories.length - 1];
   };
 
-  const allCategoriesVisited = () => {
-    return visitedCategories.length === categories.length;
-  };
-
   const handleStep2Navigation = () => {
-    if (!isLastCategory()) {
-      // Move to next category
-      const nextCategory = getNextCategory();
-      if (nextCategory) {
-        handleCategoryChange(nextCategory);
-        // Scroll to top of menu section
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    } else if (allCategoriesVisited()) {
-      // All categories visited, can proceed to step 3
-      if (validateStep2()) {
-        setCurrentStep(3);
-      }
+    // Just move to Step 3, as sidebar cart can handle the transition
+    if (validateStep2()) {
+      setCurrentStep(3);
     }
   };
 
@@ -1244,7 +1211,9 @@ export function CustomMenuWizard() {
   if (isLoadingEdit) {
     return (
       <div className="min-h-screen bg-background">
-        <WizardHeader />
+        <WizardHeader 
+          onBack={currentStep > 1 ? () => setCurrentStep(1) : undefined} 
+        />
         <div className="p-8">
           <SkeletonPage content="custom" hasHeader hasKPI={false} />
         </div>
@@ -1254,7 +1223,9 @@ export function CustomMenuWizard() {
 
   return (
     <>
-      <WizardHeader />
+      <WizardHeader 
+        onBack={currentStep > 1 ? () => setCurrentStep(1) : undefined} 
+      />
       <div className="min-h-screen bg-background flex flex-col">
         {/* Mobile Step Indicator - Only visible on mobile */}
         <div className="lg:hidden sticky top-20 z-40 bg-primary text-primary-foreground px-4 py-3">
@@ -1289,14 +1260,12 @@ export function CustomMenuWizard() {
         </div>
 
         {/* Main Content - Two Column Layout */}
-        <div className="flex-1 flex flex-col lg:flex-row">
-          {/* Left Sidebar - 25% width with primary background - Hidden on mobile - Fixed on desktop */}
-          <CustomerSidebar steps={steps} currentStep={currentStep} />
-
-          {/* Right Content Area - 75% width - With left margin on desktop to account for fixed sidebar */}
-          <main className="w-full lg:w-[75%] lg:ml-[25%] bg-background p-4 lg:p-8">
-            <div className="max-w-7xl mx-auto">
-              <div className="bg-card rounded-lg p-5 lg:p-8 border border-border" style={{ borderRadius: 'var(--radius-card)' }}>
+        {/* <div className="flex-1 flex flex-col lg:flex-row"> */}
+        <div className="flex-1 flex flex-col items-center w-full">
+          {/* Right Content Area - w-full - With left margin on desktop to account for fixed sidebar */}
+          <main className={`w-full bg-background ${currentStep === 2 ? "" : "p-4 lg:p-8"}`}>
+            <div className={currentStep === 2 ? "w-full" : "max-w-7xl mx-auto"}>
+              <div>
                 {/* Step 1: Event Details - SINGLE PAGE LAYOUT WITH GROUPED SECTIONS */}
                 {currentStep === 1 && (
                   <CustomerDetailsForm
@@ -1317,7 +1286,6 @@ export function CustomMenuWizard() {
                   <CustomerMenuSelection
                     selectedCategory={selectedCategory}
                     categories={categories}
-                    visitedCategories={visitedCategories}
                     eventDetails={eventDetails}
                     itemGuestCounts={itemGuestCounts}
                     loadingMenu={loadingMenu}
@@ -1344,7 +1312,6 @@ export function CustomMenuWizard() {
                     getFlatRateSubtotal={getFlatRateSubtotal}
                     getPerPersonSubtotal={getPerPersonSubtotal}
                     getConsumptionSubtotal={getConsumptionSubtotal}
-                    isCategoryLocked={isCategoryLocked}
                     getSelectedItemsByCategory={getSelectedItemsByCategory}
                     handleCategoryChange={handleCategoryChange}
                     categoryHasCombo={categoryHasCombo}
@@ -1354,8 +1321,11 @@ export function CustomMenuWizard() {
                     openDetailsModal={openDetailsModal}
                     removeFromCart={removeFromCart}
                     isLastCategory={isLastCategory}
-                    allCategoriesVisited={allCategoriesVisited}
                     calculateRecommendedQuantity={calculateRecommendedQuantity}
+                    handleStep2Navigation={handleStep2Navigation}
+                    onEditDateTime={() => setIsDateTimePickerOpen(true)}
+                    includeBeveragePrices={includeBeveragePrices}
+                    setIncludeBeveragePrices={setIncludeBeveragePrices}
                   />
                 )}
 
@@ -1395,8 +1365,9 @@ export function CustomMenuWizard() {
                   />
                 )}
 
-                {/* Navigation Buttons */}
-                <div className="sticky bottom-0 bg-card flex items-center justify-between mt-3 pt-3 border-t border-border gap-2 -mx-5 px-5 -mb-5 pb-3 lg:-mx-8 lg:px-8 lg:-mb-8 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]" style={{ borderRadius: '0 0 var(--radius-card) var(--radius-card)' }}>
+                {/* Navigation Buttons - Hidden on Step 2 because it has its own sidebar-aware navigation */}
+                {currentStep !== 2 && (
+                  <div className="sticky bottom-0 bg-card flex items-center justify-between mt-3 pt-3 border-t border-border gap-2 -mx-5 px-5 -mb-5 pb-3 lg:-mx-8 lg:px-8 lg:-mb-8 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]" style={{ borderRadius: '0 0 var(--radius-card) var(--radius-card)' }}>
                   {/* Back button - Show when on Step 2 or 3 */}
                   {currentStep > 1 && (
                     <Button
@@ -1438,12 +1409,9 @@ export function CustomMenuWizard() {
                         onClick={handleNext}
                         icon={ChevronRight}
                         iconPosition="right"
-                        disabled={isLastCategory() && !allCategoriesVisited()}
                         size="sm"
                       >
-                        {isLastCategory() && allCategoriesVisited()
-                          ? "Continue to Summary"
-                          : "Next Category"}
+                        Continue to Summary
                       </Button>
                     )}
 
@@ -1467,10 +1435,11 @@ export function CustomMenuWizard() {
                     )}
                   </div>
                 </div>
-              </div>
+              )}
             </div>
-          </main>
-        </div >
+          </div>
+        </main>
+      </div>
 
         <ItemDetailsModal
           item={detailsModalItem}
@@ -1537,7 +1506,7 @@ export function CustomMenuWizard() {
                   itemAddOns={itemAddOns}
                   itemComments={itemComments}
                   isCartCollapsed={false}
-                  setIsCartCollapsed={() => {}}
+                  setIsCartCollapsed={() => { }}
                   eventDetails={eventDetails}
                   itemGuestCounts={itemGuestCounts}
                   getItemPerPersonPrice={getItemPerPersonPrice}
@@ -1547,10 +1516,17 @@ export function CustomMenuWizard() {
                   calculateRecommendedQuantity={calculateRecommendedQuantity}
                   openDetailsModal={openDetailsModal}
                   removeFromCart={removeFromCart}
+                  setItemQuantities={setItemQuantities}
                   isConsumption={isConsumption}
                   isFlatFee={isFlatFee}
                   isPerPerson={isPerPerson}
                   onContinue={() => { setIsMobileDrawerOpen(false); handleNext(); }}
+                  onEditDateTime={() => { 
+                    setIsMobileDrawerOpen(false); 
+                    setIsDateTimePickerOpen(true); 
+                  }}
+                  includeBeveragePrices={includeBeveragePrices}
+                  setIncludeBeveragePrices={setIncludeBeveragePrices}
                   isDrawer
                 />
               </div>

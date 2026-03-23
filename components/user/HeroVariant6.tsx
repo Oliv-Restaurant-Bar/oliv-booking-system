@@ -1,204 +1,253 @@
 'use client';
-import { useState } from 'react';
-import { ArrowRight, Play } from 'lucide-react';
-import { Button } from './Button';
-import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
-import { useLandingTranslation, useTranslation } from '@/lib/i18n/client';
-import { useTranslations } from 'next-intl';
+import { useState, useEffect, useRef } from "react";
+import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
+import Link from "next/link";
+import { useLandingTranslation } from '@/lib/i18n/client';
+
+const imgDiningWide = "https://cdn.picflow.com/assets/images/9ee40955-4bc5-4d2a-a8cc-2c3ca4bf3db5/base/9ee40955-4bc5-4d2a-a8cc-2c3ca4bf3db5.jpg";
+const imgDiningWarm = "https://cdn.picflow.com/assets/images/9bb36043-7b02-4db1-ba3d-f1abaeea4fc0/base/9bb36043-7b02-4db1-ba3d-f1abaeea4fc0.jpg";
+const imgDiningAmbient = "https://cdn.picflow.com/assets/images/21690d2d-c4f1-45f7-ad04-1d4027cbe989/base/21690d2d-c4f1-45f7-ad04-1d4027cbe989.jpg";
+const imgBar = "https://cdn.picflow.com/assets/images/adc1153a-1583-4b70-94c4-4886b9a6ebb4/base/adc1153a-1583-4b70-94c4-4886b9a6ebb4.jpg";
+const imgArtLounge = "https://cdn.picflow.com/assets/images/b284ebc0-0b0e-41e4-a2bb-c3f46b0b0d9f/base/b284ebc0-0b0e-41e4-a2bb-c3f46b0b0d9f.jpg";
+
+const CAROUSEL_IMAGES = [
+  { src: imgDiningWide, alt: "Olive restaurant — spacious dining hall with pendant lights" },
+  { src: imgDiningWarm, alt: "Olive restaurant — warm ambient table setting" },
+  { src: imgDiningAmbient, alt: "Olive restaurant — elegant interior with paper lanterns" },
+  { src: imgBar, alt: "Olive restaurant — arched bar with curated spirits" },
+  { src: imgArtLounge, alt: "Olive restaurant — artistic lounge with portrait gallery" },
+];
+
+const GOLD = "#9dae91";
+const DARK = "#262d39";
 
 export function HeroVariant6() {
+  const [current, setCurrent] = useState(0);
+  const [prev, setPrev] = useState<number | null>(null);
+  const [fading, setFading] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const t = useLandingTranslation();
-  const tOccasion = useTranslation('occasion');
-  const tCommon = useTranslations('common');
+
+  const goTo = (index: number) => {
+    if (index === current || fading) return;
+    setPrev(current);
+    setCurrent(index);
+    setFading(true);
+    setTimeout(() => {
+      setPrev(null);
+      setFading(false);
+    }, 900);
+  };
+
+  useEffect(() => {
+    timerRef.current = setInterval(() => {
+      const next = (current + 1) % CAROUSEL_IMAGES.length;
+      goTo(next);
+    }, 5000);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current, fading]);
 
   return (
-    <section id="hero" className="relative min-h-screen lg:max-h-[750px] flex items-center p-4 sm:p-6 lg:p-8 bg-background">
-      <div className="relative w-full min-h-[calc(100vh-2rem)] sm:min-h-[calc(100vh-3rem)] lg:min-h-[calc(100vh-4rem)] lg:max-h-[750px] overflow-hidden rounded-3xl" style={{ borderRadius: 'var(--radius-card)' }}>
-        {/* Background Image with Overlay */}
-        <div className="absolute inset-0">
+    <section className="relative w-full h-screen min-h-[600px] overflow-hidden bg-background">
+      {/* ── Slide stack ── */}
+      {CAROUSEL_IMAGES.map((img, i) => (
+        <div
+          key={i}
+          className="absolute inset-0 transition-opacity"
+          style={{
+            opacity: i === current ? 1 : 0,
+            transitionDuration: "900ms",
+            transitionTimingFunction: "ease-in-out",
+            zIndex: i === current ? 2 : i === prev ? 1 : 0,
+          }}
+        >
           <ImageWithFallback
-            src="https://images.unsplash.com/photo-1580802841960-bb47baa91eac?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbGVnYW50JTIwcmVzdGF1cmFudCUyMGNhdGVyaW5nJTIwZm9vZCUyMHBsYXR0ZXJ8ZW58MXx8fHwxNzcwNDY2NjYxfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
-            alt="Elegant catering food display"
+            src={img.src}
+            alt={img.alt}
             className="w-full h-full object-cover"
           />
+        </div>
+      ))}
 
-          {/* Gradient Overlays */}
-          <div className="absolute inset-0 bg-gradient-to-r from-secondary/95 via-secondary/85 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-secondary/90 via-transparent to-transparent" />
+      {/* ── Dark overlay ── */}
+      <div
+        className="absolute inset-0 z-10"
+        style={{
+          background: `linear-gradient(
+            160deg,
+            rgba(38,45,57,0.72) 0%,
+            rgba(38,45,57,0.55) 40%,
+            rgba(157,174,145,0.18) 100%
+          )`,
+        }}
+      />
+
+      {/* ── Subtle gold vignette bottom ── */}
+      <div
+        className="absolute inset-x-0 bottom-0 h-[45%] z-10 pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(to top, rgba(38,45,57,0.85) 0%, transparent 100%)",
+        }}
+      />
+
+      {/* ── 12-col content grid ── */}
+      <div className="absolute inset-0 z-20 flex flex-col">
+        <div className="flex-1 flex items-center">
+          <div className="w-full max-w-[1440px] mx-auto px-6 lg:px-12">
+            <div className="grid grid-cols-12">
+              {/* Content: cols 1-8 on large, full on small */}
+              <div className="col-span-12 lg:col-span-8 xl:col-span-7 flex flex-col items-center lg:items-start text-center lg:text-left gap-8 mt-16 sm:mt-0">
+
+                {/* Eyebrow badge */}
+                <div
+                  className="inline-flex items-center gap-[10px] px-5 py-[9px] rounded-full border"
+                  style={{
+                    borderColor: `rgba(157,174,145,0.45)`,
+                    background: `rgba(157,174,145,0.1)`,
+                    backdropFilter: "blur(8px)",
+                  }}
+                >
+                  <span
+                    className="size-[7px] rounded-full shrink-0"
+                    style={{ backgroundColor: GOLD }}
+                  />
+                  <span
+                    className="font-['Hanken_Grotesk',sans-serif] font-semibold text-[12px] tracking-[0.14em] uppercase"
+                    style={{ color: GOLD }}
+                  >
+                    Premium Catering &amp; Fine Dining
+                  </span>
+                </div>
+
+                {/* Heading */}
+                <h1
+                  className="font-['Hanken_Grotesk',sans-serif] font-semibold text-white"
+                  style={{
+                    fontSize: "clamp(42px, 5.5vw, 76px)",
+                    lineHeight: 1.08,
+                    letterSpacing: "-0.02em",
+                  }}
+                >
+                  Craft{" "}
+                  <span style={{ color: GOLD }}>Unforgettable</span>
+                  <br />
+                  Dining Experiences
+                </h1>
+
+                {/* Subtext */}
+                <p
+                  className="font-['Hanken_Grotesk',sans-serif] font-normal text-[rgba(255,255,255,0.72)] max-w-[540px]"
+                  style={{ fontSize: "clamp(15px, 1.4vw, 18px)", lineHeight: 1.7 }}
+                >
+                  From intimate private dinners to grand celebrations — Olive
+                  brings elevated cuisine, flawless presentation, and
+                  personalised service to every occasion.
+                </p>
+
+                {/* CTA row */}
+                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4">
+                  <Link
+                    href="/wizard"
+                    className="h-[52px] px-8 rounded-[8px] font-['Hanken_Grotesk',sans-serif] font-medium text-[15px] flex items-center gap-2 transition-all duration-200 hover:brightness-110 active:scale-[0.97] shadow-[0_4px_24px_rgba(157,174,145,0.35)]"
+                    style={{ backgroundColor: GOLD, color: DARK }}
+                  >
+                    Plan Your Event
+                    <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
+                      <path d="M3 8h10M9 4l4 4-4 4" stroke={DARK} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </Link>
+
+                  <a
+                    href="#process"
+                    className="h-[52px] px-8 rounded-[8px] font-['Hanken_Grotesk',sans-serif] font-medium text-[15px] text-white flex items-center gap-2 transition-all duration-200 hover:bg-[rgba(255,255,255,0.12)]"
+                    style={{
+                      background: "rgba(255,255,255,0.08)",
+                      border: "1.5px solid rgba(255,255,255,0.22)",
+                      backdropFilter: "blur(8px)",
+                    }}
+                  >
+                    See How It Works
+                  </a>
+                </div>
+
+                {/* Stats row */}
+                <div
+                  className="flex items-center gap-0 mt-2 rounded-[10px] overflow-hidden"
+                  style={{
+                    background: "rgba(38,45,57,0.55)",
+                    backdropFilter: "blur(12px)",
+                    border: "1px solid rgba(157,174,145,0.18)",
+                  }}
+                >
+                  {[
+                    { value: "500+", label: "Events Catered" },
+                    { value: "50+", label: "Menu Options" },
+                    { value: "4.9★", label: "Guest Rating" },
+                  ].map((stat, i) => (
+                    <div
+                      key={i}
+                      className="flex flex-col items-center px-4 sm:px-8 py-4"
+                      style={{
+                        borderRight:
+                          i < 2 ? "1px solid rgba(157,174,145,0.18)" : "none",
+                      }}
+                    >
+                      <span
+                        className="font-['Hanken_Grotesk',sans-serif] font-semibold text-[22px]"
+                        style={{ color: GOLD }}
+                      >
+                        {stat.value}
+                      </span>
+                      <span className="font-['Hanken_Grotesk',sans-serif] font-normal text-[11px] sm:text-[12px] text-[rgba(255,255,255,0.6)] tracking-wide mt-[2px] text-center">
+                        {stat.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Content */}
-        <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 h-full flex items-center">
-          <div className="grid lg:grid-cols-2 gap-12 items-center w-full">
-            {/* Left Content - Text on Dark Overlay */}
-            <div className="space-y-8 max-w-2xl">
-              {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/20 backdrop-blur-md border border-primary/30 rounded-full">
-                <div className="w-2 h-2 rounded-full bg-primary" />
-                <span className="text-primary" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-                  {t('hero.welcome')}
+        {/* ── Bottom bar: slide indicators ── */}
+        <div className="pb-10">
+          <div className="max-w-[1440px] mx-auto px-6 lg:px-12">
+            <div className="grid grid-cols-12">
+              <div className="col-span-12 lg:col-start-2 lg:col-span-10 flex items-center justify-between">
+                {/* Dots */}
+                <div className="flex items-center gap-3">
+                  {CAROUSEL_IMAGES.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => goTo(i)}
+                      aria-label={`Go to slide ${i + 1}`}
+                      className="transition-all duration-300 rounded-full focus:outline-none"
+                      style={{
+                        width: i === current ? "32px" : "8px",
+                        height: "8px",
+                        background:
+                          i === current
+                            ? GOLD
+                            : "rgba(255,255,255,0.35)",
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* Slide label */}
+                <span
+                  className="font-['Hanken_Grotesk',sans-serif] text-[12px] tracking-widest uppercase"
+                  style={{ color: "rgba(255,255,255,0.45)" }}
+                >
+                  {String(current + 1).padStart(2, "0")} /{" "}
+                  {String(CAROUSEL_IMAGES.length).padStart(2, "0")}
                 </span>
               </div>
-
-              {/* Main Heading */}
-              <h1
-                className="text-white leading-tight"
-                style={{
-                  fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
-                  fontWeight: 'var(--font-weight-semibold)',
-                  lineHeight: '1.1'
-                }}
-              >
-                {t('hero.title').split(' ').map((word: string, i: number) => (
-                  <span key={i}>
-                    {word === 'Unforgettable' || word === 'unvergessliche' ? (
-                      <span className="text-primary">{word}</span>
-                    ) : (
-                      word
-                    )}
-                    {' '}
-                  </span>
-                ))}
-              </h1>
-
-              {/* Description */}
-              <p
-                className="text-white/80 leading-relaxed max-w-lg"
-                style={{ fontSize: 'var(--text-h4)' }}
-              >
-                {t('hero.description')}
-              </p>
-
-              {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <Button variant="primary" icon={ArrowRight} iconPosition="right" className="sm:flex-1" to="/wizard">
-                  {t('hero.getStarted')}
-                </Button>
-
-                <Button
-                  variant="outline"
-                  to="#how-it-works"
-                  className="sm:flex-1 bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 hover:text-white hover:border-white/20"
-                >
-                  {t('hero.seeHowItWorks')}
-                </Button>
-              </div>
-
-              {/* Stats Row */}
-              <div className="grid grid-cols-3 gap-6 pt-8">
-                <div className="space-y-1">
-                  <div className="text-primary" style={{ fontSize: 'var(--text-h2)', fontWeight: 'var(--font-weight-semibold)' }}>
-                    {t('hero.stats.events')}
-                  </div>
-                  <div className="text-white/70" style={{ fontSize: 'var(--text-small)' }}>
-                    {t('hero.eventsCatered')}
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-primary" style={{ fontSize: 'var(--text-h2)', fontWeight: 'var(--font-weight-semibold)' }}>
-                    {t('hero.stats.menus')}
-                  </div>
-                  <div className="text-white/70" style={{ fontSize: 'var(--text-small)' }}>
-                    {t('hero.menuOptions')}
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-primary" style={{ fontSize: 'var(--text-h2)', fontWeight: 'var(--font-weight-semibold)' }}>
-                    {t('hero.stats.rating')}
-                  </div>
-                  <div className="text-white/70" style={{ fontSize: 'var(--text-small)' }}>
-                    {t('hero.clientRating')}
-                  </div>
-                </div>
-              </div>
             </div>
-
-            {/* Right Side - Feature Cards Floating */}
-            <div className="relative hidden lg:block">
-              <div className="space-y-6">
-                {/* Weddings Card */}
-                <div
-                  className="bg-white/95 backdrop-blur-md p-6 rounded-2xl shadow-2xl border border-white/20 transform hover:scale-105 transition-transform group"
-                  style={{ borderRadius: 'var(--radius-card)' }}
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
-                      <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-foreground mb-2" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
-                        {t('hero.eventTypes.weddings')}
-                      </h3>
-                      <p className="text-muted-foreground mb-3" style={{ fontSize: 'var(--text-base)' }}>
-                        {t('hero.guestRange', { min: 150, max: 300 })}
-                      </p>
-                      <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full">
-                        <span className="text-primary" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
-                          {t('hero.premiumPackages')}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Corporate Events Card - Offset */}
-                <div
-                  className="bg-primary p-6 rounded-2xl shadow-2xl transform hover:scale-105 transition-transform ml-12 group"
-                  style={{ borderRadius: 'var(--radius-card)' }}
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="w-16 h-16 rounded-xl bg-primary-foreground/20 flex items-center justify-center flex-shrink-0 group-hover:bg-primary-foreground/30 transition-colors">
-                      <svg className="w-8 h-8 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-primary-foreground mb-2" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
-                        {t('hero.eventTypes.corporate')}
-                      </h3>
-                      <p className="text-primary-foreground/80 mb-3" style={{ fontSize: 'var(--text-base)' }}>
-                        {t('hero.guestRange', { min: 50, max: 200 })}
-                      </p>
-                      <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary-foreground/20 rounded-full">
-                        <span className="text-primary-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
-                          {t('hero.professionalSolutions')}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Special Celebrations Card */}
-                <div
-                  className="bg-white/95 backdrop-blur-md p-6 rounded-2xl shadow-2xl border border-white/20 transform hover:scale-105 transition-transform group"
-                  style={{ borderRadius: 'var(--radius-card)' }}
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="w-16 h-16 rounded-xl bg-secondary/90 flex items-center justify-center flex-shrink-0 group-hover:bg-secondary transition-colors">
-                      <svg className="w-8 h-8 text-secondary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-foreground mb-2" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
-                        {t('hero.eventTypes.celebrations')}
-                      </h3>
-                      <p className="text-muted-foreground mb-3" style={{ fontSize: 'var(--text-base)' }}>
-                        {t('hero.guestRange', { min: 20, max: 100 })}
-                      </p>
-                      <div className="inline-flex items-center gap-2 px-3 py-1 bg-secondary/20 rounded-full">
-                        <span className="text-secondary" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
-                          {t('hero.customizableExperiences')}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
           </div>
         </div>
       </div>

@@ -7,25 +7,25 @@ import { NativeCheckbox } from '@/components/ui/NativeCheckbox';
 import { EventDetails } from '@/lib/types';
 
 interface CustomerDetailsFormProps {
-  eventDetails: EventDetails;
-  setEventDetails: (details: EventDetails) => void;
-  errors: Partial<EventDetails>;
-  setErrors: (errors: Partial<EventDetails>) => void;
-  touched: Record<string, boolean>;
-  setTouched: (touched: Record<string, boolean>) => void;
-  displayErrors: Partial<EventDetails>;
-  setIsDateTimePickerOpen: (isOpen: boolean) => void;
+    eventDetails: EventDetails;
+    setEventDetails: (details: EventDetails) => void;
+    errors: Partial<EventDetails>;
+    setErrors: (errors: Partial<EventDetails>) => void;
+    touched: Record<string, boolean>;
+    setTouched: (touched: Record<string, boolean>) => void;
+    displayErrors: Partial<EventDetails>;
+    setIsDateTimePickerOpen: (isOpen: boolean) => void;
 }
 
 export function CustomerDetailsForm({
-  eventDetails,
-  setEventDetails,
-  errors,
-  setErrors,
-  touched,
-  setTouched,
-  displayErrors,
-  setIsDateTimePickerOpen
+    eventDetails,
+    setEventDetails,
+    errors,
+    setErrors,
+    touched,
+    setTouched,
+    displayErrors,
+    setIsDateTimePickerOpen
 }: CustomerDetailsFormProps) {
     return (
         <div>
@@ -299,6 +299,26 @@ export function CustomerDetailsForm({
                             showCharacterCount
                             error={displayErrors.occasion}
                             helperText="Optional"
+                            className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
+                        />
+
+                        <ValidatedInput
+                            label="Reference"
+                            type="text"
+                            value={eventDetails.reference}
+                            onChange={(e) => {
+                                setEventDetails({ ...eventDetails, reference: e.target.value });
+                                if (errors.reference) setErrors({ ...errors, reference: undefined });
+                            }}
+                            onBlur={() => {
+                                setTouched({ ...touched, reference: true as any });
+                                if (errors.reference) setErrors({ ...errors, reference: undefined });
+                            }}
+                            placeholder="e.g. PO-12345"
+                            maxLength={100}
+                            showCharacterCount
+                            error={displayErrors.reference}
+                            helperText="Optional reference or PO number"
                             className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                         />
                     </div>
