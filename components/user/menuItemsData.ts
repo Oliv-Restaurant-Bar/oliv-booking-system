@@ -39,4 +39,5 @@ export interface MenuItem {
   isCombo?: boolean;
   additives?: string[];
   ingredients?: string;
+  sortOrder?: number;
 }

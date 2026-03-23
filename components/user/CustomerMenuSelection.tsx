@@ -47,6 +47,7 @@ interface CustomerMenuSelectionProps {
   calculateRecommendedQuantity: (item: MenuItem, itemId?: string) => number | null;
   handleStep2Navigation: () => void;
   onEditDateTime?: () => void;
+  isSubmitting: boolean;
   includeBeveragePrices: boolean;
   setIncludeBeveragePrices: (value: boolean) => void;
 }
@@ -92,6 +93,7 @@ export function CustomerMenuSelection({
   calculateRecommendedQuantity,
   handleStep2Navigation,
   onEditDateTime,
+  isSubmitting,
   includeBeveragePrices,
   setIncludeBeveragePrices,
 }: CustomerMenuSelectionProps) {
@@ -437,8 +439,11 @@ export function CustomerMenuSelection({
           isFlatFee={isFlatFee}
           isPerPerson={isPerPerson}
           isDrawer={true} // Add this to handle scroll properly inside sidebar
+          isSubmitting={isSubmitting}
           includeBeveragePrices={includeBeveragePrices}
           setIncludeBeveragePrices={setIncludeBeveragePrices}
+          setItemGuestCounts={setItemGuestCounts}
+          categories={categories}
         />
       </div>
     </div>

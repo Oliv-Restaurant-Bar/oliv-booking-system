@@ -603,7 +603,7 @@ export function ItemDetailsModal({
             >
               <ShoppingCart className="w-5 h-5" />
               <span style={{ fontWeight: 'var(--font-weight-medium)' }}>Add to Cart</span>
-              <span style={{ fontWeight: 'var(--font-weight-bold)' }}>
+              {/* <span style={{ fontWeight: 'var(--font-weight-bold)' }}>
                 {(() => {
                   let basePrice = item.price;
                   if (tempVariant && item.variants) {
@@ -632,7 +632,7 @@ export function ItemDetailsModal({
                   const multiplier = isPerPerson(item) ? (tempGuestCount || parseInt(eventDetails.guestCount) || 1) : tempQuantity;
                   return ((basePrice + addOnsTotal) * multiplier).toFixed(2);
                 })()}
-              </span>
+              </span> */}
             </button>
           </div>
         </div>

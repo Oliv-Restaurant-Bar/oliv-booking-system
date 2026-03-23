@@ -372,7 +372,8 @@ export function CustomerSummary({
               {categories.map((category) => {
                 const categoryItems = selectedItems
                   .map((itemId) => menuItems.find((i) => i.id === itemId))
-                  .filter((item): item is MenuItem => item !== undefined && item.category === category);
+                  .filter((item): item is MenuItem => item !== undefined && item.category === category)
+                  .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
                 if (categoryItems.length === 0) return null;
 
@@ -651,6 +652,11 @@ export function CustomerSummary({
                           return item &&
                             item.category === category &&
                             isPerPerson(item);
+                        })
+                        .sort((a, b) => {
+                          const itemA = a as MenuItem;
+                          const itemB = b as MenuItem;
+                          return (itemA.sortOrder || 0) - (itemB.sortOrder || 0);
                         });
 
                       if (categoryItems.length === 0) return null;

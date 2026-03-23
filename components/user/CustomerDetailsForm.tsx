@@ -143,7 +143,7 @@ export function CustomerDetailsForm({
                         <MapPin className="w-4 h-4 text-primary" />
                         Address
                     </h4>
-                    <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <ValidatedInput
                             label="Strasse & Nr."
                             type="text"
@@ -165,50 +165,68 @@ export function CustomerDetailsForm({
                             className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                         />
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <ValidatedInput
-                                label="PLZ"
-                                type="text"
-                                value={eventDetails.plz}
-                                onChange={(e) => {
-                                    const value = e.target.value.replace(/[^0-9]/g, '');
-                                    setEventDetails({ ...eventDetails, plz: value });
-                                    if (errors.plz) setErrors({ ...errors, plz: undefined });
-                                }}
-                                onBlur={() => {
-                                    setTouched({ ...touched, plz: true });
-                                    if (errors.plz) setErrors({ ...errors, plz: undefined });
-                                }}
-                                placeholder="3000"
-                                maxLength={10}
-                                showCharacterCount
-                                error={displayErrors.plz}
-                                helperText="Min. 4 characters"
-                                required
-                                className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
-                            />
+                        <ValidatedInput
+                            label="PLZ"
+                            type="text"
+                            value={eventDetails.plz}
+                            onChange={(e) => {
+                                const value = e.target.value.replace(/[^0-9]/g, '');
+                                setEventDetails({ ...eventDetails, plz: value });
+                                if (errors.plz) setErrors({ ...errors, plz: undefined });
+                            }}
+                            onBlur={() => {
+                                setTouched({ ...touched, plz: true });
+                                if (errors.plz) setErrors({ ...errors, plz: undefined });
+                            }}
+                            placeholder="3000"
+                            maxLength={10}
+                            showCharacterCount
+                            error={displayErrors.plz}
+                            helperText="Min. 4 characters"
+                            required
+                            className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
+                        />
 
-                            <ValidatedInput
-                                label="Location"
-                                type="text"
-                                value={eventDetails.location}
-                                onChange={(e) => {
-                                    setEventDetails({ ...eventDetails, location: e.target.value });
-                                    if (errors.location) setErrors({ ...errors, location: undefined });
-                                }}
-                                onBlur={() => {
-                                    setTouched({ ...touched, location: true });
-                                    if (errors.location) setErrors({ ...errors, location: undefined });
-                                }}
-                                placeholder="Bern"
-                                maxLength={50}
-                                showCharacterCount
-                                error={displayErrors.location}
-                                helperText="Min. 2 characters"
-                                required
-                                className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
-                            />
-                        </div>
+                        <ValidatedInput
+                            label="Location"
+                            type="text"
+                            value={eventDetails.location}
+                            onChange={(e) => {
+                                setEventDetails({ ...eventDetails, location: e.target.value });
+                                if (errors.location) setErrors({ ...errors, location: undefined });
+                            }}
+                            onBlur={() => {
+                                setTouched({ ...touched, location: true });
+                                if (errors.location) setErrors({ ...errors, location: undefined });
+                            }}
+                            placeholder="Bern"
+                            maxLength={50}
+                            showCharacterCount
+                            error={displayErrors.location}
+                            helperText="Min. 2 characters"
+                            required
+                            className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
+                        />
+
+                        <ValidatedInput
+                            label="Reference"
+                            type="text"
+                            value={eventDetails.reference}
+                            onChange={(e) => {
+                                setEventDetails({ ...eventDetails, reference: e.target.value });
+                                if (errors.reference) setErrors({ ...errors, reference: undefined });
+                            }}
+                            onBlur={() => {
+                                setTouched({ ...touched, reference: true as any });
+                                if (errors.reference) setErrors({ ...errors, reference: undefined });
+                            }}
+                            placeholder="e.g. PO-12345"
+                            maxLength={100}
+                            showCharacterCount
+                            error={displayErrors.reference}
+                            helperText="Optional reference"
+                            className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
+                        />
                     </div>
                 </div>
 
@@ -302,25 +320,6 @@ export function CustomerDetailsForm({
                             className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                         />
 
-                        <ValidatedInput
-                            label="Reference"
-                            type="text"
-                            value={eventDetails.reference}
-                            onChange={(e) => {
-                                setEventDetails({ ...eventDetails, reference: e.target.value });
-                                if (errors.reference) setErrors({ ...errors, reference: undefined });
-                            }}
-                            onBlur={() => {
-                                setTouched({ ...touched, reference: true as any });
-                                if (errors.reference) setErrors({ ...errors, reference: undefined });
-                            }}
-                            placeholder="e.g. PO-12345"
-                            maxLength={100}
-                            showCharacterCount
-                            error={displayErrors.reference}
-                            helperText="Optional reference or PO number"
-                            className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
-                        />
                     </div>
                 </div>
 
@@ -419,31 +418,34 @@ export function CustomerDetailsForm({
                             <div className="space-y-4 mt-4 pt-4 border-t border-border">
                                 {eventDetails.useSameAddressForBilling ? (
                                     // Read-only display of main address
-                                    <div className="space-y-3">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
                                             <label className="text-sm text-muted-foreground mb-1 block">Street & Nr.</label>
                                             <div className="px-3 py-2 bg-muted/50 rounded-md text-foreground border border-border">
                                                 {eventDetails.street || 'Not provided'}
                                             </div>
                                         </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="text-sm text-muted-foreground mb-1 block">PLZ</label>
-                                                <div className="px-3 py-2 bg-muted/50 rounded-md text-foreground border border-border">
-                                                    {eventDetails.plz || 'Not provided'}
-                                                </div>
+                                        <div>
+                                            <label className="text-sm text-muted-foreground mb-1 block">PLZ</label>
+                                            <div className="px-3 py-2 bg-muted/50 rounded-md text-foreground border border-border">
+                                                {eventDetails.plz || 'Not provided'}
                                             </div>
-                                            <div>
-                                                <label className="text-sm text-muted-foreground mb-1 block">Location</label>
-                                                <div className="px-3 py-2 bg-muted/50 rounded-md text-foreground border border-border">
-                                                    {eventDetails.location || 'Not provided'}
-                                                </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-sm text-muted-foreground mb-1 block">Location</label>
+                                            <div className="px-3 py-2 bg-muted/50 rounded-md text-foreground border border-border">
+                                                {eventDetails.location || 'Not provided'}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-sm text-muted-foreground mb-1 block">Reference</label>
+                                            <div className="px-3 py-2 bg-muted/50 rounded-md text-foreground border border-border">
+                                                {eventDetails.reference || 'Not provided'}
                                             </div>
                                         </div>
                                     </div>
                                 ) : (
-                                    // Editable billing address fields
-                                    <>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <ValidatedInput
                                             label="Billing Street & Nr."
                                             type="text"
@@ -464,49 +466,66 @@ export function CustomerDetailsForm({
                                             error={eventDetails.billingStreetError}
                                         />
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <ValidatedInput
-                                                label="PLZ"
-                                                type="text"
-                                                value={eventDetails.billingPlz}
-                                                onChange={(e) => {
-                                                    const value = e.target.value.replace(/[^0-9]/g, '');
-                                                    setEventDetails({ ...eventDetails, billingPlz: value, billingPlzError: undefined });
-                                                }}
-                                                onBlur={() => {
-                                                    // Validate billing PLZ on blur if filled
-                                                    if (eventDetails.billingPlz.length > 0 && eventDetails.billingPlz.length < 4) {
-                                                        setEventDetails({ ...eventDetails, billingPlzError: 'Postal code must be at least 4 characters' });
-                                                    }
-                                                }}
-                                                placeholder="3000"
-                                                maxLength={10}
-                                                showCharacterCount
-                                                helperText="Optional"
-                                                error={eventDetails.billingPlzError}
-                                            />
+                                        <ValidatedInput
+                                            label="PLZ"
+                                            type="text"
+                                            value={eventDetails.billingPlz}
+                                            onChange={(e) => {
+                                                const value = e.target.value.replace(/[^0-9]/g, '');
+                                                setEventDetails({ ...eventDetails, billingPlz: value, billingPlzError: undefined });
+                                            }}
+                                            onBlur={() => {
+                                                // Validate billing PLZ on blur if filled
+                                                if (eventDetails.billingPlz.length > 0 && eventDetails.billingPlz.length < 4) {
+                                                    setEventDetails({ ...eventDetails, billingPlzError: 'Postal code must be at least 4 characters' });
+                                                }
+                                            }}
+                                            placeholder="3000"
+                                            maxLength={10}
+                                            showCharacterCount
+                                            helperText="Optional"
+                                            error={eventDetails.billingPlzError}
+                                        />
 
-                                            <ValidatedInput
-                                                label="Location"
-                                                type="text"
-                                                value={eventDetails.billingLocation}
-                                                onChange={(e) => {
-                                                    setEventDetails({ ...eventDetails, billingLocation: e.target.value, billingLocationError: undefined });
-                                                }}
-                                                onBlur={() => {
-                                                    // Validate billing location on blur if filled
-                                                    if (eventDetails.billingLocation.trim().length > 0 && eventDetails.billingLocation.trim().length < 2) {
-                                                        setEventDetails({ ...eventDetails, billingLocationError: 'Location must be at least 2 characters' });
-                                                    }
-                                                }}
-                                                placeholder="Bern"
-                                                maxLength={50}
-                                                showCharacterCount
-                                                helperText="Optional"
-                                                error={eventDetails.billingLocationError}
-                                            />
-                                        </div>
-                                    </>
+                                        <ValidatedInput
+                                            label="Location"
+                                            type="text"
+                                            value={eventDetails.billingLocation}
+                                            onChange={(e) => {
+                                                setEventDetails({ ...eventDetails, billingLocation: e.target.value, billingLocationError: undefined });
+                                            }}
+                                            onBlur={() => {
+                                                // Validate billing location on blur if filled
+                                                if (eventDetails.billingLocation.trim().length > 0 && eventDetails.billingLocation.trim().length < 2) {
+                                                    setEventDetails({ ...eventDetails, billingLocationError: 'Location must be at least 2 characters' });
+                                                }
+                                            }}
+                                            placeholder="Bern"
+                                            maxLength={50}
+                                            showCharacterCount
+                                            helperText="Optional"
+                                            error={eventDetails.billingLocationError}
+                                        />
+
+                                        <ValidatedInput
+                                            label="Billing Reference"
+                                            type="text"
+                                            value={eventDetails.billingReference || ''}
+                                            onChange={(e) => {
+                                                setEventDetails({ ...eventDetails, billingReference: e.target.value, billingReferenceError: undefined });
+                                            }}
+                                            onBlur={() => {
+                                                if (eventDetails.billingReference?.trim().length > 100) {
+                                                    setEventDetails({ ...eventDetails, billingReferenceError: 'Billing reference must not exceed 100 characters' });
+                                                }
+                                            }}
+                                            placeholder="e.g. INV-98765"
+                                            maxLength={100}
+                                            showCharacterCount
+                                            helperText="Optional billing reference"
+                                            error={eventDetails.billingReferenceError}
+                                        />
+                                    </div>
                                 )}
                             </div>
                         </div>

@@ -51,6 +51,8 @@ function parseInternalNotes(notes: string | null) {
   let street = '';
   let plz = '';
   let location = '';
+  let reference = '';
+  let billingReference = '';
 
   if (notes) {
     const lines = notes.split('\n');
@@ -59,6 +61,10 @@ function parseInternalNotes(notes: string | null) {
         businessName = line.replace('Business: ', '').replace('N/A', '').trim();
       } else if (line.startsWith('Occasion: ')) {
         occasion = line.replace('Occasion: ', '').replace('N/A', '').trim();
+      } else if (line.startsWith('Reference: ')) {
+        reference = line.replace('Reference: ', '').replace('N/A', '').trim();
+      } else if (line.startsWith('Billing Reference: ')) {
+        billingReference = line.replace('Billing Reference: ', '').replace('N/A', '').trim();
       } else if (line.startsWith('Address: ')) {
         const address = line.replace('Address: ', '').replace('N/A', '').trim();
         if (!address) continue;
@@ -105,7 +111,7 @@ function parseInternalNotes(notes: string | null) {
     }
   }
 
-  return { businessName, occasion, street, plz, location };
+  return { businessName, occasion, street, plz, location, reference, billingReference };
 }
 
 export async function createBooking(input: CreateBookingInput & { leadEmail?: string; leadName?: string }) {
@@ -615,8 +621,8 @@ export async function getBookingWithDetails(id: string) {
     // Get booking items
     const items = await db.select().from(bookingItems).where(eq(bookingItems.bookingId, id));
 
-    // Parse internalNotes to extract business, address, and occasion
-    const { businessName, occasion, street, plz, location } = parseInternalNotes(booking.internalNotes);
+    // Parse internalNotes to extract business, address, occasion and references
+    const { businessName, occasion, street, plz, location, reference, billingReference } = parseInternalNotes(booking.internalNotes);
 
     return {
       success: true,
@@ -627,6 +633,8 @@ export async function getBookingWithDetails(id: string) {
         street,
         plz,
         location,
+        reference,
+        billingReference,
         lead: lead && lead[0] ? lead[0] : null,
         booking_items: items
       }
@@ -1022,8 +1030,8 @@ export async function getBookingForClientEdit(bookingId: string) {
     // Get booking items
     const items = await db.select().from(bookingItems).where(eq(bookingItems.bookingId, bookingId));
 
-    // Parse internalNotes to extract business, address, and occasion
-    const { businessName, occasion, street, plz, location } = parseInternalNotes(booking.internalNotes);
+    // Parse internalNotes to extract business, address, occasion and references
+    const { businessName, occasion, street, plz, location, reference, billingReference } = parseInternalNotes(booking.internalNotes);
 
     return {
       success: true,
@@ -1039,6 +1047,8 @@ export async function getBookingForClientEdit(bookingId: string) {
         street,
         plz,
         location,
+        reference,
+        billingReference,
         lead: lead && lead[0] ? lead[0] : null,
         booking_items: items,
       }

@@ -100,4 +100,6 @@ export interface EventDetails {
   billingStreetError?: string;
   billingPlzError?: string;
   billingLocationError?: string;
+  billingReference: string;
+  billingReferenceError?: string;
 }

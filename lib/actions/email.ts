@@ -28,6 +28,11 @@ export async function sendBookingEmail(params: {
   bookingEditUrl?: string;
   feedbackUrl?: string;
   rebookingUrl?: string;
+  attachments?: Array<{
+    content: string;
+    mime_type: string;
+    name: string;
+  }>;
 }): Promise<{ success: boolean; error?: string; emailLogId?: string }> {
   try {
     // Skip email sending if ZeptoMail token is not configured
@@ -79,6 +84,7 @@ export async function sendBookingEmail(params: {
         templateName,
         templateData,
         subject,
+        attachments: params.attachments,
       });
 
       if (!emailResult.success) {
@@ -132,6 +138,7 @@ export async function sendBookingEmail(params: {
         to: params.recipientEmail,
         subject,
         html,
+        attachments: params.attachments,
       });
 
       if (!emailResult.success) {
@@ -195,6 +202,7 @@ export async function sendThankYouEmail(params: {
   bookingData: Booking & { lead?: Lead | null };
   estimatedTotal?: number;
   bookingEditUrl?: string;
+  pdfAttachment?: { content: string; mime_type: string; name: string };
 }): Promise<{ success: boolean; error?: string }> {
   return sendBookingEmail({
     bookingId: params.bookingId,
@@ -203,6 +211,7 @@ export async function sendThankYouEmail(params: {
     bookingData: params.bookingData,
     estimatedTotal: params.estimatedTotal,
     bookingEditUrl: params.bookingEditUrl,
+    attachments: params.pdfAttachment ? [params.pdfAttachment] : undefined,
   });
 }
 

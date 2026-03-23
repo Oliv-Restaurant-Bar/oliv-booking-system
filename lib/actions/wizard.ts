@@ -11,6 +11,7 @@ import { logBookingChange } from "@/lib/booking-audit";
 import { sendEmail } from "@/lib/email/zeptomail";
 import { wizardEventDetailsSchema } from "@/lib/validation/schemas";
 import { ZodError } from "zod";
+import { generateCustomerOfferPdf } from "@/lib/utils/pdf-generator";
 
 export interface WizardFormData {
   contactName: string;
@@ -25,11 +26,13 @@ export interface WizardFormData {
   guestCount: number;
   occasion?: string;
   specialRequests?: string;
+  reference?: string;
   paymentMethod?: string;
   useSameAddressForBilling?: boolean;
   billingStreet?: string;
   billingPlz?: string;
   billingLocation?: string;
+  billingReference?: string;
   selectedItems: string[];
   itemQuantities: Record<string, number>;
   itemGuestCounts?: Record<string, number>; // Per-item guest count for categories with guestCount enabled
@@ -107,12 +110,11 @@ export async function submitWizardForm(data: WizardFormData) {
       .from(menuItems)
       .where(eq(menuItems.isActive, true));
 
-    const allCategories = await db
-      .select({
-        id: menuCategories.id,
-        guestCount: menuCategories.guestCount,
-      })
-      .from(menuCategories);
+    const allCategories = await db.select({
+      id: menuCategories.id,
+      name: menuCategories.name,
+      guestCount: menuCategories.guestCount,
+    }).from(menuCategories);
 
     const menuItemMap = new Map(allMenuItems.map(item => [item.id, item]));
     const categoryMap = new Map(allCategories.map(cat => [cat.id, cat.guestCount]));
@@ -214,6 +216,8 @@ export async function submitWizardForm(data: WizardFormData) {
       const internalNotesParts = [
         `Business: ${data.business || 'N/A'}`,
         `Occasion: ${data.occasion || 'N/A'}`,
+        `Reference: ${data.reference || 'N/A'}`,
+        `Billing Reference: ${data.billingReference || 'N/A'}`,
         `Address: ${fullAddress || 'N/A'}`,
       ];
 
@@ -376,6 +380,8 @@ export async function submitWizardForm(data: WizardFormData) {
     const internalNotesParts = [
       `Business: ${data.business || 'N/A'}`,
       `Occasion: ${data.occasion || 'N/A'}`,
+      `Reference: ${data.reference || 'N/A'}`,
+      `Billing Reference: ${data.billingReference || 'N/A'}`,
       `Address: ${fullAddress || 'N/A'}`,
     ].filter(Boolean);
 
@@ -449,12 +455,52 @@ export async function submitWizardForm(data: WizardFormData) {
         lead,
       };
 
+      // Generate PDF for the email
+      const pdfData = {
+        id: booking.id,
+        customerName: lead.contactName,
+        business: data.business || undefined,
+        eventDate: booking.eventDate, // String from Drizzle
+        eventTime: booking.eventTime,
+        guestCount: booking.guestCount,
+        occasion: data.occasion || undefined,
+        items: data.selectedItems.map(itemId => {
+          const dbItem = menuItemMap.get(itemId);
+          const quantity = data.itemQuantities[itemId] || 1;
+          const variantId = data.itemVariants?.[itemId];
+          const variant = variantId && Array.isArray(dbItem?.variants) 
+            ? (dbItem?.variants as any[]).find(v => v.id === variantId) 
+            : null;
+          
+          return {
+            id: itemId,
+            name: dbItem?.name || 'Unknown Item',
+            category: allCategories.find(c => c.id === dbItem?.categoryId)?.name || 'Other',
+            quantity: quantity,
+            unitPrice: variant ? Number(variant.price) : Number(dbItem?.pricePerPerson || 0),
+            totalPrice: (variant ? Number(variant.price) : Number(dbItem?.pricePerPerson || 0)) * quantity,
+            notes: data.itemComments?.[itemId],
+            pricingType: dbItem?.pricingType || 'per_person',
+          };
+        }),
+        estimatedTotal: estimatedTotal,
+        specialRequests: booking.specialRequests || undefined,
+      };
+
+      const doc = await generateCustomerOfferPdf(pdfData as any);
+      const pdfBase64 = doc.output('datauristring').split(',')[1];
+
       sendThankYouEmail({
         bookingId: booking.id,
         recipientEmail: data.contactEmail,
         bookingData: bookingForEmail as any,
         estimatedTotal: estimatedTotal,
         bookingEditUrl: bookingEditUrl,
+        pdfAttachment: {
+          name: `Angebot_${pdfData.customerName.replace(/\s+/g, '_')}.pdf`,
+          mime_type: "application/pdf",
+          content: pdfBase64,
+        }
       }).catch(err => {
         console.error("Error sending wizard new booking email:", err);
       });

@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect } from 'react';
-import { Home, Plus, Phone, Mail, Edit2, CheckCircle, Clock, FileCheck, Utensils } from 'lucide-react';
+import { Home, Plus, Phone, Mail, Edit2, CheckCircle, Clock, FileCheck, Utensils, Download, Loader2 } from 'lucide-react';
 import { Button } from './Button';
 import confetti from 'canvas-confetti';
 import { motion } from 'motion/react';
 import { useWizardTranslation } from '@/lib/i18n/client';
+import { generateCustomerOfferPdf } from '@/lib/utils/pdf-generator';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 interface ThankYouScreenProps {
   inquiryNumber: string;
@@ -13,6 +16,7 @@ interface ThankYouScreenProps {
   onEditOrder: () => void;
   onGoHome?: () => void;
   variant?: 'centered' | 'split' | 'minimal';
+  bookingData?: any; // New prop for PDF generation
 }
 
 export function ThankYouScreen({
@@ -20,9 +24,31 @@ export function ThankYouScreen({
   onCreateNew,
   onEditOrder,
   onGoHome,
-  variant = 'centered'
+  variant = 'centered',
+  bookingData
 }: ThankYouScreenProps) {
   const t = useWizardTranslation();
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    if (!bookingData) {
+      toast.error('Booking data not available for PDF generation');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const doc = await generateCustomerOfferPdf(bookingData);
+      const filename = `Angebot_${bookingData.customerName.replace(/\s+/g, '_')}.pdf`;
+      doc.save(filename);
+      toast.success('PDF downloaded successfully');
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast.error('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   // Trigger confetti on mount
   useEffect(() => {
@@ -68,6 +94,9 @@ export function ThankYouScreen({
       onEditOrder={onEditOrder}
       onGoHome={onGoHome}
       t={t}
+      onDownloadPdf={handleDownloadPdf}
+      isGenerating={isGenerating}
+      hasBookingData={!!bookingData}
     />;
   }
 
@@ -78,6 +107,9 @@ export function ThankYouScreen({
       onEditOrder={onEditOrder}
       onGoHome={onGoHome}
       t={t}
+      onDownloadPdf={handleDownloadPdf}
+      isGenerating={isGenerating}
+      hasBookingData={!!bookingData}
     />;
   }
 
@@ -87,6 +119,9 @@ export function ThankYouScreen({
     onEditOrder={onEditOrder}
     onGoHome={onGoHome}
     t={t}
+    onDownloadPdf={handleDownloadPdf}
+    isGenerating={isGenerating}
+    hasBookingData={!!bookingData}
   />;
 }
 
@@ -96,8 +131,11 @@ function CenteredVariant({
   onCreateNew,
   onEditOrder,
   onGoHome,
-  t
-}: Omit<ThankYouScreenProps, 'variant'> & { t: any }) {
+  t,
+  onDownloadPdf,
+  isGenerating,
+  hasBookingData
+}: Omit<ThankYouScreenProps, 'variant'> & { t: any; onDownloadPdf: () => void; isGenerating: boolean; hasBookingData: boolean }) {
   return (
     <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: 'var(--background)' }}>
       <motion.div
@@ -239,6 +277,18 @@ function CenteredVariant({
           >
             {t('thankYou.createNewRequest')}
           </Button>
+          {hasBookingData && (
+            <Button
+              variant="outline"
+              onClick={onDownloadPdf}
+              icon={Download}
+              iconPosition="left"
+              isLoading={isGenerating}
+              disabled={isGenerating}
+            >
+              Download PDF Summary
+            </Button>
+          )}
         </motion.div>
 
         {/* Edit Order Link */}
@@ -323,8 +373,11 @@ function SplitVariant({
   onCreateNew,
   onEditOrder,
   onGoHome,
-  t
-}: Omit<ThankYouScreenProps, 'variant'> & { t: any }) {
+  t,
+  onDownloadPdf,
+  isGenerating,
+  hasBookingData
+}: Omit<ThankYouScreenProps, 'variant'> & { t: any; onDownloadPdf: () => void; isGenerating: boolean; hasBookingData: boolean }) {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row" style={{ backgroundColor: 'var(--background)' }}>
       {/* Left Side - Success Message */}
@@ -603,6 +656,20 @@ function SplitVariant({
                 Go to homepage
               </Button>
             )}
+            {hasBookingData && (
+              <Button
+                variant="primary"
+                onClick={onDownloadPdf}
+                icon={Download}
+                iconPosition="left"
+                fullWidth
+                isLoading={isGenerating}
+                disabled={isGenerating}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white border-none"
+              >
+                Download Menu Summary (PDF)
+              </Button>
+            )}
           </div>
 
           <button
@@ -680,8 +747,11 @@ function MinimalVariant({
   onCreateNew,
   onEditOrder,
   onGoHome,
-  t
-}: Omit<ThankYouScreenProps, 'variant'> & { t: any }) {
+  t,
+  onDownloadPdf,
+  isGenerating,
+  hasBookingData
+}: Omit<ThankYouScreenProps, 'variant'> & { t: any; onDownloadPdf: () => void; isGenerating: boolean; hasBookingData: boolean }) {
   return (
     <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: 'var(--background)' }}>
       <motion.div
@@ -789,6 +859,27 @@ function MinimalVariant({
             </p>
           </div>
         </motion.div>
+
+        {hasBookingData && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55 }}
+            className="flex justify-center mb-8"
+          >
+            <Button
+              variant="outline"
+              onClick={onDownloadPdf}
+              icon={Download}
+              iconPosition="left"
+              isLoading={isGenerating}
+              disabled={isGenerating}
+              className="border-primary text-primary hover:bg-primary/5"
+            >
+              Download PDF Summary
+            </Button>
+          </motion.div>
+        )}
 
         {/* Description */}
         <motion.p

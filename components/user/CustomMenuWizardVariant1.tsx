@@ -48,6 +48,7 @@ export function CustomMenuWizard() {
     billingStreetError: undefined,
     billingPlzError: undefined,
     billingLocationError: undefined,
+    billingReference: '',
   });
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
@@ -96,6 +97,7 @@ export function CustomMenuWizard() {
   const [loadingMenu, setLoadingMenu] = useState(true);
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [editSecret, setEditSecret] = useState<string | null>(null);
+  const [bookingPdfData, setBookingPdfData] = useState<any>(null); // New state for PDF
   const [isEditMode, setIsEditMode] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
@@ -164,6 +166,7 @@ export function CustomMenuWizard() {
                   billingStreetError: undefined,
                   billingPlzError: undefined,
                   billingLocationError: undefined,
+                  billingReference: booking.billingReference || '',
                 });
 
                 // Load menu items from booking_items
@@ -396,6 +399,7 @@ export function CustomMenuWizard() {
                     };
                   }).filter(Boolean);
                 })(),
+                sortOrder: item.sortOrder || 0,
               };
             });
 
@@ -802,9 +806,9 @@ export function CustomMenuWizard() {
   };
 
   const handleStep2Navigation = () => {
-    // Just move to Step 3, as sidebar cart can handle the transition
+    // Start submission directly skipping Step 3
     if (validateStep2()) {
-      setCurrentStep(3);
+      handleSubmit();
     }
   };
 
@@ -865,6 +869,8 @@ export function CustomMenuWizard() {
       billingStreet: billingStreet || '',
       billingPlz: billingPlz || '',
       billingLocation: billingLocation || '',
+      billingReference: eventDetails.billingReference || '',
+      reference: eventDetails.reference || '',
       selectedItems,
       itemQuantities,
       itemGuestCounts, // Pass per-item guest counts
@@ -877,16 +883,49 @@ export function CustomMenuWizard() {
 
     setIsSubmitting(false);
 
-    if (result.success) {
+    if (result.success && result.data) {
       // Store booking ID
-      setBookingId(result.data?.bookingId || null);
+      setBookingId(result.data.bookingId);
+
+      // Prepare data for PDF download on Thank You screen
+      const pdfData = {
+        id: result.data.bookingId,
+        customerName: eventDetails.name,
+        business: eventDetails.business || undefined,
+        eventDate: eventDetails.eventDate,
+        eventTime: eventDetails.eventTime,
+        guestCount: parseInt(eventDetails.guestCount) || 0,
+        occasion: eventDetails.occasion || undefined,
+        items: selectedItems.map(itemId => {
+          const item = menuItems.find(i => i.id === itemId);
+          const quantity = itemQuantities[itemId] || 1;
+          const variantId = itemVariants[itemId];
+          const variant = variantId && Array.isArray(item?.variants) 
+            ? (item?.variants as any[]).find(v => v.id === variantId) 
+            : null;
+          
+          return {
+            id: itemId,
+            name: item?.name || 'Unknown Item',
+            category: item?.category || 'Other',
+            quantity: quantity,
+            unitPrice: variant ? Number(variant.price) : Number(item?.price || 0),
+            totalPrice: (variant ? Number(variant.price) : Number(item?.price || 0)) * quantity,
+            notes: itemComments[itemId],
+            pricingType: item?.pricingType || 'per_person',
+          };
+        }),
+        estimatedTotal: result.data.estimatedTotal,
+        specialRequests: eventDetails.specialRequests || undefined,
+      };
+      setBookingPdfData(pdfData);
 
       // SECURITY: editSecret is NO LONGER returned here for security reasons
       // It's sent via email only. Users must use the link from their email to edit.
       setEditSecret(null);
 
       // Use the inquiry number from the server response
-      setInquiryNumber(result.data?.inquiryNumber || `INQ-${Math.floor(Math.random() * 9000) + 1000}`);
+      setInquiryNumber(result.data.inquiryNumber || `INQ-${Math.floor(Math.random() * 9000) + 1000}`);
       setIsEditMode(false); // Reset edit mode after successful submit
       setIsSubmitted(true);
 
@@ -1175,6 +1214,7 @@ export function CustomMenuWizard() {
     return (
       <ThankYouScreen
         inquiryNumber={inquiryNumber}
+        bookingData={bookingPdfData}
         variant="split" // Options: 'centered' | 'split' | 'minimal'
         onCreateNew={() => {
           setIsEditMode(false);
@@ -1189,6 +1229,7 @@ export function CustomMenuWizard() {
           setInquiryNumber('');
           setBookingId(null);
           setEditSecret(null);
+          setBookingPdfData(null);
         }}
         onEditOrder={() => {
           // Go back to summary/review page with edit mode enabled
@@ -1324,6 +1365,7 @@ export function CustomMenuWizard() {
                     calculateRecommendedQuantity={calculateRecommendedQuantity}
                     handleStep2Navigation={handleStep2Navigation}
                     onEditDateTime={() => setIsDateTimePickerOpen(true)}
+                    isSubmitting={isSubmitting}
                     includeBeveragePrices={includeBeveragePrices}
                     setIncludeBeveragePrices={setIncludeBeveragePrices}
                   />
@@ -1406,12 +1448,12 @@ export function CustomMenuWizard() {
                     {currentStep === 2 && (
                       <Button
                         variant="primary"
-                        onClick={handleNext}
-                        icon={ChevronRight}
+                        onClick={() => setIsMobileDrawerOpen(true)}
+                        icon={ShoppingCart}
                         iconPosition="right"
                         size="sm"
                       >
-                        Continue to Summary
+                        View Cart
                       </Button>
                     )}
 
@@ -1520,7 +1562,7 @@ export function CustomMenuWizard() {
                   isConsumption={isConsumption}
                   isFlatFee={isFlatFee}
                   isPerPerson={isPerPerson}
-                  onContinue={() => { setIsMobileDrawerOpen(false); handleNext(); }}
+                  onContinue={() => { setIsMobileDrawerOpen(false); handleStep2Navigation(); }}
                   onEditDateTime={() => { 
                     setIsMobileDrawerOpen(false); 
                     setIsDateTimePickerOpen(true); 
@@ -1528,6 +1570,9 @@ export function CustomMenuWizard() {
                   includeBeveragePrices={includeBeveragePrices}
                   setIncludeBeveragePrices={setIncludeBeveragePrices}
                   isDrawer
+                  isSubmitting={isSubmitting}
+                  setItemGuestCounts={setItemGuestCounts}
+                  categories={categories}
                 />
               </div>
             </div>

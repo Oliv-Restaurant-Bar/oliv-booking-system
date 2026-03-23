@@ -1,4 +1,4 @@
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon, Loader2 } from 'lucide-react';
 import { ButtonHTMLAttributes, ReactNode } from 'react';
 import Link from 'next/link';
 
@@ -12,6 +12,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   to?: string; // Next.js link
   fullWidth?: boolean;
   disabled?: boolean;
+  isLoading?: boolean;
 }
 
 export function Button({
@@ -25,6 +26,7 @@ export function Button({
   fullWidth = false,
   className = '',
   disabled,
+  isLoading = false,
   ...props
 }: ButtonProps) {
   // Base styles with proper spacing and transitions
@@ -52,15 +54,19 @@ export function Button({
   };
 
   const widthClass = fullWidth ? 'w-full' : '';
-  const disabledClass = disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : '';
+  const disabledClass = (disabled || isLoading) ? 'opacity-50 cursor-not-allowed pointer-events-none' : '';
 
   const buttonClasses = `${baseStyles} ${sizeStyles[size]} ${variantStyles[variant]} ${widthClass} ${disabledClass} ${className}`;
 
   const content = (
     <>
-      {Icon && iconPosition === 'left' && <Icon className={iconSizes[size]} />}
+      {isLoading ? (
+        <Loader2 className={`${iconSizes[size]} animate-spin`} />
+      ) : (
+        Icon && iconPosition === 'left' && <Icon className={iconSizes[size]} />
+      )}
       <span style={{ fontFamily: 'var(--font-family)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>{children}</span>
-      {Icon && iconPosition === 'right' && <Icon className={iconSizes[size]} />}
+      {!isLoading && Icon && iconPosition === 'right' && <Icon className={iconSizes[size]} />}
     </>
   );
 

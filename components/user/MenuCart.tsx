@@ -43,8 +43,11 @@ interface MenuCartProps {
   continueButtonText?: string;
   onEditDateTime?: () => void;
   isDrawer?: boolean;
+  isSubmitting?: boolean;
   includeBeveragePrices: boolean;
   setIncludeBeveragePrices: (value: boolean) => void;
+  setItemGuestCounts: React.Dispatch<React.SetStateAction<Record<string, number>>>;
+  categories: string[];
 }
 
 export function MenuCart({
@@ -75,6 +78,9 @@ export function MenuCart({
   setIncludeBeveragePrices,
   continueButtonText = 'Submit Request',
   isDrawer = false,
+  isSubmitting = false,
+  setItemGuestCounts,
+  categories,
 }: MenuCartProps) {
   const [viewMode, setViewMode] = React.useState<'per-person' | 'total'>('per-person');
   const [termsAccepted, setTermsAccepted] = React.useState(false);
@@ -106,6 +112,14 @@ export function MenuCart({
   const updateQuantity = (itemId: string, delta: number) => {
     setItemQuantities(prev => {
       const current = prev[itemId] || 1;
+      const next = Math.max(1, current + delta);
+      return { ...prev, [itemId]: next };
+    });
+  };
+
+  const updateGuestCount = (itemId: string, delta: number) => {
+    setItemGuestCounts(prev => {
+      const current = prev[itemId] || parseInt(eventDetails.guestCount) || 1;
       const next = Math.max(1, current + delta);
       return { ...prev, [itemId]: next };
     });
@@ -238,7 +252,7 @@ export function MenuCart({
             <span className="text-[10px] font-bold text-[#9ca3af] uppercase tracking-wider">Guests</span>
             <div className="flex items-center bg-[#f9fafb] border border-[#e5e7eb] rounded-lg p-0.5">
               <button
-                onClick={() => updateQuantity(item.id, -1)}
+                onClick={() => isPP ? updateGuestCount(item.id, -1) : updateQuantity(item.id, -1)}
                 className="size-[24px] flex items-center justify-center hover:bg-white hover:shadow-sm rounded-md transition-all"
               >
                 <Minus className="w-2.5 h-2.5 text-[#6b7280]" />
@@ -247,7 +261,7 @@ export function MenuCart({
                 {isPP ? guestCount : quantity}
               </span>
               <button
-                onClick={() => updateQuantity(item.id, 1)}
+                onClick={() => isPP ? updateGuestCount(item.id, 1) : updateQuantity(item.id, 1)}
                 className="size-[24px] flex items-center justify-center hover:bg-white hover:shadow-sm rounded-md transition-all"
               >
                 <Plus className="w-2.5 h-2.5 text-[#6b7280]" />
@@ -320,15 +334,18 @@ export function MenuCart({
                     <h3 className="text-[11px] font-extrabold text-[#2c2f34] uppercase tracking-[0.05em]">Food Items</h3>
                   </div>
                   <div className="space-y-2">
-                    {/* Unique categories in food items */}
-                    {Array.from(new Set(foodItems.map(i => i.category))).map(category => (
+                    {/* Use the provided categories list to maintain sequence */}
+                    {categories.filter(cat => foodItems.some(i => i.category === cat)).map(category => (
                       <div key={category}>
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-[10.5px] text-[#9dae91] font-medium">—</span>
                           <h4 className="text-[10.5px] text-[#9dae91] font-bold">{category}</h4>
                         </div>
                         <div className="divide-y divide-[#f3f4f6]">
-                          {foodItems.filter(i => i.category === category).map(i => renderItemRow(i, "bg-[#22c55e]"))}
+                          {foodItems
+                            .filter(i => i.category === category)
+                            .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+                            .map(i => renderItemRow(i, "bg-[#22c55e]"))}
                         </div>
                       </div>
                     ))}
@@ -343,14 +360,42 @@ export function MenuCart({
                     <h3 className="text-[11px] font-extrabold text-[#2c2f34] uppercase tracking-[0.05em]">Beverages <span className='text-[10.5px] text-[#9dae91] font-normal'>(billed by consumption)</span></h3>
                   </div>
                   <div className="space-y-2">
-                    {Array.from(new Set(beverages.map(i => i.category))).map(category => (
+                    {categories.filter(cat => beverages.some(i => i.category === cat)).map(category => (
                       <div key={category}>
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-[10.5px] text-[#9dae91] font-medium">—</span>
                           <h4 className="text-[10.5px] text-[#9dae91] font-bold">{category}</h4>
                         </div>
                         <div className="divide-y divide-[#f3f4f6]">
-                          {beverages.filter(i => i.category === category).map(i => renderItemRow(i, "bg-[#ef4444]"))}
+                          {beverages
+                            .filter(i => i.category === category)
+                            .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+                            .map(i => renderItemRow(i, "bg-[#ef4444]"))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Add-ons Section */}
+              {addons.length > 0 && (
+                <div className="mt-3">
+                  <div className="pb-1 border-b border-[#f3f4f6] mb-1.5">
+                    <h3 className="text-[11px] font-extrabold text-[#2c2f34] uppercase tracking-[0.05em]">Add-ons</h3>
+                  </div>
+                  <div className="space-y-2">
+                    {categories.filter(cat => addons.some(i => i.category === cat)).map(category => (
+                      <div key={category}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10.5px] text-[#9dae91] font-medium">—</span>
+                          <h4 className="text-[10.5px] text-[#9dae91] font-bold">{category}</h4>
+                        </div>
+                        <div className="divide-y divide-[#f3f4f6]">
+                          {addons
+                            .filter(i => i.category === category)
+                            .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+                            .map(i => renderItemRow(i, "bg-[#9dae91]"))}
                         </div>
                       </div>
                     ))}
@@ -452,13 +497,13 @@ export function MenuCart({
                       onContinue?.();
                     }
                   }}
-                  disabled={!termsAccepted || selectedItems.length === 0}
-                  className={`w-full h-[46px] rounded-xl flex items-center justify-center font-bold text-[14px] transition-all shadow-sm ${termsAccepted && selectedItems.length > 0
+                  disabled={!termsAccepted || selectedItems.length === 0 || isSubmitting}
+                  className={`w-full h-[46px] rounded-xl flex items-center justify-center font-bold text-[14px] transition-all shadow-sm ${termsAccepted && selectedItems.length > 0 && !isSubmitting
                     ? "bg-[#9dae91] text-[#2c2f34] hover:bg-[#8da081] active:translate-y-[1px]"
                     : "bg-[#f3f4f6] text-[#9ca3af] cursor-not-allowed"
                     }`}
                 >
-                  Submit Request
+                  {isSubmitting ? 'Submitting...' : continueButtonText}
                 </button>
 
                 <p className="text-[10px] text-[#9ca3af] text-center">
