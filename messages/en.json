@@ -748,6 +748,7 @@
       },
       "descriptions": {
         "isCombo": "A combo pack contains multiple items sold together",
+        "addDietaryInfo": "Add dietary information like vegetarian, vegan, or non-vegetarian labels to this item.",
         "selectAddonGroups": "Choose which {type} this group belongs to",
         "optionalGroup": "Customers can choose any number of items",
         "mandatoryGroup": "Customers must choose exactly one item",

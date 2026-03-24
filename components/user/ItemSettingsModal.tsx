@@ -119,7 +119,7 @@ export function ItemSettingsModal({
                 <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                   Dietary Type <span className="text-destructive">*</span>
                 </label>
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
                     onClick={() => setItemSettings({ ...itemSettings, dietaryType: 'none' })}
                     className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left cursor-pointer ${itemSettings.dietaryType === 'none'
@@ -135,11 +135,11 @@ export function ItemSettingsModal({
                         <div className="w-3 h-3 rounded-full bg-primary" />
                       )}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                         No Type
                       </div>
-                      <div className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                      <div className="text-muted-foreground break-words" style={{ fontSize: 'var(--text-small)', hyphens: 'auto' }}>
                         Non-food items
                       </div>
                     </div>
@@ -159,11 +159,11 @@ export function ItemSettingsModal({
                         <div className="w-3 h-3 rounded-full bg-primary" />
                       )}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                         Vegetarian
                       </div>
-                      <div className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                      <div className="text-muted-foreground break-words" style={{ fontSize: 'var(--text-small)', hyphens: 'auto' }}>
                         No meat or fish
                       </div>
                     </div>
@@ -183,11 +183,11 @@ export function ItemSettingsModal({
                         <div className="w-3 h-3 rounded-full bg-primary" />
                       )}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                         Non-Vegetarian
                       </div>
-                      <div className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                      <div className="text-muted-foreground break-words" style={{ fontSize: 'var(--text-small)', hyphens: 'auto' }}>
                         Contains meat or fish
                       </div>
                     </div>
@@ -207,11 +207,11 @@ export function ItemSettingsModal({
                         <div className="w-3 h-3 rounded-full bg-primary" />
                       )}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                         Vegan
                       </div>
-                      <div className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                      <div className="text-muted-foreground break-words" style={{ fontSize: 'var(--text-small)', hyphens: 'auto' }}>
                         No animal products
                       </div>
                     </div>

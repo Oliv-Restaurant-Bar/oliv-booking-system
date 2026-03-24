@@ -58,7 +58,7 @@ export function ReportsPage({ user }: { user?: any }) {
         {/* Loading State - Aligned with loading.tsx */}
         {loading && (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               <SkeletonList items={5} />
               <SkeletonTrendingItems />
             </div>
@@ -69,7 +69,7 @@ export function ReportsPage({ user }: { user?: any }) {
         {!loading && (
           <>
             {/* Top Customers and Trending Items - 2 Column Grid on Desktop */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               {/* Top Customers */}
               <div className="bg-card border border-border rounded-xl p-4 md:p-6">
                 <h3 className="text-foreground mb-4 md:mb-6" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
@@ -114,8 +114,8 @@ export function ReportsPage({ user }: { user?: any }) {
                         </p>
                       </div>
 
-                      {/* Additional Stats - Hide on mobile/tablet */}
-                      <div className="text-right hidden lg:block flex-shrink-0">
+                      {/* Additional Stats - Hide on small screens/laptops */}
+                      <div className="text-right hidden xl:block flex-shrink-0">
                         <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
                           {t('avgRevenue', { amount: contact.avgRevenue.toLocaleString() })}
                         </p>

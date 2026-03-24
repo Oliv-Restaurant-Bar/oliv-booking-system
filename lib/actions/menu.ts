@@ -168,18 +168,46 @@ export async function createMenuItem(input: {
     // Require CREATE_MENU_ITEM permission
     await requirePermissionWrapper(Permission.CREATE_MENU_ITEM);
 
+    const allowedFields: Array<keyof typeof menuItems.$inferInsert> = [
+      'categoryId',
+      'name',
+      'nameDe',
+      'description',
+      'descriptionDe',
+      'pricePerPerson',
+      'pricingType',
+      'averageConsumption',
+      'imageUrl',
+      'isActive',
+      'variants',
+      'isCombo',
+      'dietaryType',
+      'dietaryTags',
+      'ingredients',
+      'allergens',
+      'additives',
+      'nutritionalInfo',
+      'sortOrder'
+    ];
+
+    const sanitizedInput: any = {};
+    for (const field of allowedFields) {
+      if (field in input) {
+        sanitizedInput[field] = input[field as keyof typeof input];
+      }
+    }
+
+    // Ensure pricePerPerson is string
+    if (sanitizedInput.pricePerPerson !== undefined && sanitizedInput.pricePerPerson !== null) {
+      sanitizedInput.pricePerPerson = sanitizedInput.pricePerPerson.toString();
+    }
+
     const [item] = await db
       .insert(menuItems)
       .values({
         id: randomUUID(),
-        ...input,
-        pricePerPerson: input.pricePerPerson.toString(),
-        pricingType: input.pricingType || "per_person",
-        variants: input.variants as any,
-        dietaryTags: input.dietaryTags as any,
-        allergens: input.allergens as any,
-        additives: input.additives as any,
-        nutritionalInfo: input.nutritionalInfo as any,
+        ...sanitizedInput,
+        pricingType: sanitizedInput.pricingType || "per_person",
         isActive: true,
       })
       .returning();
@@ -198,16 +226,44 @@ export async function updateMenuItem(id: string, updates: Partial<typeof menuIte
     // Require EDIT_MENU_ITEM permission
     await requirePermissionWrapper(Permission.EDIT_MENU_ITEM);
 
+    const allowedFields: Array<keyof typeof menuItems.$inferInsert> = [
+      'categoryId',
+      'name',
+      'nameDe',
+      'description',
+      'descriptionDe',
+      'pricePerPerson',
+      'pricingType',
+      'averageConsumption',
+      'imageUrl',
+      'isActive',
+      'variants',
+      'isCombo',
+      'dietaryType',
+      'dietaryTags',
+      'ingredients',
+      'allergens',
+      'additives',
+      'nutritionalInfo',
+      'sortOrder'
+    ];
+
+    const sanitizedUpdates: any = {};
+    for (const field of allowedFields) {
+      if (field in updates) {
+        sanitizedUpdates[field] = updates[field];
+      }
+    }
+
+    // Ensure pricePerPerson is string if provided
+    if (sanitizedUpdates.pricePerPerson !== undefined && sanitizedUpdates.pricePerPerson !== null) {
+      sanitizedUpdates.pricePerPerson = sanitizedUpdates.pricePerPerson.toString();
+    }
+
     const [item] = await db
       .update(menuItems)
       .set({
-        ...updates,
-        pricePerPerson: updates.pricePerPerson?.toString(),
-        variants: (updates as any).variants,
-        dietaryTags: (updates as any).dietaryTags,
-        allergens: (updates as any).allergens,
-        additives: (updates as any).additives,
-        nutritionalInfo: (updates as any).nutritionalInfo,
+        ...sanitizedUpdates,
         updatedAt: new Date(),
       })
       .where(eq(menuItems.id, id))

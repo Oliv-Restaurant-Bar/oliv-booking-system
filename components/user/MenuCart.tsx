@@ -109,6 +109,15 @@ export function MenuCart({
   const beverages = cartItems.filter(item => item.category === 'Beverages');
   const addons = cartItems.filter(item => item.category === 'Add-ons');
 
+  const ppFoodItems = foodItems.filter(item => isPerPerson(item));
+  const vegItems = ppFoodItems.filter(item => item.dietaryType === 'veg' || item.dietaryType === 'vegan');
+  const nonVegItems = ppFoodItems.filter(item => item.dietaryType === 'non-veg');
+  const otherFoodItems = ppFoodItems.filter(item => item.dietaryType !== 'veg' && item.dietaryType !== 'vegan' && item.dietaryType !== 'non-veg');
+
+  const vegPerPersonSubtotal = vegItems.reduce((sum, item) => sum + getItemPerPersonPrice(item), 0);
+  const nonVegPerPersonSubtotal = nonVegItems.reduce((sum, item) => sum + getItemPerPersonPrice(item), 0);
+  const otherPerPersonSubtotal = otherFoodItems.reduce((sum, item) => sum + getItemPerPersonPrice(item), 0);
+
   const updateQuantity = (itemId: string, delta: number) => {
     setItemQuantities(prev => {
       const current = prev[itemId] || 1;
@@ -137,7 +146,11 @@ export function MenuCart({
         {/* Item Main Row */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className={`size-2 rounded-full shrink-0 ${sectionColor}`} />
+            {item.dietaryType !== 'none' ? (
+              <DietaryIcon type={item.dietaryType} size="xs" />
+            ) : (
+              <div className={`size-2 rounded-full shrink-0 ${sectionColor}`} />
+            )}
             <div className="flex items-baseline gap-1.5 min-w-0">
               <Users className="w-3 h-3" />
               <span className="text-xs font-bold text-secondary shrink-0">
@@ -145,9 +158,6 @@ export function MenuCart({
               </span>
               <span className={`text-xs font-bold text-secondary uppercase truncate ${isConsumption(item) ? 'line-clamp-1' : 'line-clamp-2'} flex items-center gap-1.5`}>
                 {item.name}
-                {item.dietaryType !== 'none' && (
-                  <DietaryIcon type={item.dietaryType} size="xs" />
-                )}
               </span>
             </div>
           </div>
@@ -429,48 +439,77 @@ export function MenuCart({
               </div>
 
               <div className="space-y-3">
-                <div className="flex justify-between items-center text-[13px]">
-                  <span className="text-[#6b7280]">Food Items</span>
-                  <span className="text-[#2c2f34] font-bold">
-                    CHF {(getPerPersonSubtotal() * (viewMode === 'total' ? (parseInt(eventDetails.guestCount) || 1) : 1) + getFlatRateSubtotal()).toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-[13px]">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-[#6b7280]">Beverages</span>
-                    <span className="text-[10px] text-[#9ca3af]">(by consumption)</span>
+                {viewMode === 'per-person' ? (
+                  <div className="space-y-3">
+                    {vegItems.length > 0 && (
+                      <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-[#6b7280]">Veg Selection ({vegItems.length})</span>
+                        <span className="text-[#2c2f34] font-bold">CHF {vegPerPersonSubtotal.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {nonVegItems.length > 0 && (
+                      <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-[#6b7280]">Non-Veg Selection ({nonVegItems.length})</span>
+                        <span className="text-[#2c2f34] font-bold">CHF {nonVegPerPersonSubtotal.toFixed(2)}</span>
+                      </div>
+                    )}
                   </div>
-                  <span className={`font-bold ${includeBeveragePrices ? "text-[#2c2f34]" : "text-[#9ca3af] line-through decoration-2"}`}>
-                    CHF {getConsumptionSubtotal().toFixed(2)}
-                  </span>
-                </div>
+                ) : (
+                  <>
+                    <div className="flex justify-between items-center text-[13px]">
+                      <span className="text-[#6b7280]">Food Items</span>
+                      <span className="text-[#2c2f34] font-bold">
+                        CHF {(getPerPersonSubtotal() * (parseInt(eventDetails.guestCount) || 1)).toFixed(2)}
+                      </span>
+                    </div>
+                    {getFlatRateSubtotal() > 0 && (
+                      <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-[#6b7280]">Add-ons & Extras</span>
+                        <span className="text-[#2c2f34] font-bold">
+                          CHF {getFlatRateSubtotal().toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center text-[13px]">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-[#6b7280]">Beverages</span>
+                        <span className="text-[10px] text-[#9ca3af]">(by consumption)</span>
+                      </div>
+                      <span className={`font-bold ${includeBeveragePrices ? "text-[#2c2f34]" : "text-[#9ca3af] line-through decoration-2"}`}>
+                        CHF {getConsumptionSubtotal().toFixed(2)}
+                      </span>
+                    </div>
 
-                <label className="flex items-center gap-2.5 cursor-pointer pt-1">
-                  <div className="relative flex items-center shrink-0">
-                    <input
-                      type="checkbox"
-                      checked={includeBeveragePrices}
-                      onChange={(e) => setIncludeBeveragePrices(e.target.checked)}
-                      className="peer appearance-none size-4 border border-[#e5e7eb] rounded-md bg-[#2c2f34] checked:bg-[#2c2f34] transition-all cursor-pointer"
-                    />
-                    <Check className="absolute size-3 text-white opacity-0 peer-checked:opacity-100 left-0.5 pointer-events-none transition-opacity" />
-                  </div>
-                  <span className="text-[11px] text-[#6b7280]">Include Beverages costs in estimate</span>
-                </label>
+                    <label className="flex items-center gap-2.5 cursor-pointer pt-1">
+                      <div className="relative flex items-center shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={includeBeveragePrices}
+                          onChange={(e) => setIncludeBeveragePrices(e.target.checked)}
+                          className="peer appearance-none size-4 border border-[#e5e7eb] rounded-md bg-[#2c2f34] checked:bg-[#2c2f34] transition-all cursor-pointer"
+                        />
+                        <Check className="absolute size-3 text-white opacity-0 peer-checked:opacity-100 left-0.5 pointer-events-none transition-opacity" />
+                      </div>
+                      <span className="text-[11px] text-[#6b7280]">Include Beverages costs in estimate</span>
+                    </label>
+                  </>
+                )}
               </div>
             </div>
 
-            <div className="pt-3 border-t border-[#f3f4f6]">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-[13px] font-bold text-[#2c2f34]">Total</span>
-                <span className="text-[18px] font-extrabold text-[#2c2f34] tracking-tight">
-                  CHF {(
-                    (getPerPersonSubtotal() * (viewMode === 'total' ? (parseInt(eventDetails.guestCount) || 1) : 1)) +
-                    getFlatRateSubtotal() +
-                    (includeBeveragePrices ? getConsumptionSubtotal() : 0)
-                  ).toFixed(2)}
-                </span>
-              </div>
+            <div className={`pt-3 ${viewMode === 'total' ? 'border-t border-[#f3f4f6]' : ''}`}>
+              {viewMode === 'total' && (
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-[13px] font-bold text-[#2c2f34]">Total</span>
+                  <span className="text-[18px] font-extrabold text-[#2c2f34] tracking-tight">
+                    CHF {(
+                      (getPerPersonSubtotal() * (parseInt(eventDetails.guestCount) || 1)) +
+                      getFlatRateSubtotal() +
+                      (includeBeveragePrices ? getConsumptionSubtotal() : 0)
+                    ).toFixed(2)}
+                  </span>
+                </div>
+              )}
 
               <div className="space-y-3">
                 <label className="flex items-center gap-2 cursor-pointer group">

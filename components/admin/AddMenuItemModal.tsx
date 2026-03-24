@@ -119,7 +119,25 @@ export function AddMenuItemModal({
             variant="primary"
             icon={editingMenuItemId ? Check : Plus}
             onClick={onSave}
-            disabled={!activeCategoryId || !newMenuItem.name || (pricingMode === 'price' && !newMenuItem.price) || (pricingMode === 'variants' && newMenuItem.variants.length === 0) || newMenuItem.name.trim() === '' || newMenuItem.name.length > 100 || newMenuItem.description.length > 500 || newMenuItem.ingredients.length > 1000 || (newMenuItem.price !== '' && parseFloat(newMenuItem.price) < 0) || newMenuItem.variants.some(v => !v.name?.trim() || v.name.length > 100 || v.price < 0) || newMenuItem.nutritionalInfo.servingSize.length > 50 || newMenuItem.nutritionalInfo.calories.length > 50 || newMenuItem.nutritionalInfo.protein.length > 50 || newMenuItem.nutritionalInfo.carbs.length > 50 || newMenuItem.nutritionalInfo.fat.length > 50 || newMenuItem.nutritionalInfo.fiber.length > 50 || newMenuItem.nutritionalInfo.sugar.length > 50 || newMenuItem.nutritionalInfo.sodium.length > 50}
+            disabled={
+              !activeCategoryId ||
+              !newMenuItem.name?.trim() ||
+              (pricingMode === 'price' && !newMenuItem.price) ||
+              (pricingMode === 'variants' && (!newMenuItem.variants || newMenuItem.variants.length === 0)) ||
+              newMenuItem.name.length > 100 ||
+              (newMenuItem.description?.length || 0) > 500 ||
+              (newMenuItem.ingredients?.length || 0) > 1000 ||
+              (newMenuItem.price !== '' && parseFloat(newMenuItem.price) < 0) ||
+              (newMenuItem.variants || []).some(v => !v.name?.trim() || v.name.length > 100 || v.price < 0) ||
+              (newMenuItem.nutritionalInfo?.servingSize?.length || 0) > 50 ||
+              (newMenuItem.nutritionalInfo?.calories?.length || 0) > 50 ||
+              (newMenuItem.nutritionalInfo?.protein?.length || 0) > 50 ||
+              (newMenuItem.nutritionalInfo?.carbs?.length || 0) > 50 ||
+              (newMenuItem.nutritionalInfo?.fat?.length || 0) > 50 ||
+              (newMenuItem.nutritionalInfo?.fiber?.length || 0) > 50 ||
+              (newMenuItem.nutritionalInfo?.sugar?.length || 0) > 50 ||
+              (newMenuItem.nutritionalInfo?.sodium?.length || 0) > 50
+            }
           >
             {editingMenuItemId ? t('buttons.saveChanges') : t('buttons.addItem')}
           </Button>
@@ -310,7 +328,7 @@ export function AddMenuItemModal({
                 value={newMenuItem.price}
                 onChange={(e) => setNewMenuItem({ ...newMenuItem, price: e.target.value })}
                 placeholder={t('placeholders.price')}
-                className="w-full pl-8 pr-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full pl-12 pr-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                 style={{ fontSize: 'var(--text-base)' }}
               />
             </div>
@@ -520,7 +538,7 @@ export function AddMenuItemModal({
               <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                 {t('labels.dietaryType')}
               </label>
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
                   { id: 'none', label: t('dietary.none'), desc: t('dietary.noneDesc') },
                   { id: 'veg', label: t('dietary.veg'), desc: t('dietary.vegDesc') },
@@ -544,11 +562,11 @@ export function AddMenuItemModal({
                         <div className="w-3 h-3 rounded-full bg-primary" />
                       )}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                         {type.label}
                       </div>
-                      <div className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                      <div className="text-muted-foreground break-words" style={{ fontSize: 'var(--text-small)', hyphens: 'auto' }}>
                         {type.desc}
                       </div>
                     </div>
