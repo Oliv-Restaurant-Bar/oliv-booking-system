@@ -969,6 +969,12 @@
       "orderSummary": "Order summary"
     },
     "labels": {
+      "billingDetails": "Billing Details",
+      "address": "Address",
+      "eventDetails": "Event Details",
+      "selectedMenu": "Selected Menu ({count})",
+      "perPersonQuantities": "Quantities per Guest",
+      "menu": "Menu",
       "name": "Name",
       "business": "Business",
       "email": "Email",

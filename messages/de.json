@@ -970,6 +970,12 @@
       "orderSummary": "Bestell-Zusammenfassung"
     },
     "labels": {
+      "billingDetails": "Rechnungsdetails",
+      "address": "Adresse",
+      "eventDetails": "Event-Details",
+      "selectedMenu": "Ausgewähltes Menü ({count})",
+      "perPersonQuantities": "Mengen pro Gast",
+      "menu": "Menü",
       "name": "Vor- und Nachname *",
       "business": "Firma",
       "email": "E-Mail *",

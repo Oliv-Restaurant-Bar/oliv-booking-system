@@ -313,7 +313,7 @@ export function CustomerSummary({
                   <ClipboardList className="w-4 h-4 text-primary" />
                 </div>
                 <h4 className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
-                  Special Requests
+                  {t('sections.specialRequests')}
                 </h4>
               </div>
               {!isLocked && (
@@ -326,7 +326,7 @@ export function CustomerSummary({
                   style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                 >
                   <Edit2 className="w-3.5 h-3.5" />
-                  Edit
+                  {t('actions.edit')}
                 </button>
               )}
             </div>
@@ -469,7 +469,7 @@ export function CustomerSummary({
                                   {itemVariants[itemId] && item.variants && (() => {
                                     const variant = item.variants.find((v) => v.id === itemVariants[itemId]);
                                     return variant ? (
-                                      <span>Variant: {variant.name}</span>
+                                      <span>{t('labels.variant')}: {variant.name}</span>
                                     ) : null;
                                   })()}
                                   {itemAddOns[itemId] && itemAddOns[itemId].length > 0 && (
@@ -523,7 +523,7 @@ export function CustomerSummary({
                     </p>
                     <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
                       {t('labels.selectedMenu', { count: selectedItems.length })} {t('status.forEvent')} {eventDetails.guestCount || '0'}{' '}
-                      {parseInt(eventDetails.guestCount) === 1 ? t('status.guest') : t('status.guests_plural')}
+                      {parseInt(eventDetails.guestCount) === 1 ? t('labels.guest') : t('labels.guests_plural')}
                     </p>
                   </div>
                   <p className="text-primary" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
@@ -637,7 +637,7 @@ export function CustomerSummary({
               <div className="space-y-4">
                 <div className="bg-card border border-border rounded-lg p-4" style={{ borderRadius: 'var(--radius)' }}>
                   <p className="text-foreground font-semibold mb-3" style={{ fontSize: 'var(--text-base)' }}>
-                    Per-Person Breakdown
+                    {t('labels.perPersonBreakdown')}
                   </p>
 
                   {/* Menu Items by Category - Per Person */}
@@ -702,10 +702,10 @@ export function CustomerSummary({
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="text-foreground font-semibold" style={{ fontSize: 'var(--text-base)' }}>
-                        Per Person Total
+                        {t('labels.perPersonTotal')}
                       </p>
                       <p className="text-muted-foreground text-sm mt-1">
-                        × {eventDetails.guestCount || '0'} guests
+                        × {eventDetails.guestCount || '0'} {parseInt(eventDetails.guestCount) === 1 ? t('labels.guest') : t('labels.guests_plural')}
                       </p>
                     </div>
                     <div className="text-right">
@@ -723,7 +723,7 @@ export function CustomerSummary({
                 <div className="bg-white border border-gray-200 rounded-lg overflow-hidden mb-4 shadow-sm" style={{ borderRadius: 'var(--radius)' }}>
                   <div className="bg-gray-50/50 px-4 py-3 border-b border-gray-200">
                     <p className="text-[#374151] font-semibold" style={{ fontSize: 'var(--text-base)' }}>
-                      🍽️ Menu
+                      🍽️ {t('labels.menu')}
                     </p>
                   </div>
                   <div className="p-4 space-y-2">
