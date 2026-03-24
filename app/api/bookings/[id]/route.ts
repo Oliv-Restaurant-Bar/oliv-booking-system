@@ -201,10 +201,10 @@ export async function GET(
       event: {
         date: booking.event_date
           ? new Date(booking.event_date).toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-            })
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          })
           : '',
         time: booking.event_time ? booking.event_time.substring(0, 5) : '',
         occasion: occasion || 'Event',

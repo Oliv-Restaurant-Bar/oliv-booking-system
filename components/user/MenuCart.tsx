@@ -274,7 +274,7 @@ export function MenuCart({
   };
 
   return (
-    <div className={`font-['Hanken_Grotesk',sans-serif] ${isDrawer ? "h-full" : "sticky top-[100px]"}`}>
+    <div className={`font-['Hanken_Grotesk',sans-serif] transition-all duration-300 ${isDrawer ? "h-full" : "sticky top-[100px]"} ${isSubmitting ? 'opacity-50 pointer-events-none select-none' : ''}`}>
       <div className={`bg-white flex flex-col ${isDrawer
         ? "h-full"
         : "border border-[#e5e7eb] rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden max-h-[calc(100vh-140px)]"

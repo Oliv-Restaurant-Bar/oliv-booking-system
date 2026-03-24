@@ -5,6 +5,7 @@ import { EventDetails } from '@/lib/types';
 import { DietaryIcon } from './DietaryIcon';
 import { Button } from '@/components/ui/Button';
 import { MenuCart } from './MenuCart';
+import { useWizardTranslation } from '@/lib/i18n/client';
 
 interface CustomerMenuSelectionProps {
   selectedCategory: string;
@@ -103,6 +104,7 @@ export function CustomerMenuSelection({
   const sentinelRef = React.useRef<HTMLDivElement>(null);
   const sectionRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
   const isManualScrolling = React.useRef(false);
+  const t = useWizardTranslation();
 
   // Detect when sticky bar becomes stuck
   React.useEffect(() => {
@@ -159,9 +161,9 @@ export function CustomerMenuSelection({
   };
 
   return (
-    <div className="font-['Hanken_Grotesk',sans-serif] bg-[#f7f7f8] min-h-screen flex">
+    <div className={`bg-[#f7f7f8] min-h-screen flex ${isSubmitting ? 'pointer-events-none select-none' : ''}`}>
       {/* Left Column: Menu Content */}
-      <div className="flex-1 min-w-0 pb-[100px]">
+      <div className={`flex-1 min-w-0 pb-[100px] transition-opacity duration-300 ${isSubmitting ? 'opacity-50' : ''}`}>
         <div className="max-w-[1020px] mx-auto px-6">
           {/* Title Section */}
           <div className="pt-6 pb-2">
@@ -169,11 +171,11 @@ export function CustomerMenuSelection({
               <div className="size-[36px] rounded-xl bg-[#9dae91]/10 flex items-center justify-center">
                 <ShoppingCart className="w-5 h-5 text-[#9dae91]" />
               </div>
-              <h1 className="font-bold text-[32px] text-[#2c2f34]">Choose your menu</h1>
+              <h1 className="font-bold text-[32px] text-[#2c2f34]">{t('sections.chooseMenu')}</h1>
             </div>
-            <p className="text-[15px] text-[#6b7280] mb-0.5">Select dishes from our curated categories</p>
+            <p className="text-[15px] text-[#6b7280] mb-0.5">{t('sections.menuSubtitle')}</p>
             <div className="flex items-center gap-1.5 text-[13px] text-[#9dae91]">
-              <span>Select as many items as you like from each category</span>
+              <span>{t('labels.selectMany')}</span>
             </div>
           </div>
 
@@ -192,7 +194,7 @@ export function CustomerMenuSelection({
                   <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9ca3af]" />
                   <input
                     type="text"
-                    placeholder="Search for dishes..."
+                    placeholder={t('placeholders.searchDishes')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full h-[42px] bg-white border border-[#e5e7eb] rounded-full pl-10 pr-4 text-[14px] text-[#2c2f34] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#9dae91]/40 transition-all"
@@ -251,51 +253,30 @@ export function CustomerMenuSelection({
 
           {loadingMenu ? (
             <div className="text-center py-16">
-              <p className="text-muted-foreground">Loading menu...</p>
+              <p className="text-muted-foreground">{t('status.loading')}</p>
             </div>
           ) : menuItems.length === 0 ? (
             <div className="text-center py-16">
-              <p className="text-muted-foreground">No menu items available. Please contact us directly.</p>
+              <p className="text-muted-foreground">{t('status.noItems')}</p>
             </div>
           ) : (
             <div className="mt-4">
-              {categoryHasCombo && (
-                <div className="mb-6 flex items-center justify-center">
-                  <div className="bg-muted/30 p-1 rounded-xl border border-border flex justify-center gap-1 shadow-sm w-full">
-                    <button
-                      onClick={() => setCategoryFilterMode({ ...categoryFilterMode, [selectedCategory]: 'combo' })}
-                      className={`px-6 py-2 rounded-lg transition-all text-sm font-medium flex justify-center gap-2 w-full ${(categoryFilterMode[selectedCategory] || 'combo') === 'combo'
-                        ? 'bg-primary text-primary-foreground shadow-md'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                        }`}
-                    >
-                      Combo Pack
-                    </button>
-                    <button
-                      onClick={() => setCategoryFilterMode({ ...categoryFilterMode, [selectedCategory]: 'individual' })}
-                      className={`px-6 py-2 rounded-lg transition-all text-sm font-medium flex justify-center gap-2 w-full ${(categoryFilterMode[selectedCategory] === 'individual')
-                        ? 'bg-primary text-primary-foreground shadow-md'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                        }`}
-                    >
-                      Single Items
-                    </button>
-                  </div>
-                </div>
-              )}
 
               <div className="flex flex-col gap-6">
                 {categories.map((cat) => {
-                  const filteredItems = menuItems.filter(item => {
-                    if (item.category !== cat) return false;
+                  const categoryItems = menuItems.filter(item => item.category === cat);
+                  const hasCombos = categoryItems.some(item => item.isCombo);
+
+                  const filteredItems = categoryItems.filter(item => {
                     const matchesSearch = searchQuery.trim() === '' ||
                       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                       item.description.toLowerCase().includes(searchQuery.toLowerCase());
 
                     if (!matchesSearch) return false;
 
-                    if (categoryHasCombo && cat === selectedCategory) {
-                      const mode = categoryFilterMode[cat] || 'combo';
+                    // If category has combos, default to 'individual' mode
+                    if (hasCombos) {
+                      const mode = categoryFilterMode[cat] || 'individual';
                       return mode === 'combo' ? item.isCombo : !item.isCombo;
                     }
                     return true;
@@ -312,8 +293,39 @@ export function CustomerMenuSelection({
                     >
                       <div className="flex items-baseline justify-between mb-3 border-b border-[#f3f4f6]/60 pb-1.5">
                         <h2 className="font-bold text-[20px] text-[#2c2f34]">{cat}</h2>
-                        <span className="font-normal text-[12px] text-[#9ca3af]">{filteredItems.length} items</span>
+                        <span className="font-normal text-[12px] text-[#9ca3af]">{t('status.itemsAvailable', { count: filteredItems.length })}</span>
                       </div>
+
+                      {hasCombos && (
+                        <div className="mb-4 flex items-center justify-start">
+                          <div className="bg-muted/30 p-1 rounded-lg border border-border flex justify-center gap-1 shadow-sm max-w-[400px]">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCategoryFilterMode({ ...categoryFilterMode, [cat]: categoryFilterMode[cat] === 'combo' ? (undefined as any) : 'combo' });
+                              }}
+                              className={`px-4 py-1.5 rounded-md transition-all text-xs font-medium flex justify-center gap-2 ${categoryFilterMode[cat] === 'combo'
+                                ? 'bg-[#9dae91] text-[#2c2f34] shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                                }`}
+                            >
+                              {t('labels.comboPack')}
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCategoryFilterMode({ ...categoryFilterMode, [cat]: categoryFilterMode[cat] === 'individual' ? (undefined as any) : 'individual' });
+                              }}
+                              className={`px-4 py-1.5 rounded-md transition-all text-xs font-medium flex justify-center gap-2 ${(categoryFilterMode[cat] || 'individual') === 'individual'
+                                ? 'bg-[#9dae91] text-[#2c2f34] shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                                }`}
+                            >
+                              {t('labels.singleItems')}
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {filteredItems.map((item) => {
@@ -354,7 +366,7 @@ export function CustomerMenuSelection({
                                       CHF {item.price.toFixed(2)}
                                     </span>
                                     <span className="text-[11px] text-[#9ca3af]">
-                                      {isConsumption(item) ? 'billed by consumption' : isFlatFee(item) ? 'flat fee' : 'per person'}
+                                      {isConsumption(item) ? t('status.billedByConsumption') : isFlatFee(item) ? t('status.flatFee') : t('status.perPerson')}
                                     </span>
                                   </div>
 
@@ -363,14 +375,14 @@ export function CustomerMenuSelection({
                                       <button
                                         onClick={() => openDetailsModal(item)}
                                         className="size-[32px] rounded-[10px] border border-[#e5e7eb] flex items-center justify-center cursor-pointer hover:bg-[#f9fafb] transition-colors"
-                                        title="Edit"
+                                        title={t('actions.edit')}
                                       >
                                         <Edit2 className="w-3.5 h-3.5 text-[#6b7280]" />
                                       </button>
                                       <button
                                         onClick={() => removeFromCart(item.id)}
                                         className="size-[32px] rounded-[10px] border border-[#e5e7eb] flex items-center justify-center cursor-pointer hover:bg-[#fef2f2] hover:border-[#fecaca] transition-colors text-[#9ca3af] hover:text-[#ef4444]"
-                                        title="Remove"
+                                        title={t('actions.remove')}
                                       >
                                         <X className="w-3.5 h-3.5" />
                                       </button>
@@ -384,7 +396,7 @@ export function CustomerMenuSelection({
                                       className="bg-[#9dae91] h-[34px] px-4 rounded-[10px] flex items-center gap-1.5 cursor-pointer hover:opacity-90 transition-opacity"
                                     >
                                       <Plus className="w-3.5 h-3.5 text-[#262D39]" />
-                                      <span className="font-medium text-[13px] text-[#262d39]">Add</span>
+                                      <span className="font-medium text-[13px] text-[#262d39]">{t('actions.add')}</span>
                                     </button>
                                   )}
                                 </div>

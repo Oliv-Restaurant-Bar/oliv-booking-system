@@ -286,7 +286,7 @@ function CenteredVariant({
               isLoading={isGenerating}
               disabled={isGenerating}
             >
-              Download PDF Summary
+              {t('thankYou.downloadPdf')}
             </Button>
           )}
         </motion.div>
@@ -429,43 +429,14 @@ function SplitVariant({
             </motion.div>
           </motion.div>
 
-          <h1
-            className="mb-4"
-            style={{
-              fontSize: 'var(--text-3xl)',
-              fontWeight: 'var(--font-weight-bold)',
-              color: 'var(--primary-foreground)',
-              fontFamily: 'var(--font-family-heading)'
-            }}
-          >
-            Request Submitted Successfully!
+          <h1 className="text-4xl lg:text-5xl font-bold mb-4 leading-tight" style={{ color: 'var(--background)' }}>
+            {t('thankYou.title')}
           </h1>
-
-          {/* Congratulations Subheading */}
-          <p
-            className="mb-6"
-            style={{
-              fontSize: 'var(--text-lg)',
-              fontWeight: 'var(--font-weight-medium)',
-              color: 'var(--primary-foreground)',
-              fontFamily: 'var(--font-family-body)',
-              opacity: 0.95
-            }}
-          >
-            Congratulations on taking the first step!
+          <p className="text-xl mb-6 opacity-90" style={{ color: 'var(--background)', fontWeight: 'var(--font-weight-medium)' }}>
+            {t('thankYou.subtitle')}
           </p>
-
-          <p
-            className="mb-6"
-            style={{
-              fontSize: 'var(--text-lg)',
-              color: 'var(--primary-foreground)',
-              opacity: 0.85,
-              fontFamily: 'var(--font-family-body)',
-              lineHeight: '1.6'
-            }}
-          >
-            Your custom menu inquiry has been received. Our team will review your request and get back to you shortly.
+          <p className="text-lg mb-8 opacity-80 leading-relaxed" style={{ color: 'var(--background)' }}>
+            {t('thankYou.description')}
           </p>
 
           <div
@@ -480,7 +451,7 @@ function SplitVariant({
               fontFamily: 'var(--font-family-body)',
               fontWeight: 'var(--font-weight-medium)'
             }}>
-              Inquiry #{inquiryNumber}
+              {t('thankYou.inquiryNumber')}{inquiryNumber}
             </p>
           </div>
         </div>
@@ -495,16 +466,8 @@ function SplitVariant({
         style={{ backgroundColor: 'var(--surface)' }}
       >
         <div className="max-w-md w-full">
-          <h2
-            className="mb-6"
-            style={{
-              fontSize: 'var(--text-xl)',
-              fontWeight: 'var(--font-weight-semibold)',
-              color: 'var(--foreground)',
-              fontFamily: 'var(--font-family-heading)'
-            }}
-          >
-            What's next?
+          <h2 className="text-3xl font-bold mb-8" style={{ color: 'var(--primary)' }}>
+            {t('thankYou.whatsNext')}
           </h2>
 
           <div className="space-y-4 mb-8">
@@ -527,24 +490,11 @@ function SplitVariant({
                   <Clock className="w-6 h-6" style={{ color: 'var(--primary-foreground)' }} />
                 </div>
                 <div className="flex-1">
-                  <h3
-                    style={{
-                      fontSize: 'var(--text-base)',
-                      fontWeight: 'var(--font-weight-semibold)',
-                      color: 'var(--foreground)',
-                      fontFamily: 'var(--font-family-body)',
-                      marginBottom: '0.5rem'
-                    }}
-                  >
-                    1. Confirmation Call
+                  <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--primary)' }}>
+                    {t('thankYou.step1Title')}
                   </h3>
-                  <p style={{
-                    fontSize: 'var(--text-sm)',
-                    color: 'var(--muted-foreground)',
-                    fontFamily: 'var(--font-family-body)',
-                    lineHeight: '1.5'
-                  }}>
-                    We'll contact you within 24 hours to confirm details
+                  <p className="text-sm opacity-80" style={{ color: 'var(--primary)' }}>
+                    {t('thankYou.step1Desc')}
                   </p>
                 </div>
               </div>
@@ -569,24 +519,11 @@ function SplitVariant({
                   <FileCheck className="w-6 h-6" style={{ color: 'var(--primary-foreground)' }} />
                 </div>
                 <div className="flex-1">
-                  <h3
-                    style={{
-                      fontSize: 'var(--text-base)',
-                      fontWeight: 'var(--font-weight-semibold)',
-                      color: 'var(--foreground)',
-                      fontFamily: 'var(--font-family-body)',
-                      marginBottom: '0.5rem'
-                    }}
-                  >
-                    2. Menu Finalization
+                  <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--primary)' }}>
+                    {t('thankYou.step2Title')}
                   </h3>
-                  <p style={{
-                    fontSize: 'var(--text-sm)',
-                    color: 'var(--muted-foreground)',
-                    fontFamily: 'var(--font-family-body)',
-                    lineHeight: '1.5'
-                  }}>
-                    Together we'll perfect your custom menu selections
+                  <p className="text-sm opacity-80" style={{ color: 'var(--primary)' }}>
+                    {t('thankYou.step2Desc')}
                   </p>
                 </div>
               </div>
@@ -611,24 +548,11 @@ function SplitVariant({
                   <Utensils className="w-6 h-6" style={{ color: 'var(--primary-foreground)' }} />
                 </div>
                 <div className="flex-1">
-                  <h3
-                    style={{
-                      fontSize: 'var(--text-base)',
-                      fontWeight: 'var(--font-weight-semibold)',
-                      color: 'var(--foreground)',
-                      fontFamily: 'var(--font-family-body)',
-                      marginBottom: '0.5rem'
-                    }}
-                  >
-                    3. Event Preparation
+                  <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--primary)' }}>
+                    {t('thankYou.step3Title')}
                   </h3>
-                  <p style={{
-                    fontSize: 'var(--text-sm)',
-                    color: 'var(--muted-foreground)',
-                    fontFamily: 'var(--font-family-body)',
-                    lineHeight: '1.5'
-                  }}>
-                    We'll prepare everything for your special event
+                  <p className="text-sm opacity-80" style={{ color: 'var(--primary)' }}>
+                    {t('thankYou.step3Desc')}
                   </p>
                 </div>
               </div>
@@ -643,7 +567,7 @@ function SplitVariant({
               iconPosition="left"
               fullWidth
             >
-              Create new request
+              {t('thankYou.createNewRequest')}
             </Button>
             {onGoHome && (
               <Button
@@ -653,7 +577,7 @@ function SplitVariant({
                 iconPosition="left"
                 fullWidth
               >
-                Go to homepage
+                {t('thankYou.goToHomepage')}
               </Button>
             )}
             {hasBookingData && (
@@ -667,7 +591,7 @@ function SplitVariant({
                 disabled={isGenerating}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white border-none"
               >
-                Download Menu Summary (PDF)
+                {t('thankYou.downloadPdf')}
               </Button>
             )}
           </div>
@@ -687,7 +611,7 @@ function SplitVariant({
             }}
           >
             <Edit2 className="w-4 h-4" />
-            Edit your order
+            {t('thankYou.editOrder')}
           </button>
 
           {/* Contact Section */}
@@ -704,7 +628,7 @@ function SplitVariant({
                 fontFamily: 'var(--font-family-body)'
               }}
             >
-              Questions? Contact us
+              {t('thankYou.questions')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <a

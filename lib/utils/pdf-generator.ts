@@ -187,19 +187,24 @@ export async function generateCustomerOfferPdf(data: PdfBookingData): Promise<js
   addLogo();
   addHeader("ANGEBOT");
 
-  // Customer / Business Name
+  // Customer Name (Primary)
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(22);
+  doc.setFontSize(24);
   doc.setTextColor(...COLORS.title);
-  doc.text(data.business || data.customerName, pageWidth / 2, yPos, { align: 'center' });
-  yPos += 10;
+  
+  const nameWidth = contentWidth * 0.85;
+  const nameLines = doc.splitTextToSize(data.customerName, nameWidth);
+  doc.text(nameLines, pageWidth / 2, yPos, { align: 'center' });
+  yPos += (nameLines.length * 8.5) + 2;
 
+  // Business Name (Secondary)
   if (data.business) {
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(12);
+    doc.setFontSize(13);
     doc.setTextColor(...COLORS.text);
-    doc.text(`z.Hd. ${data.customerName}`, pageWidth / 2, yPos, { align: 'center' });
-    yPos += 10;
+    const businessLines = doc.splitTextToSize(data.business, nameWidth);
+    doc.text(businessLines, pageWidth / 2, yPos, { align: 'center' });
+    yPos += (businessLines.length * 6) + 5;
   }
 
   yPos += 5;

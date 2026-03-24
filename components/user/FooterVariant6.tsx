@@ -1,8 +1,10 @@
 'use client';
 
 import { Facebook, Instagram, Linkedin } from 'lucide-react';
+import { useLandingTranslation } from '@/lib/i18n/client';
 
 export function FooterVariant6() {
+  const t = useLandingTranslation();
   return (
     <footer className="bg-secondary text-secondary-foreground py-6">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -18,16 +20,16 @@ export function FooterVariant6() {
           {/* Center: Terms and Privacy Links */}
           <div className="flex gap-6">
             <a href="#" className="text-secondary-foreground/70 hover:text-primary transition-colors" style={{ fontSize: 'var(--text-base)' }}>
-              Terms
+              {t('footer.terms')}
             </a>
             <a href="#" className="text-secondary-foreground/70 hover:text-primary transition-colors" style={{ fontSize: 'var(--text-base)' }}>
-              Privacy
+              {t('footer.privacy')}
             </a>
           </div>
 
           {/* Right: Copyright */}
           <p className="text-secondary-foreground/60" style={{ fontSize: 'var(--text-small)' }}>
-            © {new Date().getFullYear()} Oliv Catering. All rights reserved.
+            © {new Date().getFullYear()} Oliv Catering. {t('footer.rights')}
           </p>
         </div>
       </div>

@@ -1,9 +1,11 @@
 import React from 'react';
-import { Eye, Lock, Check, Clock, Edit2, User, MapPin, Calendar, ClipboardList, ShoppingCart, Users, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
+import { Eye, Lock, Check, Clock, Edit2, User, MapPin, Calendar, ClipboardList, ShoppingCart, Users, ChevronDown, ChevronUp, AlertTriangle, LayoutList } from 'lucide-react';
 import { MenuItem } from './menuItemsData';
 import { EventDetails } from '@/lib/types';
 import { DietaryIcon } from './DietaryIcon';
 import { NativeCheckbox } from '@/components/ui/NativeCheckbox';
+import { useWizardTranslation } from '@/lib/i18n/client';
+import { useLocale } from 'next-intl';
 
 interface CustomerSummaryProps {
   eventDetails: EventDetails;
@@ -72,6 +74,8 @@ export function CustomerSummary({
   termsAccepted,
   setTermsAccepted,
 }: CustomerSummaryProps) {
+  const t = useWizardTranslation();
+  const locale = useLocale();
   const perPersonTotal = getPerPersonSubtotal();
   const guestCountValue = parseInt(eventDetails.guestCount) || 0;
   const flatRateTotal = getFlatRateSubtotal();
@@ -87,15 +91,15 @@ export function CustomerSummary({
           </div>
           <div>
             <h3 className="text-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-              Review your request
+              {t('sections.reviewRequest')}
             </h3>
             {isEditMode && (
-              <p className="text-primary text-sm">Edit Mode - Make changes below</p>
+              <p className="text-primary text-sm">{t('status.editMode')}</p>
             )}
           </div>
         </div>
         <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
-          Check all details before submitting
+          {t('sections.reviewSubtitle')}
         </p>
 
         {isLocked && (
@@ -104,10 +108,10 @@ export function CustomerSummary({
               <Lock className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-amber-800 font-semibold" style={{ fontSize: 'var(--text-base)' }}>
-                  This booking is locked
+                  {t('status.bookingLocked')}
                 </p>
                 <p className="text-amber-700 text-sm" style={{ fontSize: 'var(--text-small)' }}>
-                  Your inquiry is currently being processed by our team and can no longer be edited online. Please contact us directly or click the button if you need to make urgent changes.
+                  {t('status.lockedDescription')}
                 </p>
               </div>
             </div>
@@ -115,7 +119,7 @@ export function CustomerSummary({
               {isUnlockRequested ? (
                 <div className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg border border-green-200" style={{ borderRadius: 'var(--radius)' }}>
                   <Check className="w-4 h-4" />
-                  <span className="text-sm font-medium">Request Sent</span>
+                  <span className="text-sm font-medium">{t('status.requestSent')}</span>
                 </div>
               ) : (
                 <button
@@ -127,12 +131,12 @@ export function CustomerSummary({
                   {isRequestingUnlock ? (
                     <>
                       <Clock className="w-4 h-4 animate-spin" />
-                      Processing...
+                      {t('status.processing')}
                     </>
                   ) : (
                     <>
                       <Edit2 className="w-4 h-4" />
-                      Request Edit
+                      {t('actions.requestEdit')}
                     </>
                   )}
                 </button>
@@ -151,7 +155,7 @@ export function CustomerSummary({
                 <User className="w-4 h-4 text-primary" />
               </div>
               <h4 className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
-                Contact Information
+                {t('labels.billingDetails')}
               </h4>
             </div>
             {!isLocked && (
@@ -164,31 +168,31 @@ export function CustomerSummary({
                 style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
               >
                 <Edit2 className="w-3.5 h-3.5" />
-                Edit
+                {t('actions.edit')}
               </button>
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <p className="text-muted-foreground mb-1" style={{ fontSize: 'var(--text-small)' }}>Name</p>
+              <p className="text-muted-foreground mb-1" style={{ fontSize: 'var(--text-small)' }}>{t('labels.name')}</p>
               <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                 {eventDetails.name || '-'}
               </p>
             </div>
             <div>
-              <p className="text-muted-foreground mb-1" style={{ fontSize: 'var(--text-small)' }}>Business</p>
+              <p className="text-muted-foreground mb-1" style={{ fontSize: 'var(--text-small)' }}>{t('labels.business')}</p>
               <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                 {eventDetails.business || '-'}
               </p>
             </div>
             <div>
-              <p className="text-muted-foreground mb-1" style={{ fontSize: 'var(--text-small)' }}>Email</p>
+              <p className="text-muted-foreground mb-1" style={{ fontSize: 'var(--text-small)' }}>{t('labels.email')}</p>
               <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                 {eventDetails.email || '-'}
               </p>
             </div>
             <div>
-              <p className="text-muted-foreground mb-1" style={{ fontSize: 'var(--text-small)' }}>Telephone</p>
+              <p className="text-muted-foreground mb-1" style={{ fontSize: 'var(--text-small)' }}>{t('labels.telephone')}</p>
               <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                 {eventDetails.telephone || '-'}
               </p>
@@ -204,7 +208,7 @@ export function CustomerSummary({
                 <MapPin className="w-4 h-4 text-primary" />
               </div>
               <h4 className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
-                Address
+                {t('labels.address')}
               </h4>
             </div>
             {!isLocked && (
@@ -217,25 +221,25 @@ export function CustomerSummary({
                 style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
               >
                 <Edit2 className="w-3.5 h-3.5" />
-                Edit
+                {t('actions.edit')}
               </button>
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-3">
-              <p className="text-muted-foreground mb-1" style={{ fontSize: 'var(--text-small)' }}>Street & Nr.</p>
+              <p className="text-muted-foreground mb-1" style={{ fontSize: 'var(--text-small)' }}>{t('labels.street')}</p>
               <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                 {eventDetails.street || '-'}
               </p>
             </div>
             <div>
-              <p className="text-muted-foreground mb-1" style={{ fontSize: 'var(--text-small)' }}>PLZ</p>
+              <p className="text-muted-foreground mb-1" style={{ fontSize: 'var(--text-small)' }}>{t('labels.plz')}</p>
               <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                 {eventDetails.plz || '-'}
               </p>
             </div>
             <div className="md:col-span-2">
-              <p className="text-muted-foreground mb-1" style={{ fontSize: 'var(--text-small)' }}>Location</p>
+              <p className="text-muted-foreground mb-1" style={{ fontSize: 'var(--text-small)' }}>{t('labels.location')}</p>
               <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                 {eventDetails.location || '-'}
               </p>
@@ -251,7 +255,7 @@ export function CustomerSummary({
                 <Calendar className="w-4 h-4 text-primary" />
               </div>
               <h4 className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
-                Event Details
+                {t('labels.eventDetails')}
               </h4>
             </div>
             {!isLocked && (
@@ -264,15 +268,15 @@ export function CustomerSummary({
                 style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
               >
                 <Edit2 className="w-3.5 h-3.5" />
-                Edit
+                {t('actions.edit')}
               </button>
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <p className="text-muted-foreground mb-1" style={{ fontSize: 'var(--text-small)' }}>Date</p>
+              <p className="text-muted-foreground mb-1" style={{ fontSize: 'var(--text-small)' }}>{t('labels.date')}</p>
               <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                {eventDetails.eventDate ? new Date(eventDetails.eventDate).toLocaleDateString('de-CH', {
+                {eventDetails.eventDate ? new Date(eventDetails.eventDate).toLocaleDateString(locale === 'de' ? 'de-CH' : 'en-CH', {
                   day: '2-digit',
                   month: 'long',
                   year: 'numeric'
@@ -280,19 +284,19 @@ export function CustomerSummary({
               </p>
             </div>
             <div>
-              <p className="text-muted-foreground mb-1" style={{ fontSize: 'var(--text-small)' }}>Time</p>
+              <p className="text-muted-foreground mb-1" style={{ fontSize: 'var(--text-small)' }}>{t('labels.time')}</p>
               <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                 {eventDetails.eventTime || '-'}
               </p>
             </div>
             <div>
-              <p className="text-muted-foreground mb-1" style={{ fontSize: 'var(--text-small)' }}>Number of Guests</p>
+              <p className="text-muted-foreground mb-1" style={{ fontSize: 'var(--text-small)' }}>{t('labels.guests')}</p>
               <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                 {eventDetails.guestCount || '-'}
               </p>
             </div>
             <div>
-              <p className="text-muted-foreground mb-1" style={{ fontSize: 'var(--text-small)' }}>Occasion</p>
+              <p className="text-muted-foreground mb-1" style={{ fontSize: 'var(--text-small)' }}>{t('labels.occasion')}</p>
               <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                 {eventDetails.occasion || '-'}
               </p>
@@ -341,10 +345,10 @@ export function CustomerSummary({
               </div>
               <div>
                 <h4 className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
-                  Selected Menu ({selectedItems.length} {selectedItems.length === 1 ? 'item' : 'items'})
+                  {t('labels.selectedMenu', { count: selectedItems.length })}
                 </h4>
                 <p className="text-muted-foreground mt-0.5" style={{ fontSize: 'var(--text-small)' }}>
-                  Per person quantities
+                  {t('labels.perPersonQuantities')}
                 </p>
               </div>
             </div>
@@ -355,7 +359,7 @@ export function CustomerSummary({
                 style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
               >
                 <Edit2 className="w-3.5 h-3.5" />
-                Edit
+                {t('actions.edit')}
               </button>
             )}
           </div>
@@ -364,7 +368,7 @@ export function CustomerSummary({
             <div className="text-center py-8">
               <ShoppingCart className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-30" />
               <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                No items selected
+                {t('status.noChanges')}
               </p>
             </div>
           ) : (
@@ -409,7 +413,7 @@ export function CustomerSummary({
                         </span>
                       </div>
                       <span className="text-muted-foreground text-xs">
-                        {isCollapsed ? 'Show' : 'Hide'}
+                        {isCollapsed ? t('actions.show') : t('actions.hide')}
                       </span>
                     </button>
 
@@ -454,7 +458,7 @@ export function CustomerSummary({
                                           color: 'var(--consumption-badge-text)'
                                         }}
                                       >
-                                        Pay by consumption
+                                        {t('status.billedByConsumption')}
                                       </span>
                                     </div>
                                   )}
@@ -470,7 +474,7 @@ export function CustomerSummary({
                                   })()}
                                   {itemAddOns[itemId] && itemAddOns[itemId].length > 0 && (
                                     <span>
-                                      Add-ons:{' '}
+                                      {t('labels.addons')}:{' '}
                                       {itemAddOns[itemId]
                                         .map((addOnId) => {
                                           const addOn = item.addOns?.find((ao) => ao.id === addOnId);
@@ -481,7 +485,7 @@ export function CustomerSummary({
                                     </span>
                                   )}
                                   {itemComments[itemId] && (
-                                    <span className="italic truncate max-w-125">Note: {itemComments[itemId]}</span>
+                                    <span className="italic truncate max-w-125">{t('labels.itemNote')}: {itemComments[itemId]}</span>
                                   )}
                                 </div>
                               </div>
@@ -495,10 +499,10 @@ export function CustomerSummary({
                                 </p>
                                 <p className="text-muted-foreground text-xs">
                                   {isConsumption(item)
-                                    ? 'billed by consumption'
+                                    ? t('status.billedByConsumption')
                                     : isPerPerson(item)
-                                      ? `${itemGuestCounts[itemId] || parseInt(eventDetails.guestCount) || 1} guests × CHF ${getItemPerPersonPrice(item).toFixed(2)}`
-                                      : `Qty: ${quantity} × CHF ${getItemPerPersonPrice(item).toFixed(2)}`}
+                                      ? t('status.guestsCalculation', { count: itemGuestCounts[itemId] || parseInt(eventDetails.guestCount) || 1, price: getItemPerPersonPrice(item).toFixed(2) })
+                                      : t('status.qtyCalculation', { qty: quantity, price: getItemPerPersonPrice(item).toFixed(2) })}
                                 </p>
                               </div>
                             </div>
@@ -515,11 +519,11 @@ export function CustomerSummary({
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-foreground mb-1" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      Per Person Total
+                      {t('labels.perPersonTotal')}
                     </p>
                     <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                      {selectedItems.length} {selectedItems.length === 1 ? 'item' : 'items'} selected for {eventDetails.guestCount || '0'}{' '}
-                      {parseInt(eventDetails.guestCount) === 1 ? 'guest' : 'guests'}
+                      {t('labels.selectedMenu', { count: selectedItems.length })} {t('status.forEvent')} {eventDetails.guestCount || '0'}{' '}
+                      {parseInt(eventDetails.guestCount) === 1 ? t('status.guest') : t('status.guests_plural')}
                     </p>
                   </div>
                   <p className="text-primary" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
@@ -540,7 +544,7 @@ export function CustomerSummary({
                 <Users className="w-4 h-4 text-primary" />
               </div>
               <h4 className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
-                Dietary Breakdown
+                {t('labels.dietaryBreakdown')}
               </h4>
             </div>
 
@@ -548,25 +552,25 @@ export function CustomerSummary({
               {/* Meat/Fish Summary */}
               <div className="bg-card border border-border rounded-lg p-4" style={{ borderRadius: 'var(--radius)' }}>
                 <p className="text-muted-foreground mb-2" style={{ fontSize: 'var(--text-small)' }}>
-                  🍖 Meat/Fish Selections
+                  {t('labels.meatFish')}
                 </p>
                 <p className="text-primary mb-1" style={{ fontSize: 'var(--text-h2)', fontWeight: 'var(--font-weight-semibold)' }}>
                   {selectedItems.filter((itemId) => {
                     const item = menuItems.find((i) => i.id === itemId);
                     return item?.dietaryType === 'non-veg';
                   }).length}{' '}
-                  items
+                  {t('labels.items')}
                 </p>
                 {eventDetails.guestCount && (
                   <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                    Total:{' '}
-                    {selectedItems
-                      .filter((itemId) => {
-                        const item = menuItems.find((i) => i.id === itemId);
-                        return (item?.dietaryType === 'non-veg' && item?.pricingType === 'per-person') || (item?.dietaryType === 'non-veg' && item?.pricingType === 'flat_fee');
-                      })
-                      .reduce((total, itemId) => total + (itemQuantities[itemId] || 1), 0) * parseInt(eventDetails.guestCount)}{' '}
-                    portions
+                    {t('labels.portionsCalculation', {
+                      count: selectedItems
+                        .filter((itemId) => {
+                          const item = menuItems.find((i) => i.id === itemId);
+                          return (item?.dietaryType === 'non-veg' && item?.pricingType === 'per-person') || (item?.dietaryType === 'non-veg' && item?.pricingType === 'flat_fee');
+                        })
+                        .reduce((total, itemId) => total + (itemQuantities[itemId] || 1), 0) * parseInt(eventDetails.guestCount)
+                    })}
                   </p>
                 )}
               </div>
@@ -574,25 +578,25 @@ export function CustomerSummary({
               {/* Veggie/Vegan Summary */}
               <div className="bg-card border border-border rounded-lg p-4" style={{ borderRadius: 'var(--radius)' }}>
                 <p className="text-muted-foreground mb-2" style={{ fontSize: 'var(--text-small)' }}>
-                  🥗 Veggie/Vegan Selections
+                  {t('labels.veggieVegan')}
                 </p>
                 <p className="text-primary mb-1" style={{ fontSize: 'var(--text-h2)', fontWeight: 'var(--font-weight-semibold)' }}>
                   {selectedItems.filter((itemId) => {
                     const item = menuItems.find((i) => i.id === itemId);
                     return item?.dietaryType === 'veg' || item?.dietaryType === 'vegan';
                   }).length}{' '}
-                  items
+                  {t('labels.items')}
                 </p>
                 {eventDetails.guestCount && (
                   <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                    Total:{' '}
-                    {selectedItems
-                      .filter((itemId) => {
-                        const item = menuItems.find((i) => i.id === itemId);
-                        return ((item?.dietaryType === 'veg' || item?.dietaryType === 'vegan') && item?.pricingType === 'per-person') || ((item?.dietaryType === 'veg' || item?.dietaryType === 'vegan') && item?.pricingType === 'flat_fee');
-                      })
-                      .reduce((total, itemId) => total + (itemQuantities[itemId] || 1), 0) * parseInt(eventDetails.guestCount)}{' '}
-                    portions
+                    {t('labels.portionsCalculation', {
+                      count: selectedItems
+                        .filter((itemId) => {
+                          const item = menuItems.find((i) => i.id === itemId);
+                          return ((item?.dietaryType === 'veg' || item?.dietaryType === 'vegan') && item?.pricingType === 'per-person') || ((item?.dietaryType === 'veg' || item?.dietaryType === 'vegan') && item?.pricingType === 'flat_fee');
+                        })
+                        .reduce((total, itemId) => total + (itemQuantities[itemId] || 1), 0) * parseInt(eventDetails.guestCount)
+                    })}
                   </p>
                 )}
               </div>
@@ -603,32 +607,27 @@ export function CustomerSummary({
           <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm" style={{ borderRadius: 'var(--radius-card)' }}>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0" style={{ borderRadius: 'var(--radius)' }}>
-                  <ShoppingCart className="w-4 h-4 text-gray-500" />
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0" style={{ borderRadius: 'var(--radius)' }}>
+                  <LayoutList className="w-4 h-4 text-primary" />
                 </div>
-                <h4 className="text-gray-800" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
-                  Order overview
+                <h4 className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
+                  {t('labels.orderOverview')}
                 </h4>
               </div>
-              {/* View Toggle */}
-              <div className="flex items-center gap-1 bg-white p-1 rounded-md border border-gray-200 shadow-sm">
+              <div className="flex bg-muted p-1 rounded-lg" style={{ borderRadius: 'var(--radius)' }}>
                 <button
                   onClick={() => setSummaryViewMode('per-person')}
-                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${summaryViewMode === 'per-person'
-                    ? 'bg-[#8da78d] text-white'
-                    : 'text-gray-500 hover:text-gray-700 bg-transparent'
-                    }`}
+                  className={`px-3 py-1 text-xs font-medium transition-all ${summaryViewMode === 'per-person' ? 'bg-white shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                  style={{ borderRadius: 'calc(var(--radius) - 4px)' }}
                 >
-                  Pro Person
+                  {t('labels.proPerson')}
                 </button>
                 <button
                   onClick={() => setSummaryViewMode('total')}
-                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${summaryViewMode === 'total'
-                    ? 'bg-[#8da78d] text-white'
-                    : 'text-gray-500 hover:text-gray-700 bg-transparent'
-                    }`}
+                  className={`px-3 py-1 text-xs font-medium transition-all ${summaryViewMode === 'total' ? 'bg-white shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                  style={{ borderRadius: 'calc(var(--radius) - 4px)' }}
                 >
-                  Total + extras
+                  {t('labels.totalExtras')}
                 </button>
               </div>
             </div>
@@ -750,6 +749,16 @@ export function CustomerSummary({
                         })
                         .filter((cat) => cat.count > 0);
 
+                      const mealsSubtotal = selectedItems
+                        .filter((itemId) => {
+                          const item = menuItems.find((i) => i.id === itemId);
+                          return item && foodCategories.includes(item.category);
+                        })
+                        .reduce((sum, itemId) => {
+                          const item = menuItems.find((i) => i.id === itemId);
+                          return sum + (item ? getItemTotalPrice(item) : 0);
+                        }, 0);
+
                       return (
                         <div key="food-categories" className="space-y-1">
                           {breakdown.map((cat) => (
@@ -765,22 +774,12 @@ export function CustomerSummary({
                               </span>
                             </div>
                           ))}
-                          <div className="pt-3 mt-3 border-t border-[#8da78d] flex justify-between">
-                            <span className="text-[#374151] font-bold">
-                              Subtotal for meals:
+                          <div className="pt-3 mt-3 border-t border-primary/30 flex justify-between">
+                            <span className="text-foreground font-bold">
+                              {t('labels.mealsSubtotal')}
                             </span>
-                            <span className="text-[#374151] font-bold">
-                              CHF{' '}
-                              {selectedItems
-                                .filter((itemId) => {
-                                  const item = menuItems.find((i) => i.id === itemId);
-                                  return item && foodCategories.includes(item.category);
-                                })
-                                .reduce((sum, itemId) => {
-                                  const item = menuItems.find((i) => i.id === itemId);
-                                  return sum + (item ? getItemTotalPrice(item) : 0);
-                                }, 0)
-                                .toFixed(2)}
+                            <span className="text-foreground font-bold">
+                              CHF {mealsSubtotal.toFixed(2)}
                             </span>
                           </div>
                         </div>
@@ -808,11 +807,11 @@ export function CustomerSummary({
                       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden mb-4 shadow-sm" style={{ borderRadius: 'var(--radius)' }}>
                         <div className="bg-gray-50/50 px-4 py-3 border-b border-gray-200">
                           <p className="text-[#374151] font-semibold" style={{ fontSize: 'var(--text-base)' }}>
-                            🍷 Billed by Consumption
+                            {t('status.billedByConsumption')}
                           </p>
                           {!includeBeveragePrices && (
                             <p className="text-gray-500 text-xs mt-1">
-                              Prices are displayed, but not included in the total price.
+                              {t('labels.drinksExcludedWarning')}
                             </p>
                           )}
                         </div>
@@ -836,7 +835,7 @@ export function CustomerSummary({
                           })}
                           <div className="pt-3 mt-3 border-t border-gray-100 flex justify-between">
                             <span className="text-[#374151] font-bold">
-                              Subtotal (consumption):
+                              {t('labels.consumptionSubtotal')}
                             </span>
                             <span className="text-[#374151] font-bold">
                               CHF {includeBeveragePrices ? consumptionSubtotal.toFixed(2) : '0.00'}
@@ -859,9 +858,9 @@ export function CustomerSummary({
                           className="mt-1"
                         />
                         <label htmlFor="include-drinks" className="cursor-pointer">
-                          <span className="block text-gray-800 font-medium mb-1">Include consumption-based prices in the estimate</span>
+                          <span className="block text-gray-800 font-medium mb-1">{t('labels.includeDrinksEstimate')}</span>
                           {!includeBeveragePrices && (
-                            <span className="block text-sm" style={{ color: 'var(--consumption-alert-text)' }}>⚠️ Consumption-based prices are currently excluded from the overall estimate.</span>
+                            <span className="block text-sm" style={{ color: 'var(--consumption-alert-text)' }}>{t('labels.drinksExcludedWarning')}</span>
                           )}
                         </label>
                       </div>
@@ -910,7 +909,7 @@ export function CustomerSummary({
                         })}
                         <div className="pt-2 mt-2 border-t border-primary/30 flex justify-between">
                           <span className="text-foreground font-semibold">
-                            Subtotal {category}:
+                            {t('labels.subtotal')} {category}:
                           </span>
                           <span className="text-foreground font-semibold">
                             CHF {categorySubtotal.toFixed(2)}
@@ -929,10 +928,10 @@ export function CustomerSummary({
               <div className="bg-white border-2 border-[#1e293b] rounded-lg p-6 shadow-sm flex flex-col md:flex-row justify-between items-center" style={{ borderRadius: 'var(--radius)' }}>
                 <div>
                   <h3 className="text-[#1e293b] font-bold uppercase tracking-wider mb-1" style={{ fontSize: 'var(--text-h4)' }}>
-                    TOTAL ESTIMATE
+                    {t('labels.totalEstimate')}
                   </h3>
                   <p className="text-muted-foreground font-medium" style={{ fontSize: 'var(--text-small)' }}>
-                    For {guestCountValue} {guestCountValue === 1 ? 'guest' : 'guests'}
+                    {t('labels.guestsCountCalculation', { count: guestCountValue })}
                   </p>
                 </div>
                 <div className="font-bold mt-4 md:mt-0" style={{ fontSize: 'var(--text-h2)', color: '#8da78d' }}>
@@ -946,13 +945,13 @@ export function CustomerSummary({
           <div className="bg-[#1e293b] text-white p-6 rounded-lg flex gap-4 items-start shadow-md" style={{ borderRadius: 'var(--radius)' }}>
             <AlertTriangle className="w-6 h-6 text-amber-400 flex-shrink-0 mt-1" />
             <div>
-              <h4 className="font-bold mb-2" style={{ fontSize: 'var(--text-base)' }}>Deposit Requirement</h4>
+              <h4 className="font-bold mb-2" style={{ fontSize: 'var(--text-base)' }}>{t('labels.depositRequirement')}</h4>
               <p className="text-gray-300 text-sm mb-3">
-                A deposit is required for orders above CHF 5,000.00. This deposit will be deducted from the final invoice.
+                {t('labels.depositRequirementText')}
               </p>
               <p className="text-gray-400 text-xs flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-gray-500" />
-                Our team will connect you once order is locked and confirmed.
+                {t('labels.contactAfterLocked')}
               </p>
             </div>
           </div>
@@ -966,7 +965,7 @@ export function CustomerSummary({
             className="w-5 h-5 flex-shrink-0"
           />
           <label htmlFor="terms-checkbox" className="text-foreground cursor-pointer select-none leading-relaxed" style={{ fontSize: 'var(--text-small)' }}>
-            I agree to the <span className="text-[#8da78d] underline font-medium">Terms and Conditions</span> and confirm that all information is correct.
+            {t('labels.agreeTerms')}
           </label>
         </div>
       </div>

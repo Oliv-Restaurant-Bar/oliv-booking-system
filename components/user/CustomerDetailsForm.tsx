@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { NativeRadio } from '@/components/ui/NativeRadio';
 import { NativeCheckbox } from '@/components/ui/NativeCheckbox';
 import { EventDetails } from '@/lib/types';
+import { useWizardTranslation } from '@/lib/i18n/client';
+import { useLocale } from 'next-intl';
 
 interface CustomerDetailsFormProps {
     eventDetails: EventDetails;
@@ -27,19 +29,22 @@ export function CustomerDetailsForm({
     displayErrors,
     setIsDateTimePickerOpen
 }: CustomerDetailsFormProps) {
+    const t = useWizardTranslation();
+    const locale = useLocale();
+
     return (
-        <div>
+        <div className="w-full">
             <div className="mb-6">
                 <div className="flex items-center gap-3 mb-2">
                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0" style={{ borderRadius: 'var(--radius)' }}>
                         <ClipboardList className="w-5 h-5 text-primary" />
                     </div>
                     <h3 className="text-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                        Tell us about your event
+                        {t('sections.tellUsAboutEvent')}
                     </h3>
                 </div>
                 <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                    Please fill out all the required information below
+                    {t('sections.fillRequiredInfo')}
                 </p>
             </div>
 
@@ -49,11 +54,11 @@ export function CustomerDetailsForm({
                 <div className="bg-muted/30 rounded-lg p-5 border border-border" style={{ borderRadius: 'var(--radius-card)' }}>
                     <h4 className="text-foreground mb-4 flex items-center gap-2" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
                         <User className="w-4 h-4 text-primary" />
-                        Contact Information
+                        {t('sections.contactInformation')}
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <ValidatedInput
-                            label="Name"
+                            label={t('labels.name')}
                             type="text"
                             value={eventDetails.name}
                             onChange={(e) => {
@@ -64,7 +69,7 @@ export function CustomerDetailsForm({
                                 setTouched({ ...touched, name: true });
                                 if (errors.name) setErrors({ ...errors, name: undefined });
                             }}
-                            placeholder="Max Mustermann"
+                            placeholder={t('placeholders.name')}
                             maxLength={100}
                             showCharacterCount
                             error={displayErrors.name}
@@ -73,7 +78,7 @@ export function CustomerDetailsForm({
                         />
 
                         <ValidatedInput
-                            label="Business"
+                            label={t('labels.business')}
                             type="text"
                             value={eventDetails.business}
                             onChange={(e) => {
@@ -88,12 +93,12 @@ export function CustomerDetailsForm({
                             maxLength={100}
                             showCharacterCount
                             error={displayErrors.business}
-                            helperText="Optional"
+                            helperText={t('labels.optional')}
                             className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                         />
 
                         <ValidatedInput
-                            label="Email"
+                            label={t('labels.email')}
                             type="email"
                             value={eventDetails.email}
                             onChange={(e) => {
@@ -108,13 +113,13 @@ export function CustomerDetailsForm({
                             maxLength={255}
                             showCharacterCount
                             error={displayErrors.email}
-                            helperText="Must be a valid email address"
+                            helperText={t('labels.email')}
                             required
                             className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                         />
 
                         <ValidatedInput
-                            label="Telephone"
+                            label={t('labels.telephone')}
                             type="tel"
                             value={eventDetails.telephone}
                             onChange={(e) => {
@@ -130,7 +135,7 @@ export function CustomerDetailsForm({
                             maxLength={20}
                             showCharacterCount
                             error={displayErrors.telephone}
-                            helperText="Min. 10 characters"
+                            helperText={t('labels.phone')}
                             required
                             className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                         />
@@ -141,11 +146,11 @@ export function CustomerDetailsForm({
                 <div className="bg-muted/30 rounded-lg p-5 border border-border" style={{ borderRadius: 'var(--radius-card)' }}>
                     <h4 className="text-foreground mb-4 flex items-center gap-2" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
                         <MapPin className="w-4 h-4 text-primary" />
-                        Address
+                        {t('sections.address')}
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <ValidatedInput
-                            label="Strasse & Nr."
+                            label={t('labels.street')}
                             type="text"
                             value={eventDetails.street}
                             onChange={(e) => {
@@ -156,17 +161,17 @@ export function CustomerDetailsForm({
                                 setTouched({ ...touched, street: true });
                                 if (errors.street) setErrors({ ...errors, street: undefined });
                             }}
-                            placeholder="Musterstrasse 123"
+                            placeholder={t('placeholders.street')}
                             maxLength={100}
                             showCharacterCount
                             error={displayErrors.street}
-                            helperText="Min. 5 characters"
+                            helperText={t('labels.street')}
                             required
                             className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                         />
 
                         <ValidatedInput
-                            label="PLZ"
+                            label={t('labels.plz')}
                             type="text"
                             value={eventDetails.plz}
                             onChange={(e) => {
@@ -178,17 +183,17 @@ export function CustomerDetailsForm({
                                 setTouched({ ...touched, plz: true });
                                 if (errors.plz) setErrors({ ...errors, plz: undefined });
                             }}
-                            placeholder="3000"
+                            placeholder={t('placeholders.plz')}
                             maxLength={10}
                             showCharacterCount
                             error={displayErrors.plz}
-                            helperText="Min. 4 characters"
+                            helperText={t('labels.plz')}
                             required
                             className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                         />
 
                         <ValidatedInput
-                            label="Location"
+                            label={t('labels.location')}
                             type="text"
                             value={eventDetails.location}
                             onChange={(e) => {
@@ -199,17 +204,17 @@ export function CustomerDetailsForm({
                                 setTouched({ ...touched, location: true });
                                 if (errors.location) setErrors({ ...errors, location: undefined });
                             }}
-                            placeholder="Bern"
+                            placeholder={t('placeholders.location')}
                             maxLength={50}
                             showCharacterCount
                             error={displayErrors.location}
-                            helperText="Min. 2 characters"
+                            helperText={t('labels.location')}
                             required
                             className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                         />
 
                         <ValidatedInput
-                            label="Reference"
+                            label={t('labels.reference')}
                             type="text"
                             value={eventDetails.reference}
                             onChange={(e) => {
@@ -220,11 +225,11 @@ export function CustomerDetailsForm({
                                 setTouched({ ...touched, reference: true as any });
                                 if (errors.reference) setErrors({ ...errors, reference: undefined });
                             }}
-                            placeholder="e.g. PO-12345"
+                            placeholder={t('placeholders.occasion')}
                             maxLength={100}
                             showCharacterCount
                             error={displayErrors.reference}
-                            helperText="Optional reference"
+                            helperText={t('labels.optional')}
                             className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                         />
                     </div>
@@ -234,13 +239,13 @@ export function CustomerDetailsForm({
                 <div className="bg-muted/30 rounded-lg p-5 border border-border" style={{ borderRadius: 'var(--radius-card)' }}>
                     <h4 className="text-foreground mb-4 flex items-center gap-2" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
                         <Calendar className="w-4 h-4 text-primary" />
-                        Event Details
+                        {t('sections.event')}
                     </h4>
                     <div className="grid grid-cols-1 gap-4">
                         {/* Date & Time Picker */}
                         <div>
                             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                                Date & Time *
+                                {t('labels.eventDate')} *
                             </label>
                             <button
                                 type="button"
@@ -254,12 +259,12 @@ export function CustomerDetailsForm({
                             >
                                 <span className={(eventDetails.eventDate || eventDetails.eventTime) ? 'text-foreground' : 'text-muted-foreground'}>
                                     {eventDetails.eventDate && eventDetails.eventTime
-                                        ? `${new Date(eventDetails.eventDate).toLocaleDateString('de-CH', { day: '2-digit', month: 'short', year: 'numeric' })} um ${eventDetails.eventTime}`
+                                        ? `${new Date(eventDetails.eventDate).toLocaleDateString(locale === 'de' ? 'de-CH' : 'en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} ${locale === 'de' ? 'um' : 'at'} ${eventDetails.eventTime}`
                                         : eventDetails.eventDate
-                                            ? new Date(eventDetails.eventDate).toLocaleDateString('de-CH', { day: '2-digit', month: 'short', year: 'numeric' })
+                                            ? new Date(eventDetails.eventDate).toLocaleDateString(locale === 'de' ? 'de-CH' : 'en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
                                             : eventDetails.eventTime
                                                 ? eventDetails.eventTime
-                                                : 'Date & Time'
+                                                : t('labels.eventDate')
                                     }
                                 </span>
                                 <Calendar className="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors" />
@@ -273,7 +278,7 @@ export function CustomerDetailsForm({
 
                         <div>
                             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                                Number of guests *
+                                {t('labels.guestCount')} *
                             </label>
                             <Input
                                 type="number"
@@ -301,7 +306,7 @@ export function CustomerDetailsForm({
                         </div>
 
                         <ValidatedInput
-                            label="Occasion"
+                            label={t('labels.occasion')}
                             type="text"
                             value={eventDetails.occasion}
                             onChange={(e) => {
@@ -312,11 +317,11 @@ export function CustomerDetailsForm({
                                 setTouched({ ...touched, occasion: true });
                                 if (errors.occasion) setErrors({ ...errors, occasion: undefined });
                             }}
-                            placeholder="e.g. company party"
+                            placeholder={t('placeholders.occasion')}
                             maxLength={100}
                             showCharacterCount
                             error={displayErrors.occasion}
-                            helperText="Optional"
+                            helperText={t('labels.optional')}
                             className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                         />
 
@@ -327,10 +332,10 @@ export function CustomerDetailsForm({
                 <div className="bg-muted/30 rounded-lg p-5 border border-border" style={{ borderRadius: 'var(--radius-card)' }}>
                     <h4 className="text-foreground mb-4 flex items-center gap-2" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
                         <ClipboardList className="w-4 h-4 text-primary" />
-                        Special Requests
+                        {t('sections.specialRequests')}
                     </h4>
                     <ValidatedTextarea
-                        label="Allergies, dietary requirements or other comments"
+                        label={t('labels.specialRequests')}
                         value={eventDetails.specialRequests}
                         onChange={(e) => {
                             setEventDetails({ ...eventDetails, specialRequests: e.target.value });
@@ -340,12 +345,12 @@ export function CustomerDetailsForm({
                             setTouched({ ...touched, specialRequests: true });
                             if (errors.specialRequests) setErrors({ ...errors, specialRequests: undefined });
                         }}
-                        placeholder="e.g. 2 people vegetarian, 1 person gluten-free..."
+                        placeholder={t('placeholders.specialRequests')}
                         rows={4}
                         maxLength={1000}
                         showCharacterCount
                         error={displayErrors.specialRequests}
-                        helperText="Optional"
+                        helperText={t('labels.optional')}
                         className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                     />
                 </div>
@@ -354,10 +359,10 @@ export function CustomerDetailsForm({
                 <div className="bg-muted/30 rounded-lg p-5 border border-border" style={{ borderRadius: 'var(--radius-card)' }}>
                     <h4 className="text-foreground mb-4 flex items-center gap-2" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
                         <CreditCard className="w-4 h-4 text-primary" />
-                        Payment Options
+                        {t('sections.paymentOptions')}
                     </h4>
                     <p className="text-muted-foreground mb-4" style={{ fontSize: 'var(--text-base)' }}>
-                        Choose your preferred payment method
+                        {t('labels.choosePayment')}
                     </p>
                     <div className="space-y-3">
                         <label
@@ -371,7 +376,7 @@ export function CustomerDetailsForm({
                             />
                             <div className="flex-1">
                                 <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                                    EC Card / Card on Site
+                                    {t('labels.ecCard')}
                                 </span>
                             </div>
                         </label>
@@ -387,7 +392,7 @@ export function CustomerDetailsForm({
                             />
                             <div className="flex-1">
                                 <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                                    On Invoice
+                                    {t('labels.onInvoice')}
                                 </span>
                             </div>
                         </label>
@@ -399,10 +404,10 @@ export function CustomerDetailsForm({
                     <div className="bg-muted/30 rounded-lg p-5 border border-border" style={{ borderRadius: 'var(--radius-card)' }}>
                         <h4 className="text-foreground mb-4 flex items-center gap-2" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
                             <Building2 className="w-4 h-4 text-primary" />
-                            Billing Address
+                            {t('sections.billingAddress')}
                         </h4>
                         <p className="text-muted-foreground mb-4" style={{ fontSize: 'var(--text-base)' }}>
-                            Specify where the invoice should be sent
+                            {t('labels.invoiceTarget')}
                         </p>
                         <div className="bg-background/50 border border-border rounded-lg p-4 space-y-4" style={{ borderRadius: 'var(--radius)' }}>
                             <label className="flex items-center gap-3 cursor-pointer">
@@ -411,7 +416,7 @@ export function CustomerDetailsForm({
                                     onChange={(e) => setEventDetails({ ...eventDetails, useSameAddressForBilling: e.target.checked })}
                                 />
                                 <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                    Use same address for billing
+                                    {t('labels.sameAddress')}
                                 </span>
                             </label>
 
@@ -420,34 +425,34 @@ export function CustomerDetailsForm({
                                     // Read-only display of main address
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="text-sm text-muted-foreground mb-1 block">Street & Nr.</label>
+                                            <label className="text-sm text-muted-foreground mb-1 block">{t('labels.street')}</label>
                                             <div className="px-3 py-2 bg-muted/50 rounded-md text-foreground border border-border">
-                                                {eventDetails.street || 'Not provided'}
+                                                {eventDetails.street || t('status.editMode')}
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="text-sm text-muted-foreground mb-1 block">PLZ</label>
+                                            <label className="text-sm text-muted-foreground mb-1 block">{t('labels.plz')}</label>
                                             <div className="px-3 py-2 bg-muted/50 rounded-md text-foreground border border-border">
-                                                {eventDetails.plz || 'Not provided'}
+                                                {eventDetails.plz || t('status.editMode')}
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="text-sm text-muted-foreground mb-1 block">Location</label>
+                                            <label className="text-sm text-muted-foreground mb-1 block">{t('labels.location')}</label>
                                             <div className="px-3 py-2 bg-muted/50 rounded-md text-foreground border border-border">
-                                                {eventDetails.location || 'Not provided'}
+                                                {eventDetails.location || t('status.editMode')}
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="text-sm text-muted-foreground mb-1 block">Reference</label>
+                                            <label className="text-sm text-muted-foreground mb-1 block">{t('labels.reference')}</label>
                                             <div className="px-3 py-2 bg-muted/50 rounded-md text-foreground border border-border">
-                                                {eventDetails.reference || 'Not provided'}
+                                                {eventDetails.reference || t('status.editMode')}
                                             </div>
                                         </div>
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <ValidatedInput
-                                            label="Billing Street & Nr."
+                                            label={t('labels.billingStreet')}
                                             type="text"
                                             value={eventDetails.billingStreet}
                                             onChange={(e) => {
@@ -459,15 +464,15 @@ export function CustomerDetailsForm({
                                                     setEventDetails({ ...eventDetails, billingStreetError: 'Street address must be at least 5 characters' });
                                                 }
                                             }}
-                                            placeholder="Street and house number"
+                                            placeholder={t('placeholders.street')}
                                             maxLength={100}
                                             showCharacterCount
-                                            helperText="Optional"
+                                            helperText={t('labels.optional')}
                                             error={eventDetails.billingStreetError}
                                         />
 
                                         <ValidatedInput
-                                            label="PLZ"
+                                            label={t('labels.billingPlz')}
                                             type="text"
                                             value={eventDetails.billingPlz}
                                             onChange={(e) => {
@@ -480,15 +485,15 @@ export function CustomerDetailsForm({
                                                     setEventDetails({ ...eventDetails, billingPlzError: 'Postal code must be at least 4 characters' });
                                                 }
                                             }}
-                                            placeholder="3000"
+                                            placeholder={t('placeholders.plz')}
                                             maxLength={10}
                                             showCharacterCount
-                                            helperText="Optional"
+                                            helperText={t('labels.optional')}
                                             error={eventDetails.billingPlzError}
                                         />
 
                                         <ValidatedInput
-                                            label="Location"
+                                            label={t('labels.billingLocation')}
                                             type="text"
                                             value={eventDetails.billingLocation}
                                             onChange={(e) => {
@@ -500,15 +505,15 @@ export function CustomerDetailsForm({
                                                     setEventDetails({ ...eventDetails, billingLocationError: 'Location must be at least 2 characters' });
                                                 }
                                             }}
-                                            placeholder="Bern"
+                                            placeholder={t('placeholders.location')}
                                             maxLength={50}
                                             showCharacterCount
-                                            helperText="Optional"
+                                            helperText={t('labels.optional')}
                                             error={eventDetails.billingLocationError}
                                         />
 
                                         <ValidatedInput
-                                            label="Billing Reference"
+                                            label={t('labels.reference')}
                                             type="text"
                                             value={eventDetails.billingReference || ''}
                                             onChange={(e) => {
@@ -522,7 +527,7 @@ export function CustomerDetailsForm({
                                             placeholder="e.g. INV-98765"
                                             maxLength={100}
                                             showCharacterCount
-                                            helperText="Optional billing reference"
+                                            helperText={t('labels.optional')}
                                             error={eventDetails.billingReferenceError}
                                         />
                                     </div>
@@ -534,4 +539,4 @@ export function CustomerDetailsForm({
             </div>
         </div>
     );
-}
+}

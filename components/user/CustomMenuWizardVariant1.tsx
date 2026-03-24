@@ -8,6 +8,7 @@ import { MenuItem, MenuItemVariant } from './menuItemsData';
 import { DietaryIcon } from './DietaryIcon';
 import { ThankYouScreen } from './ThankYouScreen';
 import { WizardHeader } from './WizardHeader';
+import { useWizardTranslation } from '@/lib/i18n/client';
 import { DateTimePickerModal } from './DateTimePickerModal';
 import { submitWizardForm, requestBookingUnlock } from '@/lib/actions/wizard';
 import { SkeletonKPI, SkeletonPage } from '@/components/ui/skeleton-loaders';
@@ -23,6 +24,7 @@ import { MenuCart } from './MenuCart';
 export function CustomMenuWizard() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useWizardTranslation();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [activeTab, setActiveTab] = useState('contact');
@@ -469,29 +471,29 @@ export function CustomMenuWizard() {
   const steps = [
     {
       number: 1,
-      title: 'Event Details',
-      subtitle: 'Share your contact details, event date, and number of guests with us.',
+      title: t('steps.contact'),
+      subtitle: t('steps.welcome'),
       icon: User
     },
     {
       number: 2,
-      title: 'Choose Menu',
-      subtitle: 'Select from our curated offerings - from appetizers to desserts.',
+      title: t('steps.selection'),
+      subtitle: t('sections.chooseMenu'),
       icon: ClipboardList
     },
     {
       number: 3,
-      title: 'Review & Submit',
-      subtitle: 'We\'ll contact you to review your request and confirm availability.',
+      title: t('steps.review'),
+      subtitle: t('sections.reviewRequest'),
       icon: Check
     },
   ];
 
   const tabs = [
-    { id: 'contact', label: 'Contact', icon: User },
-    { id: 'address', label: 'Address', icon: MapPin },
-    { id: 'event', label: 'Event', icon: Calendar },
-    { id: 'requests', label: 'Requests', icon: ClipboardList },
+    { id: 'contact', label: t('steps.contact'), icon: User },
+    { id: 'address', label: t('sections.address'), icon: MapPin },
+    { id: 'event', label: t('sections.event'), icon: Calendar },
+    { id: 'requests', label: t('sections.specialRequests'), icon: ClipboardList },
   ];
 
   // Real-time validation errors for touched fields
@@ -931,10 +933,10 @@ export function CustomMenuWizard() {
 
       // Show success message
       if (isEditMode) {
-        alert('Your order has been updated successfully!');
+        alert(t('status.requestSent'));
       }
     } else {
-      alert(result.error || 'Failed to submit your request. Please try again.');
+      alert(result.error || t('status.noItems'));
     }
   };
 
@@ -1274,10 +1276,10 @@ export function CustomMenuWizard() {
             {/* Compact Row: Step Counter + Title */}
             <div className="flex items-center justify-between gap-3 mb-2">
               <p className="text-primary-foreground opacity-80 flex-shrink-0" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
-                Step {currentStep}/3
+                {t('status.itemsAvailable', { count: currentStep })}
               </p>
               <h2 className="text-primary-foreground text-right" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                {steps[currentStep - 1]?.title || 'Review & Submit'}
+                {steps[currentStep - 1]?.title || t('steps.review')}
               </h2>
             </div>
 
@@ -1427,7 +1429,7 @@ export function CustomMenuWizard() {
                       iconPosition="left"
                       size="sm"
                     >
-                      Back
+                      {t('actions.back')}
                     </Button>
                   )}
 
@@ -1441,7 +1443,7 @@ export function CustomMenuWizard() {
                         disabled={!isStep1Valid}
                         size="sm"
                       >
-                        Proceed to menu selection
+                        {t('actions.proceedToMenu')}
                       </Button>
                     )}
 
@@ -1453,7 +1455,7 @@ export function CustomMenuWizard() {
                         iconPosition="right"
                         size="sm"
                       >
-                        View Cart
+                        {t('status.notSelected')}
                       </Button>
                     )}
 
@@ -1467,12 +1469,12 @@ export function CustomMenuWizard() {
                         size="sm"
                       >
                         {isLocked
-                          ? 'Booking Locked'
+                          ? t('status.bookingLocked')
                           : isSubmitting
-                            ? 'Submitting...'
+                            ? t('status.processing')
                             : isEditMode
-                              ? 'Update Request'
-                              : 'Submit Request'}
+                              ? t('actions.updateRequest')
+                              : t('actions.submitRequest')}
                       </Button>
                     )}
                   </div>
@@ -1517,9 +1519,6 @@ export function CustomMenuWizard() {
                 </span>
               </div>
               <div className="flex flex-col items-start">
-                <span className="opacity-80" style={{ fontSize: '11px', fontWeight: 'var(--font-weight-medium)' }}>
-                  Per person
-                </span>
                 <span style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)', lineHeight: '1' }}>
                   CHF {getPerPersonSubtotal().toFixed(2)}
                 </span>

@@ -119,7 +119,7 @@ export function HeroVariant6() {
                     className="font-['Hanken_Grotesk',sans-serif] font-semibold text-[12px] tracking-[0.14em] uppercase"
                     style={{ color: GOLD }}
                   >
-                    Premium Catering &amp; Fine Dining
+                    {t('hero.premiumCatering')}
                   </span>
                 </div>
 
@@ -132,10 +132,10 @@ export function HeroVariant6() {
                     letterSpacing: "-0.02em",
                   }}
                 >
-                  Craft{" "}
-                  <span style={{ color: GOLD }}>Unforgettable</span>
+                  {t('hero.craft')}{" "}
+                  <span style={{ color: GOLD }}>{t('hero.unforgettable')}</span>
                   <br />
-                  Dining Experiences
+                  {t('hero.diningExperiences')}
                 </h1>
 
                 {/* Subtext */}
@@ -143,9 +143,7 @@ export function HeroVariant6() {
                   className="font-['Hanken_Grotesk',sans-serif] font-normal text-[rgba(255,255,255,0.72)] max-w-[540px]"
                   style={{ fontSize: "clamp(15px, 1.4vw, 18px)", lineHeight: 1.7 }}
                 >
-                  From intimate private dinners to grand celebrations — Olive
-                  brings elevated cuisine, flawless presentation, and
-                  personalised service to every occasion.
+                  {t('hero.heroDescription')}
                 </p>
 
                 {/* CTA row */}
@@ -155,7 +153,7 @@ export function HeroVariant6() {
                     className="h-[52px] px-8 rounded-[8px] font-['Hanken_Grotesk',sans-serif] font-medium text-[15px] flex items-center gap-2 transition-all duration-200 hover:brightness-110 active:scale-[0.97] shadow-[0_4px_24px_rgba(157,174,145,0.35)]"
                     style={{ backgroundColor: GOLD, color: DARK }}
                   >
-                    Plan Your Event
+                    {t('hero.planEvent')}
                     <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
                       <path d="M3 8h10M9 4l4 4-4 4" stroke={DARK} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
@@ -170,7 +168,7 @@ export function HeroVariant6() {
                       backdropFilter: "blur(8px)",
                     }}
                   >
-                    See How It Works
+                    {t('hero.seeHowItWorks')}
                   </a>
                 </div>
 
@@ -184,9 +182,9 @@ export function HeroVariant6() {
                   }}
                 >
                   {[
-                    { value: "500+", label: "Events Catered" },
-                    { value: "50+", label: "Menu Options" },
-                    { value: "4.9★", label: "Guest Rating" },
+                    { value: t('hero.stats.events'), label: t('hero.eventsCatered') },
+                    { value: t('hero.stats.menus'), label: t('hero.menuOptions') },
+                    { value: t('hero.stats.rating'), label: t('hero.clientRating') },
                   ].map((stat, i) => (
                     <div
                       key={i}

@@ -55,55 +55,55 @@ export function CTASectionVariant1() {
                     backdropFilter: "blur(8px)",
                   }}
                 >
-                  <span
-                    className="font-['Hanken_Grotesk',sans-serif] font-semibold text-[12px] tracking-[0.14em] uppercase"
-                    style={{ color: GOLD }}
-                  >
-                    Ready to Begin?
-                  </span>
-                </div>
+                    <span
+                      className="font-['Hanken_Grotesk',sans-serif] font-semibold text-[12px] tracking-[0.14em] uppercase"
+                      style={{ color: GOLD }}
+                    >
+                      {t('cta.readyToBegin')}
+                    </span>
+                  </div>
 
-                <h2
-                  className="font-['Hanken_Grotesk',sans-serif] font-semibold text-white max-w-[680px]"
-                  style={{
-                    fontSize: "clamp(28px, 3.5vw, 48px)",
-                    lineHeight: 1.15,
-                    letterSpacing: "-0.02em",
-                  }}
-                >
-                  {t('cta.subtitle')} <span style={{ color: GOLD }}>Minutes</span>
-                </h2>
-
-                <p
-                  className="font-['Hanken_Grotesk',sans-serif] font-normal text-[rgba(255,255,255,0.65)] max-w-[540px] mt-6"
-                  style={{ fontSize: "clamp(15px, 1.2vw, 17px)", lineHeight: 1.7 }}
-                >
-                  {t('cta.body')}
-                </p>
-
-                {/* CTA buttons */}
-                <div className="flex flex-wrap items-center justify-center gap-4 mt-10">
-                  <Link
-                    href="/wizard"
-                    className="h-[52px] px-8 rounded-[8px] font-['Hanken_Grotesk',sans-serif] font-medium text-[15px] flex items-center gap-2 transition-all duration-200 hover:brightness-110 active:scale-[0.97]"
-                    style={{ backgroundColor: GOLD, color: DARK }}
-                  >
-                    {t('cta.button')}
-                  </Link>
-                  <a
-                    href="https://images.romystreit.com/raumforum-oliv-24/snrf6ty9je"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="h-[52px] px-8 rounded-[8px] font-['Hanken_Grotesk',sans-serif] font-medium text-[15px] text-white flex items-center gap-2 transition-all duration-200 hover:bg-[rgba(255,255,255,0.12)]"
+                  <h2
+                    className="font-['Hanken_Grotesk',sans-serif] font-semibold text-white max-w-[680px]"
                     style={{
-                      background: "rgba(255,255,255,0.08)",
-                      border: "1.5px solid rgba(255,255,255,0.22)",
-                      backdropFilter: "blur(8px)",
+                      fontSize: "clamp(28px, 3.5vw, 48px)",
+                      lineHeight: 1.15,
+                      letterSpacing: "-0.02em",
                     }}
                   >
-                    View Gallery
-                  </a>
-                </div>
+                    {t('cta.subtitle')} <span style={{ color: GOLD }}>{t('cta.minutes')}</span>
+                  </h2>
+
+                  <p
+                    className="font-['Hanken_Grotesk',sans-serif] font-normal text-[rgba(255,255,255,0.65)] max-w-[540px] mt-6"
+                    style={{ fontSize: "clamp(15px, 1.2vw, 17px)", lineHeight: 1.7 }}
+                  >
+                    {t('cta.body')}
+                  </p>
+
+                  {/* CTA buttons */}
+                  <div className="flex flex-wrap items-center justify-center gap-4 mt-10">
+                    <Link
+                      href="/wizard"
+                      className="h-[52px] px-8 rounded-[8px] font-['Hanken_Grotesk',sans-serif] font-medium text-[15px] flex items-center gap-2 transition-all duration-200 hover:brightness-110 active:scale-[0.97]"
+                      style={{ backgroundColor: GOLD, color: DARK }}
+                    >
+                      {t('cta.button')}
+                    </Link>
+                    <a
+                      href="https://images.romystreit.com/raumforum-oliv-24/snrf6ty9je"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="h-[52px] px-8 rounded-[8px] font-['Hanken_Grotesk',sans-serif] font-medium text-[15px] text-white flex items-center gap-2 transition-all duration-200 hover:bg-[rgba(255,255,255,0.12)]"
+                      style={{
+                        background: "rgba(255,255,255,0.08)",
+                        border: "1.5px solid rgba(255,255,255,0.22)",
+                        backdropFilter: "blur(8px)",
+                      }}
+                    >
+                      {t('cta.viewGallery')}
+                    </a>
+                  </div>
               </div>
             </div>
           </div>
