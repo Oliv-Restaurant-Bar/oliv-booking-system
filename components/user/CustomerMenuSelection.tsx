@@ -164,7 +164,7 @@ export function CustomerMenuSelection({
     <div className={`bg-[#f7f7f8] min-h-screen flex ${isSubmitting ? 'pointer-events-none select-none' : ''}`}>
       {/* Left Column: Menu Content */}
       <div className={`flex-1 min-w-0 pb-[100px] transition-opacity duration-300 ${isSubmitting ? 'opacity-50' : ''}`}>
-        <div className="max-w-[1020px] mx-auto px-6">
+        <div className="mx-auto px-6">
           {/* Title Section */}
           <div className="pt-6 pb-2">
             <div className="flex items-center gap-3 mb-2">

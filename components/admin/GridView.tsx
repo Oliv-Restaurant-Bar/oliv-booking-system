@@ -58,28 +58,29 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 md:gap-4">
       {bookings.map((booking) => (
         <div
           key={booking.id}
-          className="bg-card border border-border rounded-xl p-4 md:p-5 hover:shadow-md transition-all"
+          className="bg-card border border-border rounded-xl p-4 md:p-5 hover:shadow-md transition-all h-full flex flex-col"
         >
           {/* Header */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <div>
+          <div className="flex items-center justify-between mb-3 min-h-[44px]">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="min-w-0">
                 <h4
-                  className="text-foreground"
+                  className="text-foreground truncate"
                   style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}
+                  title={booking.customer.name}
                 >
-                  {booking.customer.name.slice(0, 20)} {booking.customer.name.length > 20 ? '...' : ''}
+                  {booking.customer.name}
                 </h4>
-                <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                  {booking.event.occasion.slice(0, 20)} {booking.event.occasion.length > 20 ? '...' : ''}
+                <p className="text-muted-foreground truncate" style={{ fontSize: 'var(--text-small)' }} title={booking.event.occasion}>
+                  {booking.event.occasion}
                 </p>
               </div>
             </div>
-            <div className="flex flex-col items-end gap-2">
+            <div className="flex flex-col items-end gap-2 flex-shrink-0">
               <div className="flex items-center gap-2 flex-wrap justify-end">
                 {booking.kitchenPdf && (
                   <KitchenPdfStatusBadge
@@ -93,8 +94,8 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
           </div>
 
           {/* Refined Information Rows */}
-          <div className="space-y-2 mb-4">
-            <div className="flex items-center justify-between gap-4">
+          <div className="space-y-2 mb-4 flex-1">
+            <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <Mail className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
                 <span className="text-muted-foreground truncate" style={{ fontSize: 'var(--text-small)' }}>
@@ -110,10 +111,10 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
             </div>
 
             {/* Row 2: Phone + Guests */}
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <Phone className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                <span className="text-muted-foreground truncate" style={{ fontSize: 'var(--text-small)' }}>
                   {booking.customer.phone}
                 </span>
               </div>
@@ -125,48 +126,56 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
               </div>
             </div>
 
-            {/* Row 3: Assigned + Location/Amount */}
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2 flex-1 min-w-0">
+            {/* Row 3: Assigned + Time + Venue + Amount */}
+            <div className="flex flex-wrap items-center justify-between gap-y-2 gap-x-4 pt-1">
+              {/* Assigned section - can take up whole line or wrap venue to next line */}
+              <div className="flex items-center gap-2 flex-1 min-w-[150px]">
                 <User className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                {booking.assignedTo ? (
-                  <span className="text-muted-foreground truncate" style={{ fontSize: 'var(--text-small)' }}>
-                    {booking.assignedTo.name}
-                    {booking.createdAt && (
-                      <span className="ml-1 opacity-60 font-normal">
-                        • {formatRelativeTime(booking.createdAt, timezone)}
+                <div className="flex items-baseline gap-1 min-w-0 flex-1 overflow-hidden h-5">
+                  {booking.assignedTo ? (
+                    <span 
+                      className="text-muted-foreground truncate" 
+                      style={{ fontSize: 'var(--text-small)' }}
+                      title={booking.assignedTo.name}
+                    >
+                      {booking.assignedTo.name}
+                    </span>
+                  ) : (
+                    <Tooltip title={bookingT('tooltips.notAssignedYet')} position="top">
+                      <span className="text-muted-foreground truncate" style={{ fontSize: 'var(--text-small)' }}>
+                        {bookingT('notAssignedYet')}
                       </span>
-                    )}
-                  </span>
-                ) : (
-                  <Tooltip title={bookingT('tooltips.notAssignedYet')} position="top">
-                    <span className="text-muted-foreground truncate" style={{ fontSize: 'var(--text-small)' }}>
-                      {bookingT('notAssignedYet')}
-                      {booking.createdAt && (
-                        <span className="ml-1 opacity-60 font-normal">
-                          • {formatRelativeTime(booking.createdAt, timezone)}
-                        </span>
-                      )}
+                    </Tooltip>
+                  )}
+                  {booking.createdAt && (
+                    <span className="opacity-60 font-normal flex-shrink-0" style={{ fontSize: 'var(--text-small)' }}>
+                      • {formatRelativeTime(booking.createdAt, timezone)}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Venue + Amount - often grouped together at the end */}
+              <div className="flex items-center gap-4 flex-shrink-0 ml-auto md:ml-0">
+                {booking.event.location && (
+                  <div className="flex items-center gap-1.5 text-primary font-medium" style={{ fontSize: 'var(--text-small)' }}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                    <span className="truncate max-w-[120px]" title={booking.event.location}>
+                      {booking.event.location}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Banknote className="w-3.5 h-3.5 text-muted-foreground" />
+                  <Tooltip title={t('bookings.tooltips.amount')} position="top">
+                    <span
+                      className="text-foreground"
+                      style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}
+                    >
+                      {booking.amount}
                     </span>
                   </Tooltip>
-                )}
-              </div>
-              {booking.event.location && (
-                <div className="flex items-center gap-1.5 text-primary font-medium" style={{ fontSize: 'var(--text-small)' }}>
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                  {booking.event.location.slice(0, 20)}{booking.event.location.length > 20 ? '...' : ''}
                 </div>
-              )}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <Banknote className="w-3.5 h-3.5 text-muted-foreground" />
-                <Tooltip title={t('bookings.tooltips.amount')} position="top">
-                  <span
-                    className="text-foreground"
-                    style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}
-                  >
-                    {booking.amount}
-                  </span>
-                </Tooltip>
               </div>
             </div>
           </div>

@@ -2,10 +2,9 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Calendar, Users, Mail, Phone, User, Check, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Send, Eye, Edit2, ClipboardList, Building2, MapPin, Clock, Sparkles, ShoppingCart, X, Plus, Minus, AlertTriangle, Lock, CreditCard } from 'lucide-react';
+import { Calendar, User, Check, ChevronLeft, ChevronRight, Send, ClipboardList, MapPin, ShoppingCart, Lock } from 'lucide-react';
 import { Button } from './Button';
-import { MenuItem, MenuItemVariant } from './menuItemsData';
-import { DietaryIcon } from './DietaryIcon';
+import { MenuItem } from './menuItemsData';
 import { ThankYouScreen } from './ThankYouScreen';
 import { WizardHeader } from './WizardHeader';
 import { useWizardTranslation } from '@/lib/i18n/client';
@@ -14,7 +13,6 @@ import { submitWizardForm, requestBookingUnlock } from '@/lib/actions/wizard';
 import { SkeletonKPI, SkeletonPage } from '@/components/ui/skeleton-loaders';
 import { customerNameSchema, customerBusinessSchema, customerPhoneSchema, customerStreetSchema, customerPlzSchema, customerLocationSchema, customerOccasionSchema, customerSpecialRequestsSchema, userEmailSchema } from '@/lib/validation/schemas';
 import { EventDetails } from '@/lib/types';
-import { CustomerSidebar } from './CustomerSidebar';
 import { CustomerDetailsForm } from './CustomerDetailsForm';
 import { CustomerMenuSelection } from './CustomerMenuSelection';
 import { CustomerSummary } from './CustomerSummary';
@@ -902,10 +900,10 @@ export function CustomMenuWizard() {
           const item = menuItems.find(i => i.id === itemId);
           const quantity = itemQuantities[itemId] || 1;
           const variantId = itemVariants[itemId];
-          const variant = variantId && Array.isArray(item?.variants) 
-            ? (item?.variants as any[]).find(v => v.id === variantId) 
+          const variant = variantId && Array.isArray(item?.variants)
+            ? (item?.variants as any[]).find(v => v.id === variantId)
             : null;
-          
+
           return {
             id: itemId,
             name: item?.name || 'Unknown Item',
@@ -1254,8 +1252,8 @@ export function CustomMenuWizard() {
   if (isLoadingEdit) {
     return (
       <div className="min-h-screen bg-background">
-        <WizardHeader 
-          onBack={currentStep > 1 ? () => setCurrentStep(1) : undefined} 
+        <WizardHeader
+          onBack={currentStep > 1 ? () => setCurrentStep(1) : undefined}
         />
         <div className="p-8">
           <SkeletonPage content="custom" hasHeader hasKPI={false} />
@@ -1266,8 +1264,8 @@ export function CustomMenuWizard() {
 
   return (
     <>
-      <WizardHeader 
-        onBack={currentStep > 1 ? () => setCurrentStep(1) : undefined} 
+      <WizardHeader
+        onBack={currentStep > 1 ? () => setCurrentStep(1) : undefined}
       />
       <div className="min-h-screen bg-background flex flex-col">
         {/* Mobile Step Indicator - Only visible on mobile */}
@@ -1307,7 +1305,11 @@ export function CustomMenuWizard() {
         <div className="flex-1 flex flex-col items-center w-full">
           {/* Right Content Area - w-full - With left margin on desktop to account for fixed sidebar */}
           <main className={`w-full bg-background ${currentStep === 2 ? "" : "p-4 lg:p-8"}`}>
-            <div className={currentStep === 2 ? "w-full" : "max-w-7xl mx-auto"}>
+            <div className={
+              currentStep === 2 ? "w-full" :
+                currentStep === 1 ? "max-w-4xl mx-auto" :
+                  "max-w-5xl mx-auto"
+            }>
               <div>
                 {/* Step 1: Event Details - SINGLE PAGE LAYOUT WITH GROUPED SECTIONS */}
                 {currentStep === 1 && (
@@ -1412,78 +1414,78 @@ export function CustomMenuWizard() {
                 {/* Navigation Buttons - Hidden on Step 2 because it has its own sidebar-aware navigation */}
                 {currentStep !== 2 && (
                   <div className="sticky bottom-0 bg-card flex items-center justify-between mt-3 pt-3 border-t border-border gap-2 -mx-5 px-5 -mb-5 pb-3 lg:-mx-8 lg:px-8 lg:-mb-8 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]" style={{ borderRadius: '0 0 var(--radius-card) var(--radius-card)' }}>
-                  {/* Back button - Show when on Step 2 or 3 */}
-                  {currentStep > 1 && (
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        if (currentStep === 2) {
-                          // On Step 2, go to previous category or back to Step 1
-                          handleStep2Back();
-                        } else {
-                          // Step 3 or higher, navigate to previous step
-                          handleBack();
-                        }
-                      }}
-                      icon={ChevronLeft}
-                      iconPosition="left"
-                      size="sm"
-                    >
-                      {t('actions.back')}
-                    </Button>
-                  )}
-
-                  <div className="flex items-center gap-2 ml-auto">
-                    {currentStep === 1 && (
+                    {/* Back button - Show when on Step 2 or 3 */}
+                    {currentStep > 1 && (
                       <Button
-                        variant="primary"
-                        onClick={handleStep1Navigation}
-                        icon={ChevronRight}
-                        iconPosition="right"
-                        disabled={!isStep1Valid}
+                        variant="outline"
+                        onClick={() => {
+                          if (currentStep === 2) {
+                            // On Step 2, go to previous category or back to Step 1
+                            handleStep2Back();
+                          } else {
+                            // Step 3 or higher, navigate to previous step
+                            handleBack();
+                          }
+                        }}
+                        icon={ChevronLeft}
+                        iconPosition="left"
                         size="sm"
                       >
-                        {t('actions.proceedToMenu')}
+                        {t('actions.back')}
                       </Button>
                     )}
 
-                    {currentStep === 2 && (
-                      <Button
-                        variant="primary"
-                        onClick={() => setIsMobileDrawerOpen(true)}
-                        icon={ShoppingCart}
-                        iconPosition="right"
-                        size="sm"
-                      >
-                        {t('status.notSelected')}
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-2 ml-auto">
+                      {currentStep === 1 && (
+                        <Button
+                          variant="primary"
+                          onClick={handleStep1Navigation}
+                          icon={ChevronRight}
+                          iconPosition="right"
+                          disabled={!isStep1Valid}
+                          size="sm"
+                        >
+                          {t('actions.proceedToMenu')}
+                        </Button>
+                      )}
 
-                    {currentStep === 3 && (
-                      <Button
-                        variant={isLocked ? "outline" : "primary"}
-                        onClick={isLocked ? undefined : handleSubmit}
-                        icon={isLocked ? Lock : Send}
-                        iconPosition="right"
-                        disabled={(!termsAccepted || isSubmitting) || isLocked}
-                        size="sm"
-                      >
-                        {isLocked
-                          ? t('status.bookingLocked')
-                          : isSubmitting
-                            ? t('status.processing')
-                            : isEditMode
-                              ? t('actions.updateRequest')
-                              : t('actions.submitRequest')}
-                      </Button>
-                    )}
+                      {currentStep === 2 && (
+                        <Button
+                          variant="primary"
+                          onClick={() => setIsMobileDrawerOpen(true)}
+                          icon={ShoppingCart}
+                          iconPosition="right"
+                          size="sm"
+                        >
+                          {t('status.notSelected')}
+                        </Button>
+                      )}
+
+                      {currentStep === 3 && (
+                        <Button
+                          variant={isLocked ? "outline" : "primary"}
+                          onClick={isLocked ? undefined : handleSubmit}
+                          icon={isLocked ? Lock : Send}
+                          iconPosition="right"
+                          disabled={(!termsAccepted || isSubmitting) || isLocked}
+                          size="sm"
+                        >
+                          {isLocked
+                            ? t('status.bookingLocked')
+                            : isSubmitting
+                              ? t('status.processing')
+                              : isEditMode
+                                ? t('actions.updateRequest')
+                                : t('actions.submitRequest')}
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
-        </main>
-      </div>
+          </main>
+        </div>
 
         <ItemDetailsModal
           item={detailsModalItem}
@@ -1562,9 +1564,9 @@ export function CustomMenuWizard() {
                   isFlatFee={isFlatFee}
                   isPerPerson={isPerPerson}
                   onContinue={() => { setIsMobileDrawerOpen(false); handleStep2Navigation(); }}
-                  onEditDateTime={() => { 
-                    setIsMobileDrawerOpen(false); 
-                    setIsDateTimePickerOpen(true); 
+                  onEditDateTime={() => {
+                    setIsMobileDrawerOpen(false);
+                    setIsDateTimePickerOpen(true);
                   }}
                   includeBeveragePrices={includeBeveragePrices}
                   setIncludeBeveragePrices={setIncludeBeveragePrices}
