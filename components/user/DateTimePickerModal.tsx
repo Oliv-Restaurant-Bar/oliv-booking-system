@@ -290,10 +290,10 @@ export function DateTimePickerModal({
                 </div>
               </div>
 
-              {/* Two Column Layout */}
-              <div className="flex flex-col md:flex-row">
-                {/* Left: Calendar */}
-                <div className="flex-1 px-6 py-4 border-r border-border">
+              {/* Two Column Layout - Scrollable on mobile, flexible to take remaining height */}
+              <div className="flex flex-col md:flex-row flex-1 overflow-y-auto min-h-0 md:overflow-visible">
+                {/* Left: Calendar - Flexible on desktop, fixed on mobile */}
+                <div className="w-full md:flex-1 px-6 py-4 border-b md:border-b-0 md:border-r border-border">
                   {/* Day Headers */}
                   <div className="grid grid-cols-7 gap-1 mb-2" role="row">
                     {dayNames.map(day => (
@@ -357,8 +357,8 @@ export function DateTimePickerModal({
                   </div>
                 </div>
 
-                {/* Right: Time Slots */}
-                <div className="w-full md:w-48 bg-muted px-5 py-4 overflow-y-auto max-h-[350px]">
+                {/* Right: Time Slots - Internal scroll on desktop, expand on mobile */}
+                <div className="w-full md:w-48 bg-muted px-5 py-4 md:overflow-y-auto md:max-h-[350px]">
                   <h3 className="text-sm font-semibold text-muted-foreground mb-3">
                     Uhrzeit
                   </h3>
@@ -407,12 +407,12 @@ export function DateTimePickerModal({
               </div>
 
               {/* Footer */}
-              <div className="px-6 py-4 bg-muted border-t border-border flex-shrink-0">
+              <div className="px-6 py-4 bg-card border-t border-border flex-shrink-0">
                 <button
                   ref={lastFocusableRef}
                   onClick={onClose}
-                  className="w-full py-3.5 rounded-xl font-semibold text-base bg-card text-foreground border border-border hover:bg-accent hover:shadow-sm transition-all"
-                  style={{ borderRadius: 'var(--radius)' }}
+                  className="w-full py-3.5 rounded-xl font-semibold text-base text-white shadow-lg transition-all hover:opacity-90 active:scale-[0.98]"
+                  style={{ backgroundColor: 'var(--primary)', borderRadius: 'var(--radius)' }}
                 >
                   Select
                 </button>
