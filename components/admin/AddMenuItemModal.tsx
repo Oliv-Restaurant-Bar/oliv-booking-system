@@ -24,7 +24,6 @@ interface AddMenuItemModalProps {
     image: File | null;
     imageUrl: string;
     isActive: boolean;
-    isCombo: boolean;
     variants: any[];
     dietaryType: 'veg' | 'non-veg' | 'vegan' | 'none';
     dietaryTags: string[];
@@ -335,28 +334,7 @@ export function AddMenuItemModal({
           </div>
         )}
 
-        <div className="flex items-center gap-3 p-4 bg-muted/20 rounded-lg border border-border">
-          <div
-            className="flex-shrink-0 cursor-pointer"
-            onClick={() => setNewMenuItem({ ...newMenuItem, isCombo: !newMenuItem.isCombo })}
-          >
-            <div className={`w-6 h-6 rounded border-2 transition-colors flex items-center justify-center ${newMenuItem.isCombo ? 'bg-primary border-primary' : 'border-border'}`}>
-              {newMenuItem.isCombo && <Check className="w-4 h-4 text-white" />}
-            </div>
-          </div>
-          <div>
-            <label
-              className="block text-foreground cursor-pointer"
-              style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
-              onClick={() => setNewMenuItem({ ...newMenuItem, isCombo: !newMenuItem.isCombo })}
-            >
-              {t('labels.isCombo')}
-            </label>
-            <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-              {t('descriptions.isCombo')}
-            </p>
-          </div>
-        </div>
+
 
         <div>
           <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>

@@ -379,20 +379,6 @@ export function MenuCategoriesTab({
                                           <DietaryIcon type={item.dietaryType as any} size="sm" />
                                         )}
                                         <span className={`text-ellipsis overflow-hidden whitespace-nowrap ${item.name.slice(0, 25)} ${item.name.length > 25 ? '...' : ''}`}>{item.name}</span>
-                                        {item.isCombo && (
-                                          <span
-                                            className="px-2 py-0.5 rounded text-xs uppercase inline-block ml-1"
-                                            style={{
-                                              backgroundColor: 'rgba(var(--primary-rgb), 0.1)',
-                                              color: 'var(--primary)',
-                                              fontSize: '10px',
-                                              fontWeight: 'var(--font-weight-semibold)',
-                                              letterSpacing: '0.5px'
-                                            }}
-                                          >
-                                            {t('labels.comboItem')}
-                                          </span>
-                                        )}
                                       </h5>
                                       <p className="text-muted-foreground line-clamp-1" style={{ fontSize: 'var(--text-small)' }}>
                                         {item.description}

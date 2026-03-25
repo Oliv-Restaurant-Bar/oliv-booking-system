@@ -667,7 +667,7 @@
         "pricingMode": "Pricing Mode",
         "pricingModePrice": "Price",
         "pricingModeVariants": "Variants",
-        "isCombo": "Is Combo Pack",
+
         "itemSettingsOpt": "Item Settings (Optional)",
         "addonsOpt": "Addons & Choices (Optional)",
         "selected": "selected",
@@ -747,7 +747,7 @@
         "consumptionDesc": "Billed based on actual usage"
       },
       "descriptions": {
-        "isCombo": "A combo pack contains multiple items sold together",
+
         "addDietaryInfo": "Add dietary information like vegetarian, vegan, or non-vegetarian labels to this item.",
         "selectAddonGroups": "Choose which {type} this group belongs to",
         "optionalGroup": "Customers can choose any number of items",

@@ -179,7 +179,6 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
     image: null as File | null,
     imageUrl: '',
     isActive: true,
-    isCombo: false,
     variants: [] as any[],
     dietaryType: 'veg' as any,
     dietaryTags: [] as string[],
@@ -334,7 +333,6 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
       pricingType: newMenuItem.pricingType,
       averageConsumption: parseInt(newMenuItem.averageConsumption) || 1,
       isActive: newMenuItem.isActive,
-      isCombo: newMenuItem.isCombo || false,
       dietaryType: newMenuItem.dietaryType as any,
       dietaryTags: newMenuItem.dietaryTags,
       ingredients: newMenuItem.ingredients,
@@ -604,7 +602,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
                   setEditingMenuItemId(null);
                   setNewMenuItem({
                     name: '', description: '', price: '', pricingType: 'per_person', averageConsumption: '',
-                    image: null, imageUrl: '', isActive: true, isCombo: false, variants: [], assignedAddonGroups: [],
+                    image: null, imageUrl: '', isActive: true, variants: [], assignedAddonGroups: [],
                     dietaryType: 'veg', dietaryTags: [], ingredients: '', allergens: [], additives: [],
                     nutritionalInfo: { servingSize: '', calories: '', protein: '', carbs: '', fat: '', fiber: '', sugar: '', sodium: '' }
                   });
@@ -618,7 +616,6 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
                     pricingType: item.pricingType || 'per_person',
                     averageConsumption: (item as any).averageConsumption ? String((item as any).averageConsumption) : '1',
                     image: null, imageUrl: item.image,
-                    isCombo: (item as any).isCombo || false,
                     variants: item.variants || [],
                     assignedAddonGroups: item.assignedAddonGroups || [],
                     nutritionalInfo: (item as any).nutritionalInfo || { servingSize: '', calories: '', protein: '', carbs: '', fat: '', fiber: '', sugar: '', sodium: '' }

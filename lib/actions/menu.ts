@@ -144,7 +144,6 @@ export async function createMenuItem(input: {
   pricePerPerson: number;
   pricingType?: "per_person" | "flat_fee" | "billed_by_consumption";
   imageUrl?: string;
-  isCombo?: boolean;
   sortOrder?: number;
   variants?: any[];
   dietaryType?: "veg" | "non-veg" | "vegan" | "none";
@@ -180,7 +179,6 @@ export async function createMenuItem(input: {
       'imageUrl',
       'isActive',
       'variants',
-      'isCombo',
       'dietaryType',
       'dietaryTags',
       'ingredients',
@@ -238,7 +236,6 @@ export async function updateMenuItem(id: string, updates: Partial<typeof menuIte
       'imageUrl',
       'isActive',
       'variants',
-      'isCombo',
       'dietaryType',
       'dietaryTags',
       'ingredients',

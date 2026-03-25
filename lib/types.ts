@@ -10,7 +10,6 @@ export interface MenuItemData {
   variants: VariantOption[];
   dietaryType: 'veg' | 'non-veg' | 'vegan' | 'none';
   dietaryTags: string[];
-  isCombo?: boolean;
   ingredients: string;
   allergens: string[];
   additives: string[];

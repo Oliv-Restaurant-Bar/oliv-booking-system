@@ -248,7 +248,6 @@ export const menuItems = pgTable(
     imageUrl: text("image_url"),
     isActive: boolean("is_active").notNull().default(true),
     variants: jsonb("variants"),
-    isCombo: boolean("is_combo").notNull().default(false),
     dietaryType: text("dietary_type", { enum: ["veg", "non-veg", "vegan", "none"] }).notNull().default("none"),
     dietaryTags: jsonb("dietary_tags").$type<string[]>().default([]),
     ingredients: text("ingredients"),

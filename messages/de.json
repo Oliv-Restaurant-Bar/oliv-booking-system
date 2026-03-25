@@ -667,7 +667,7 @@
         "pricingMode": "Preismodus",
         "pricingModePrice": "Preis",
         "pricingModeVariants": "Varianten",
-        "isCombo": "Ist Kombipaket",
+
         "itemSettingsOpt": "Artikeleinstellungen (Optional)",
         "addonsOpt": "Optionen & Auswahl (Optional)",
         "selected": "ausgewählt",
@@ -745,7 +745,7 @@
         "consumptionDesc": "Abrechnung nach tatsächlichem Verbrauch"
       },
       "descriptions": {
-        "isCombo": "Ein Kombipaket enthält mehrere zusammen verkaufte Artikel",
+
         "addDietaryInfo": "Fügen Sie diesem Artikel Informationen zur Ernährungsweise wie vegetarisch, vegan oder nicht-vegetarisch hinzu.",
         "selectAddonGroups": "Wählen Sie aus, zu welchem {type} diese Gruppe gehört",
         "optionalGroup": "Kunden können eine beliebige Anzahl von Artikeln wählen",

@@ -101,11 +101,9 @@ export function CustomMenuWizard() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
-  const [categoryFilterMode, setCategoryFilterMode] = useState<Record<string, 'combo' | 'individual'>>({});
 
-  const categoryHasCombo = useMemo(() => {
-    return menuItems.some(item => item.category === selectedCategory && item.isCombo);
-  }, [menuItems, selectedCategory]);
+
+
   const [isUnlockRequested, setIsUnlockRequested] = useState(false);
   const [isRequestingUnlock, setIsRequestingUnlock] = useState(false);
   const [includeBeveragePrices, setIncludeBeveragePrices] = useState(false);
@@ -339,7 +337,6 @@ export function CustomMenuWizard() {
                 additives: item.additives || [],
                 ingredients: item.ingredients || '',
                 isGlutenFree: item.dietaryTags?.includes('Gluten Free') || item.dietaryTags?.includes('gluten-free') || false,
-                isCombo: item.isCombo || false,
                 averageConsumption: item.averageConsumption || null,
                 variants: item.variants || [],
                 addOns: (() => {
@@ -1347,13 +1344,11 @@ export function CustomMenuWizard() {
                     itemAddOns={itemAddOns}
                     itemComments={itemComments}
                     isCartCollapsed={isCartCollapsed}
-                    categoryFilterMode={categoryFilterMode}
                     step2Error={step2Error}
                     categoryRefs={categoryRefs}
                     setSelectedCategory={setSelectedCategory}
                     setItemGuestCounts={setItemGuestCounts}
                     setIsCartCollapsed={setIsCartCollapsed}
-                    setCategoryFilterMode={setCategoryFilterMode}
                     setSelectedItems={setSelectedItems}
                     setItemQuantities={setItemQuantities}
                     setItemAddOns={setItemAddOns}
@@ -1365,7 +1360,6 @@ export function CustomMenuWizard() {
                     getConsumptionSubtotal={getConsumptionSubtotal}
                     getSelectedItemsByCategory={getSelectedItemsByCategory}
                     handleCategoryChange={handleCategoryChange}
-                    categoryHasCombo={categoryHasCombo}
                     isConsumption={isConsumption}
                     isFlatFee={isFlatFee}
                     isPerPerson={isPerPerson}

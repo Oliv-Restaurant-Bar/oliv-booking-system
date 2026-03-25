@@ -20,13 +20,11 @@ interface CustomerMenuSelectionProps {
   itemAddOns: Record<string, string[]>;
   itemComments: Record<string, string>;
   isCartCollapsed: boolean;
-  categoryFilterMode: Record<string, 'combo' | 'individual'>;
   step2Error: string;
   categoryRefs: React.MutableRefObject<Record<string, HTMLButtonElement | null>>;
   setSelectedCategory: (category: string) => void;
   setItemGuestCounts: React.Dispatch<React.SetStateAction<Record<string, number>>>;
   setIsCartCollapsed: (value: boolean) => void;
-  setCategoryFilterMode: (mode: Record<string, 'combo' | 'individual'>) => void;
   setSelectedItems: React.Dispatch<React.SetStateAction<string[]>>;
   setItemQuantities: React.Dispatch<React.SetStateAction<Record<string, number>>>;
   setItemAddOns: React.Dispatch<React.SetStateAction<Record<string, string[]>>>;
@@ -38,7 +36,6 @@ interface CustomerMenuSelectionProps {
   getConsumptionSubtotal: () => number;
   getSelectedItemsByCategory: (category: string) => MenuItem[];
   handleCategoryChange: (category: string) => void;
-  categoryHasCombo: boolean;
   isConsumption: (item: MenuItem) => boolean;
   isFlatFee: (item: MenuItem) => boolean;
   isPerPerson: (item: MenuItem) => boolean;
@@ -66,13 +63,11 @@ export function CustomerMenuSelection({
   itemAddOns,
   itemComments,
   isCartCollapsed,
-  categoryFilterMode,
   step2Error,
   categoryRefs,
   setSelectedCategory,
   setItemGuestCounts,
   setIsCartCollapsed,
-  setCategoryFilterMode,
   setSelectedItems,
   setItemQuantities,
   setItemAddOns,
@@ -84,7 +79,6 @@ export function CustomerMenuSelection({
   getConsumptionSubtotal,
   getSelectedItemsByCategory,
   handleCategoryChange,
-  categoryHasCombo,
   isConsumption,
   isFlatFee,
   isPerPerson,
@@ -265,21 +259,12 @@ export function CustomerMenuSelection({
               <div className="flex flex-col gap-6">
                 {categories.map((cat) => {
                   const categoryItems = menuItems.filter(item => item.category === cat);
-                  const hasCombos = categoryItems.some(item => item.isCombo);
-
                   const filteredItems = categoryItems.filter(item => {
                     const matchesSearch = searchQuery.trim() === '' ||
                       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                       item.description.toLowerCase().includes(searchQuery.toLowerCase());
 
-                    if (!matchesSearch) return false;
-
-                    // If category has combos, default to 'individual' mode
-                    if (hasCombos) {
-                      const mode = categoryFilterMode[cat] || 'individual';
-                      return mode === 'combo' ? item.isCombo : !item.isCombo;
-                    }
-                    return true;
+                    return matchesSearch;
                   });
 
                   if (filteredItems.length === 0) return null;
@@ -296,36 +281,7 @@ export function CustomerMenuSelection({
                         <span className="font-normal text-[12px] text-[#9ca3af]">{t('status.itemsAvailable', { count: filteredItems.length })}</span>
                       </div>
 
-                      {hasCombos && (
-                        <div className="mb-4 flex items-center justify-start">
-                          <div className="bg-muted/30 p-1 rounded-lg border border-border flex justify-center gap-1 shadow-sm max-w-[400px]">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setCategoryFilterMode({ ...categoryFilterMode, [cat]: categoryFilterMode[cat] === 'combo' ? (undefined as any) : 'combo' });
-                              }}
-                              className={`px-4 py-1.5 rounded-md transition-all text-xs font-medium flex justify-center gap-2 ${categoryFilterMode[cat] === 'combo'
-                                ? 'bg-[#9dae91] text-[#2c2f34] shadow-sm'
-                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                                }`}
-                            >
-                              {t('labels.comboPack')}
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setCategoryFilterMode({ ...categoryFilterMode, [cat]: categoryFilterMode[cat] === 'individual' ? (undefined as any) : 'individual' });
-                              }}
-                              className={`px-4 py-1.5 rounded-md transition-all text-xs font-medium flex justify-center gap-2 ${(categoryFilterMode[cat] || 'individual') === 'individual'
-                                ? 'bg-[#9dae91] text-[#2c2f34] shadow-sm'
-                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                                }`}
-                            >
-                              {t('labels.singleItems')}
-                            </button>
-                          </div>
-                        </div>
-                      )}
+
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {filteredItems.map((item) => {

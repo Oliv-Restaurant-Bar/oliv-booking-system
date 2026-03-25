@@ -35,7 +35,6 @@ interface MenuExport {
     imageUrl: string | null;
     isActive: boolean;
     variants: any;
-    isCombo: boolean;
     dietaryType: string;
     dietaryTags: string[];
     ingredients: string | null;
@@ -163,7 +162,6 @@ async function exportMenuToJson() {
         imageUrl: item.imageUrl,
         isActive: item.isActive,
         variants: item.variants,
-        isCombo: item.isCombo,
         dietaryType: item.dietaryType,
         dietaryTags: item.dietaryTags || [],
         ingredients: item.ingredients,

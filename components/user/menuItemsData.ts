@@ -35,8 +35,7 @@ export interface MenuItem {
   dietaryTags?: string[];
   /** Additional dietary flag from database for gluten-free items */
   isGlutenFree?: boolean;
-  /** Indicates if this item is a combo pack */
-  isCombo?: boolean;
+
   additives?: string[];
   ingredients?: string;
   sortOrder?: number;
