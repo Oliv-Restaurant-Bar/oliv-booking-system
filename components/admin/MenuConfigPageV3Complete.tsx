@@ -261,7 +261,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
           setAddonGroups(assembledAddonGroups);
         }
       } catch (error) {
-        toast.error('Failed to load menu data');
+        toast.error(t('messages.loadFailed'));
       } finally {
         setLoading(false);
       }
@@ -296,7 +296,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
             : cat
         ));
         setIsAddCategoryModalOpen(false);
-        toast.success('Category updated');
+        toast.success(t('messages.settingsSaved'));
       }
     } else {
       const result = await createMenuCategory({
@@ -317,7 +317,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
           items: [],
         }]);
         setIsAddCategoryModalOpen(false);
-        toast.success('Category created');
+        toast.success(t('messages.settingsSaved'));
       }
     }
   };
@@ -351,7 +351,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
           items: cat.items.map(i => i.id === editingMenuItemId ? { ...i, ...itemData, image: newMenuItem.imageUrl } : i)
         })));
         setIsAddMenuItemModalOpen(false);
-        toast.success('Item updated');
+        toast.success(t('messages.settingsSaved'));
       }
     } else if (activeCategoryId) {
       const result = await createMenuItem({ ...itemData, categoryId: activeCategoryId } as any);
@@ -362,7 +362,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
             : cat
         ));
         setIsAddMenuItemModalOpen(false);
-        toast.success('Item added');
+        toast.success(t('messages.settingsSaved'));
       }
     }
   };
@@ -376,7 +376,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
           items: cat.items.map(i => i.id === settingsMenuItemId ? { ...i, ...itemSettings } : i)
         })));
         setIsItemSettingsModalOpen(false);
-        toast.success('Settings saved');
+        toast.success(t('messages.settingsSaved'));
       }
     }
   };
@@ -389,7 +389,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
           cat.id === choiceCategoryId ? { ...cat, assignedAddonGroups: selectedAddonGroups } : cat
         ));
         setIsAddChoiceModalOpen(false);
-        toast.success('Choices updated');
+        toast.success(t('messages.choicesUpdated'));
       }
     } else if (choiceItemId && activeCategoryId) {
       const result = await updateItemAddonGroups(choiceItemId, selectedAddonGroups);
@@ -399,7 +399,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
           items: cat.items.map(i => i.id === choiceItemId ? { ...i, assignedAddonGroups: selectedAddonGroups } : i)
         })));
         setIsAddChoiceModalOpen(false);
-        toast.success('Choices updated');
+        toast.success(t('messages.choicesUpdated'));
       }
     }
   };
@@ -407,9 +407,9 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
   const handleSaveGroup = async () => {
     const groupData = {
       name: newGroup.name,
-      nameDe: newGroup.name, // Fallback
+      nameDe: newGroup.name,
       subtitle: newGroup.subtitle,
-      subtitleDe: newGroup.subtitle, // Fallback
+      subtitleDe: newGroup.subtitle,
       isRequired: newGroup.type === 'mandatory',
       minSelect: newGroup.minSelect,
       maxSelect: newGroup.maxSelect,
@@ -420,15 +420,91 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
       if (result.success) {
         setAddonGroups(addonGroups.map(g => g.id === editingGroupId ? { ...g, ...groupData } as any : g));
         setIsAddGroupModalOpen(false);
-        toast.success('Group updated');
+        toast.success(t('messages.groupUpdated') || 'Group updated');
       }
     } else {
       const result = await createAddonGroup(groupData);
       if (result.success && result.data) {
         setAddonGroups([...addonGroups, { ...groupData, id: result.data.id, isActive: true, isExpanded: false, items: [] } as any]);
         setIsAddGroupModalOpen(false);
-        toast.success('Group created');
+        toast.success(t('messages.groupCreated') || 'Group created');
       }
+    }
+  };
+
+  const onDuplicateCategory = async (cat: Category) => {
+    const result = await createMenuCategory({
+      name: `Copy of ${cat.name}`,
+      nameDe: `Kopie von ${cat.name}`,
+      description: cat.description,
+      descriptionDe: cat.description,
+    });
+    if (result.success && result.data) {
+      setCategories([...categories, {
+        ...cat,
+        id: result.data.id,
+        name: `Copy of ${cat.name}`,
+        isActive: true,
+        isExpanded: false,
+      }]);
+      toast.success(t('messages.categoryDuplicated'));
+    } else {
+      toast.error(t('messages.duplicateFailed'));
+    }
+  };
+
+  const onDuplicateMenuItem = async (categoryId: string, item: MenuItemData) => {
+    const itemData = {
+      ...item,
+      name: `Copy of ${item.name}`,
+      nameDe: `Kopie von ${item.name}`,
+      price: (item.price || 0).toString(),
+      categoryId: categoryId,
+    };
+    const result = await createMenuItem(itemData as any);
+    if (result.success && result.data) {
+      setCategories(categories.map(cat =>
+        cat.id === categoryId
+          ? { ...cat, items: [...cat.items, { ...itemData, id: result.data.id, price: parseFloat(itemData.price) }] as any[] }
+          : cat
+      ));
+      toast.success(t('messages.itemDuplicated'));
+    } else {
+      toast.error(t('messages.duplicateFailed'));
+    }
+  };
+
+  const onDuplicateAddonGroup = async (group: AddonGroup) => {
+    const groupData = {
+      name: `Copy of ${group.name}`,
+      nameDe: `Kopie von ${group.name}`,
+      subtitle: group.subtitle,
+      subtitleDe: group.subtitle,
+      isRequired: group.isRequired,
+      minSelect: group.minSelect,
+      maxSelect: group.maxSelect,
+    };
+    const result = await createAddonGroup(groupData);
+    if (result.success && result.data) {
+      // Also duplicate items in group
+      const newGroupId = result.data.id;
+      const duplicatedItems = [];
+      for (const item of group.items) {
+        const itemResult = await createAddonItem({
+          name: item.name,
+          nameDe: item.name,
+          price: item.price,
+          dietaryType: item.dietaryType as any,
+          addonGroupId: newGroupId,
+        });
+        if (itemResult.success && itemResult.data) {
+          duplicatedItems.push({ ...item, id: itemResult.data.id });
+        }
+      }
+      setAddonGroups([...addonGroups, { ...groupData, id: newGroupId, items: duplicatedItems as any[], isActive: true, isExpanded: false } as any]);
+      toast.success(t('messages.groupDuplicated'));
+    } else {
+      toast.error(t('messages.duplicateFailed'));
     }
   };
 
@@ -450,7 +526,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
           g.id === currentGroupId ? { ...g, items: g.items.map(i => i.id === editingAddonItemId ? { ...i, ...itemData, price: parseFloat(newAddonItem.price) || 0 } : i) } : g
         ));
         setIsAddAddonItemModalOpen(false);
-        toast.success('Addon item updated');
+        toast.success(t('messages.settingsSaved'));
       }
     } else {
       const result = await createAddonItem({ ...itemData, addonGroupId: currentGroupId, price: parseFloat(newAddonItem.price) || 0 });
@@ -459,7 +535,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
           g.id === currentGroupId ? { ...g, items: [...g.items, { ...itemData, id: result.data.id, price: parseFloat(newAddonItem.price) || 0 }] as any[] } : g
         ));
         setIsAddAddonItemModalOpen(false);
-        toast.success('Addon item added');
+        toast.success(t('messages.settingsSaved'));
       }
     }
   };
@@ -594,7 +670,12 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
                   const cat = categories.find(c => c.id === id);
                   if (cat) {
                     const result = await updateMenuCategory(id, { isActive: !cat.isActive });
-                    if (result.success) setCategories(categories.map(c => c.id === id ? { ...c, isActive: !c.isActive } : c));
+                    if (result.success) {
+                      setCategories(categories.map(c => c.id === id ? { ...c, isActive: !c.isActive } : c));
+                      toast.success(cat.isActive ? t('messages.categoryHidden') : t('messages.categoryShown'));
+                    } else {
+                      toast.error(t('messages.updateStatusFailed'));
+                    }
                   }
                 }}
                 onAddMenuItem={(id) => {
@@ -634,9 +715,14 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
                       setCategories(categories.map(c => c.id === catId ?
                         { ...c, items: c.items.map(i => i.id === itemId ? { ...i, isActive: !i.isActive } : i) } : c
                       ));
+                      toast.success(item.isActive ? t('messages.itemHidden') : t('messages.itemShown'));
+                    } else {
+                      toast.error(t('messages.updateStatusFailed'));
                     }
                   }
                 }}
+                onDuplicateMenuItem={onDuplicateMenuItem}
+                onDuplicateCategory={onDuplicateCategory}
                 onOpenItemSettings={(catId, item) => {
                   setSettingsMenuItemId(item.id);
                   setItemSettings(item);
@@ -682,12 +768,17 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
                   const group = addonGroups.find(g => g.id === id);
                   if (group) {
                     const result = await updateAddonGroup(id, { isActive: !group.isActive });
-                    if (result.success) setAddonGroups(addonGroups.map(g => g.id === id ? { ...g, isActive: !g.isActive } : g));
+                    if (result.success) {
+                      setAddonGroups(addonGroups.map(g => g.id === id ? { ...g, isActive: !g.isActive } : g));
+                      toast.success(group.isActive ? t('messages.groupHidden') : t('messages.groupShown'));
+                    } else {
+                      toast.error(t('messages.updateStatusFailed'));
+                    }
                   }
                 }}
                 onDuplicateAddonGroup={(id) => {
-                  // Duplicate logic
-                  toast.success('Group duplicated');
+                  const group = addonGroups.find(g => g.id === id);
+                  if (group) onDuplicateAddonGroup(group);
                 }}
                 onAddAddonItem={(id) => {
                   setCurrentGroupId(id);
@@ -713,6 +804,9 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
                       setAddonGroups(addonGroups.map(g => g.id === groupId ?
                         { ...g, items: g.items.map(i => i.id === itemId ? { ...i, isActive: !i.isActive } : i) } : g
                       ));
+                      toast.success(item.isActive ? t('messages.addonHidden') : t('messages.addonShown'));
+                    } else {
+                      toast.error(t('messages.updateStatusFailed'));
                     }
                   }
                 }}
@@ -816,7 +910,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
             if (result.success) {
               setCategories(categories.filter(c => c.id !== deleteCategoryId));
               setDeleteCategoryId(null);
-              toast.success('Category deleted');
+              toast.success(t('messages.categoryDeleted'));
             }
           }
         }}
@@ -833,7 +927,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
             if (result.success) {
               setCategories(categories.map(c => c.id === activeCategoryId ? { ...c, items: c.items.filter(i => i.id !== deleteMenuItemId) } : c));
               setDeleteMenuItemId(null);
-              toast.success('Item deleted');
+              toast.success(t('messages.itemDeleted'));
             }
           }
         }}
@@ -850,7 +944,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
             if (result.success) {
               setAddonGroups(addonGroups.filter(g => g.id !== deleteGroupId));
               setDeleteGroupId(null);
-              toast.success('Group deleted');
+              toast.success(t('messages.groupDeleted'));
             }
           }
         }}
@@ -867,7 +961,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
             if (result.success) {
               setAddonGroups(addonGroups.map(g => g.id === currentGroupId ? { ...g, items: g.items.filter(i => i.id !== deleteAddonItemId) } : g));
               setDeleteAddonItemId(null);
-              toast.success('Addon item deleted');
+              toast.success(t('messages.addonDeleted'));
             }
           }
         }}

@@ -105,9 +105,9 @@ export function MenuCart({
   };
 
   const cartItems = selectedItems.map(id => menuItems.find(item => item.id === id)).filter(Boolean) as MenuItem[];
-  const foodItems = cartItems.filter(item => item.category !== 'Beverages' && item.category !== 'Add-ons');
+  const foodItems = cartItems.filter(item => item.category !== 'Beverages' && item.category !== 'Add-ons' && !isFlatFee(item));
   const beverages = cartItems.filter(item => item.category === 'Beverages');
-  const addons = cartItems.filter(item => item.category === 'Add-ons');
+  const addons = cartItems.filter(item => item.category === 'Add-ons' || (isFlatFee(item) && item.category !== 'Beverages'));
 
   const ppFoodItems = foodItems.filter(item => isPerPerson(item));
   const vegItems = ppFoodItems.filter(item => item.dietaryType === 'veg' || item.dietaryType === 'vegan');
@@ -136,10 +136,11 @@ export function MenuCart({
 
   const renderItemRow = (item: MenuItem, sectionColor: string) => {
     const isPP = isPerPerson(item);
+    const useQtyLabel = item.category === 'Beverages' || isFlatFee(item) || isConsumption(item);
     const quantity = itemQuantities[item.id] || 1;
     const guestCount = itemGuestCounts[item.id] || parseInt(eventDetails.guestCount) || 1;
     const price = getItemPerPersonPrice(item);
-    const total = price * (isPP ? guestCount : quantity);
+    const total = price * (isPP && !useQtyLabel ? guestCount : quantity);
 
     return (
       <div key={item.id} className="py-1 space-y-0.5">
@@ -152,9 +153,9 @@ export function MenuCart({
               <div className={`size-2 rounded-full shrink-0 ${sectionColor}`} />
             )}
             <div className="flex items-baseline gap-1.5 min-w-0">
-              <Users className="w-3 h-3" />
+              {!useQtyLabel && <Users className="w-3 h-3" />}
               <span className="text-xs font-bold text-secondary shrink-0">
-                {isPP ? `${guestCount}X` : `${quantity}X`}
+                {useQtyLabel ? `${quantity}X` : (isPP ? `${guestCount}X` : `${quantity}X`)}
               </span>
               <span className={`text-xs font-bold text-secondary uppercase truncate ${isConsumption(item) ? 'line-clamp-1' : 'line-clamp-2'} flex items-center gap-1.5`}>
                 {item.name}
@@ -259,7 +260,9 @@ export function MenuCart({
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-[10px] font-bold text-[#9ca3af] uppercase tracking-wider">Guests</span>
+            <span className="text-[10px] font-bold text-[#9ca3af] uppercase tracking-wider">
+              {item.category === 'Beverages' || isFlatFee(item) ? 'Qty' : 'Guests'}
+            </span>
             <div className="flex items-center bg-[#f9fafb] border border-[#e5e7eb] rounded-lg p-0.5">
               <button
                 onClick={() => isPP ? updateGuestCount(item.id, -1) : updateQuantity(item.id, -1)}

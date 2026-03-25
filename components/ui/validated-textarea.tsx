@@ -52,6 +52,7 @@ export function ValidatedTextarea({
       {label && (
         <label className="block text-foreground font-medium text-sm first-letter:uppercase">
           {label}
+          {required && <span className="text-destructive ml-1">*</span>}
         </label>
       )}
 

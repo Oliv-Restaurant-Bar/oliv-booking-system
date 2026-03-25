@@ -32,6 +32,8 @@ interface MenuCategoriesTabProps {
   onToggleMenuItemActive: (categoryId: string, itemId: string) => void;
   onOpenItemSettings: (categoryId: string, item: MenuItemData) => void;
   onAddChoice: (categoryId: string, itemId?: string) => void;
+  onDuplicateCategory: (category: Category) => void;
+  onDuplicateMenuItem: (categoryId: string, item: MenuItemData) => void;
   SortableCategory: any;
   SortableItem: any;
   sensors: any;
@@ -61,6 +63,8 @@ export function MenuCategoriesTab({
   onToggleMenuItemActive,
   onOpenItemSettings,
   onAddChoice,
+  onDuplicateCategory,
+  onDuplicateMenuItem,
   SortableCategory,
   SortableItem,
   sensors,
@@ -271,7 +275,7 @@ export function MenuCategoriesTab({
                                   {canCreateCategory && (
                                     <button
                                       onClick={() => {
-                                        console.log('Duplicate', category.name);
+                                        onDuplicateCategory(category);
                                         setOpenDropdownId(null);
                                       }}
                                       className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
@@ -487,6 +491,20 @@ export function MenuCategoriesTab({
                                                     <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>{t('buttons.addChoice')}</span>
                                                   </button>
                                                 </div>
+ 
+                                                {/* Duplicate (all screens) */}
+                                                {canCreateItem && (
+                                                  <button
+                                                    onClick={() => {
+                                                      onDuplicateMenuItem(category.id, item);
+                                                      setOpenDropdownId(null);
+                                                    }}
+                                                    className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
+                                                  >
+                                                    <Copy className="w-4 h-4 text-muted-foreground" />
+                                                    <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>{t('buttons.duplicate')}</span>
+                                                  </button>
+                                                )}
 
                                                 {/* Show/Hide (all screens) */}
                                                 {canEditItem && (

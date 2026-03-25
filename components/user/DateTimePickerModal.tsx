@@ -141,7 +141,10 @@ export function DateTimePickerModal({
   }, [currentMonth]);
 
   const formatDateKey = (date: Date) => {
-    return date.toISOString().split('T')[0];
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   // Check if a date has ANY available time slots
@@ -187,6 +190,11 @@ export function DateTimePickerModal({
       const dateKey = formatDateKey(date);
       setSelectedDate(dateKey);
       onSelectDate(dateKey);
+
+      // Update currentMonth if the selected date is not in the currently viewed month
+      if (date.getMonth() !== currentMonth.getMonth() || date.getFullYear() !== currentMonth.getFullYear()) {
+        setCurrentMonth(new Date(date.getFullYear(), date.getMonth(), 1));
+      }
 
       // If the previously selected time is not available for this date, clear it
       if (selectedTime && isTimeSlotDisabled(selectedTime)) {
@@ -278,7 +286,11 @@ export function DateTimePickerModal({
                     <ChevronLeft className="w-5 h-5 text-white" />
                   </button>
                   <span className="text-lg font-semibold" style={{ color: 'var(--primary-foreground)' }}>
-                    {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                    {selectedDate ? (() => {
+                      const [y, m, d] = selectedDate.split('-').map(Number);
+                      const dObj = new Date(y, m - 1, d);
+                      return dObj.toLocaleDateString('de-CH', { day: '2-digit', month: 'long', year: 'numeric' });
+                    })() : `${monthNames[currentMonth.getMonth()]} ${currentMonth.getFullYear()}`}
                   </span>
                   <button
                     onClick={goToNextMonth}

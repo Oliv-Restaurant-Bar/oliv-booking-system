@@ -8,6 +8,7 @@ import { NativeCheckbox } from '@/components/ui/NativeCheckbox';
 import { Input } from '@/components/ui/input';
 import { ValidatedTextarea } from '@/components/ui/validated-textarea';
 import { toast } from 'sonner';
+import { useWizardTranslation } from '@/lib/i18n/client';
 
 interface ItemDetailsModalProps {
   item: MenuItem | null;
@@ -28,7 +29,8 @@ interface ItemDetailsModalProps {
   itemComments: Record<string, string>;
   isPerPerson: (item: MenuItem) => boolean;
   isConsumption: (item: MenuItem) => boolean;
-  calculateRecommendedQuantity: (item: MenuItem, itemId?: string) => number | null;
+  isFlatFee?: (item: MenuItem) => boolean;
+  calculateRecommendedQuantity: (item: MenuItem, itemId?: string, variantIdOverride?: string) => number | null;
 }
 
 export function ItemDetailsModal({
@@ -44,8 +46,10 @@ export function ItemDetailsModal({
   itemComments,
   isPerPerson,
   isConsumption,
+  isFlatFee,
   calculateRecommendedQuantity,
 }: ItemDetailsModalProps) {
+  const t = useWizardTranslation();
   const [tempQuantity, setTempQuantity] = useState(1);
   const [tempGuestCount, setTempGuestCount] = useState<number | null>(null);
   const [tempAddOns, setTempAddOns] = useState<string[]>([]);
@@ -85,7 +89,7 @@ export function ItemDetailsModal({
         setTempGuestCount(isAlreadySelected ? (itemGuestCounts[item.id] || totalGuestCount) : totalGuestCount);
         setTempQuantity(1);
       } else if (isConsumption(item)) {
-        const recommended = calculateRecommendedQuantity(item, item.id);
+        const recommended = calculateRecommendedQuantity(item, item.id, itemVariants[item.id]);
         setTempQuantity(isAlreadySelected ? (itemQuantities[item.id] || recommended || 1) : (recommended || 1));
         setTempGuestCount(null);
       } else {
@@ -94,6 +98,16 @@ export function ItemDetailsModal({
       }
     }
   }, [item, selectedItems, itemQuantities, itemGuestCounts, itemAddOns, itemVariants, itemComments, eventDetails.guestCount]);
+
+  // Update quantity automatically when variant changes for consumption items
+  useEffect(() => {
+    if (item && isConsumption(item) && tempVariant) {
+      const recommended = calculateRecommendedQuantity(item, undefined, tempVariant);
+      if (recommended) {
+        setTempQuantity(recommended);
+      }
+    }
+  }, [tempVariant, item, isConsumption, calculateRecommendedQuantity]);
 
   if (!item) return null;
 
@@ -176,15 +190,15 @@ export function ItemDetailsModal({
                 {item.name}
               </h3>
               <p className="text-primary mt-1" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                CHF {item.price.toFixed(2)}
+                CHF {(item.price > 0 ? item.price : (item.variants && item.variants.length > 0 ? item.variants[0].price : 0)).toFixed(2)}
                 {item.pricingType === 'billed_by_consumption' && (
-                  <span className="text-muted-foreground ml-2" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-normal)' }}>
-                    (Billed by consumption)
+                  <span className="text-muted-foreground ml-2 capitalize" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-normal)' }}>
+                    ({t('status.billedByConsumption')})
                   </span>
                 )}
                 {item.pricingType === 'flat_fee' && (
-                  <span className="text-muted-foreground ml-2" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-normal)' }}>
-                    (Flat fee)
+                  <span className="text-muted-foreground ml-2 capitalize" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-normal)' }}>
+                    ({t('status.flatFee')})
                   </span>
                 )}
               </p>
@@ -219,6 +233,10 @@ export function ItemDetailsModal({
 
           {/* Recommendation for consumption-based items */}
           {isConsumption(item) && (() => {
+            const recommended = calculateRecommendedQuantity(item, undefined, tempVariant);
+            if (!recommended) return null;
+            
+            // For display purposes, we still want to show the specific consumption rate
             const avgConsumption = (() => {
               if (tempVariant && item.variants) {
                 const variant = item.variants.find(v => v.id === tempVariant);
@@ -226,10 +244,10 @@ export function ItemDetailsModal({
               }
               return item.averageConsumption;
             })();
-            if (!avgConsumption) return null;
+
             const guestCount = parseInt(eventDetails.guestCount) || 0;
             if (guestCount === 0) return null;
-            const recommended = Math.ceil(guestCount / avgConsumption);
+            
             return (
               <div className="mb-4 p-3 bg-amber-50 rounded-lg border border-amber-500/30">
                 <div className="flex items-start gap-2">
@@ -242,7 +260,7 @@ export function ItemDetailsModal({
                       </span>
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Based on {avgConsumption} people per unit
+                      Based on {avgConsumption || 1} people per unit
                     </p>
                   </div>
                 </div>
@@ -521,7 +539,9 @@ export function ItemDetailsModal({
               {isPerPerson(item) ? (
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
-                    <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Guests:</span>
+                    <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                      {(item.category === 'Beverages' || isFlatFee?.(item)) ? 'Qty:' : 'Guests:'}
+                    </span>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => {
@@ -566,7 +586,7 @@ export function ItemDetailsModal({
                     <div className="flex items-center gap-2 text-destructive">
                       <AlertTriangle className="w-4 h-4 flex-shrink-0" />
                       <span style={{ fontSize: 'var(--text-small)' }}>
-                        Guests exceed total event guests ({parseInt(eventDetails.guestCount) || 1})
+                        {(item.category === 'Beverages' || isFlatFee?.(item)) ? 'Quantity' : 'Guests'} exceed total event guests ({parseInt(eventDetails.guestCount) || 1})
                       </span>
                     </div>
                   )}

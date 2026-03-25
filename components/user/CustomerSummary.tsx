@@ -76,6 +76,7 @@ export function CustomerSummary({
 }: CustomerSummaryProps) {
   const t = useWizardTranslation();
   const locale = useLocale();
+  const isFlatFee = (item: MenuItem) => item.pricingType === 'flat-rate' || item.pricingType === 'flat_fee';
   const perPersonTotal = getPerPersonSubtotal();
   const guestCountValue = parseInt(eventDetails.guestCount) || 0;
   const flatRateTotal = getFlatRateSubtotal();
@@ -276,11 +277,15 @@ export function CustomerSummary({
             <div>
               <p className="text-muted-foreground mb-1" style={{ fontSize: 'var(--text-small)' }}>{t('labels.date')}</p>
               <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                {eventDetails.eventDate ? new Date(eventDetails.eventDate).toLocaleDateString(locale === 'de' ? 'de-CH' : 'en-CH', {
-                  day: '2-digit',
-                  month: 'long',
-                  year: 'numeric'
-                }) : '-'}
+                {eventDetails.eventDate ? (() => {
+                  const [y, m, d] = eventDetails.eventDate.split('-').map(Number);
+                  const dObj = new Date(y, m - 1, d);
+                  return dObj.toLocaleDateString(locale === 'de' ? 'de-CH' : 'en-CH', {
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric'
+                  });
+                })() : '-'}
               </p>
             </div>
             <div>
@@ -500,7 +505,7 @@ export function CustomerSummary({
                                 <p className="text-muted-foreground text-xs">
                                   {isConsumption(item)
                                     ? t('status.billedByConsumption')
-                                    : isPerPerson(item)
+                                    : (isPerPerson(item) && !isFlatFee(item) && item.category !== 'Beverages')
                                       ? t('status.guestsCalculation', { count: itemGuestCounts[itemId] || parseInt(eventDetails.guestCount) || 1, price: getItemPerPersonPrice(item).toFixed(2) })
                                       : t('status.qtyCalculation', { qty: quantity, price: getItemPerPersonPrice(item).toFixed(2) })}
                                 </p>
@@ -735,7 +740,7 @@ export function CustomerSummary({
                         .map((cat) => {
                           const items = selectedItems.filter((itemId) => {
                             const item = menuItems.find((i) => i.id === itemId);
-                            return item?.category === cat && !isConsumption(item);
+                            return item && item.category === cat && !isConsumption(item) && !isFlatFee(item);
                           });
                           const subtotal = items.reduce((sum, itemId) => {
                             const item = menuItems.find((i) => i.id === itemId);
@@ -820,14 +825,27 @@ export function CustomerSummary({
                             const item = menuItems.find((i) => i.id === itemId);
                             if (!item) return null;
                             const itemTotal = getItemTotalPrice(item);
+                            const variant = itemVariants[itemId] && item.variants
+                              ? item.variants.find(v => v.id === itemVariants[itemId])
+                              : null;
+                            const quantity = itemQuantities[itemId] || 1;
+
                             return (
-                              <div key={itemId} className="flex justify-between items-center py-1.5">
+                              <div key={itemId} className="flex justify-between items-center py-1.5 border-b border-gray-100 last:border-0 hover:bg-gray-50/50 px-1 rounded transition-colors group">
                                 <div className="flex items-center gap-2 flex-wrap min-w-0 pr-4">
-                                  <span className="text-gray-500 truncate" style={{ fontSize: 'var(--text-small)' }}>
-                                    {item.name}
-                                  </span>
+                                  <div className="flex flex-col">
+                                    <span className="text-gray-700 font-medium truncate" style={{ fontSize: 'var(--text-small)' }}>
+                                      {item.name}
+                                    </span>
+                                    <div className="flex items-center gap-2 text-[10px] text-gray-500">
+                                      {variant && (
+                                        <span className="bg-gray-100 px-1.5 py-0.5 rounded">{variant.name}</span>
+                                      )}
+                                      <span>{quantity} × CHF {getItemPerPersonPrice(item).toFixed(2)}</span>
+                                    </div>
+                                  </div>
                                 </div>
-                                <span className={`font-medium flex-shrink-0 ${!includeBeveragePrices ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
+                                <span className={`font-semibold flex-shrink-0 ${!includeBeveragePrices ? 'text-gray-300 line-through' : 'text-primary'}`}>
                                   CHF {itemTotal.toFixed(2)}
                                 </span>
                               </div>
@@ -869,10 +887,15 @@ export function CustomerSummary({
                 })()}
 
                 {/* Technology, Decoration, Furniture, Miscellaneous Sections */}
-                {['Technology', 'Decoration', 'Furniture', 'Miscellaneous'].map((category) => {
+                {['Add-ons', 'Technology', 'Decoration', 'Furniture', 'Miscellaneous', 'Beverages'].map((category) => {
                   const categoryItems = selectedItems.filter((itemId) => {
                     const item = menuItems.find((i) => i.id === itemId);
-                    return item?.category === category && !isConsumption(item);
+                    if (!item) return false;
+                    // Include if category matches OR if it's a flat fee item that doesn't fit elsewhere (and is not beverage/food)
+                    if (category === 'Add-ons') {
+                      return (item.category === 'Add-ons' || (isFlatFee(item) && !['Technology', 'Decoration', 'Furniture', 'Miscellaneous', 'Beverages'].includes(item.category || '')));
+                    }
+                    return item.category === category && !isConsumption(item);
                   });
 
                   if (categoryItems.length === 0) return null;

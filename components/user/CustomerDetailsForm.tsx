@@ -238,7 +238,8 @@ export function CustomerDetailsForm({
                         {/* Date & Time Picker */}
                         <div>
                             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                                {t('labels.eventDate')} *
+                                {t('labels.eventDate')}
+                                <span className="text-destructive ml-1">*</span>
                             </label>
                             <button
                                 type="button"
@@ -251,14 +252,21 @@ export function CustomerDetailsForm({
                                 style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
                             >
                                 <span className={(eventDetails.eventDate || eventDetails.eventTime) ? 'text-foreground' : 'text-muted-foreground'}>
-                                    {eventDetails.eventDate && eventDetails.eventTime
-                                        ? `${new Date(eventDetails.eventDate).toLocaleDateString(locale === 'de' ? 'de-CH' : 'en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} ${locale === 'de' ? 'um' : 'at'} ${eventDetails.eventTime}`
-                                        : eventDetails.eventDate
-                                            ? new Date(eventDetails.eventDate).toLocaleDateString(locale === 'de' ? 'de-CH' : 'en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-                                            : eventDetails.eventTime
-                                                ? eventDetails.eventTime
-                                                : t('labels.eventDate')
-                                    }
+                                    {(() => {
+                                        if (!eventDetails.eventDate && !eventDetails.eventTime) return t('labels.eventDate');
+                                        
+                                        let dateStr = '';
+                                        if (eventDetails.eventDate) {
+                                            const [y, m, d] = eventDetails.eventDate.split('-').map(Number);
+                                            const dObj = new Date(y, m - 1, d);
+                                            dateStr = dObj.toLocaleDateString(locale === 'de' ? 'de-CH' : 'en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                                        }
+
+                                        if (eventDetails.eventDate && eventDetails.eventTime) {
+                                            return `${dateStr} ${locale === 'de' ? 'um' : 'at'} ${eventDetails.eventTime}`;
+                                        }
+                                        return dateStr || eventDetails.eventTime || t('labels.eventDate');
+                                    })()}
                                 </span>
                                 <Calendar className="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors" />
                             </button>
@@ -271,7 +279,8 @@ export function CustomerDetailsForm({
 
                         <div>
                             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                                {t('labels.guestCount')} *
+                                {t('labels.guestCount')}
+                                <span className="text-destructive ml-1">*</span>
                             </label>
                             <Input
                                 type="number"

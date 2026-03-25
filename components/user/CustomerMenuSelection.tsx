@@ -319,7 +319,7 @@ export function CustomerMenuSelection({
                                 <div className="flex items-center justify-between">
                                   <div className="flex flex-col">
                                     <span className="font-semibold text-[15px] text-[#2c2f34]">
-                                      CHF {item.price.toFixed(2)}
+                                      CHF {(item.price > 0 ? item.price : (item.variants && item.variants.length > 0 ? item.variants[0].price : 0)).toFixed(2)}
                                     </span>
                                     <span className="text-[11px] text-[#9ca3af]">
                                       {isConsumption(item) ? t('status.billedByConsumption') : isFlatFee(item) ? t('status.flatFee') : t('status.perPerson')}

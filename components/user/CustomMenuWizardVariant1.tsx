@@ -1018,7 +1018,7 @@ export function CustomMenuWizard() {
   const isNonPerPerson = (item: MenuItem) => isFlatFee(item) || isConsumption(item);
 
   // Calculate recommended quantity for consumption-based items
-  const calculateRecommendedQuantity = (item: MenuItem, itemId?: string): number | null => {
+  const calculateRecommendedQuantity = (item: MenuItem, itemId?: string, variantIdOverride?: string): number | null => {
     if (!isConsumption(item)) return null;
 
     const guestCount = parseInt(eventDetails.guestCount) || 0;
@@ -1027,9 +1027,11 @@ export function CustomMenuWizard() {
     // Get the average consumption value to use
     let avgConsumption = item.averageConsumption || null;
 
-    // If a variant is selected, use the variant's average consumption if available
-    if (itemId && itemVariants[itemId] && item.variants) {
-      const selectedVariant = item.variants.find(v => v.id === itemVariants[itemId]);
+    // Use specific variant if provided or available in state
+    const currentVariantId = variantIdOverride || (itemId ? itemVariants[itemId] : null);
+    
+    if (currentVariantId && item.variants) {
+      const selectedVariant = item.variants.find(v => v.id === currentVariantId);
       if (selectedVariant?.averageConsumption) {
         avgConsumption = selectedVariant.averageConsumption;
       }
@@ -1500,6 +1502,7 @@ export function CustomMenuWizard() {
           itemComments={itemComments}
           isPerPerson={isPerPerson}
           isConsumption={isConsumption}
+          isFlatFee={isFlatFee}
           calculateRecommendedQuantity={calculateRecommendedQuantity}
         />
         {/* Mobile Cart FAB - side-attached style, only on step 2 with items selected */}
