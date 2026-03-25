@@ -1269,7 +1269,7 @@ export function CustomMenuWizard() {
       />
       <div className="min-h-screen bg-background flex flex-col">
         {/* Mobile Step Indicator - Only visible on mobile */}
-        <div className="lg:hidden sticky top-20 z-40 bg-primary text-primary-foreground px-4 py-3">
+        <div className="lg:hidden sticky top-0 z-40 bg-primary text-primary-foreground px-4 py-3">
           <div className="max-w-4xl mx-auto">
             {/* Compact Row: Step Counter + Title */}
             <div className="flex items-center justify-between gap-3 mb-2">

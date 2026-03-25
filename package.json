@@ -21,7 +21,8 @@
     "email:test": "dotenv -e .env -- tsx scripts/test-email.ts",
     "email:test-dummy": "tsx scripts/test-email-with-dummy.ts",
     "email:send-reminders": "dotenv -e .env -- tsx -e \"require('./lib/actions/reminders').sendRemindersForNext24Hours()\"",
-    "db:seed-dummy-bookings": "dotenv -e .env -- tsx scripts/seed-dummy-bookings.ts"
+    "db:seed-dummy-bookings": "dotenv -e .env -- tsx scripts/seed-dummy-bookings.ts",
+    "menu:export": "dotenv -e .env -- tsx scripts/export-menu-to-json.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.4",
