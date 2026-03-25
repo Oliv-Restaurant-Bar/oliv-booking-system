@@ -898,19 +898,25 @@ export function CustomMenuWizard() {
         occasion: eventDetails.occasion || undefined,
         items: selectedItems.map(itemId => {
           const item = menuItems.find(i => i.id === itemId);
-          const quantity = itemQuantities[itemId] || 1;
+          const isPerPersonItem = item?.pricingType === 'per_person';
+          const quantity = isPerPersonItem 
+            ? (itemGuestCounts[itemId] || parseInt(eventDetails.guestCount) || 1)
+            : (itemQuantities[itemId] || 1);
+          
           const variantId = itemVariants[itemId];
           const variant = variantId && Array.isArray(item?.variants)
             ? (item?.variants as any[]).find(v => v.id === variantId)
             : null;
+
+          const unitPrice = variant ? Number(variant.price) : Number(item?.price || 0);
 
           return {
             id: itemId,
             name: item?.name || 'Unknown Item',
             category: item?.category || 'Other',
             quantity: quantity,
-            unitPrice: variant ? Number(variant.price) : Number(item?.price || 0),
-            totalPrice: (variant ? Number(variant.price) : Number(item?.price || 0)) * quantity,
+            unitPrice: unitPrice,
+            totalPrice: unitPrice * quantity,
             notes: itemComments[itemId],
             pricingType: item?.pricingType || 'per_person',
           };

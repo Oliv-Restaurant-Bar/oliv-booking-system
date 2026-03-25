@@ -466,19 +466,25 @@ export async function submitWizardForm(data: WizardFormData) {
         occasion: data.occasion || undefined,
         items: data.selectedItems.map(itemId => {
           const dbItem = menuItemMap.get(itemId);
-          const quantity = data.itemQuantities[itemId] || 1;
+          const isPerPersonItem = dbItem?.pricingType === 'per_person';
+          const quantity = isPerPersonItem 
+            ? (data.itemGuestCounts?.[itemId] || data.guestCount || 1)
+            : (data.itemQuantities[itemId] || 1);
+          
           const variantId = data.itemVariants?.[itemId];
           const variant = variantId && Array.isArray(dbItem?.variants) 
             ? (dbItem?.variants as any[]).find(v => v.id === variantId) 
             : null;
           
+          const unitPrice = variant ? Number(variant.price) : Number(dbItem?.pricePerPerson || 0);
+
           return {
             id: itemId,
             name: dbItem?.name || 'Unknown Item',
             category: allCategories.find(c => c.id === dbItem?.categoryId)?.name || 'Other',
             quantity: quantity,
-            unitPrice: variant ? Number(variant.price) : Number(dbItem?.pricePerPerson || 0),
-            totalPrice: (variant ? Number(variant.price) : Number(dbItem?.pricePerPerson || 0)) * quantity,
+            unitPrice: unitPrice,
+            totalPrice: unitPrice * quantity,
             notes: data.itemComments?.[itemId],
             pricingType: dbItem?.pricingType || 'per_person',
           };
