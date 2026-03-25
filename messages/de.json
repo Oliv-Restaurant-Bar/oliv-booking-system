@@ -814,7 +814,7 @@
       "diningExperiences": "Dining-Erlebnisse",
       "title": "Schaffen Sie unvergessliche Dining-Momente",
       "description": "Erstellen Sie benutzerdefinierte Catering-Menüs in Minuten mit unserem intuitiven Wizard. Perfekt für Hochzeiten, Firmenevents und besondere Feiern.",
-      "heroDescription": "Von intimen privaten Abendessen bis hin zu grossen Feiern – Olive bringt gehobene Küche, makellose Präsentation und persönlichen Service zu jedem Anlass.",
+      "heroDescription": "Von intimen privaten Abendessen bis hin zu grossen Feiern – Oliv bringt gehobene Küche, makellose Präsentation und persönlichen Service zu jedem Anlass.",
       "getStarted": "Kostenlos starten",
       "planEvent": "Planen Sie Ihr Event",
       "seeHowItWorks": "Siehe, wie es funktioniert",
@@ -854,9 +854,9 @@
       },
       "createMenu": "Jetzt Menü erstellen"
     },
-    "whyOlive": {
+    "whyOliv": {
       "title": "WARUM UNS WÄHLEN",
-      "subtitle": "Warum Olive?",
+      "subtitle": "Warum Oliv?",
       "description": "Wir bringen Leidenschaft, Präzision und Premium-Qualität in jedes Event, das wir betreuen.",
       "cuisine": {
         "title": "Ausgezeichnete Küche",
@@ -885,7 +885,7 @@
       "minutes": "Minuten",
       "viewGallery": "Galerie ansehen",
       "description": "In Nur Wenigen Minuten",
-      "body": "Schließen Sie sich Hunderten zufriedener Kunden an, die Olive für ihre Catering-Bedürfnisse vertrauen. Beginnen Sie noch heute mit der Erstellung Ihres individuellen Menüs – keine Kreditkarte erforderlich.",
+      "body": "Schließen Sie sich Hunderten zufriedener Kunden an, die Oliv für ihre Catering-Bedürfnisse vertrauen. Beginnen Sie noch heute mit der Erstellung Ihres individuellen Menüs – keine Kreditkarte erforderlich.",
       "button": "Jetzt Menü erstellen"
     },
     "footer": {
@@ -897,7 +897,7 @@
     "header": {
       "home": "Startseite",
       "howItWorks": "Wie es funktioniert",
-      "whyOlive": "Warum Olive",
+      "whyOliv": "Warum Oliv",
       "gallery": "Galerie",
       "createMenu": "Menü erstellen"
     }
@@ -1003,7 +1003,7 @@
       "billingStreet": "Rechnungsstrasse & Nr.",
       "billingPlz": "Rechnungs-PLZ",
       "billingLocation": "Rechnungsort",
-      "reference": "Referenz",
+      "reference": "Referenzinformationen",
       "optional": "Optional",
       "guest": "Gast",
       "guests_plural": "Gäste",

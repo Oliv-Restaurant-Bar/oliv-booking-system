@@ -816,7 +816,7 @@
       "diningExperiences": "Dining Experiences",
       "title": "Build Unforgettable Dining Moments",
       "description": "Design custom catering menus in minutes with our intuitive wizard. Perfect for weddings, corporate events, and special celebrations.",
-      "heroDescription": "From intimate private dinners to grand celebrations — Olive brings elevated cuisine, flawless presentation, and personalised service to every occasion.",
+      "heroDescription": "From intimate private dinners to grand celebrations — Oliv brings elevated cuisine, flawless presentation, and personalised service to every occasion.",
       "getStarted": "Get started free",
       "planEvent": "Plan Your Event",
       "seeHowItWorks": "See how it works",
@@ -856,9 +856,9 @@
       },
       "createMenu": "Create Menu Now"
     },
-    "whyOlive": {
+    "whyOliv": {
       "title": "WHY CHOOSE US",
-      "subtitle": "Why Olive?",
+      "subtitle": "Why Oliv?",
       "description": "We bring passion, precision, and premium quality to every event we cater.",
       "cuisine": {
         "title": "Excellent cuisine",
@@ -887,7 +887,7 @@
       "minutes": "Minutes",
       "viewGallery": "View Gallery",
       "description": "In Just Minutes",
-      "body": "Join hundreds of satisfied clients who trust Olive for their catering needs. Start building your custom menu today – no credit card required.",
+      "body": "Join hundreds of satisfied clients who trust Oliv for their catering needs. Start building your custom menu today – no credit card required.",
       "button": "Create Menu Now"
     },
     "footer": {
@@ -899,7 +899,7 @@
     "header": {
       "home": "Home",
       "howItWorks": "How It Works",
-      "whyOlive": "Why Olive",
+      "whyOliv": "Why Oliv",
       "gallery": "Gallery",
       "createMenu": "Create Menu"
     }
@@ -998,7 +998,7 @@
       "billingStreet": "Billing Street & Nr.",
       "billingPlz": "Billing PLZ",
       "billingLocation": "Billing Location",
-      "reference": "Reference",
+      "reference": "Reference information",
       "optional": "Optional",
       "guest": "guest",
       "guests_plural": "guests",

@@ -24,7 +24,7 @@ interface MenuExport {
   }>;
   items: Array<{
     id: string;
-    categoryId: string;
+    categoryId: string | null;
     name: string;
     nameDe: string;
     description: string | null;
@@ -58,7 +58,7 @@ interface MenuExport {
   }>;
   addonItems: Array<{
     id: string;
-    addonGroupId: string;
+    addonGroupId: string | null;
     name: string;
     nameDe: string;
     description: string | null;
@@ -70,12 +70,12 @@ interface MenuExport {
     sortOrder: number;
   }>;
   categoryAddonGroups: Array<{
-    categoryId: string;
-    addonGroupId: string;
+    categoryId: string | null;
+    addonGroupId: string | null;
   }>;
   itemAddonGroups: Array<{
-    itemId: string;
-    addonGroupId: string;
+    itemId: string | null;
+    addonGroupId: string | null;
   }>;
   exportedAt: string;
   summary: {

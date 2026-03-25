@@ -11,7 +11,7 @@ const updateProfileSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(50, 'First name too long'),
   lastName: z.string().min(1, 'Last name is required').max(50, 'Last name too long'),
   email: z.string().email('Invalid email format').max(255, 'Email too long'),
-  avatar: z.string().url('Invalid avatar URL').optional().nullable(),
+  avatar: z.string().optional().nullable(),
 });
 
 const updateEmailSchema = z.object({

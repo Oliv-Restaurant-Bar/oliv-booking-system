@@ -48,16 +48,15 @@ export function ValidatedInput({
     showPasswordToggle && type === 'password' && showPassword ? 'text' :
       type;
 
-  const characterCount = typeof value === 'string' ? value.length : 0;
+  const characterCount = (value && typeof value === 'string') ? value.length : 0;
   const isNearLimit = maxLength && characterCount >= maxLength * 0.9;
   const isAtLimit = maxLength && characterCount >= maxLength;
 
   return (
     <div className="space-y-1.5">
       {label && (
-        <label className="block text-foreground font-medium text-sm">
+        <label className="block text-foreground font-medium text-sm first-letter:uppercase">
           {label}
-          {required && <span className="text-destructive ml-1">*</span>}
         </label>
       )}
 
@@ -128,7 +127,7 @@ export function ValidatedInput({
         </div>
 
         {showCharacterCount && maxLength && (
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0" translate="no">
             <p
               className={cn(
                 'text-xs font-medium tabular-nums',

@@ -2,6 +2,7 @@
 
 import { Facebook, Instagram, Linkedin } from 'lucide-react';
 import { useLandingTranslation } from '@/lib/i18n/client';
+import Image from 'next/image';
 
 export function FooterVariant6() {
   const t = useLandingTranslation();
@@ -10,20 +11,15 @@ export function FooterVariant6() {
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Left: Logo */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-bold)' }}>O</span>
-            </div>
-            <span className="text-secondary-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-bold)' }}>Oliv</span>
-          </div>
-
-          {/* Center: Terms and Privacy Links */}
-          <div className="flex gap-6">
-            <a href="#" className="text-secondary-foreground/70 hover:text-primary transition-colors" style={{ fontSize: 'var(--text-base)' }}>
-              {t('footer.terms')}
-            </a>
-            <a href="#" className="text-secondary-foreground/70 hover:text-primary transition-colors" style={{ fontSize: 'var(--text-base)' }}>
-              {t('footer.privacy')}
+          <div className="flex-shrink-0">
+            <a href="#" className="flex items-center">
+              <Image
+                src="/assets/oliv-clear-bg.png"
+                alt="Oliv Catering"
+                width={120}
+                height={48}
+                className="h-10 w-auto object-contain"
+              />
             </a>
           </div>
 

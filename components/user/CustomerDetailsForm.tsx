@@ -93,7 +93,6 @@ export function CustomerDetailsForm({
                             maxLength={100}
                             showCharacterCount
                             error={displayErrors.business}
-                            helperText={t('labels.optional')}
                             className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                         />
 
@@ -113,7 +112,6 @@ export function CustomerDetailsForm({
                             maxLength={255}
                             showCharacterCount
                             error={displayErrors.email}
-                            helperText={t('labels.email')}
                             required
                             className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                         />
@@ -135,7 +133,6 @@ export function CustomerDetailsForm({
                             maxLength={20}
                             showCharacterCount
                             error={displayErrors.telephone}
-                            helperText={t('labels.phone')}
                             required
                             className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                         />
@@ -165,7 +162,6 @@ export function CustomerDetailsForm({
                             maxLength={100}
                             showCharacterCount
                             error={displayErrors.street}
-                            helperText={t('labels.street')}
                             required
                             className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                         />
@@ -187,7 +183,6 @@ export function CustomerDetailsForm({
                             maxLength={10}
                             showCharacterCount
                             error={displayErrors.plz}
-                            helperText={t('labels.plz')}
                             required
                             className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                         />
@@ -208,7 +203,6 @@ export function CustomerDetailsForm({
                             maxLength={50}
                             showCharacterCount
                             error={displayErrors.location}
-                            helperText={t('labels.location')}
                             required
                             className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                         />
@@ -229,7 +223,6 @@ export function CustomerDetailsForm({
                             maxLength={100}
                             showCharacterCount
                             error={displayErrors.reference}
-                            helperText={t('labels.optional')}
                             className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                         />
                     </div>
@@ -321,7 +314,6 @@ export function CustomerDetailsForm({
                             maxLength={100}
                             showCharacterCount
                             error={displayErrors.occasion}
-                            helperText={t('labels.optional')}
                             className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                         />
 
@@ -350,7 +342,6 @@ export function CustomerDetailsForm({
                         maxLength={1000}
                         showCharacterCount
                         error={displayErrors.specialRequests}
-                        helperText={t('labels.optional')}
                         className='w-full px-4 py-2.5 bg-background border rounded-lg transition-colors border-border focus:border-primary'
                     />
                 </div>
@@ -372,7 +363,15 @@ export function CustomerDetailsForm({
                             <NativeRadio
                                 name="paymentMethod"
                                 checked={eventDetails.paymentMethod === 'cash_card'}
-                                onChange={() => setEventDetails({ ...eventDetails, paymentMethod: 'cash_card' })}
+                                onChange={() => {
+                                    setEventDetails({ ...eventDetails, paymentMethod: 'cash_card' });
+                                    setTimeout(() => {
+                                        window.scrollTo({
+                                            top: document.documentElement.scrollHeight,
+                                            behavior: 'smooth'
+                                        });
+                                    }, 100);
+                                }}
                             />
                             <div className="flex-1">
                                 <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
@@ -388,7 +387,15 @@ export function CustomerDetailsForm({
                             <NativeRadio
                                 name="paymentMethod"
                                 checked={eventDetails.paymentMethod === 'on_bill'}
-                                onChange={() => setEventDetails({ ...eventDetails, paymentMethod: 'on_bill' })}
+                                onChange={() => {
+                                    setEventDetails({ ...eventDetails, paymentMethod: 'on_bill' });
+                                    setTimeout(() => {
+                                        window.scrollTo({
+                                            top: document.documentElement.scrollHeight,
+                                            behavior: 'smooth'
+                                        });
+                                    }, 100);
+                                }}
                             />
                             <div className="flex-1">
                                 <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
@@ -467,7 +474,6 @@ export function CustomerDetailsForm({
                                             placeholder={t('placeholders.street')}
                                             maxLength={100}
                                             showCharacterCount
-                                            helperText={t('labels.optional')}
                                             error={eventDetails.billingStreetError}
                                         />
 
@@ -488,7 +494,6 @@ export function CustomerDetailsForm({
                                             placeholder={t('placeholders.plz')}
                                             maxLength={10}
                                             showCharacterCount
-                                            helperText={t('labels.optional')}
                                             error={eventDetails.billingPlzError}
                                         />
 
@@ -508,7 +513,6 @@ export function CustomerDetailsForm({
                                             placeholder={t('placeholders.location')}
                                             maxLength={50}
                                             showCharacterCount
-                                            helperText={t('labels.optional')}
                                             error={eventDetails.billingLocationError}
                                         />
 
@@ -527,7 +531,6 @@ export function CustomerDetailsForm({
                                             placeholder="e.g. INV-98765"
                                             maxLength={100}
                                             showCharacterCount
-                                            helperText={t('labels.optional')}
                                             error={eventDetails.billingReferenceError}
                                         />
                                     </div>

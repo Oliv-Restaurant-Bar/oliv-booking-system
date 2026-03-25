@@ -51,7 +51,7 @@ export function HeroVariant6() {
   }, [current, fading]);
 
   return (
-    <section className="relative w-full h-screen min-h-[600px] overflow-hidden bg-background">
+    <section id="hero" className="relative w-full h-screen min-h-[600px] overflow-hidden bg-background">
       {/* ── Slide stack ── */}
       {CAROUSEL_IMAGES.map((img, i) => (
         <div
@@ -160,7 +160,14 @@ export function HeroVariant6() {
                   </Link>
 
                   <a
-                    href="#process"
+                    href="#how-it-works"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const element = document.querySelector('#how-it-works');
+                      if (element) {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    }}
                     className="h-[52px] px-8 rounded-[8px] font-['Hanken_Grotesk',sans-serif] font-medium text-[15px] text-white flex items-center gap-2 transition-all duration-200 hover:bg-[rgba(255,255,255,0.12)]"
                     style={{
                       background: "rgba(255,255,255,0.08)",

@@ -49,7 +49,7 @@ export function HeaderVariant6() {
               <a
                 key={item.name}
                 href={item.href}
-                className="text-muted-foreground hover:text-foreground transition-colors relative group pb-1"
+                className="inline-block text-muted-foreground hover:text-foreground transition-colors relative group pb-1 first-letter:uppercase"
                 style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
                 onClick={(e) => handleNavClick(e, item.href)}
               >
@@ -83,7 +83,7 @@ export function HeaderVariant6() {
                 <a
                   key={item.name}
                   href={item.href}
-                  className="text-muted-foreground hover:text-foreground hover:bg-muted transition-colors px-4 py-3 rounded-lg"
+                  className="block text-muted-foreground hover:text-foreground hover:bg-muted transition-colors px-4 py-3 rounded-lg first-letter:uppercase"
                   style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
                   onClick={(e) => handleNavClick(e, item.href)}
                 >
