@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { bookings, leads, menuItems, addons } from "@/lib/db/schema";
-import { sql, eq, and, gte, count } from "drizzle-orm";
+import { sql, eq, and, gte, count, isNull } from "drizzle-orm";
 import { requirePermissionWrapper } from "@/lib/auth/rbac-middleware";
 import { Permission } from "@/lib/auth/rbac";
 
@@ -21,15 +21,27 @@ export async function GET() {
       .from(leads)
       .where(eq(leads.status, "new"));
 
-    // Get total menu items
+    // Get total menu items (only non-deleted AND active items)
     const [menuItemsCount] = await db
       .select({ count: count() })
-      .from(menuItems);
+      .from(menuItems)
+      .where(
+        and(
+          isNull(menuItems.deletedAt),
+          eq(menuItems.isActive, true)
+        )
+      );
 
-    // Get total addons
+    // Get total addons (only non-deleted AND active addons)
     const [addonsCount] = await db
       .select({ count: count() })
-      .from(addons);
+      .from(addons)
+      .where(
+        and(
+          isNull(addons.deletedAt),
+          eq(addons.isActive, true)
+        )
+      );
 
     // Calculate total revenue (sum of estimated_total where status is 'completed')
     const [revenueResult] = await db

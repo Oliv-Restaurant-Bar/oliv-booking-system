@@ -2,6 +2,7 @@
 
 import { Search, Plus, GripVertical, ChevronDown, ChevronRight, Edit2, Trash2, MoreVertical, Eye, EyeOff, Copy } from 'lucide-react';
 import { Button } from '../user/Button';
+import { DietaryIcon } from '../user/DietaryIcon';
 import { useMenuConfigTranslation, useCommonTranslation } from '@/lib/i18n/client';
 import { AddonGroup, AddonItem } from '@/lib/types';
 
@@ -267,13 +268,12 @@ export function ChoicesAddonsTab({
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
+                        {item.dietaryType && item.dietaryType !== 'none' && (
+                          <DietaryIcon type={item.dietaryType} size="sm" />
+                        )}
                         <h5 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                           {item.name}
                         </h5>
-                        {/* Veg/Non-Veg Indicator */}
-                        <span className={`inline-flex items-center justify-center w-5 h-5 rounded border-2 flex-shrink-0 ${item.dietaryType === 'veg' ? 'border-green-600' : 'border-red-600'}`}>
-                          <span className={`w-2 h-2 rounded-full ${item.dietaryType === 'veg' ? 'bg-green-600' : 'bg-red-600'}`} />
-                        </span>
                       </div>
                     </div>
 

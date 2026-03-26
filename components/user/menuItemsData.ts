@@ -19,14 +19,14 @@ export interface MenuItem {
   averageConsumption?: number;
   image: string;
   allergens?: string[];
-  addOns?: { id: string; name: string; price: number }[];
+  addOns?: { id: string; name: string; price: number; dietaryType?: 'veg' | 'non-veg' | 'vegan' | 'none' }[];
   addonGroups?: {
     id: string;
     name: string;
     isRequired: boolean;
     minSelect: number;
     maxSelect: number;
-    items: { id: string; name: string; price: number }[];
+    items: { id: string; name: string; price: number; dietaryType?: 'veg' | 'non-veg' | 'vegan' | 'none' }[];
   }[];
   variants?: MenuItemVariant[];
   /** 'none' is used for non-food service items (tech, furniture, etc.) from the database */
@@ -38,5 +38,15 @@ export interface MenuItem {
 
   additives?: string[];
   ingredients?: string;
+  nutritionalInfo?: {
+    servingSize: string;
+    calories: string;
+    protein: string;
+    carbs: string;
+    fat: string;
+    fiber: string;
+    sugar: string;
+    sodium: string;
+  };
   sortOrder?: number;
 }

@@ -1,13 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Download, Calendar, Users } from 'lucide-react';
-import Highcharts from 'highcharts';
-import HighchartsReact from 'highcharts-react-official';
 import { TrendingItems } from './TrendingItems';
 import { MonthlyReportLayout2 } from './MonthlyReportLayout2';
-import { SkeletonPage, SkeletonKPI, SkeletonList, SkeletonChart, SkeletonTrendingItems, SkeletonMonthlyReport } from '@/components/ui/skeleton-loaders';
-import { Permission, hasPermission } from '@/lib/auth/rbac';
+import { SkeletonList, SkeletonTrendingItems, SkeletonMonthlyReport } from '@/components/ui/skeleton-loaders';
 import { useTranslations } from 'next-intl';
 import { SettingsService } from '@/services/settings.service';
 

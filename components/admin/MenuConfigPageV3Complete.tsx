@@ -215,7 +215,26 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
 
   const [currentGroupId, setCurrentGroupId] = useState<string | null>(null);
   const [editingAddonItemId, setEditingAddonItemId] = useState<string | null>(null);
-  const [newAddonItem, setNewAddonItem] = useState({ name: '', price: '', dietaryType: 'veg' as any, isActive: true });
+  const [newAddonItem, setNewAddonItem] = useState({
+    name: '',
+    price: '',
+    dietaryType: 'veg' as any,
+    isActive: true,
+    dietaryTags: [] as string[],
+    ingredients: '',
+    allergens: [] as string[],
+    additives: [] as string[],
+    nutritionalInfo: {
+      servingSize: '',
+      calories: '',
+      protein: '',
+      carbs: '',
+      fat: '',
+      fiber: '',
+      sugar: '',
+      sodium: '',
+    },
+  });
 
   const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null);
   const [deleteMenuItemId, setDeleteMenuItemId] = useState<string | null>(null);
@@ -642,10 +661,16 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
             {/* Tab Content */}
             {activeTab === 'items' ? (
               <MenuCategoriesTab
-                filteredCategories={categories.filter(cat =>
-                  cat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  cat.description.toLowerCase().includes(searchQuery.toLowerCase())
-                )}
+                filteredCategories={categories
+                  .map(cat => ({
+                    ...cat,
+                    isExpanded: searchQuery === '' ? cat.isExpanded : true,
+                    items: cat.items.filter(item =>
+                      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      item.description?.toLowerCase().includes(searchQuery.toLowerCase())
+                    )
+                  }))
+                  .filter(cat => searchQuery === '' || cat.items.length > 0)}
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
                 canCreateCategory={canCreateCategory}
@@ -783,13 +808,49 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
                 onAddAddonItem={(id) => {
                   setCurrentGroupId(id);
                   setEditingAddonItemId(null);
-                  setNewAddonItem({ name: '', price: '', dietaryType: 'veg', isActive: true });
+                  setNewAddonItem({
+                    name: '',
+                    price: '',
+                    dietaryType: 'veg',
+                    isActive: true,
+                    dietaryTags: [],
+                    ingredients: '',
+                    allergens: [],
+                    additives: [],
+                    nutritionalInfo: {
+                      servingSize: '',
+                      calories: '',
+                      protein: '',
+                      carbs: '',
+                      fat: '',
+                      fiber: '',
+                      sugar: '',
+                      sodium: '',
+                    },
+                  });
                   setIsAddAddonItemModalOpen(true);
                 }}
                 onEditAddonItem={(groupId, item) => {
                   setCurrentGroupId(groupId);
                   setEditingAddonItemId(item.id);
-                  setNewAddonItem({ ...item, price: (item.price ?? '').toString() });
+                  setNewAddonItem({
+                    ...item,
+                    price: (item.price ?? '').toString(),
+                    dietaryTags: (item as any).dietaryTags || [],
+                    ingredients: (item as any).ingredients || '',
+                    allergens: (item as any).allergens || [],
+                    additives: (item as any).additives || [],
+                    nutritionalInfo: (item as any).nutritionalInfo || {
+                      servingSize: '',
+                      calories: '',
+                      protein: '',
+                      carbs: '',
+                      fat: '',
+                      fiber: '',
+                      sugar: '',
+                      sodium: '',
+                    },
+                  });
                   setIsAddAddonItemModalOpen(true);
                 }}
                 onDeleteAddonItem={(groupId, itemId) => {

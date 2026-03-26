@@ -85,7 +85,7 @@ export function AddGroupModal({
               <div className={`px-4 py-3 border-2 rounded-lg transition-all flex flex-col items-start gap-2 hover:border-primary/50 ${newGroup.type === 'optional' ? 'border-primary bg-primary/10' : 'border-border'}`}>
                 <div className="flex items-center justify-between w-full gap-2">
                   <span className={`text-foreground ${newGroup.type === 'optional' ? 'text-primary' : ''}`} style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                    {t('labels.addon')}s
+                    {t('labels.addons')}
                   </span>
                   <NativeRadio
                     name="groupType"
@@ -102,7 +102,7 @@ export function AddGroupModal({
               <div className={`px-4 py-3 border-2 rounded-lg transition-all flex flex-col items-start gap-2 hover:border-primary/50 ${newGroup.type === 'mandatory' ? 'border-primary bg-primary/10' : 'border-border'}`}>
                 <div className="flex items-center justify-between w-full gap-2">
                   <span className={`text-foreground ${newGroup.type === 'mandatory' ? 'text-primary' : ''}`} style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                    {t('labels.choice')}s
+                    {t('labels.choices')}
                   </span>
                   <NativeRadio
                     name="groupType"

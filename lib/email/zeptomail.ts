@@ -213,7 +213,9 @@ export async function sendTemplateEmail(params: TemplateEmailParams): Promise<{ 
 
     const startTime = Date.now();
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
+    // Increased timeout to 45 seconds for emails with PDF attachments
+    // Vercel serverless functions have a 60s limit (Hobby plan)
+    const timeout = setTimeout(() => controller.abort(), 45000);
 
     const response = await fetch(templateUrl, {
       method: "POST",
@@ -250,7 +252,7 @@ export async function sendTemplateEmail(params: TemplateEmailParams): Promise<{ 
     };
   } catch (error: any) {
     if (error.name === "AbortError") {
-      console.error("   ❌ TIMEOUT — ZeptoMail template email timed out after 15s");
+      console.error("   ❌ TIMEOUT — ZeptoMail template email timed out after 45s");
       console.log('📬 ======== ZEPTOMAIL SEND END ========');
       return { success: false, error: "Email request timed out" };
     }

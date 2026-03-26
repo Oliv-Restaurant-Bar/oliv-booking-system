@@ -111,6 +111,11 @@ export function CustomMenuWizard() {
   // Date and Time picker modal states
   const [isDateTimePickerOpen, setIsDateTimePickerOpen] = useState(false);
 
+  // Scroll to top when step changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentStep]);
+
   // Check for edit mode from sessionStorage
   useEffect(() => {
     const editMode = searchParams.get('edit');
@@ -364,6 +369,7 @@ export function CustomMenuWizard() {
                 allergens: item.allergens || [],
                 additives: item.additives || [],
                 ingredients: item.ingredients || '',
+                nutritionalInfo: item.nutritionalInfo || null,
                 isGlutenFree: item.dietaryTags?.includes('Gluten Free') || item.dietaryTags?.includes('gluten-free') || false,
                 averageConsumption: item.averageConsumption || null,
                 variants: item.variants || [],
@@ -386,6 +392,7 @@ export function CustomMenuWizard() {
                           id: gi.id,
                           name: gi.name,
                           price: Number(gi.price) || 0,
+                          dietaryType: gi.dietaryType,
                         });
                       }
                     });
@@ -412,6 +419,7 @@ export function CustomMenuWizard() {
                       name: gi.name,
                       price: Number(gi.price) || 0,
                       description: gi.description || gi.ingredients || '',
+                      dietaryType: gi.dietaryType,
                     }));
 
                     return {
@@ -489,6 +497,7 @@ export function CustomMenuWizard() {
   // Handle category change 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const steps = [
@@ -1666,6 +1675,7 @@ export function CustomMenuWizard() {
                   isSubmitting={isSubmitting}
                   setItemGuestCounts={setItemGuestCounts}
                   categories={categories}
+                  onCloseDrawer={() => setIsMobileDrawerOpen(false)}
                 />
               </div>
             </div>

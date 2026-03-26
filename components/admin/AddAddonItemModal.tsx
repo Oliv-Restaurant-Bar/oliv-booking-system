@@ -98,15 +98,17 @@ export function AddAddonItemModal({
           <label className="block text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
             {t('labels.dietaryType')}
           </label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
+              { id: 'none', label: t('dietary.none'), desc: t('dietary.noneDesc'), color: 'slate' },
               { id: 'veg', label: t('dietary.veg'), desc: t('dietary.vegDesc'), color: 'green' },
               { id: 'non-veg', label: t('dietary.nonVeg'), desc: t('dietary.nonVegDesc'), color: 'red' },
+              { id: 'vegan', label: t('dietary.vegan'), desc: t('dietary.veganDesc'), color: 'green' },
             ].map((type) => (
               <button
                 key={type.id}
                 onClick={() => setNewAddonItem({ ...newAddonItem, dietaryType: type.id as any })}
-                className={`p-4 rounded-lg border-2 transition-all ${newAddonItem.dietaryType === type.id
+                className={`p-4 rounded-lg border-2 transition-all text-left ${newAddonItem.dietaryType === type.id
                   ? 'border-primary bg-primary/5'
                   : 'border-border hover:border-border/60 bg-background'
                   }`}
@@ -115,11 +117,11 @@ export function AddAddonItemModal({
                   <div className={`w-6 h-6 rounded border-2 border-${type.color}-600 flex items-center justify-center flex-shrink-0`}>
                     <div className={`w-3 h-3 rounded-full bg-${type.color}-600`} />
                   </div>
-                  <div className="text-left flex-1">
-                    <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-foreground truncate" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                       {type.label}
                     </p>
-                    <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                    <p className="text-muted-foreground line-clamp-2" style={{ fontSize: 'var(--text-small)' }}>
                       {type.desc}
                     </p>
                   </div>

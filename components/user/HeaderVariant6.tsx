@@ -13,14 +13,21 @@ export function HeaderVariant6() {
   const navigation = [
     { name: t('header.home'), href: '#hero' },
     { name: t('header.howItWorks'), href: '#how-it-works' },
-    { name: t('header.gallery'), href: '#cta' },
+    { name: t('header.gallery'), href: 'https://images.romystreit.com/raumforum-oliv-24/snrf6ty9je' },
   ];
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault();
-    const element = document.querySelector(href);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Check if it's an internal anchor link (starts with #)
+    if (href.startsWith('#')) {
+      e.preventDefault();
+      const element = document.querySelector(href);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setMobileMenuOpen(false);
+      }
+    } else {
+      // For external URLs, let them navigate normally (or open in new tab)
+      // Close mobile menu if open
       setMobileMenuOpen(false);
     }
   };
@@ -45,18 +52,23 @@ export function HeaderVariant6() {
 
           {/* Desktop Navigation - Minimal Underline */}
           <div className="hidden md:flex items-center gap-8">
-            {navigation.map((item) => (
-              <a
-                key={item.name}
-                href={item.href}
-                className="inline-block text-muted-foreground hover:text-foreground transition-colors relative group pb-1 first-letter:uppercase"
-                style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
-                onClick={(e) => handleNavClick(e, item.href)}
-              >
-                {item.name}
-                <span className="absolute bottom-0 left-0 w-full h-px bg-primary scale-x-0 group-hover:scale-x-100 transition-transform" />
-              </a>
-            ))}
+            {navigation.map((item) => {
+              const isExternal = item.href.startsWith('http');
+              return (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  target={isExternal ? '_blank' : undefined}
+                  rel={isExternal ? 'noopener noreferrer' : undefined}
+                  className="inline-block text-muted-foreground hover:text-foreground transition-colors relative group pb-1 first-letter:uppercase"
+                  style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+                  onClick={(e) => handleNavClick(e, item.href)}
+                >
+                  {item.name}
+                  <span className="absolute bottom-0 left-0 w-full h-px bg-primary scale-x-0 group-hover:scale-x-100 transition-transform" />
+                </a>
+              );
+            })}
           </div>
 
           {/* CTA Button - Desktop */}
@@ -79,17 +91,22 @@ export function HeaderVariant6() {
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-border">
             <div className="flex flex-col space-y-2">
-              {navigation.map((item) => (
-                <a
-                  key={item.name}
-                  href={item.href}
-                  className="block text-muted-foreground hover:text-foreground hover:bg-muted transition-colors px-4 py-3 rounded-lg first-letter:uppercase"
-                  style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
-                  onClick={(e) => handleNavClick(e, item.href)}
-                >
-                  {item.name}
-                </a>
-              ))}
+              {navigation.map((item) => {
+                const isExternal = item.href.startsWith('http');
+                return (
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    target={isExternal ? '_blank' : undefined}
+                    rel={isExternal ? 'noopener noreferrer' : undefined}
+                    className="block text-muted-foreground hover:text-foreground hover:bg-muted transition-colors px-4 py-3 rounded-lg first-letter:uppercase"
+                    style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+                    onClick={(e) => handleNavClick(e, item.href)}
+                  >
+                    {item.name}
+                  </a>
+                );
+              })}
               <div className="px-4 pt-2 flex flex-col gap-2">
                 <Button variant="primary" fullWidth to="/wizard">
                   {t('header.createMenu')}

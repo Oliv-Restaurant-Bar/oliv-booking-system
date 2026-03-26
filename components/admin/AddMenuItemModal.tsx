@@ -98,6 +98,42 @@ export function AddMenuItemModal({
   const t = useMenuConfigTranslation();
   const ct = useCommonTranslation();
 
+  // Helper functions to get translated labels
+  const getDietaryTagLabel = (tag: string) => {
+    const key = tag.toLowerCase().replace(/\s+/g, '').replace(/[^a-z]/g, '');
+    const mappings: Record<string, string> = {
+      'glutenfree': 'glutenFree',
+      'dairyfree': 'dairyFree',
+      'nutfree': 'nutFree',
+      'soyfree': 'soyFree',
+      'sugarfree': 'sugarFree',
+      'lowcarb': 'lowCarb',
+      'highprotein': 'highProtein',
+    };
+    const mappedKey = mappings[key] || key;
+    return t(`dietary.tags.${mappedKey}`);
+  };
+
+  const getAllergenLabel = (allergen: string) => {
+    const key = allergen.toLowerCase().replace(/\s+/g, '');
+    const mappings: Record<string, string> = {
+      'treenuts': 'treeNuts',
+    };
+    const mappedKey = mappings[key] || key;
+    return t(`dietary.allergens.${mappedKey}`);
+  };
+
+  const getAdditiveLabel = (additive: string) => {
+    const key = additive.toLowerCase().replace(/\s+/g, '').replace('/', '');
+    const mappings: Record<string, string> = {
+      'artificialcolors': 'artificialColors',
+      'artificialflavors': 'artificialFlavors',
+      'bhabht': 'bhaBht',
+    };
+    const mappedKey = mappings[key] || key;
+    return t(`dietary.additives.${mappedKey}`);
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -457,7 +493,7 @@ export function AddMenuItemModal({
                             value={variant.price}
                             onChange={(e) => updateVariant(index, 'price', parseFloat(e.target.value) || 0)}
                             placeholder={t('placeholders.price')}
-                            className="w-full pl-8 pr-3 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                            className="w-full pl-12 pr-3 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                             style={{ fontSize: 'var(--text-base)' }}
                           />
                         </div>
@@ -578,7 +614,7 @@ export function AddMenuItemModal({
                     </div>
                     <div className="flex-1">
                       <div className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                        {tag}
+                        {getDietaryTagLabel(tag)}
                       </div>
                     </div>
                   </button>
@@ -627,7 +663,7 @@ export function AddMenuItemModal({
                     </div>
                     <div className="flex-1">
                       <div className={newMenuItem.allergens.includes(allergen) ? 'text-destructive' : 'text-foreground'} style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                        {allergen}
+                        {getAllergenLabel(allergen)}
                       </div>
                     </div>
                   </button>
@@ -660,7 +696,7 @@ export function AddMenuItemModal({
                     </div>
                     <div className="flex-1">
                       <div className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                        {additive}
+                        {getAdditiveLabel(additive)}
                       </div>
                     </div>
                   </button>

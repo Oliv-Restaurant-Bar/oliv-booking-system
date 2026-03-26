@@ -3,6 +3,7 @@
 import React from 'react';
 import { Settings, X, Check } from 'lucide-react';
 import { DietaryIcon } from '@/components/user/DietaryIcon';
+import { useMenuConfigTranslation, useCommonTranslation } from '@/lib/i18n/client';
 
 interface ItemSettingsModalProps {
   isOpen: boolean;
@@ -73,7 +74,46 @@ export function ItemSettingsModal({
   setItemSettings,
   itemName,
 }: ItemSettingsModalProps) {
+  const t = useMenuConfigTranslation();
+  const ct = useCommonTranslation();
+
   if (!isOpen) return null;
+
+  // Helper functions to get translated labels
+  const getDietaryTagLabel = (tag: string) => {
+    const key = tag.toLowerCase().replace(/\s+/g, '').replace(/[^a-z]/g, '');
+    const mappings: Record<string, string> = {
+      'glutenfree': 'glutenFree',
+      'dairyfree': 'dairyFree',
+      'nutfree': 'nutFree',
+      'soyfree': 'soyFree',
+      'sugarfree': 'sugarFree',
+      'lowcarb': 'lowCarb',
+      'highprotein': 'highProtein',
+    };
+    const mappedKey = mappings[key] || key;
+    return t(`dietary.tags.${mappedKey}`);
+  };
+
+  const getAllergenLabel = (allergen: string) => {
+    const key = allergen.toLowerCase().replace(/\s+/g, '');
+    const mappings: Record<string, string> = {
+      'treenuts': 'treeNuts',
+    };
+    const mappedKey = mappings[key] || key;
+    return t(`dietary.allergens.${mappedKey}`);
+  };
+
+  const getAdditiveLabel = (additive: string) => {
+    const key = additive.toLowerCase().replace(/\s+/g, '').replace('/', '');
+    const mappings: Record<string, string> = {
+      'artificialcolors': 'artificialColors',
+      'artificialflavors': 'artificialFlavors',
+      'bhabht': 'bhaBht',
+    };
+    const mappedKey = mappings[key] || key;
+    return t(`dietary.additives.${mappedKey}`);
+  };
 
   const handleToggleTag = (tag: string, field: 'dietaryTags' | 'allergens' | 'additives') => {
     const currentArray = itemSettings[field];
@@ -101,7 +141,7 @@ export function ItemSettingsModal({
               <Settings className="w-5 h-5 text-primary" />
             </div>
             <h3 className="text-foreground flex-1" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-              {itemName ? `${itemName} - Settings` : 'Item Settings'}
+              {itemName ? `${itemName} - ${t('labels.itemSettings')}` : t('labels.itemSettings')}
             </h3>
             <button
               onClick={onClose}
@@ -118,7 +158,7 @@ export function ItemSettingsModal({
               {/* Dietary Type */}
               <div>
                 <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                  Dietary Type <span className="text-destructive">*</span>
+                  {t('labels.dietaryType')} <span className="text-destructive">*</span>
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
@@ -138,10 +178,10 @@ export function ItemSettingsModal({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>No Type</span>
+                        <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>{t('dietary.none')}</span>
                       </div>
                       <div className="text-muted-foreground break-words" style={{ fontSize: 'var(--text-small)', hyphens: 'auto' }}>
-                        Non-food items
+                        {t('dietary.noneDesc')}
                       </div>
                     </div>
                   </button>
@@ -162,11 +202,11 @@ export function ItemSettingsModal({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>Vegetarian</span>
+                        <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>{t('dietary.veg')}</span>
                         <DietaryIcon type="veg" size="sm" />
                       </div>
                       <div className="text-muted-foreground break-words" style={{ fontSize: 'var(--text-small)', hyphens: 'auto' }}>
-                        No meat or fish
+                        {t('dietary.vegDesc')}
                       </div>
                     </div>
                   </button>
@@ -187,11 +227,11 @@ export function ItemSettingsModal({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>Non-Vegetarian</span>
+                        <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>{t('dietary.nonVeg')}</span>
                         <DietaryIcon type="non-veg" size="sm" />
                       </div>
                       <div className="text-muted-foreground break-words" style={{ fontSize: 'var(--text-small)', hyphens: 'auto' }}>
-                        Contains meat or fish
+                        {t('dietary.nonVegDesc')}
                       </div>
                     </div>
                   </button>
@@ -212,11 +252,11 @@ export function ItemSettingsModal({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>Vegan</span>
+                        <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>{t('dietary.vegan')}</span>
                         <DietaryIcon type="vegan" size="sm" />
                       </div>
                       <div className="text-muted-foreground break-words" style={{ fontSize: 'var(--text-small)', hyphens: 'auto' }}>
-                        No animal products
+                        {t('dietary.veganDesc')}
                       </div>
                     </div>
                   </button>
@@ -226,7 +266,7 @@ export function ItemSettingsModal({
               {/* Dietary Tags */}
               <div>
                 <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                  Dietary Tags
+                  {t('labels.dietaryTags')}
                 </label>
                 <div className="grid grid-cols-3 gap-3">
                   {dietaryTagOptions.map((tag) => (
@@ -250,7 +290,7 @@ export function ItemSettingsModal({
                       </div>
                       <div className="flex-1">
                         <div className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                          {tag}
+                          {getDietaryTagLabel(tag)}
                         </div>
                       </div>
                     </button>
@@ -261,12 +301,12 @@ export function ItemSettingsModal({
               {/* Ingredients */}
               <div>
                 <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                  Ingredients
+                  {t('labels.ingredients')}
                 </label>
                 <textarea
                   value={itemSettings.ingredients}
                   onChange={(e) => setItemSettings({ ...itemSettings, ingredients: e.target.value })}
-                  placeholder="List all ingredients..."
+                  placeholder={t('placeholders.ingredients')}
                   rows={3}
                   className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                   style={{ fontSize: 'var(--text-base)' }}
@@ -276,7 +316,7 @@ export function ItemSettingsModal({
               {/* Allergens */}
               <div>
                 <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                  Allergens
+                  {t('labels.allergens')}
                 </label>
                 <div className="grid grid-cols-3 gap-3">
                   {allergenOptions.map((allergen) => (
@@ -300,7 +340,7 @@ export function ItemSettingsModal({
                       </div>
                       <div className="flex-1">
                         <div className={itemSettings.allergens.includes(allergen) ? 'text-destructive' : 'text-foreground'} style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                          {allergen}
+                          {getAllergenLabel(allergen)}
                         </div>
                       </div>
                     </button>
@@ -311,7 +351,7 @@ export function ItemSettingsModal({
               {/* Additives */}
               <div>
                 <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                  Additives
+                  {t('labels.additives')}
                 </label>
                 <div className="grid grid-cols-3 gap-3">
                   {additiveOptions.map((additive) => (
@@ -335,7 +375,7 @@ export function ItemSettingsModal({
                       </div>
                       <div className="flex-1">
                         <div className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                          {additive}
+                          {getAdditiveLabel(additive)}
                         </div>
                       </div>
                     </button>
@@ -346,12 +386,12 @@ export function ItemSettingsModal({
               {/* Nutritional Information */}
               <div>
                 <h4 className="text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                  Nutritional Information
+                  {t('labels.nutritionalInfo')}
                 </h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-muted-foreground mb-1.5" style={{ fontSize: 'var(--text-small)' }}>
-                      Serving Size
+                      {t('nutrition.servingSize')}
                     </label>
                     <input
                       type="text"
@@ -360,14 +400,14 @@ export function ItemSettingsModal({
                         ...itemSettings,
                         nutritionalInfo: { ...itemSettings.nutritionalInfo, servingSize: e.target.value }
                       })}
-                      placeholder="e.g., 100g"
+                      placeholder={t('placeholders.nutrition.servingSize')}
                       className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                       style={{ fontSize: 'var(--text-base)' }}
                     />
                   </div>
                   <div>
                     <label className="block text-muted-foreground mb-1.5" style={{ fontSize: 'var(--text-small)' }}>
-                      Calories
+                      {t('nutrition.calories')}
                     </label>
                     <input
                       type="text"
@@ -376,14 +416,14 @@ export function ItemSettingsModal({
                         ...itemSettings,
                         nutritionalInfo: { ...itemSettings.nutritionalInfo, calories: e.target.value }
                       })}
-                      placeholder="e.g., 250 kcal"
+                      placeholder={t('placeholders.nutrition.calories')}
                       className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                       style={{ fontSize: 'var(--text-base)' }}
                     />
                   </div>
                   <div>
                     <label className="block text-muted-foreground mb-1.5" style={{ fontSize: 'var(--text-small)' }}>
-                      Protein
+                      {t('nutrition.protein')}
                     </label>
                     <input
                       type="text"
@@ -392,14 +432,14 @@ export function ItemSettingsModal({
                         ...itemSettings,
                         nutritionalInfo: { ...itemSettings.nutritionalInfo, protein: e.target.value }
                       })}
-                      placeholder="e.g., 15g"
+                      placeholder={t('placeholders.nutrition.protein')}
                       className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                       style={{ fontSize: 'var(--text-base)' }}
                     />
                   </div>
                   <div>
                     <label className="block text-muted-foreground mb-1.5" style={{ fontSize: 'var(--text-small)' }}>
-                      Carbohydrates
+                      {t('nutrition.carbs')}
                     </label>
                     <input
                       type="text"
@@ -408,14 +448,14 @@ export function ItemSettingsModal({
                         ...itemSettings,
                         nutritionalInfo: { ...itemSettings.nutritionalInfo, carbs: e.target.value }
                       })}
-                      placeholder="e.g., 30g"
+                      placeholder={t('placeholders.nutrition.carbs')}
                       className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                       style={{ fontSize: 'var(--text-base)' }}
                     />
                   </div>
                   <div>
                     <label className="block text-muted-foreground mb-1.5" style={{ fontSize: 'var(--text-small)' }}>
-                      Fat
+                      {t('nutrition.fat')}
                     </label>
                     <input
                       type="text"
@@ -424,14 +464,14 @@ export function ItemSettingsModal({
                         ...itemSettings,
                         nutritionalInfo: { ...itemSettings.nutritionalInfo, fat: e.target.value }
                       })}
-                      placeholder="e.g., 10g"
+                      placeholder={t('placeholders.nutrition.fat')}
                       className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                       style={{ fontSize: 'var(--text-base)' }}
                     />
                   </div>
                   <div>
                     <label className="block text-muted-foreground mb-1.5" style={{ fontSize: 'var(--text-small)' }}>
-                      Fiber
+                      {t('nutrition.fiber')}
                     </label>
                     <input
                       type="text"
@@ -440,14 +480,14 @@ export function ItemSettingsModal({
                         ...itemSettings,
                         nutritionalInfo: { ...itemSettings.nutritionalInfo, fiber: e.target.value }
                       })}
-                      placeholder="e.g., 5g"
+                      placeholder={t('placeholders.nutrition.fiber')}
                       className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                       style={{ fontSize: 'var(--text-base)' }}
                     />
                   </div>
                   <div>
                     <label className="block text-muted-foreground mb-1.5" style={{ fontSize: 'var(--text-small)' }}>
-                      Sugar
+                      {t('nutrition.sugar')}
                     </label>
                     <input
                       type="text"
@@ -456,14 +496,14 @@ export function ItemSettingsModal({
                         ...itemSettings,
                         nutritionalInfo: { ...itemSettings.nutritionalInfo, sugar: e.target.value }
                       })}
-                      placeholder="e.g., 8g"
+                      placeholder={t('placeholders.nutrition.sugar')}
                       className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                       style={{ fontSize: 'var(--text-base)' }}
                     />
                   </div>
                   <div>
                     <label className="block text-muted-foreground mb-1.5" style={{ fontSize: 'var(--text-small)' }}>
-                      Sodium
+                      {t('nutrition.sodium')}
                     </label>
                     <input
                       type="text"
@@ -472,7 +512,7 @@ export function ItemSettingsModal({
                         ...itemSettings,
                         nutritionalInfo: { ...itemSettings.nutritionalInfo, sodium: e.target.value }
                       })}
-                      placeholder="e.g., 500mg"
+                      placeholder={t('placeholders.nutrition.sodium')}
                       className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                       style={{ fontSize: 'var(--text-base)' }}
                     />
@@ -490,7 +530,7 @@ export function ItemSettingsModal({
               style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
             >
               <X className="w-4 h-4" />
-              Cancel
+              {ct('cancel')}
             </button>
             <button
               onClick={onSave}
@@ -498,7 +538,7 @@ export function ItemSettingsModal({
               style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
             >
               <Check className="w-4 h-4" />
-              Save Changes
+              {t('buttons.saveChanges')}
             </button>
           </div>
         </div>

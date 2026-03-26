@@ -18,6 +18,7 @@ interface MonthData {
   totalBookings: number;
   totalRevenue: number;
   avgRevenue: number;
+  pending: number;
   new: number;
   touchbase: number;
   confirmed: number;
@@ -55,6 +56,7 @@ export function MonthlyReportLayout2({ data, user, selectedYear, onYearChange, c
       [t('bookingsLabel')]: month.totalBookings,
       [t('revenue')]: month.totalRevenue,
       [t('avgRevenueLabel')]: month.avgRevenue,
+      [statusT('pending')]: month.pending,
       [statusT('new')]: month.new,
       [statusT('touchbase')]: month.touchbase,
       [statusT('confirmed')]: month.confirmed,
@@ -152,6 +154,12 @@ export function MonthlyReportLayout2({ data, user, selectedYear, onYearChange, c
                     <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>{t('avgRevenueLabel')}</span>
                     <span className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
                       {currencySymbol} {month.avgRevenue.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>{statusT('pending')}</span>
+                    <span className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
+                      {month.pending}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">

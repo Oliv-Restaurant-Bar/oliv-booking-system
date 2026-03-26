@@ -146,16 +146,8 @@ export function MenuCategoriesTab({
                         )}
                       </button>
 
-                      {/* Image - Larger rectangular */}
-                      <div className="hidden sm:block w-24 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-muted relative">
-                        <ImageWithFallback
-                          src={category.image}
-                          alt={category.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-
                       {/* Content - Name, Description, Item Count */}
+
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <h4 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
@@ -382,7 +374,7 @@ export function MenuCategoriesTab({
                                         {item.dietaryType && (
                                           <DietaryIcon type={item.dietaryType as any} size="sm" />
                                         )}
-                                        <span className={`text-ellipsis overflow-hidden whitespace-nowrap ${item.name.slice(0, 25)} ${item.name.length > 25 ? '...' : ''}`}>{item.name}</span>
+                                        <span className="text-ellipsis overflow-hidden whitespace-nowrap">{item.name.slice(0, 25)} {item.name.length > 25 ? '...' : ''}</span>
                                       </h5>
                                       <p className="text-muted-foreground line-clamp-1" style={{ fontSize: 'var(--text-small)' }}>
                                         {item.description}

@@ -8,7 +8,7 @@ import { NativeCheckbox } from '@/components/ui/NativeCheckbox';
 import { Input } from '@/components/ui/input';
 import { ValidatedTextarea } from '@/components/ui/validated-textarea';
 import { toast } from 'sonner';
-import { useWizardTranslation } from '@/lib/i18n/client';
+import { useWizardTranslation, useMenuConfigTranslation } from '@/lib/i18n/client';
 
 interface ItemDetailsModalProps {
   item: MenuItem | null;
@@ -50,11 +50,68 @@ export function ItemDetailsModal({
   calculateRecommendedQuantity,
 }: ItemDetailsModalProps) {
   const t = useWizardTranslation();
+  const mt = useMenuConfigTranslation();
+
+  // Helper functions to get translated labels
+  const getDietaryTagLabel = (tag: string) => {
+    const key = tag.toLowerCase().replace(/\s+/g, '').replace(/[^a-z]/g, '');
+    const mappings: Record<string, string> = {
+      'glutenfree': 'glutenFree',
+      'dairyfree': 'dairyFree',
+      'nutfree': 'nutFree',
+      'soyfree': 'soyFree',
+      'sugarfree': 'sugarFree',
+      'lowcarb': 'lowCarb',
+      'highprotein': 'highProtein',
+    };
+    const mappedKey = mappings[key] || key;
+    return mt(`dietary.tags.${mappedKey}`);
+  };
+
+  const getAllergenLabel = (allergen: string) => {
+    const key = allergen.toLowerCase().replace(/\s+/g, '');
+    const mappings: Record<string, string> = {
+      'treenuts': 'treeNuts',
+    };
+    const mappedKey = mappings[key] || key;
+    return mt(`dietary.allergens.${mappedKey}`);
+  };
+
+  const getAdditiveLabel = (additive: string) => {
+    const key = additive.toLowerCase().replace(/\s+/g, '').replace('/', '');
+    const mappings: Record<string, string> = {
+      'artificialcolors': 'artificialColors',
+      'artificialflavors': 'artificialFlavors',
+      'bhabht': 'bhaBht',
+    };
+    const mappedKey = mappings[key] || key;
+    return mt(`dietary.additives.${mappedKey}`);
+  };
+
   const [tempQuantity, setTempQuantity] = useState(1);
   const [tempGuestCount, setTempGuestCount] = useState<number | null>(null);
   const [tempAddOns, setTempAddOns] = useState<string[]>([]);
   const [tempVariant, setTempVariant] = useState('');
   const [tempComment, setTempComment] = useState('');
+
+  // Helper to get the current price based on selected variant
+  const getCurrentPrice = () => {
+    if (!item) return 0;
+    if (tempVariant && item.variants) {
+      const variant = item.variants.find(v => v.id === tempVariant);
+      if (variant) return variant.price;
+    }
+    return item.price;
+  };
+
+  // Helper to get the current variant object
+  const getCurrentVariant = () => {
+    if (!item) return null;
+    if (tempVariant && item.variants) {
+      return item.variants.find(v => v.id === tempVariant);
+    }
+    return item.variants?.[0] || null;
+  };
 
   useEffect(() => {
     if (item) {
@@ -190,7 +247,12 @@ export function ItemDetailsModal({
                 {item.name}
               </h3>
               <p className="text-primary mt-1" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                CHF {(item.price > 0 ? item.price : (item.variants && item.variants.length > 0 ? item.variants[0].price : 0)).toFixed(2)}
+                CHF {getCurrentPrice().toFixed(2)}
+                {getCurrentVariant()?.name && (
+                  <span className="text-muted-foreground ml-2" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-normal)' }}>
+                    ({getCurrentVariant()?.name})
+                  </span>
+                )}
                 {item.pricingType === 'billed_by_consumption' && (
                   <span className="text-muted-foreground ml-2 capitalize" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-normal)' }}>
                     ({t('status.billedByConsumption')})
@@ -272,7 +334,7 @@ export function ItemDetailsModal({
           {item.variants && item.variants.length > 0 && (
             <div className="mb-6">
               <h4 className="text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                Choose Size
+                Choose Size <span className="text-muted-foreground font-normal">(Required)</span>
               </h4>
               <div className="space-y-3">
                 {item.variants.map((variant) => {
@@ -280,7 +342,7 @@ export function ItemDetailsModal({
                   return (
                     <label
                       key={variant.id}
-                      className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all ${isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-border/80'
+                      className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all ${isSelected ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-border/80'
                         }`}
                       style={{ borderRadius: 'var(--radius)' }}
                     >
@@ -303,7 +365,7 @@ export function ItemDetailsModal({
                           )}
                         </div>
                       </div>
-                      <span className="text-foreground ml-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                      <span className={`ml-3 ${isSelected ? 'text-primary' : 'text-foreground'}`} style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
                         CHF {variant.price.toFixed(2)}
                       </span>
                     </label>
@@ -317,7 +379,7 @@ export function ItemDetailsModal({
           {item.dietaryTags && item.dietaryTags.length > 0 && (
             <div className="mb-6">
               <h4 className="text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                Dietary Information
+                {t('dietaryInfo')}
               </h4>
               <div className="flex flex-wrap gap-2">
                 {item.dietaryTags.map((tag) => (
@@ -326,29 +388,73 @@ export function ItemDetailsModal({
                     className="px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20"
                     style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                   >
-                    {tag}
+                    {getDietaryTagLabel(tag)}
                   </span>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Allergen Information */}
+          {/* Ingredients */}
+          {item.ingredients && (
+            <div className="mb-6">
+              <h4 className="text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                {mt('labels.ingredients')}
+              </h4>
+              <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                {item.ingredients}
+              </p>
+            </div>
+          )}
+
+          {/* Nutritional Info */}
+          {item.nutritionalInfo && (
+            <div className="mb-6">
+              <h4 className="text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                {mt('labels.nutritionalInfo')}
+              </h4>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {Object.entries({
+                  calories: item.nutritionalInfo.calories,
+                  protein: item.nutritionalInfo.protein,
+                  carbs: item.nutritionalInfo.carbs,
+                  fat: item.nutritionalInfo.fat,
+                  fiber: item.nutritionalInfo.fiber,
+                  sugar: item.nutritionalInfo.sugar,
+                  sodium: item.nutritionalInfo.sodium
+                }).map(([key, value]) => value && (
+                  <div key={key} className="p-2 bg-muted/30 border border-border/40 rounded-lg">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">
+                      {mt(`nutrition.${key}`)}
+                    </p>
+                    <p className="text-sm font-bold text-foreground">{value}</p>
+                  </div>
+                ))}
+              </div>
+              {item.nutritionalInfo.servingSize && (
+                <p className="text-[10px] text-muted-foreground mt-2 italic">
+                  * {mt('descriptions.nutritionServingSize', { size: item.nutritionalInfo.servingSize }) || `All values based on ${item.nutritionalInfo.servingSize} serving size.`}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Allergen & Additive Information */}
           {((item.allergens && item.allergens.length > 0) || (item.additives && item.additives.length > 0)) && (
             <div className="mb-6 p-4 bg-destructive/5 border border-destructive/20 rounded-lg flex gap-3" style={{ borderRadius: 'var(--radius)' }}>
               <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-foreground mb-1" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-                  Allergen & Additive Information
+                  {mt('labels.allergens')} & {mt('labels.additives')}
                 </p>
                 {item.allergens && item.allergens.length > 0 && (
                   <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                    Contains: {item.allergens.join(', ')}
+                    <span className="font-medium text-destructive/80">{t('contains')}:</span> {item.allergens.map(a => getAllergenLabel(a)).join(', ')}
                   </p>
                 )}
                 {item.additives && item.additives.length > 0 && (
                   <p className="text-muted-foreground mt-1" style={{ fontSize: 'var(--text-small)' }}>
-                    Additives: {item.additives.join(', ')}
+                    <span className="font-medium text-destructive/80">{mt('labels.additives')}:</span> {item.additives.map(a => getAdditiveLabel(a)).join(', ')}
                   </p>
                 )}
               </div>
@@ -400,9 +506,14 @@ export function ItemDetailsModal({
                                         />
                                       )}
                                     </div>
-                                    <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                                      {addOn.name}
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                      {addOn.dietaryType && addOn.dietaryType !== 'none' && (
+                                        <DietaryIcon type={addOn.dietaryType} size="sm" />
+                                      )}
+                                      <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                                        {addOn.name}
+                                      </span>
+                                    </div>
                                   </div>
                                   <span className="text-foreground ml-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                                     CHF {addOn.price.toFixed(2)}
@@ -455,9 +566,14 @@ export function ItemDetailsModal({
                                         />
                                       )}
                                     </div>
-                                    <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                                      {addOn.name}
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                      {addOn.dietaryType && addOn.dietaryType !== 'none' && (
+                                        <DietaryIcon type={addOn.dietaryType} size="sm" />
+                                      )}
+                                      <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                                        {addOn.name}
+                                      </span>
+                                    </div>
                                   </div>
                                   <span className="text-foreground ml-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                                     +CHF {addOn.price.toFixed(2)}
@@ -499,9 +615,14 @@ export function ItemDetailsModal({
                               onChange={() => toggleTempAddOn(addOn.id)}
                             />
                           </div>
-                          <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                            {addOn.name}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            {addOn.dietaryType && addOn.dietaryType !== 'none' && (
+                              <DietaryIcon type={addOn.dietaryType} size="sm" />
+                            )}
+                            <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                              {addOn.name}
+                            </span>
+                          </div>
                         </div>
                         <span className="text-foreground ml-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                           +CHF {addOn.price.toFixed(2)}
@@ -533,12 +654,12 @@ export function ItemDetailsModal({
 
         {/* Modal Footer */}
         <div className="sticky bottom-0 bg-card border-t border-border px-6 py-4">
-          <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-4">
-            {/* Left: Quantity and Guest Count Selectors */}
-            <div className="flex items-center gap-6">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+            {/* Left: Quantity and Guest Count Selectors - Full width on mobile */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full sm:w-auto">
               {isPerPerson(item) ? (
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+                <div className="flex flex-col gap-2 w-full sm:w-auto">
+                  <div className="flex items-center justify-between sm:justify-start gap-3 flex-wrap sm:flex-nowrap">
                     <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
                       {(item.category === 'Beverages' || isFlatFee?.(item)) ? 'Qty:' : 'Guests:'}
                     </span>
@@ -592,30 +713,35 @@ export function ItemDetailsModal({
                   )}
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setTempQuantity(Math.max(1, tempQuantity - 1))}
-                    className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-foreground bg-card"
-                    style={{ borderRadius: 'var(--radius)' }}
-                    disabled={tempQuantity <= 1}
-                  >
-                    <Minus className="w-5 h-5" />
-                  </button>
-                  <span className="text-foreground min-w-[2rem] text-center" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                    {tempQuantity}
+                <div className="flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto">
+                  <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                    Qty:
                   </span>
-                  <button
-                    onClick={() => setTempQuantity(tempQuantity + 1)}
-                    className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors bg-card"
-                    style={{ borderRadius: 'var(--radius)' }}
-                  >
-                    <Plus className="w-5 h-5" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setTempQuantity(Math.max(1, tempQuantity - 1))}
+                      className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-foreground bg-card"
+                      style={{ borderRadius: 'var(--radius)' }}
+                      disabled={tempQuantity <= 1}
+                    >
+                      <Minus className="w-5 h-5" />
+                    </button>
+                    <span className="text-foreground min-w-[2rem] text-center" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                      {tempQuantity}
+                    </span>
+                    <button
+                      onClick={() => setTempQuantity(tempQuantity + 1)}
+                      className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors bg-card"
+                      style={{ borderRadius: 'var(--radius)' }}
+                    >
+                      <Plus className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* Right: Add to Cart Button with Total */}
+            {/* Right: Add to Cart Button with Total - Full width on mobile */}
             <button
               onClick={handleAddToCart}
               className="flex-shrink-0 w-full sm:w-auto flex items-center justify-center gap-3 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"

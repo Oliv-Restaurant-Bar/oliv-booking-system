@@ -266,7 +266,7 @@
   },
   "validation": {
     "required": "Dieses Feld ist erforderlich",
-    "invalidEmail": "Ungültige E-Mail-Adresse",
+    "invalidEmail": "Bitte geben Sie eine gültige E-Mail-Adresse ein (z.B. user@example.com)",
     "invalidPhone": "Ungültige Telefonnummer",
     "minLength": "Mindestens {min} Zeichen",
     "maxLength": "Maximal {max} Zeichen",
@@ -705,7 +705,9 @@
         "categories": "Kategorien",
         "type": "Typ",
         "addon": "Zusatz",
+        "addons": "Zusätze",
         "choice": "Auswahl",
+        "choices": "Auswahlen",
         "priceHint": "0 für kostenlos",
         "dietaryType": "Ernährungsweise",
         "available": "Verfügbar"
@@ -721,7 +723,7 @@
         "sodium": "Natrium"
       },
       "placeholders": {
-        "searchCategories": "Menükategorien nach Name, Beschreibung suchen...",
+        "searchCategories": "Menüartikel nach Name, Beschreibung suchen...",
         "searchGroups": "Optionsgruppen nach Namen suchen...",
         "categoryName": "z.B. Vorspeisen, Hauptgerichte",
         "categoryDesc": "Kurze Beschreibung dieser Kategorie",
@@ -794,7 +796,40 @@
         "nonVeg": "Nicht-vegetarisch",
         "nonVegDesc": "Enthält Fleisch oder Fisch",
         "vegan": "Vegan",
-        "veganDesc": "Enthält keine tierischen Produkte"
+        "veganDesc": "Enthält keine tierischen Produkte",
+        "tags": {
+          "glutenFree": "Glutenfrei",
+          "dairyFree": "Laktosefrei",
+          "nutFree": "Nussfrei",
+          "soyFree": "Sojafrei",
+          "sugarFree": "Zuckerfrei",
+          "lowCarb": "Kohlenhydratarm",
+          "highProtein": "Eiweissreich",
+          "organic": "Bio",
+          "local": "Lokal",
+          "seasonal": "Saisonal"
+        },
+        "allergens": {
+          "peanuts": "Erdnüsse",
+          "treeNuts": "Baumnüsse",
+          "milk": "Milch",
+          "eggs": "Eier",
+          "fish": "Fisch",
+          "shellfish": "Schalentiere",
+          "soy": "Soja",
+          "wheat": "Weizen",
+          "sesame": "Sesam",
+          "mustard": "Senf"
+        },
+        "additives": {
+          "preservatives": "Konservierungsstoffe",
+          "artificialColors": "Künstliche Farben",
+          "artificialFlavors": "Künstliche Aromen",
+          "msg": "MSG",
+          "nitrates": "Nitrate",
+          "sulfites": "Sulfite",
+          "bhaBht": "BHA/BHT"
+        }
       },
       "confirmations": {
         "deleteCategory": "Kategorie löschen",

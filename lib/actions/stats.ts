@@ -26,12 +26,12 @@ export async function getDashboardStats() {
     const totalMenuItems = await db
       .select({ count: count() })
       .from(menuItems)
-      .where(eq(menuItems.isActive, true));
+      .where(sql`${menuItems.deletedAt} IS NULL`);
 
     const totalCategories = await db
       .select({ count: count() })
       .from(menuCategories)
-      .where(eq(menuCategories.isActive, true));
+      .where(sql`${menuCategories.deletedAt} IS NULL`);
 
     return {
       totalBookings: Math.floor(Number(totalBookings[0]?.count) || 0),
@@ -386,9 +386,9 @@ export async function getTopCustomersByRevenue(limit: number = 10) {
         bookings: bookingCount,
         totalRevenue: totalRevenue,
         realizedRevenue: realizedRevenue,
-        avgRevenue: activeBookingCount > 0 ? Math.round(totalRevenue / activeBookingCount) : 0,
+        avgRevenue: bookingCount > 0 ? Math.round(totalRevenue / bookingCount) : 0,
         totalPersons: totalGuests,
-        avgPersons: activeBookingCount > 0 ? Math.round(totalGuests / activeBookingCount) : 0,
+        avgPersons: bookingCount > 0 ? Math.round(totalGuests / bookingCount) : 0,
       };
     });
 
@@ -520,8 +520,9 @@ export async function getMonthlyReportData(year: number = new Date().getFullYear
           month: (d.month_name as string).trim(),
           totalBookings: Math.floor(Number(d.total_bookings) || 0),
           totalRevenue: Number(d.total_revenue) || 0,
-          avgRevenue: Number(d.active_bookings) > 0 ? Number(d.total_revenue) / Number(d.active_bookings) : 0,
-          // Map correctly without splitting pending
+          avgRevenue: Number(d.total_bookings) > 0 ? Number(d.total_revenue) / Number(d.total_bookings) : 0,
+          // All status counts
+          pending: Math.floor(Number(d.pending_count) || 0),
           new: Math.floor(Number(d.new_count) || 0),
           touchbase: Math.floor(Number(d.touchbase_count) || 0),
           confirmed: Math.floor(Number(d.confirmed_count) || 0),
@@ -531,6 +532,7 @@ export async function getMonthlyReportData(year: number = new Date().getFullYear
           unresponsive: Math.floor(Number(d.cancelled_count) || 0),
           noShow: Math.floor(Number(d.noshow_count) || 0),
           // Revenue breakdown
+          pendingRevenue: Number(d.pending_revenue) || 0,
           newRevenue: Number(d.new_revenue) || 0,
           touchbaseRevenue: Number(d.touchbase_revenue) || 0,
           confirmedRevenue: Number(d.confirmed_revenue) || 0,
@@ -548,6 +550,7 @@ export async function getMonthlyReportData(year: number = new Date().getFullYear
         totalBookings: 0,
         totalRevenue: 0,
         avgRevenue: 0,
+        pending: 0,
         new: 0,
         touchbase: 0,
         confirmed: 0,
@@ -555,6 +558,7 @@ export async function getMonthlyReportData(year: number = new Date().getFullYear
         unresponsive: 0,
         completed: 0,
         noShow: 0,
+        pendingRevenue: 0,
         newRevenue: 0,
         touchbaseRevenue: 0,
         confirmedRevenue: 0,

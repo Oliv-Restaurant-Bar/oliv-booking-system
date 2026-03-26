@@ -77,8 +77,20 @@ export function CustomerSummary({
   const t = useWizardTranslation();
   const locale = useLocale();
   const isFlatFee = (item: MenuItem) => item.pricingType === 'flat-rate' || item.pricingType === 'flat_fee';
+  
+  // Use a derived guest count that prioritizes per-item overrides from the cart/modal
+  const guestCountValue = React.useMemo(() => {
+    const ppItems = selectedItems
+      .map(id => menuItems.find(i => i.id === id))
+      .filter((i): i is MenuItem => !!i && isPerPerson(i));
+    
+    if (ppItems.length === 0) return parseInt(eventDetails.guestCount) || 0;
+    
+    // Take the max guest count among per-person items
+    return Math.max(...ppItems.map(item => itemGuestCounts[item.id] || parseInt(eventDetails.guestCount) || 1), parseInt(eventDetails.guestCount) || 0);
+  }, [selectedItems, menuItems, itemGuestCounts, eventDetails.guestCount]);
+
   const perPersonTotal = getPerPersonSubtotal();
-  const guestCountValue = parseInt(eventDetails.guestCount) || 0;
   const flatRateTotal = getFlatRateSubtotal();
   const consumptionTotal = includeBeveragePrices ? getConsumptionSubtotal() : 0;
   const grandTotal = (perPersonTotal * (guestCountValue || 1)) + flatRateTotal + consumptionTotal;
@@ -297,7 +309,7 @@ export function CustomerSummary({
             <div>
               <p className="text-muted-foreground mb-1" style={{ fontSize: 'var(--text-small)' }}>{t('labels.guests')}</p>
               <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                {eventDetails.guestCount || '-'}
+                {guestCountValue || '-'}
               </p>
             </div>
             <div>
@@ -527,8 +539,8 @@ export function CustomerSummary({
                       {t('labels.perPersonTotal')}
                     </p>
                     <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                      {t('labels.selectedMenu', { count: selectedItems.length })} {t('status.forEvent')} {eventDetails.guestCount || '0'}{' '}
-                      {parseInt(eventDetails.guestCount) === 1 ? t('labels.guest') : t('labels.guests_plural')}
+                      {t('labels.selectedMenu', { count: selectedItems.length })} {t('status.forEvent')} {guestCountValue || '0'}{' '}
+                      {guestCountValue === 1 ? t('labels.guest') : t('labels.guests_plural')}
                     </p>
                   </div>
                   <p className="text-primary" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
@@ -574,7 +586,7 @@ export function CustomerSummary({
                           const item = menuItems.find((i) => i.id === itemId);
                           return (item?.dietaryType === 'non-veg' && item?.pricingType === 'per-person') || (item?.dietaryType === 'non-veg' && item?.pricingType === 'flat_fee');
                         })
-                        .reduce((total, itemId) => total + (itemQuantities[itemId] || 1), 0) * parseInt(eventDetails.guestCount)
+                        .reduce((total, itemId) => total + (itemQuantities[itemId] || 1), 0) * guestCountValue
                     })}
                   </p>
                 )}
@@ -600,7 +612,7 @@ export function CustomerSummary({
                           const item = menuItems.find((i) => i.id === itemId);
                           return ((item?.dietaryType === 'veg' || item?.dietaryType === 'vegan') && item?.pricingType === 'per-person') || ((item?.dietaryType === 'veg' || item?.dietaryType === 'vegan') && item?.pricingType === 'flat_fee');
                         })
-                        .reduce((total, itemId) => total + (itemQuantities[itemId] || 1), 0) * parseInt(eventDetails.guestCount)
+                        .reduce((total, itemId) => total + (itemQuantities[itemId] || 1), 0) * guestCountValue
                     })}
                   </p>
                 )}
@@ -710,7 +722,7 @@ export function CustomerSummary({
                         {t('labels.perPersonTotal')}
                       </p>
                       <p className="text-muted-foreground text-sm mt-1">
-                        × {eventDetails.guestCount || '0'} {parseInt(eventDetails.guestCount) === 1 ? t('labels.guest') : t('labels.guests_plural')}
+                        × {guestCountValue || '0'} {guestCountValue === 1 ? t('labels.guest') : t('labels.guests_plural')}
                       </p>
                     </div>
                     <div className="text-right">

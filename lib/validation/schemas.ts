@@ -22,7 +22,7 @@ export const userLastNameSchema = z.string()
   .trim();
 
 export const userEmailSchema = z.string()
-  .email('Invalid email address')
+  .email('Please enter a valid email address (e.g., user@example.com)')
   .max(255, 'Email cannot exceed 255 characters')
   .toLowerCase()
   .trim();

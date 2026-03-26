@@ -291,28 +291,7 @@ function CenteredVariant({
           )}
         </motion.div>
 
-        {/* Edit Order Link */}
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          onClick={onEditOrder}
-          className="inline-flex items-center gap-2 mb-8 transition-colors"
-          style={{
-            fontSize: 'var(--text-sm)',
-            color: 'var(--primary)',
-            fontFamily: 'var(--font-family-body)',
-            fontWeight: 'var(--font-weight-medium)',
-            textDecoration: 'underline',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '0.5rem'
-          }}
-        >
-          <Edit2 className="w-4 h-4" />
-          {t('thankYou.editOrder')}
-        </motion.button>
+        <div className="h-4" />
 
         {/* Contact Section */}
         <motion.div
@@ -596,23 +575,6 @@ function SplitVariant({
             )}
           </div>
 
-          <button
-            onClick={onEditOrder}
-            className="w-full flex items-center justify-center gap-2 py-3 transition-colors"
-            style={{
-              fontSize: 'var(--text-sm)',
-              color: 'var(--primary)',
-              fontFamily: 'var(--font-family-body)',
-              fontWeight: 'var(--font-weight-medium)',
-              textDecoration: 'underline',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer'
-            }}
-          >
-            <Edit2 className="w-4 h-4" />
-            {t('thankYou.editOrder')}
-          </button>
 
           {/* Contact Section */}
           <div
@@ -861,38 +823,6 @@ function MinimalVariant({
             </p>
           </button>
 
-          <button
-            onClick={onEditOrder}
-            className="p-6 rounded-xl text-left transition-all hover:scale-105"
-            style={{
-              backgroundColor: 'var(--surface)',
-              border: '1px solid var(--border)',
-              cursor: 'pointer'
-            }}
-          >
-            <Edit2
-              className="w-8 h-8 mb-3"
-              style={{ color: 'var(--primary)' }}
-            />
-            <h3
-              style={{
-                fontSize: 'var(--text-base)',
-                fontWeight: 'var(--font-weight-semibold)',
-                color: 'var(--foreground)',
-                fontFamily: 'var(--font-family-body)',
-                marginBottom: '0.5rem'
-              }}
-            >
-              Edit Order
-            </h3>
-            <p style={{
-              fontSize: 'var(--text-sm)',
-              color: 'var(--muted-foreground)',
-              fontFamily: 'var(--font-family-body)'
-            }}>
-              Make changes to your submitted request
-            </p>
-          </button>
         </motion.div>
 
         {/* Contact Info */}

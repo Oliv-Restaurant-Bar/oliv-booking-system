@@ -185,6 +185,7 @@ export function SettingsPage({ user }: { user?: any }) {
   return (
     <div className="min-h-full bg-background flex flex-col">
       <div className="w-full flex-1">
+
         {/* Header with Save Button */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -209,7 +210,7 @@ export function SettingsPage({ user }: { user?: any }) {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Venue Management Card */}
-          <div className="bg-card border border-border rounded-xl p-6 lg:col-span-2">
+          {/* <div className="bg-card border border-border rounded-xl p-6 lg:col-span-2">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <MapPin className="w-5 h-5 text-primary" />
@@ -233,7 +234,7 @@ export function SettingsPage({ user }: { user?: any }) {
                 </button>
               </div>
             </div>
-            {/* Venues List */}
+            Venues List
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {isLoadingVenues ? (
                 <div className="col-span-full">
@@ -298,7 +299,7 @@ export function SettingsPage({ user }: { user?: any }) {
                 ))
               )}
             </div>
-          </div>
+          </div> */}
 
           {/* Language & Region Card */}
           <div className="bg-card border border-border rounded-xl p-6">
@@ -366,7 +367,7 @@ export function SettingsPage({ user }: { user?: any }) {
                 <DollarSign className="w-5 h-5 text-primary" />
               </div>
               <h3 className="text-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                 {t('currency')}
+                {t('currency')}
               </h3>
             </div>
 
@@ -410,7 +411,7 @@ export function SettingsPage({ user }: { user?: any }) {
                   className={`text-foreground ${canUpdateSettings ? 'cursor-pointer' : 'cursor-default'}`}
                   style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}
                 >
-                   {t('showCurrencySymbol')}
+                  {t('showCurrencySymbol')}
                 </label>
               </div>
             </div>

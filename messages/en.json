@@ -266,7 +266,7 @@
   },
   "validation": {
     "required": "This field is required",
-    "invalidEmail": "Invalid email address",
+    "invalidEmail": "Please enter a valid email address (e.g., user@example.com)",
     "invalidPhone": "Invalid phone number",
     "minLength": "Must be at least {min} characters",
     "maxLength": "Must be at most {max} characters",
@@ -705,7 +705,9 @@
         "categories": "categories",
         "type": "Type",
         "addon": "Addon",
+        "addons": "Addons",
         "choice": "Choice",
+        "choices": "Choices",
         "priceHint": "0 for free",
         "dietaryType": "Dietary Type",
         "available": "Available"
@@ -721,7 +723,7 @@
         "sodium": "Sodium"
       },
       "placeholders": {
-        "searchCategories": "Search menu categories by name, description...",
+        "searchCategories": "Search menu items by name, description...",
         "searchGroups": "Search choice groups by name...",
         "categoryName": "e.g., Appetizers, Main Courses",
         "categoryDesc": "Brief description of this category",
@@ -796,7 +798,40 @@
         "nonVeg": "Non-Vegetarian",
         "nonVegDesc": "Contains meat or fish",
         "vegan": "Vegan",
-        "veganDesc": "Contains no animal products"
+        "veganDesc": "Contains no animal products",
+        "tags": {
+          "glutenFree": "Gluten Free",
+          "dairyFree": "Dairy Free",
+          "nutFree": "Nut Free",
+          "soyFree": "Soy Free",
+          "sugarFree": "Sugar Free",
+          "lowCarb": "Low Carb",
+          "highProtein": "High Protein",
+          "organic": "Organic",
+          "local": "Local",
+          "seasonal": "Seasonal"
+        },
+        "allergens": {
+          "peanuts": "Peanuts",
+          "treeNuts": "Tree Nuts",
+          "milk": "Milk",
+          "eggs": "Eggs",
+          "fish": "Fish",
+          "shellfish": "Shellfish",
+          "soy": "Soy",
+          "wheat": "Wheat",
+          "sesame": "Sesame",
+          "mustard": "Mustard"
+        },
+        "additives": {
+          "preservatives": "Preservatives",
+          "artificialColors": "Artificial Colors",
+          "artificialFlavors": "Artificial Flavors",
+          "msg": "MSG",
+          "nitrates": "Nitrates",
+          "sulfites": "Sulfites",
+          "bhaBht": "BHA/BHT"
+        }
       },
       "confirmations": {
         "deleteCategory": "Delete Category",

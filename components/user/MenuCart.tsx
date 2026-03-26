@@ -48,6 +48,7 @@ interface MenuCartProps {
   setIncludeBeveragePrices: (value: boolean) => void;
   setItemGuestCounts: React.Dispatch<React.SetStateAction<Record<string, number>>>;
   categories: string[];
+  onCloseDrawer?: () => void;
 }
 
 export function MenuCart({
@@ -81,6 +82,7 @@ export function MenuCart({
   isSubmitting = false,
   setItemGuestCounts,
   categories,
+  onCloseDrawer,
 }: MenuCartProps) {
   const [viewMode, setViewMode] = React.useState<'per-person' | 'total'>('per-person');
   const [termsAccepted, setTermsAccepted] = React.useState(false);
@@ -132,9 +134,22 @@ export function MenuCart({
     setItemGuestCounts(prev => {
       const current = prev[itemId] || parseInt(eventDetails.guestCount) || 1;
       const next = Math.max(1, current + delta);
-      return { ...prev, [itemId]: next };
+      
+      // Keep all per-person food items in sync as they share the same guest count for pricing
+      const updated = { ...prev };
+      ppFoodItems.forEach(item => {
+        updated[item.id] = next;
+      });
+      return updated;
     });
   };
+
+  const currentGuestCount = React.useMemo(() => {
+    if (ppFoodItems.length === 0) return parseInt(eventDetails.guestCount) || 1;
+    // Extract the guest count from the first per-person food item, falling back to global state
+    const firstItem = ppFoodItems[0];
+    return itemGuestCounts[firstItem.id] || parseInt(eventDetails.guestCount) || 1;
+  }, [ppFoodItems, itemGuestCounts, eventDetails.guestCount]);
 
   const renderItemRow = (item: MenuItem, sectionColor: string) => {
     const isPP = isPerPerson(item);
@@ -204,7 +219,12 @@ export function MenuCart({
                       </span>
                       {selectedInGroup.map(addon => (
                         <div key={addon.id} className="flex flex-col mb-1.5 last:mb-0">
-                          <span className="text-[11px] font-medium text-[#2c2f34]">{addon.name}</span>
+                          <div className="flex items-center gap-1.5">
+                            {(addon as any).dietaryType && (addon as any).dietaryType !== 'none' && (
+                              <DietaryIcon type={(addon as any).dietaryType} size="xs" />
+                            )}
+                            <span className="text-[11px] font-medium text-[#2c2f34]">{addon.name}</span>
+                          </div>
                           {(addon as any).description && (
                             <span className="text-[10px] text-[#9ca3af] leading-snug mt-0.5">{(addon as any).description}</span>
                           )}
@@ -227,7 +247,12 @@ export function MenuCart({
                         if (!ao) return null;
                         return (
                           <div key={addonId} className="flex flex-col mb-1.5 last:mb-0">
-                            <span className="text-[11px] font-medium text-[#2c2f34]">{ao.name}</span>
+                            <div className="flex items-center gap-1.5">
+                              {ao.dietaryType && ao.dietaryType !== 'none' && (
+                                <DietaryIcon type={ao.dietaryType} size="xs" />
+                              )}
+                              <span className="text-[11px] font-medium text-[#2c2f34]">{ao.name}</span>
+                            </div>
                             {(ao as any).description && (
                               <span className="text-[10px] text-[#9ca3af] leading-snug mt-0.5">{(ao as any).description}</span>
                             )}
@@ -253,7 +278,12 @@ export function MenuCart({
               <X className="w-4.5 h-4.5" />
             </button>
             <button
-              onClick={() => openDetailsModal(item)}
+              onClick={() => {
+                // Close the drawer first (on mobile), then open the modal
+                onCloseDrawer?.();
+                // Small delay to allow drawer to close before modal opens
+                setTimeout(() => openDetailsModal(item), 100);
+              }}
               className="text-[#9ca3af] hover:text-[#2c2f34] transition-colors"
               title="Edit"
             >
@@ -302,7 +332,7 @@ export function MenuCart({
               <h2 className="font-bold text-[17px] text-[#2c2f34]">Your Menu</h2>
             </div>
             <div className="text-[#9dae91] font-bold text-[12px]">
-              {eventDetails.guestCount || "0"} Guests
+              {currentGuestCount} Guests
             </div>
           </div>
 
@@ -448,19 +478,28 @@ export function MenuCart({
                   <div className="space-y-3">
                     {pureVegItems.length > 0 && (
                       <div className="flex justify-between items-center text-[13px]">
-                        <span className="text-[#6b7280]">Veg Selection ({pureVegItems.length})</span>
+                        <div className="flex items-center gap-2">
+                          <DietaryIcon type="veg" size="xs" />
+                          <span className="text-[#6b7280]">Veg Selection ({pureVegItems.length})</span>
+                        </div>
                         <span className="text-[#2c2f34] font-bold">CHF {pureVegPerPersonSubtotal.toFixed(2)}</span>
                       </div>
                     )}
                     {veganItems.length > 0 && (
                       <div className="flex justify-between items-center text-[13px]">
-                        <span className="text-[#6b7280]">Vegan Selection ({veganItems.length})</span>
+                        <div className="flex items-center gap-2">
+                          <DietaryIcon type="vegan" size="xs" />
+                          <span className="text-[#6b7280]">Vegan Selection ({veganItems.length})</span>
+                        </div>
                         <span className="text-[#2c2f34] font-bold">CHF {veganPerPersonSubtotal.toFixed(2)}</span>
                       </div>
                     )}
                     {nonVegItems.length > 0 && (
                       <div className="flex justify-between items-center text-[13px]">
-                        <span className="text-[#6b7280]">Non-Veg Selection ({nonVegItems.length})</span>
+                        <div className="flex items-center gap-2">
+                          <DietaryIcon type="non-veg" size="xs" />
+                          <span className="text-[#6b7280]">Non-Veg Selection ({nonVegItems.length})</span>
+                        </div>
                         <span className="text-[#2c2f34] font-bold">CHF {nonVegPerPersonSubtotal.toFixed(2)}</span>
                       </div>
                     )}
@@ -470,7 +509,7 @@ export function MenuCart({
                     <div className="flex justify-between items-center text-[13px]">
                       <span className="text-[#6b7280]">Food Items</span>
                       <span className="text-[#2c2f34] font-bold">
-                        CHF {(getPerPersonSubtotal() * (parseInt(eventDetails.guestCount) || 1)).toFixed(2)}
+                        CHF {(getPerPersonSubtotal() * currentGuestCount).toFixed(2)}
                       </span>
                     </div>
                     {getFlatRateSubtotal() > 0 && (
@@ -497,11 +536,11 @@ export function MenuCart({
                           type="checkbox"
                           checked={includeBeveragePrices}
                           onChange={(e) => setIncludeBeveragePrices(e.target.checked)}
-                          className="peer appearance-none size-4 border border-[#e5e7eb] rounded-md bg-[#2c2f34] checked:bg-[#2c2f34] transition-all cursor-pointer"
+                          className="peer appearance-none size-4 border border-[#9ca3af] rounded-md bg-white checked:bg-[#2c2f34] checked:border-[#2c2f34] transition-all cursor-pointer"
                         />
                         <Check className="absolute size-3 text-white opacity-0 peer-checked:opacity-100 left-0.5 pointer-events-none transition-opacity" />
                       </div>
-                      <span className="text-[11px] text-[#6b7280]">Include Beverages costs in estimate</span>
+                      <span className="text-[11px] text-[#2c2f34] font-medium">Include Beverages costs in estimate</span>
                     </label>
                   </>
                 )}
@@ -514,7 +553,7 @@ export function MenuCart({
                   <span className="text-[13px] font-bold text-[#2c2f34]">Total</span>
                   <span className="text-[18px] font-extrabold text-[#2c2f34] tracking-tight">
                     CHF {(
-                      (getPerPersonSubtotal() * (parseInt(eventDetails.guestCount) || 1)) +
+                      (getPerPersonSubtotal() * currentGuestCount) +
                       getFlatRateSubtotal() +
                       (includeBeveragePrices ? getConsumptionSubtotal() : 0)
                     ).toFixed(2)}
@@ -529,18 +568,18 @@ export function MenuCart({
                       type="checkbox"
                       checked={termsAccepted}
                       onChange={(e) => setTermsAccepted(e.target.checked)}
-                      className="peer appearance-none size-3.5 border border-[#e5e7eb] rounded-md bg-white checked:bg-[#9dae91] checked:border-[#9dae91] transition-all cursor-pointer"
+                      className="peer appearance-none size-3.5 border border-[#9ca3af] rounded-md bg-white checked:bg-[#9dae91] checked:border-[#9dae91] transition-all cursor-pointer"
                     />
                     <Check className="absolute size-2.5 text-white opacity-0 peer-checked:opacity-100 left-0.5 pointer-events-none transition-opacity" />
                   </div>
-                  <span className="text-[11px] text-[#6b7280]">
-                    I agree to the <span className="text-[#9dae91] underline font-medium cursor-pointer">Terms & Conditions</span>
+                  <span className="text-[11px] text-[#2c2f34] font-medium">
+                    I agree to the <span className="text-[#8da081] underline font-bold cursor-pointer">Terms & Conditions</span>
                   </span>
                 </label>
 
                 <button
                   onClick={() => {
-                    const total = getPerPersonSubtotal() * (parseInt(eventDetails.guestCount) || 1) + getFlatRateSubtotal() + getConsumptionSubtotal();
+                    const total = getPerPersonSubtotal() * currentGuestCount + getFlatRateSubtotal() + getConsumptionSubtotal();
                     if (total > 5000) {
                       setIsDepositModalOpen(true);
                     } else {

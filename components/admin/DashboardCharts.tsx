@@ -352,7 +352,11 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
                 fontFamily: 'var(--font-sans)',
               },
               formatter: function (this: any) {
-                return '<b>' + this.x + '</b><br/>' + t('dashboard.kpis.revenue') + ': <b>CHF ' + this.y.toLocaleString() + '</b>';
+                return `
+                  <b>${this.key}</b><br/>
+                  ${t('dashboard.kpis.revenue')}: 
+                  <b>CHF ${this.y.toLocaleString()}</b>
+                `;
               },
             },
             plotOptions: {

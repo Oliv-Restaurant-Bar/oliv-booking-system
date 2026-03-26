@@ -169,17 +169,35 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
     return grouped;
   }, [bookings]);
 
-  // Get upcoming bookings (next 10, sorted by date)
+  // Get upcoming bookings (next 10, sorted by date AND time)
   const upcomingBookings = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // Helper to parse full date and time
+    const parseDateTime = (dateStr: string, timeStr: string): Date => {
+      const date = parseEventDate(dateStr);
+
+      // Parse time string (e.g., "11:30", "20:00", "22:00")
+      if (timeStr) {
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        if (!isNaN(hours) && !isNaN(minutes)) {
+          date.setHours(hours, minutes, 0, 0);
+        }
+      }
+
+      return date;
+    };
+
     return bookings
-      .map(b => ({ ...b, parsedDate: parseEventDate(b.event?.date || '') }))
-      .filter(b => b.parsedDate >= today)
-      .sort((a, b) => a.parsedDate.getTime() - b.parsedDate.getTime())
+      .map(b => ({
+        ...b,
+        parsedDateTime: parseDateTime(b.event?.date || '', b.event?.time || '')
+      }))
+      .filter(b => b.parsedDateTime >= today)
+      .sort((a, b) => a.parsedDateTime.getTime() - b.parsedDateTime.getTime())
       .slice(0, 10)
-      .map(({ parsedDate, ...rest }) => rest);
+      .map(({ parsedDateTime, ...rest }) => rest);
   }, [bookings]);
 
   // Generate calendar days
@@ -321,11 +339,11 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
 
                 {/* Booking chips */}
                 <div className="space-y-0.5">
-                  {dayBookings.slice(0, 2).map(booking => (
+                  {dayBookings.slice(0, 3).map(booking => (
                     <div
                       key={booking.id}
                       className={cn(
-                        "text-xs px-1.5 py-0.5 rounded truncate flex items-center gap-1.5 border",
+                        "text-xs px-1.5 py-1 rounded border truncate font-medium",
                         "cursor-pointer hover:opacity-80 transition-opacity"
                       )}
                       style={{
@@ -342,22 +360,14 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
                           onOpenModal(booking);
                         }
                       }}
-                      title={`${booking.customer.name} - ${booking.event.occasion}`}
+                      title={`${booking.customer.name} - ${booking.event.occasion}${booking.event.location ? ` @ ${booking.event.location}` : ''}`}
                     >
-                      <div className="flex flex-col flex-1 min-w-0 py-0.5">
-                        {booking.event.location && (
-                          <div className="flex items-center gap-1 opacity-80" style={{ fontSize: '9px' }}>
-                            <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
-                            <span className="truncate">{booking.event.location}</span>
-                          </div>
-                        )}
-                        <span className="truncate font-semibold">{booking.customer.name}</span>
-                      </div>
+                      {booking.customer.name}
                     </div>
                   ))}
-                  {dayBookings.length > 2 && (
+                  {dayBookings.length > 3 && (
                     <div className="text-xs text-muted-foreground px-1.5 py-0.5">
-                      {t('calendar.showMore', { count: dayBookings.length - 2 })}
+                      {t('calendar.showMore', { count: dayBookings.length - 3 })}
                     </div>
                   )}
                 </div>

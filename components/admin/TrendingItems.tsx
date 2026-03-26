@@ -25,21 +25,26 @@ interface TrendingItemsProps {
   trendingData?: TrendingItem[];
 }
 
-const defaultCategories = ['All Categories', 'Main Course', 'Pizza', 'Drink', 'Dessert', 'Appetizer'];
+// Generate a consistent color for any category based on its name
+const getCategoryColor = (categoryName: string): string => {
+  const colors = [
+    '#9DAE91', // Default green
+    '#10B981', // Emerald
+    '#8B5CF6', // Purple
+    '#3B82F6', // Blue
+    '#F59E0B', // Amber
+    '#EF4444', // Red
+    '#EC4899', // Pink
+    '#14B8A6', // Teal
+  ];
 
-const categoryColors: Record<string, string> = {
-  'All Categories': '#9DAE91',
-  'Main Course': '#10B981',
-  'Main Courses': '#10B981',
-  'Hauptgerichte': '#10B981',
-  'Pizza': '#8B5CF6',
-  'Drink': '#3B82F6',
-  'Dessert': '#F59E0B',
-  'Desserts': '#F59E0B',
-  'Nachspeisen': '#F59E0B',
-  'Appetizer': '#9DAE91',
-  'Appetizers': '#9DAE91',
-  'Vorspeisen': '#9DAE91',
+  // Simple hash function to pick a consistent color
+  let hash = 0;
+  for (let i = 0; i < categoryName.length; i++) {
+    hash = categoryName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  return colors[Math.abs(hash) % colors.length];
 };
 
 // Default image for items without image
@@ -50,19 +55,44 @@ export function TrendingItems({ trendingData: propTrendingData }: TrendingItemsP
   const commonT = useCommonTranslation();
   const locale = useLocale();
 
-  const categories = [
-    { value: 'All Categories', label: t('allCategories') },
-    { value: 'Main Course', label: commonT('categories.mainCourses') },
-    { value: 'Pizza', label: 'Pizza' },
-    { value: 'Drink', label: commonT('categories.beverages') },
-    { value: 'Dessert', label: commonT('categories.desserts') },
-    { value: 'Appetizer', label: commonT('categories.starters') },
-  ];
-
+  const [categories, setCategories] = useState<{ value: string; label: string }[]>([
+    { value: 'All Categories', label: t('allCategories') }
+  ]);
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [trendingData, setTrendingData] = useState<TrendingItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Fetch categories from database
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/menu');
+        if (response.ok) {
+          const data = await response.json();
+          const dbCategories = data.categories || [];
+
+          // Transform database categories to filter options
+          const categoryOptions = dbCategories.map((cat: any) => ({
+            value: cat.name,
+            label: locale === 'de' && cat.nameDe ? cat.nameDe : cat.name
+          }));
+
+          // Sort categories alphabetically (excluding "All Categories")
+          categoryOptions.sort((a: any, b: any) => a.label.localeCompare(b.label));
+
+          setCategories([
+            { value: 'All Categories', label: t('allCategories') },
+            ...categoryOptions
+          ]);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+
+    fetchCategories();
+  }, [locale, t]);
 
   // Use prop data if provided, otherwise fetch from API
   useEffect(() => {
@@ -88,14 +118,13 @@ export function TrendingItems({ trendingData: propTrendingData }: TrendingItemsP
     }
   }, [propTrendingData]);
 
-  // Filter by category - map our DB categories to UI categories
+  // Filter by category - exact match with database categories
   const filteredData = selectedCategory === 'All Categories'
     ? trendingData.slice(0, 5)
     : trendingData
       .filter(item => {
-        const itemCat = item.category.toLowerCase();
-        const selCat = selectedCategory.toLowerCase();
-        return itemCat.includes(selCat) || selCat.includes(itemCat);
+        // Use exact category matching
+        return item.category === selectedCategory;
       })
       .slice(0, 5);
 
@@ -189,7 +218,7 @@ export function TrendingItems({ trendingData: propTrendingData }: TrendingItemsP
                   {/* Category Badge */}
                   <CategoryPill
                     label={locale === 'de' && item.categoryDe ? item.categoryDe : item.category}
-                    color={categoryColors[item.category] || '#9DAE91'}
+                    color={getCategoryColor(item.category)}
                     variant="badge"
                   />
                 </div>

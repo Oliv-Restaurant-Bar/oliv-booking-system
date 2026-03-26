@@ -423,10 +423,15 @@ export function DateTimePickerModal({
                 <button
                   ref={lastFocusableRef}
                   onClick={onClose}
-                  className="w-full py-3.5 rounded-xl font-semibold text-base text-white shadow-lg transition-all hover:opacity-90 active:scale-[0.98]"
+                  disabled={!selectedDate || !selectedTime}
+                  className={`w-full py-3.5 rounded-xl font-semibold text-base text-white shadow-lg transition-all active:scale-[0.98] ${
+                    (!selectedDate || !selectedTime) 
+                      ? 'opacity-50 cursor-not-allowed grayscale' 
+                      : 'hover:opacity-90 cursor-pointer'
+                  }`}
                   style={{ backgroundColor: 'var(--primary)', borderRadius: 'var(--radius)' }}
                 >
-                  Select
+                  Auswählen
                 </button>
               </div>
             </motion.div>
