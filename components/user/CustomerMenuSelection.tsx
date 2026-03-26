@@ -6,6 +6,7 @@ import { DietaryIcon } from './DietaryIcon';
 import { Button } from '@/components/ui/Button';
 import { MenuCart } from './MenuCart';
 import { useWizardTranslation } from '@/lib/i18n/client';
+import { SkeletonMenuSelection } from '@/components/ui/skeleton-loaders';
 
 interface CustomerMenuSelectionProps {
   selectedCategory: string;
@@ -246,9 +247,7 @@ export function CustomerMenuSelection({
           </div>
 
           {loadingMenu ? (
-            <div className="text-center py-16">
-              <p className="text-muted-foreground">{t('status.loading')}</p>
-            </div>
+            <SkeletonMenuSelection />
           ) : menuItems.length === 0 ? (
             <div className="text-center py-16">
               <p className="text-muted-foreground">{t('status.noItems')}</p>

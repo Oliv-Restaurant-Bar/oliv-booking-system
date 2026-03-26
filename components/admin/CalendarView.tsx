@@ -9,7 +9,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useCommonTranslation } from '@/lib/i18n/client';
 // Date utilities
 const parseEventDate = (dateStr: string): Date => {
-  // Try to parse various date formats
+  if (!dateStr) return new Date();
   const date = new Date(dateStr);
   if (!isNaN(date.getTime())) {
     return date;
@@ -159,7 +159,7 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
   const bookingsByDate = useMemo(() => {
     const grouped = new Map<string, typeof bookings>();
     bookings.forEach(booking => {
-      const bookingDate = parseEventDate(booking.event.date);
+      const bookingDate = parseEventDate(booking.event?.date || '');
       const dateKey = formatDateKey(bookingDate);
       if (!grouped.has(dateKey)) {
         grouped.set(dateKey, []);
@@ -175,7 +175,7 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
     today.setHours(0, 0, 0, 0);
 
     return bookings
-      .map(b => ({ ...b, parsedDate: parseEventDate(b.event.date) }))
+      .map(b => ({ ...b, parsedDate: parseEventDate(b.event?.date || '') }))
       .filter(b => b.parsedDate >= today)
       .sort((a, b) => a.parsedDate.getTime() - b.parsedDate.getTime())
       .slice(0, 10)

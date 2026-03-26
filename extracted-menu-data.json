@@ -1,0 +1,803 @@
+{
+  "categories": [
+    {
+      "id": "new-category-1",
+      "name": "Apéro",
+      "nameDe": "Apéro",
+      "description": "Starters and appetizers",
+      "descriptionDe": "Vorspeisen und Appetithäppchen",
+      "sortOrder": 0,
+      "isActive": true,
+      "guestCount": false
+    },
+    {
+      "id": "new-category-2",
+      "name": "Hauptgerichte Fleisch/Fisch",
+      "nameDe": "Hauptgerichte Fleisch/Fisch",
+      "description": "Main courses with meat and fish",
+      "descriptionDe": "Hauptgerichte mit Fleisch und Fisch",
+      "sortOrder": 1,
+      "isActive": true,
+      "guestCount": false
+    },
+    {
+      "id": "new-category-3",
+      "name": "Vegetarische Hauptgerichte",
+      "nameDe": "Vegetarische Hauptgerichte",
+      "description": "Vegetarian main courses",
+      "descriptionDe": "Vegetarische Hauptgerichte",
+      "sortOrder": 2,
+      "isActive": true,
+      "guestCount": false
+    },
+    {
+      "id": "new-category-4",
+      "name": "Dessert",
+      "nameDe": "Dessert",
+      "description": "Sweet endings to your meal",
+      "descriptionDe": "Süsse Enden für Ihr Mahl",
+      "sortOrder": 3,
+      "isActive": true,
+      "guestCount": false
+    },
+    {
+      "id": "new-category-5",
+      "name": "Getränke",
+      "nameDe": "Getränke",
+      "description": "Beverages and drinks",
+      "descriptionDe": "Getränke",
+      "sortOrder": 4,
+      "isActive": true,
+      "guestCount": false
+    },
+    {
+      "id": "new-category-6",
+      "name": "Bar",
+      "nameDe": "Bar",
+      "description": "Cocktails and bar drinks",
+      "descriptionDe": "Cocktails und Barkarte",
+      "sortOrder": 5,
+      "isActive": true,
+      "guestCount": false
+    }
+  ],
+  "items": [
+    {
+      "categoryId": "new-category-1",
+      "name": "Bread Basket with Butter",
+      "nameDe": "Brotkorb mit Butter",
+      "description": "Assorted fresh breads with butter",
+      "descriptionDe": "Verschiedenes frisches Brot mit Butter",
+      "pricePerPerson": "4.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 0
+    },
+    {
+      "categoryId": "new-category-1",
+      "name": "Charcuterie Board",
+      "nameDe": "Fleischaufschnitt",
+      "description": "Selection of cured meats",
+      "descriptionDe": " Auswahl von Fleischaufschnitt",
+      "pricePerPerson": "12.00",
+      "pricingType": "per_person",
+      "dietaryType": "non-veg",
+      "sortOrder": 1
+    },
+    {
+      "categoryId": "new-category-1",
+      "name": "Cheese Selection",
+      "nameDe": "Käseauswahl",
+      "description": "Selection of Swiss cheeses",
+      "descriptionDe": "Auswahl von Schweizer Käse",
+      "pricePerPerson": "14.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 2
+    },
+    {
+      "categoryId": "new-category-2",
+      "name": "Zürcher Geschnetzeltes",
+      "nameDe": "Zürcher Geschnetzeltes",
+      "description": "Creamy veal strips with mushrooms, served with Rösti",
+      "descriptionDe": "Cremige Kalbsstreifen mit Pilzen, serviert mit Rösti",
+      "pricePerPerson": "38.00",
+      "pricingType": "per_person",
+      "dietaryType": "non-veg",
+      "sortOrder": 0
+    },
+    {
+      "categoryId": "new-category-2",
+      "name": "Rindsentrecôte",
+      "nameDe": "Rindsentrecôte",
+      "description": "Beef entrecote with herb butter and vegetables",
+      "descriptionDe": "Rindsentrecôte mit Kräuterbutter und Gemüse",
+      "pricePerPerson": "42.00",
+      "pricingType": "per_person",
+      "dietaryType": "non-veg",
+      "sortOrder": 1
+    },
+    {
+      "categoryId": "new-category-2",
+      "name": "Schweinelendchen",
+      "nameDe": "Schweinelendchen",
+      "description": "Pork tenderloin with mushroom sauce",
+      "descriptionDe": "Schweinelendchen mit Pilzsosse",
+      "pricePerPerson": "36.00",
+      "pricingType": "per_person",
+      "dietaryType": "non-veg",
+      "sortOrder": 2
+    },
+    {
+      "categoryId": "new-category-2",
+      "name": "Saiblingsfilet",
+      "nameDe": "Saiblingsfilet",
+      "description": "Char fillet with lemon butter sauce",
+      "descriptionDe": "Saiblingsfilet mit Zitronenbutter-Sosse",
+      "pricePerPerson": "34.00",
+      "pricingType": "per_person",
+      "dietaryType": "non-veg",
+      "sortOrder": 3
+    },
+    {
+      "categoryId": "new-category-2",
+      "name": "Raclette",
+      "nameDe": "Raclette",
+      "description": "Melted Raclette cheese with potatoes, pickles, and onions",
+      "descriptionDe": "Geschmolzener Raclettekäse mit Kartoffeln, Gewürzgurken und Zwiebeln",
+      "pricePerPerson": "32.00",
+      "pricingType": "per_person",
+      "dietaryType": "non-veg",
+      "sortOrder": 4
+    },
+    {
+      "categoryId": "new-category-3",
+      "name": "Gemüse-Risotto",
+      "nameDe": "Gemüse-Risotto",
+      "description": "Creamy risotto with seasonal vegetables",
+      "descriptionDe": "Cremiges Risotto mit saisonalem Gemüse",
+      "pricePerPerson": "24.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 0
+    },
+    {
+      "categoryId": "new-category-3",
+      "name": "Spinat-Käse-Lauch-Pflanzerl",
+      "nameDe": "Spinat-Käse-Lauch-Pflanzerl",
+      "description": "Vegetarian patties with spinach, cheese and leek",
+      "descriptionDe": "Vegetarische Puffer mit Spinat, Käse und Lauch",
+      "pricePerPerson": "26.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 1
+    },
+    {
+      "categoryId": "new-category-3",
+      "name": "Käse-Fondue",
+      "nameDe": "Käse-Fondue",
+      "description": "Traditional cheese fondue with bread and potatoes",
+      "descriptionDe": "Traditionelles Käsefondue mit Brot und Kartoffeln",
+      "pricePerPerson": "28.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 2
+    },
+    {
+      "categoryId": "new-category-4",
+      "name": "Schokoladenfondue",
+      "nameDe": "Schokoladenfondue",
+      "description": "Warm melted chocolate with fresh fruits",
+      "descriptionDe": "Warm geschmolzene Schokolade mit frischem Obst",
+      "pricePerPerson": "16.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 0
+    },
+    {
+      "categoryId": "new-category-4",
+      "name": "Mousse au Chocolat",
+      "nameDe": "Mousse au Chocolat",
+      "description": "Classic chocolate mousse",
+      "descriptionDe": "Klassische Schoko-Mousse",
+      "pricePerPerson": "12.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 1
+    },
+    {
+      "categoryId": "new-category-4",
+      "name": "Vanilleeis mit Früchten",
+      "nameDe": "Vanilleeis mit Früchten",
+      "description": "Vanilla ice cream with fresh fruits",
+      "descriptionDe": "Vanilleeis mit frischem Obst",
+      "pricePerPerson": "10.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 2
+    },
+    {
+      "categoryId": "new-category-4",
+      "name": "Creme Brûlée",
+      "nameDe": "Creme Brûlée",
+      "description": "Classic caramelized custard",
+      "descriptionDe": "Klassischer karamellisierter Pudding",
+      "pricePerPerson": "11.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 3
+    },
+    {
+      "categoryId": "new-category-5",
+      "name": "Mineral Water",
+      "nameDe": "Mineralwasser",
+      "description": "Still or sparkling water",
+      "descriptionDe": "Still oder sprudelnd",
+      "pricePerPerson": "4.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 0
+    },
+    {
+      "categoryId": "new-category-5",
+      "name": "Soft Drinks",
+      "nameDe": "Soft Drinks",
+      "description": "Cola, Fanta, Sprite, etc.",
+      "descriptionDe": "Cola, Fanta, Sprite, etc.",
+      "pricePerPerson": "5.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 1
+    },
+    {
+      "categoryId": "new-category-5",
+      "name": "Orange Juice",
+      "nameDe": "Orangensaft",
+      "description": "Fresh orange juice",
+      "descriptionDe": "Frischer Orangensaft",
+      "pricePerPerson": "6.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 2
+    },
+    {
+      "categoryId": "new-category-5",
+      "name": "Coffee",
+      "nameDe": "Kaffee",
+      "description": "Espresso, cappuccino, latte macchiato",
+      "descriptionDe": "Espresso, Cappuccino, Latte Macchiato",
+      "pricePerPerson": "4.50",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 3
+    },
+    {
+      "categoryId": "new-category-5",
+      "name": "Tea",
+      "nameDe": "Tee",
+      "description": "Selection of herbal and black teas",
+      "descriptionDe": "Auswahl von Kräuter- und Schwarztees",
+      "pricePerPerson": "4.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 4
+    }
+  ],
+  "addonGroups": [
+    {
+      "id": "new-addon-group-1",
+      "name": "Raclette Cheese Selection",
+      "nameDe": "Raclette Käseauswahl",
+      "subtitle": "Choose your cheese",
+      "subtitleDe": "Wählen Sie Ihren Käse",
+      "minSelect": 1,
+      "maxSelect": 3,
+      "isRequired": true,
+      "sortOrder": 0,
+      "isActive": true
+    },
+    {
+      "id": "new-addon-group-2",
+      "name": "Side Dishes",
+      "nameDe": "Beilagen",
+      "subtitle": "Choose your sides",
+      "subtitleDe": "Wählen Sie Ihre Beilagen",
+      "minSelect": 1,
+      "maxSelect": 3,
+      "isRequired": false,
+      "sortOrder": 1,
+      "isActive": true
+    },
+    {
+      "id": "new-addon-group-3",
+      "name": "Sauces",
+      "nameDe": "Soßen",
+      "subtitle": "Extra sauces",
+      "subtitleDe": "Extra Soßen",
+      "minSelect": 0,
+      "maxSelect": 5,
+      "isRequired": false,
+      "sortOrder": 2,
+      "isActive": true
+    },
+    {
+      "id": "new-addon-group-4",
+      "name": "Dessert Toppings",
+      "nameDe": "Dessert-Toppings",
+      "subtitle": "Choose your toppings",
+      "subtitleDe": "Wählen Sie Ihre Toppings",
+      "minSelect": 0,
+      "maxSelect": 4,
+      "isRequired": false,
+      "sortOrder": 3,
+      "isActive": true
+    },
+    {
+      "id": "new-addon-group-5",
+      "name": "Fondue Dippers",
+      "nameDe": "Fondue-Dipp",
+      "subtitle": "Items for dipping",
+      "subtitleDe": "Zum Dippen",
+      "minSelect": 2,
+      "maxSelect": 5,
+      "isRequired": true,
+      "sortOrder": 4,
+      "isActive": true
+    }
+  ],
+  "addonItems": [
+    {
+      "addonGroupId": "new-addon-group-1",
+      "name": "Classic Raclette Cheese",
+      "nameDe": "Klassischer Raclettekäse",
+      "description": "Traditional raclette cheese",
+      "descriptionDe": "Traditioneller Raclettekäse",
+      "price": "0.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 0
+    },
+    {
+      "addonGroupId": "new-addon-group-1",
+      "name": "Pepper Raclette Cheese",
+      "nameDe": "Pfeffer-Raclettekäse",
+      "description": "Raclette with pepper",
+      "descriptionDe": "Raclette mit Pfeffer",
+      "price": "2.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 1
+    },
+    {
+      "addonGroupId": "new-addon-group-1",
+      "name": "Garlic Raclette Cheese",
+      "nameDe": "Knoblauch-Raclettekäse",
+      "description": "Raclette with garlic",
+      "descriptionDe": "Raclette mit Knoblauch",
+      "price": "2.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 2
+    },
+    {
+      "addonGroupId": "new-addon-group-1",
+      "name": "Herb Raclette Cheese",
+      "nameDe": "Kräuter-Raclettekäse",
+      "description": "Raclette with herbs",
+      "descriptionDe": "Raclette mit Kräutern",
+      "price": "2.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 3
+    },
+    {
+      "addonGroupId": "new-addon-group-2",
+      "name": "Rösti",
+      "nameDe": "Rösti",
+      "description": "Swiss potato pancake",
+      "descriptionDe": "Schweizer Kartoffelpuffer",
+      "price": "4.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 0
+    },
+    {
+      "addonGroupId": "new-addon-group-2",
+      "name": "Potatoes",
+      "nameDe": "Kartoffeln",
+      "description": "Boiled potatoes",
+      "descriptionDe": "Gekochte Kartoffeln",
+      "price": "3.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 1
+    },
+    {
+      "addonGroupId": "new-addon-group-2",
+      "name": "Vegetables",
+      "nameDe": "Gemüse",
+      "description": "Seasonal vegetables",
+      "descriptionDe": "Saisonales Gemüse",
+      "price": "5.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 2
+    },
+    {
+      "addonGroupId": "new-addon-group-2",
+      "name": "Salad",
+      "nameDe": "Salat",
+      "description": "Fresh side salad",
+      "descriptionDe": "Frischer Beilagensalat",
+      "price": "4.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 3
+    },
+    {
+      "addonGroupId": "new-addon-group-2",
+      "name": "Swiss Bread",
+      "nameDe": "Schweizer Brot",
+      "description": "Fresh bread",
+      "descriptionDe": "Frisches Brot",
+      "price": "3.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 4
+    },
+    {
+      "addonGroupId": "new-addon-group-3",
+      "name": "Pepper Sauce",
+      "nameDe": "Pfeffersosse",
+      "description": "Spicy pepper sauce",
+      "descriptionDe": "Scharfe Pfeffersosse",
+      "price": "2.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 0
+    },
+    {
+      "addonGroupId": "new-addon-group-3",
+      "name": "Mushroom Sauce",
+      "nameDe": "Pilzsosse",
+      "description": "Creamy mushroom sauce",
+      "descriptionDe": "Cremige Pilzsosse",
+      "price": "2.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 1
+    },
+    {
+      "addonGroupId": "new-addon-group-3",
+      "name": "Garlic Sauce",
+      "nameDe": "Knoblauchsosse",
+      "description": "Garlic butter sauce",
+      "descriptionDe": "Knoblauchbutter-Sosse",
+      "price": "2.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 2
+    },
+    {
+      "addonGroupId": "new-addon-group-3",
+      "name": "Herb Butter",
+      "nameDe": "Kräuterbutter",
+      "description": "Herb butter",
+      "descriptionDe": "Kräuterbutter",
+      "price": "1.50",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 3
+    },
+    {
+      "addonGroupId": "new-addon-group-4",
+      "name": "Whipped Cream",
+      "nameDe": "Schlagsahne",
+      "description": "Fresh whipped cream",
+      "descriptionDe": "Frische Schlagsahne",
+      "price": "2.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 0
+    },
+    {
+      "addonGroupId": "new-addon-group-4",
+      "name": "Chocolate Shavings",
+      "nameDe": "Schokospäne",
+      "description": "Dark chocolate shavings",
+      "descriptionDe": "Dunkle Schokospäne",
+      "price": "1.50",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 1
+    },
+    {
+      "addonGroupId": "new-addon-group-4",
+      "name": "Fresh Berries",
+      "nameDe": "Frische Beeren",
+      "description": "Mixed fresh berries",
+      "descriptionDe": "Gemischte frische Beeren",
+      "price": "3.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 2
+    },
+    {
+      "addonGroupId": "new-addon-group-4",
+      "name": "Caramel Sauce",
+      "nameDe": "Karamellsosse",
+      "description": "Warm caramel sauce",
+      "descriptionDe": "Warme Karamellsosse",
+      "price": "1.50",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 3
+    },
+    {
+      "addonGroupId": "new-addon-group-5",
+      "name": "Bread Cubes",
+      "nameDe": "Brotwürfel",
+      "description": "Fresh bread cubes",
+      "descriptionDe": "Frische Brotwürfel",
+      "price": "0.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 0
+    },
+    {
+      "addonGroupId": "new-addon-group-5",
+      "name": "Potatoes",
+      "nameDe": "Kartoffeln",
+      "description": "Boiled potatoes",
+      "descriptionDe": "Gekochte Kartoffeln",
+      "price": "0.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 1
+    },
+    {
+      "addonGroupId": "new-addon-group-5",
+      "name": "Vegetables",
+      "nameDe": "Gemüse",
+      "description": "Carrots, zucchini, bell peppers",
+      "descriptionDe": "Karotten, Zucchini, Paprika",
+      "price": "0.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 2
+    },
+    {
+      "addonGroupId": "new-addon-group-5",
+      "name": "Pickles",
+      "nameDe": "Gewürzgurken",
+      "description": "Pickled cucumbers",
+      "descriptionDe": "Eingelegte Gurken",
+      "price": "0.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 3
+    },
+    {
+      "addonGroupId": "new-addon-group-5",
+      "name": "Onions",
+      "nameDe": "Zwiebeln",
+      "description": "Pickled onions",
+      "descriptionDe": "Eingelegte Zwiebeln",
+      "price": "0.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 4
+    }
+  ],
+  "itemAddonGroups": [
+    {
+      "itemId": "raclette-item",
+      "addonGroupId": "new-addon-group-1"
+    },
+    {
+      "itemId": "raclette-item",
+      "addonGroupId": "new-addon-group-2"
+    },
+    {
+      "itemId": "raclette-item",
+      "addonGroupId": "new-addon-group-3"
+    },
+    {
+      "itemId": "chocolate-fondue-item",
+      "addonGroupId": "new-addon-group-4"
+    },
+    {
+      "itemId": "cheese-fondue-item",
+      "addonGroupId": "new-addon-group-5"
+    }
+  ],
+  "barItems": [
+    {
+      "categoryId": "new-category-6",
+      "name": "Classic Mojito",
+      "nameDe": "Classic Mojito",
+      "description": "White rum, fresh mint, lime juice, sugar, soda water",
+      "descriptionDe": "Weisser Rum, frische Minze, Limettensaft, Zucker, Soda",
+      "pricePerPerson": "12.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 0
+    },
+    {
+      "categoryId": "new-category-6",
+      "name": "Caipirinha",
+      "nameDe": "Caipirinha",
+      "description": "Cachaça, lime, sugar",
+      "descriptionDe": "Cachaça, Limette, Zucker",
+      "pricePerPerson": "12.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 1
+    },
+    {
+      "categoryId": "new-category-6",
+      "name": "Espresso Martini",
+      "nameDe": "Espresso Martini",
+      "description": "Vodka, espresso, coffee liqueur",
+      "descriptionDe": "Wodka, Espresso, Kaffeelikör",
+      "pricePerPerson": "14.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 2
+    },
+    {
+      "categoryId": "new-category-6",
+      "name": "Aperol Spritz",
+      "nameDe": "Aperol Spritz",
+      "description": "Aperol, prosecco, soda water",
+      "descriptionDe": "Aperol, Prosecco, Soda",
+      "pricePerPerson": "10.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 3
+    },
+    {
+      "categoryId": "new-category-6",
+      "name": "Gin Tonic",
+      "nameDe": "Gin Tonic",
+      "description": "Gin, tonic water, lime",
+      "descriptionDe": "Gin, Tonic Water, Limette",
+      "pricePerPerson": "11.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 4
+    },
+    {
+      "categoryId": "new-category-6",
+      "name": "Whisky Sour",
+      "nameDe": "Whisky Sour",
+      "description": "Whisky, lemon juice, sugar, egg white",
+      "descriptionDe": "Whisky, Zitronensaft, Zucker, Eiklar",
+      "pricePerPerson": "13.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 5
+    },
+    {
+      "categoryId": "new-category-6",
+      "name": "Old Fashioned",
+      "nameDe": "Old Fashioned",
+      "description": "Whisky, sugar, bitters, orange peel",
+      "descriptionDe": "Whisky, Zucker, Bitter, Orangenschale",
+      "pricePerPerson": "14.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 6
+    },
+    {
+      "categoryId": "new-category-6",
+      "name": "Piña Colada",
+      "nameDe": "Piña Colada",
+      "description": "White rum, coconut cream, pineapple juice",
+      "descriptionDe": "Weisser Rum, Kokoscreme, Ananassaft",
+      "pricePerPerson": "13.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 7
+    },
+    {
+      "categoryId": "new-category-6",
+      "name": "Negroni",
+      "nameDe": "Negroni",
+      "description": "Gin, vermouth, campari",
+      "descriptionDe": "Gin, Wermut, Campari",
+      "pricePerPerson": "13.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 8
+    },
+    {
+      "categoryId": "new-category-6",
+      "name": "Mai Tai",
+      "nameDe": "Mai Tai",
+      "description": "White rum, dark rum, lime juice, orgeat syrup",
+      "descriptionDe": "Weisser Rum, dunkler Rum, Limettensaft, Orgeat-Sirup",
+      "pricePerPerson": "14.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 9
+    },
+    {
+      "categoryId": "new-category-6",
+      "name": "Cosmopolitan",
+      "nameDe": "Cosmopolitan",
+      "description": "Vodka, triple sec, lime juice, cranberry juice",
+      "descriptionDe": "Wodka, Triple Sec, Limettensaft, Cranberrysaft",
+      "pricePerPerson": "13.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 10
+    },
+    {
+      "categoryId": "new-category-6",
+      "name": "Moscow Mule",
+      "nameDe": "Moscow Mule",
+      "description": "Vodka, ginger beer, lime juice",
+      "descriptionDe": "Wodka, Ginger Beer, Limettensaft",
+      "pricePerPerson": "12.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 11
+    },
+    {
+      "categoryId": "new-category-6",
+      "name": "Margarita",
+      "nameDe": "Margarita",
+      "description": "Tequila, triple sec, lime juice",
+      "descriptionDe": "Tequila, Triple Sec, Limettensaft",
+      "pricePerPerson": "12.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 12
+    },
+    {
+      "categoryId": "new-category-6",
+      "name": "Daiquiri",
+      "nameDe": "Daiquiri",
+      "description": "White rum, lime juice, sugar",
+      "descriptionDe": "Weisser Rum, Limettensaft, Zucker",
+      "pricePerPerson": "11.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 13
+    },
+    {
+      "categoryId": "new-category-6",
+      "name": "French 75",
+      "nameDe": "French 75",
+      "description": "Gin, lemon juice, sugar, champagne",
+      "descriptionDe": "Gin, Zitronensaft, Zucker, Champagner",
+      "pricePerPerson": "15.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 14
+    },
+    {
+      "categoryId": "new-category-6",
+      "name": "Sidecar",
+      "nameDe": "Sidecar",
+      "description": "Cognac, triple sec, lemon juice",
+      "descriptionDe": "Cognac, Triple Sec, Zitronensaft",
+      "pricePerPerson": "14.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 15
+    },
+    {
+      "categoryId": "new-category-6",
+      "name": "Manhattan",
+      "nameDe": "Manhattan",
+      "description": "Whisky, sweet vermouth, bitters",
+      "descriptionDe": "Whisky, süsser Wermut, Bitter",
+      "pricePerPerson": "14.00",
+      "pricingType": "per_person",
+      "dietaryType": "veg",
+      "sortOrder": 16
+    }
+  ]
+}

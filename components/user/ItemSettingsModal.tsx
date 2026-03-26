@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Settings, X, Check } from 'lucide-react';
+import { DietaryIcon } from '@/components/user/DietaryIcon';
 
 interface ItemSettingsModalProps {
   isOpen: boolean;
@@ -136,8 +137,8 @@ export function ItemSettingsModal({
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                        No Type
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>No Type</span>
                       </div>
                       <div className="text-muted-foreground break-words" style={{ fontSize: 'var(--text-small)', hyphens: 'auto' }}>
                         Non-food items
@@ -160,8 +161,9 @@ export function ItemSettingsModal({
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                        Vegetarian
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>Vegetarian</span>
+                        <DietaryIcon type="veg" size="sm" />
                       </div>
                       <div className="text-muted-foreground break-words" style={{ fontSize: 'var(--text-small)', hyphens: 'auto' }}>
                         No meat or fish
@@ -184,8 +186,9 @@ export function ItemSettingsModal({
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                        Non-Vegetarian
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>Non-Vegetarian</span>
+                        <DietaryIcon type="non-veg" size="sm" />
                       </div>
                       <div className="text-muted-foreground break-words" style={{ fontSize: 'var(--text-small)', hyphens: 'auto' }}>
                         Contains meat or fish
@@ -208,8 +211,9 @@ export function ItemSettingsModal({
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                        Vegan
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>Vegan</span>
+                        <DietaryIcon type="vegan" size="sm" />
                       </div>
                       <div className="text-muted-foreground break-words" style={{ fontSize: 'var(--text-small)', hyphens: 'auto' }}>
                         No animal products

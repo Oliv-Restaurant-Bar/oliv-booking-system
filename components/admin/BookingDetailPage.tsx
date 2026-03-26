@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Send, User, CalendarDays, UtensilsCrossed, MessageSquare, Link, Lock, Unlock, History, FileText, RefreshCw, UserPlus, CheckCircle2, Info } from 'lucide-react';
+import { ArrowLeft, Send, User, CalendarDays, UtensilsCrossed, MessageSquare, Link, Lock, Unlock, History, FileText, RefreshCw, UserPlus, CheckCircle2, Info, Pencil, X, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { StatusDropdown } from './StatusDropdown';
 import { KitchenPdfStatusBadge } from './KitchenPdfStatusBadge';
@@ -43,6 +43,7 @@ export interface Booking {
     };
     guests: number;
     amount: string;
+    rawAmount?: number;
     billingAddress?: string;
     status: string;
     notes?: string;
@@ -50,10 +51,11 @@ export interface Booking {
     contactHistory?: Array<{ by: string; time: string; date: string; action: string; type?: 'system' | 'manual' }>;
     isLocked?: boolean;
     kitchenPdf?: KitchenPdfStatus;
-    menuItems?: Array<{ item: string; category: string; quantity: string; price: string }>;
+    menuItems?: Array<{ id?: string; itemId?: string; item: string; category: string; quantity: string; rawQuantity?: number; unitPrice?: number; price: string; notes?: string; customerComment?: string }>;
     assignedTo?: { id: string; name: string; email: string } | null;
     kitchenNotes?: string;
     createdAt?: string;
+    editSecret?: string;
 }
 
 interface AuditLog {
@@ -103,6 +105,29 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
     const [auditLoading, setAuditLoading] = useState(false);
     const [editLink, setEditLink] = useState<string | null>(null);
+
+    // Editing states
+    const [isEditingCustomer, setIsEditingCustomer] = useState(false);
+    const [tempCustomer, setTempCustomer] = useState({
+        name: '',
+        business: '',
+        email: '',
+        phone: '',
+        address: '',
+        billingAddress: ''
+    });
+
+    const [isEditingEvent, setIsEditingEvent] = useState(false);
+    const [tempEvent, setTempEvent] = useState({
+        date: '',
+        time: '',
+        guests: 0,
+        occasion: '',
+        amount: 0
+    });
+
+    const [isEditingMenu, setIsEditingMenu] = useState(false);
+    const [tempMenuItems, setTempMenuItems] = useState<any[]>([]);
 
     const userRole = user?.role;
     const canEditBooking = hasPermission(userRole, Permission.EDIT_BOOKING);
@@ -474,6 +499,187 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         }
     };
 
+    const updateFieldInNotes = (notes: string, field: string, value: string) => {
+        const regex = new RegExp(`^${field}: .*$`, 'm');
+        const fieldLine = `${field}: ${value || 'N/A'}`;
+        if (notes.match(regex)) {
+            return notes.replace(regex, fieldLine);
+        } else {
+            return notes + (notes.endsWith('\n') || !notes ? '' : '\n') + fieldLine;
+        }
+    };
+
+    const handleEditCustomer = () => {
+        if (!booking) return;
+        setTempCustomer({
+            name: booking.customer.name,
+            business: booking.customer.business || '',
+            email: booking.customer.email,
+            phone: booking.customer.phone,
+            address: booking.customer.address || '',
+            billingAddress: booking.billingAddress || ''
+        });
+        setIsEditingCustomer(true);
+    };
+
+    const handleCancelCustomer = () => {
+        setIsEditingCustomer(false);
+    };
+
+    const handleSaveCustomer = async () => {
+        if (!booking) return;
+        setIsSaving(true);
+        try {
+            // Construct updated internal notes
+            let newInternalNotes = booking.notes || '';
+
+            newInternalNotes = updateFieldInNotes(newInternalNotes, 'Business', tempCustomer.business);
+            newInternalNotes = updateFieldInNotes(newInternalNotes, 'Address', tempCustomer.address);
+
+            const response = await fetch(`/api/bookings/${booking.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    customer: {
+                        name: tempCustomer.name,
+                        email: tempCustomer.email,
+                        phone: tempCustomer.phone
+                    },
+                    internalNotes: newInternalNotes,
+                    billingAddress: tempCustomer.billingAddress
+                }),
+            });
+
+            if (response.ok) {
+                toast.success(t('toast.saveSuccess'));
+                setIsEditingCustomer(false);
+                window.location.reload();
+            } else {
+                toast.error(t('toast.saveFailed'));
+            }
+        } catch (error) {
+            console.error('Error saving customer info:', error);
+            toast.error(t('toast.saveFailed'));
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleEditEvent = () => {
+        if (!booking) return;
+        setTempEvent({
+            date: booking.event.date,
+            time: booking.event.time,
+            guests: booking.guests,
+            occasion: booking.event.occasion,
+            amount: booking.rawAmount || 0
+        });
+        setIsEditingEvent(true);
+    };
+
+    const handleCancelEvent = () => {
+        setIsEditingEvent(false);
+    };
+
+    const handleSaveEvent = async () => {
+        if (!booking) return;
+        setIsSaving(true);
+        try {
+            // Construct updated internal notes
+            let newInternalNotes = booking.notes || '';
+            newInternalNotes = updateFieldInNotes(newInternalNotes, 'Occasion', tempEvent.occasion);
+
+            const response = await fetch(`/api/bookings/${booking.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    eventDate: tempEvent.date,
+                    eventTime: tempEvent.time,
+                    guestCount: tempEvent.guests,
+                    estimatedTotal: tempEvent.amount,
+                    internalNotes: newInternalNotes
+                }),
+            });
+
+            if (response.ok) {
+                toast.success(t('toast.saveSuccess'));
+                setIsEditingEvent(false);
+                window.location.reload();
+            } else {
+                toast.error(t('toast.saveFailed'));
+            }
+        } catch (error) {
+            console.error('Error saving event details:', error);
+            toast.error(t('toast.saveFailed'));
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleEditMenu = () => {
+        if (!booking || !booking.menuItems) return;
+        setTempMenuItems(booking.menuItems.map(item => ({
+            ...item,
+            rawQuantity: item.rawQuantity || 0
+        })));
+        setIsEditingMenu(true);
+    };
+
+    const handleCancelMenu = () => {
+        setIsEditingMenu(false);
+    };
+
+    const handleSaveMenu = async () => {
+        if (!booking) return;
+        setIsSaving(true);
+        try {
+            const selectedItems = tempMenuItems.map(item => item.itemId);
+            const itemQuantities: Record<string, number> = {};
+            tempMenuItems.forEach(item => {
+                itemQuantities[item.itemId] = item.rawQuantity;
+            });
+
+            const response = await fetch(`/api/bookings/${booking.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    selectedItems,
+                    itemQuantities
+                }),
+            });
+
+            if (response.ok) {
+                toast.success(t('toast.saveSuccess'));
+                setIsEditingMenu(false);
+                window.location.reload();
+            } else {
+                toast.error(t('toast.saveFailed'));
+            }
+        } catch (error) {
+            console.error('Error saving menu items:', error);
+            toast.error(t('toast.saveFailed'));
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleEditItems = () => {
+        if (!booking || !booking.editSecret) {
+            toast.error("Edit mode not available for this booking (Secret missing)");
+            return;
+        }
+
+        // Store credentials in localStorage with a short-lived timestamp
+        // This allows the new tab to pick them up without exposing them in the URL
+        localStorage.setItem('temp_edit_id', booking.id);
+        localStorage.setItem('temp_edit_secret', booking.editSecret);
+        localStorage.setItem('temp_edit_timestamp', Date.now().toString());
+
+        // Redirect to wizard with edit mode flag (creds will be picked up from localStorage)
+        const url = `/wizard?edit=true`;
+        router.push(url);
+    };
+
     const handlePdfActionComplete = async (action: 'email' | 'download', data?: { emails?: string[]; notes?: string }) => {
         setIsPdfActionModalOpen(false);
         const customerName = booking?.customer?.name || 'Unknown';
@@ -701,34 +907,127 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                 <div className="space-y-6">
                     {/* Customer Information */}
                     <div className="bg-card border border-border rounded-xl p-6">
-                        <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                            <User className="w-5 h-5 text-primary" />
-                            {t('customerInfo')}
-                        </h3>
+                        <div className="flex items-center justify-between mb-5">
+                            <h3 className="text-foreground flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                <User className="w-5 h-5 text-primary" />
+                                {t('customerInfo')}
+                            </h3>
+                            {canEditBooking && !isLocked && !isEditingCustomer && (
+                                <button
+                                    onClick={handleEditCustomer}
+                                    className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary cursor-pointer flex items-center gap-2"
+                                    style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                    <span>{buttonT('edit')}</span>
+                                </button>
+                            )}
+                            {isEditingCustomer && (
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={handleCancelCustomer}
+                                        className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-red-500 cursor-pointer flex items-center gap-2"
+                                        style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                    >
+                                        <X className="w-4 h-4" />
+                                        <span>{buttonT('cancel')}</span>
+                                    </button>
+                                    <button
+                                        onClick={handleSaveCustomer}
+                                        disabled={isSaving}
+                                        className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-green-600 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                                        style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                    >
+                                        <Save className="w-4 h-4" />
+                                        <span>{buttonT('save')}</span>
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-1">
                                 <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{commonT('name')}</label>
-                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.name}</p>
+                                {isEditingCustomer ? (
+                                    <input
+                                        type="text"
+                                        value={tempCustomer.name}
+                                        onChange={(e) => setTempCustomer({ ...tempCustomer, name: e.target.value })}
+                                        className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
+                                        style={{ fontSize: 'var(--text-base)' }}
+                                    />
+                                ) : (
+                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.name}</p>
+                                )}
                             </div>
                             <div className="space-y-1">
                                 <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{commonT('business')}</label>
-                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.business || '-'}</p>
+                                {isEditingCustomer ? (
+                                    <input
+                                        type="text"
+                                        value={tempCustomer.business}
+                                        onChange={(e) => setTempCustomer({ ...tempCustomer, business: e.target.value })}
+                                        className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
+                                        style={{ fontSize: 'var(--text-base)' }}
+                                    />
+                                ) : (
+                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.business || '-'}</p>
+                                )}
                             </div>
                             <div className="space-y-1">
                                 <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{commonT('email')}</label>
-                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.email}</p>
+                                {isEditingCustomer ? (
+                                    <input
+                                        type="email"
+                                        value={tempCustomer.email}
+                                        onChange={(e) => setTempCustomer({ ...tempCustomer, email: e.target.value })}
+                                        className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
+                                        style={{ fontSize: 'var(--text-base)' }}
+                                    />
+                                ) : (
+                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.email}</p>
+                                )}
                             </div>
                             <div className="space-y-1">
                                 <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{commonT('phone')}</label>
-                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.phone}</p>
+                                {isEditingCustomer ? (
+                                    <input
+                                        type="text"
+                                        value={tempCustomer.phone}
+                                        onChange={(e) => setTempCustomer({ ...tempCustomer, phone: e.target.value })}
+                                        className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
+                                        style={{ fontSize: 'var(--text-base)' }}
+                                    />
+                                ) : (
+                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.phone}</p>
+                                )}
                             </div>
                             <div className="sm:col-span-2 space-y-1">
                                 <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('address')}</label>
-                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.address || '-'}</p>
+                                {isEditingCustomer ? (
+                                    <input
+                                        type="text"
+                                        value={tempCustomer.address}
+                                        onChange={(e) => setTempCustomer({ ...tempCustomer, address: e.target.value })}
+                                        className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
+                                        style={{ fontSize: 'var(--text-base)' }}
+                                    />
+                                ) : (
+                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.address || '-'}</p>
+                                )}
                             </div>
                             <div className="sm:col-span-2 space-y-1">
                                 <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('billingAddress')}</label>
-                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.billingAddress || '-'}</p>
+                                {isEditingCustomer ? (
+                                    <input
+                                        type="text"
+                                        value={tempCustomer.billingAddress}
+                                        onChange={(e) => setTempCustomer({ ...tempCustomer, billingAddress: e.target.value })}
+                                        className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
+                                        style={{ fontSize: 'var(--text-base)' }}
+                                    />
+                                ) : (
+                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.billingAddress || '-'}</p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -740,41 +1039,125 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                 <CalendarDays className="w-5 h-5 text-primary" />
                                 {t('eventDetails')}
                             </h3>
-                            {kitchenPdfStatus && (
-                                <KitchenPdfStatusBadge
-                                    status={kitchenPdfStatus.sentStatus}
-                                    lastSentAt={kitchenPdfStatus.lastSentAt}
-                                />
-                            )}
+                            <div className="flex items-center gap-2">
+                                {kitchenPdfStatus && !isEditingEvent && (
+                                    <KitchenPdfStatusBadge
+                                        status={kitchenPdfStatus.sentStatus}
+                                        lastSentAt={kitchenPdfStatus.lastSentAt}
+                                    />
+                                )}
+                                {canEditBooking && !isLocked && !isEditingEvent && (
+                                    <button
+                                        onClick={handleEditEvent}
+                                        className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary cursor-pointer flex items-center gap-2"
+                                        style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                    >
+                                        <Pencil className="w-3.5 h-3.5" />
+                                        <span>{buttonT('edit')}</span>
+                                    </button>
+                                )}
+                                {isEditingEvent && (
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={handleCancelEvent}
+                                            className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-red-500 cursor-pointer flex items-center gap-2"
+                                            style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                        >
+                                            <X className="w-4 h-4" />
+                                            <span>{buttonT('cancel')}</span>
+                                        </button>
+                                        <button
+                                            onClick={handleSaveEvent}
+                                            disabled={isSaving}
+                                            className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-green-600 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                                            style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                        >
+                                            <Save className="w-4 h-4" />
+                                            <span>{buttonT('save')}</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-1">
                                 <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{commonT('date')}</label>
-                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.event.date}</p>
+                                {isEditingEvent ? (
+                                    <input
+                                        type="text"
+                                        value={tempEvent.date}
+                                        onChange={(e) => setTempEvent({ ...tempEvent, date: e.target.value })}
+                                        className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
+                                        style={{ fontSize: 'var(--text-base)' }}
+                                    />
+                                ) : (
+                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.event.date}</p>
+                                )}
                             </div>
                             <div className="space-y-1">
                                 <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{commonT('time')}</label>
-                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.event.time}</p>
+                                {isEditingEvent ? (
+                                    <input
+                                        type="text"
+                                        value={tempEvent.time}
+                                        onChange={(e) => setTempEvent({ ...tempEvent, time: e.target.value })}
+                                        className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
+                                        style={{ fontSize: 'var(--text-base)' }}
+                                    />
+                                ) : (
+                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.event.time}</p>
+                                )}
                             </div>
                             <div className="space-y-1">
                                 <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('guests')}</label>
-                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.guests}</p>
+                                {isEditingEvent ? (
+                                    <input
+                                        type="number"
+                                        value={tempEvent.guests}
+                                        onChange={(e) => setTempEvent({ ...tempEvent, guests: parseInt(e.target.value) || 0 })}
+                                        className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
+                                        style={{ fontSize: 'var(--text-base)' }}
+                                    />
+                                ) : (
+                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.guests}</p>
+                                )}
                             </div>
                             <div className="space-y-1">
                                 <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('occasion')}</label>
-                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.event.occasion}</p>
+                                {isEditingEvent ? (
+                                    <input
+                                        type="text"
+                                        value={tempEvent.occasion}
+                                        onChange={(e) => setTempEvent({ ...tempEvent, occasion: e.target.value })}
+                                        className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
+                                        style={{ fontSize: 'var(--text-base)' }}
+                                    />
+                                ) : (
+                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.event.occasion}</p>
+                                )}
                             </div>
                             <div className="space-y-1">
                                 <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('amount')} (CHF)</label>
-                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.amount}</p>
+                                {isEditingEvent ? (
+                                    <input
+                                        type="number"
+                                        value={tempEvent.amount}
+                                        onChange={(e) => setTempEvent({ ...tempEvent, amount: parseFloat(e.target.value) || 0 })}
+                                        className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
+                                        style={{ fontSize: 'var(--text-base)' }}
+                                    />
+                                ) : (
+                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.amount}</p>
+                                )}
                             </div>
                             <div className="space-y-1">
                                 <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('venueLocation')}</label>
                                 {canEditBooking ? (
                                     <select
                                         value={selectedVenue}
+                                        disabled={isEditingEvent}
                                         onChange={(e) => handleVenueChange(e.target.value)}
-                                        className="w-full px-4 py-2 bg-input-background border border-border rounded-lg text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                        className="w-full px-4 py-2 bg-input-background border border-border rounded-lg text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
                                         style={{ fontSize: 'var(--text-base)' }}
                                     >
                                         <option value="">{t('notAssigned')}</option>
@@ -793,9 +1176,54 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
                     {/* Menu Items */}
                     <div className="bg-card border border-border rounded-xl p-6">
-                        <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                            <UtensilsCrossed className="w-5 h-5 text-primary" /> {t('menuItems')}
-                        </h3>
+                        <div className="flex items-center justify-between mb-5">
+                            <h3 className="text-foreground flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                <UtensilsCrossed className="w-5 h-5 text-primary" /> {t('menuItems')}
+                            </h3>
+                            <div className="flex items-center gap-2">
+                                {canEditBooking && !isLocked && !isEditingMenu && (
+                                    <button
+                                        onClick={handleEditMenu}
+                                        className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary cursor-pointer flex items-center gap-2"
+                                        style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                    >
+                                        <Pencil className="w-3.5 h-3.5" />
+                                        <span>{buttonT('edit')}</span>
+                                    </button>
+                                )}
+                                {canEditBooking && !isLocked && !isEditingMenu && (
+                                    <button
+                                        onClick={handleEditItems}
+                                        className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary cursor-pointer flex items-center gap-2"
+                                        style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                    >
+                                        <UtensilsCrossed className="w-3.5 h-3.5" />
+                                        <span>Edit Items</span>
+                                    </button>
+                                )}
+                                {isEditingMenu && (
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={handleCancelMenu}
+                                            className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-red-500 cursor-pointer flex items-center gap-2"
+                                            style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                        >
+                                            <X className="w-4 h-4" />
+                                            <span>{buttonT('cancel')}</span>
+                                        </button>
+                                        <button
+                                            onClick={handleSaveMenu}
+                                            disabled={isSaving}
+                                            className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-green-600 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                                            style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                        >
+                                            <Save className="w-4 h-4" />
+                                            <span>{buttonT('save')}</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                         <div className="bg-background border border-border rounded-lg overflow-hidden overflow-x-auto">
                             <table className="w-full">
                                 <thead className="bg-muted">
@@ -807,8 +1235,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {booking.menuItems && booking.menuItems.length > 0 ? (
-                                        booking.menuItems.map((item: any, index: number) => (
+                                    {(isEditingMenu ? tempMenuItems : booking.menuItems) && (isEditingMenu ? tempMenuItems : booking.menuItems)!.length > 0 ? (
+                                        (isEditingMenu ? tempMenuItems : booking.menuItems)!.map((item: any, index: number) => (
                                             <tr key={index} className="border-t border-border">
                                                 <td className="px-4 py-3 text-foreground" style={{ fontSize: 'var(--text-base)' }}>
                                                     <div className="flex flex-col gap-1">
@@ -824,8 +1252,34 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-3 text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>{item.category}</td>
-                                                <td className="px-4 py-3 text-foreground" style={{ fontSize: 'var(--text-base)' }}>{item.quantity}</td>
-                                                <td className="px-4 py-3 text-right text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>{item.price}</td>
+                                                <td className="px-4 py-3 text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                                    {isEditingMenu ? (
+                                                        <div className="flex items-center gap-2">
+                                                            <input
+                                                                type="number"
+                                                                value={item.rawQuantity}
+                                                                onChange={(e) => {
+                                                                    const newItems = [...tempMenuItems];
+                                                                    newItems[index] = { ...item, rawQuantity: parseInt(e.target.value) || 0 };
+                                                                    setTempMenuItems(newItems);
+                                                                }}
+                                                                className="w-20 px-2 py-1 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
+                                                            />
+                                                            <span className="text-muted-foreground text-sm">
+                                                                {item.quantity.includes('guests') ? 'guests' : 'units'}
+                                                            </span>
+                                                        </div>
+                                                    ) : (
+                                                        item.quantity
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-3 text-right text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                                    {isEditingMenu ? (
+                                                        `CHF ${((item.rawQuantity || 0) * (item.unitPrice || 0)).toFixed(2)}`
+                                                    ) : (
+                                                        item.price
+                                                    )}
+                                                </td>
                                             </tr>
                                         ))
                                     ) : (
@@ -834,7 +1288,13 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     {booking.menuItems && booking.menuItems.length > 0 && (
                                         <tr className="border-t-2 border-border bg-muted">
                                             <td colSpan={3} className="px-4 py-3 text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>{t('totalAmount')}</td>
-                                            <td className="px-4 py-3 text-right text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>{booking.amount}</td>
+                                            <td className="px-4 py-3 text-right text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                                {isEditingMenu ? (
+                                                    `CHF ${tempMenuItems.reduce((sum, item) => sum + ((item.rawQuantity || 0) * (item.unitPrice || 0)), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                                ) : (
+                                                    booking.amount
+                                                )}
+                                            </td>
                                         </tr>
                                     )}
                                 </tbody>
@@ -1044,7 +1504,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                         kitchenNotes: kitchenNotes,
                         menuItems: booking.menuItems?.map(item => ({
                             ...item,
-                            quantity: String(item.quantity)
+                            quantity: String(item.quantity),
+                            notes: item.notes
                         }))
                     }}
                 />

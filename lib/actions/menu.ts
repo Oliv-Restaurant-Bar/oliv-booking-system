@@ -480,13 +480,37 @@ export async function getCompleteMenuData() {
     const categoryAddons = await db.select().from(categoryAddonGroups);
     const itemAddons = await db.select().from(itemAddonGroups);
 
-    if (!categoriesResult.success || !itemsResult.success || !addonsResult.success) {
-      throw new Error("Failed to fetch menu data");
-    }
+    // Map assignments for quick lookup
+    const categoryAddonsMap = new Map<string, string[]>();
+    categoryAddons.forEach(a => {
+      if (a.categoryId && a.addonGroupId) {
+        const existing = categoryAddonsMap.get(a.categoryId) || [];
+        categoryAddonsMap.set(a.categoryId, [...existing, a.addonGroupId]);
+      }
+    });
 
-    // Group items by category
+    const itemAddonsMap = new Map<string, string[]>();
+    itemAddons.forEach(a => {
+      if (a.itemId && a.addonGroupId) {
+        const existing = itemAddonsMap.get(a.itemId) || [];
+        itemAddonsMap.set(a.itemId, [...existing, a.addonGroupId]);
+      }
+    });
+
+    // Merge assignments into categories and items
+    const categoriesWithAddons = categoriesResult.data.map(cat => ({
+      ...cat,
+      assignedAddonGroups: categoryAddonsMap.get(cat.id) || [],
+    }));
+
+    const itemsWithAddons = itemsResult.data.map(item => ({
+      ...item,
+      assignedAddonGroups: itemAddonsMap.get(item.id) || [],
+    }));
+
+    // Group items by category (using merged items)
     const itemsByCategory = new Map();
-    itemsResult.data.forEach((item: any) => {
+    itemsWithAddons.forEach((item: any) => {
       if (!itemsByCategory.has(item.categoryId)) {
         itemsByCategory.set(item.categoryId, []);
       }
@@ -505,8 +529,8 @@ export async function getCompleteMenuData() {
     }
 
     return {
-      categories: categoriesResult.data,
-      items: itemsResult.data,
+      categories: categoriesWithAddons,
+      items: itemsWithAddons,
       addons: addonsResult.data,
       addonGroups: addonGroupsResult.data || [],
       addonItems: addonItemsResult.data || [],
@@ -551,9 +575,37 @@ export async function getAllMenuData() {
       throw new Error("Failed to fetch all menu data");
     }
 
-    // Group items by category
+    // Map assignments for quick lookup
+    const categoryAddonsMap = new Map<string, string[]>();
+    categoryAddons.forEach(a => {
+      if (a.categoryId && a.addonGroupId) {
+        const existing = categoryAddonsMap.get(a.categoryId) || [];
+        categoryAddonsMap.set(a.categoryId, [...existing, a.addonGroupId]);
+      }
+    });
+
+    const itemAddonsMap = new Map<string, string[]>();
+    itemAddons.forEach(a => {
+      if (a.itemId && a.addonGroupId) {
+        const existing = itemAddonsMap.get(a.itemId) || [];
+        itemAddonsMap.set(a.itemId, [...existing, a.addonGroupId]);
+      }
+    });
+
+    // Merge assignments into categories and items
+    const categoriesWithAddons = categoriesResult.data.map(cat => ({
+      ...cat,
+      assignedAddonGroups: categoryAddonsMap.get(cat.id) || [],
+    }));
+
+    const itemsWithAddons = itemsResult.data.map(item => ({
+      ...item,
+      assignedAddonGroups: itemAddonsMap.get(item.id) || [],
+    }));
+
+    // Group items by category (using merged items)
     const itemsByCategory = new Map();
-    itemsResult.data.forEach((item: any) => {
+    itemsWithAddons.forEach((item: any) => {
       if (!itemsByCategory.has(item.categoryId)) {
         itemsByCategory.set(item.categoryId, []);
       }
@@ -572,8 +624,8 @@ export async function getAllMenuData() {
     }
 
     return {
-      categories: categoriesResult.data,
-      items: itemsResult.data,
+      categories: categoriesWithAddons,
+      items: itemsWithAddons,
       addons: addonsResult.data,
       addonGroups: addonGroupsResult.data || [],
       addonItems: addonItemsResult.data || [],

@@ -48,9 +48,9 @@ export function BookingsPage({ user }: { user?: any }) {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(booking =>
-        booking.customer.name.toLowerCase().includes(query) ||
-        booking.customer.email.toLowerCase().includes(query) ||
-        booking.customer.phone.toLowerCase().includes(query)
+        booking.customer?.name?.toLowerCase().includes(query) ||
+        booking.customer?.email?.toLowerCase().includes(query) ||
+        booking.customer?.phone?.toLowerCase().includes(query)
       );
     }
 
@@ -144,15 +144,15 @@ export function BookingsPage({ user }: { user?: any }) {
 
   const handleExport = () => {
     const excelData = filteredBookings.map((booking: Booking) => ({
-      [t('exportColumns.customerName')]: booking.customer.name,
-      [t('exportColumns.email')]: booking.customer.email,
-      [t('exportColumns.phone')]: booking.customer.phone,
-      [t('exportColumns.eventDate')]: booking.event.date,
-      [t('exportColumns.time')]: booking.event.time,
-      [t('exportColumns.guests')]: booking.guests,
-      [t('exportColumns.occasion')]: booking.event.occasion,
-      [t('exportColumns.amount')]: booking.amount,
-      [t('exportColumns.status')]: booking.status,
+      [t('exportColumns.customerName')]: booking.customer?.name || 'Unknown',
+      [t('exportColumns.email')]: booking.customer?.email || '',
+      [t('exportColumns.phone')]: booking.customer?.phone || '',
+      [t('exportColumns.eventDate')]: booking.event?.date || '',
+      [t('exportColumns.time')]: booking.event?.time || '',
+      [t('exportColumns.guests')]: booking.guests || 0,
+      [t('exportColumns.occasion')]: booking.event?.occasion || '',
+      [t('exportColumns.amount')]: booking.amount || '0.00',
+      [t('exportColumns.status')]: booking.status || '',
       [t('exportColumns.contactedBy')]: booking.contactHistory?.[0]?.by || '',
       [t('exportColumns.contactedWhen')]: booking.contactHistory?.[0]?.date || '',
     }));

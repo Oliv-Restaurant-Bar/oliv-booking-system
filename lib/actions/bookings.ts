@@ -40,6 +40,7 @@ export interface CreateBookingInput {
   location?: string;
   assignedTo?: string;
   kitchenNotes?: string;
+  billingAddress?: string;
 }
 
 /**
@@ -431,6 +432,10 @@ export async function updateBooking(
       updateData.kitchenNotes = updates.kitchenNotes;
       console.log('  → Updating kitchenNotes:', updates.kitchenNotes);
     }
+    if (updates.billingAddress !== undefined) {
+      updateData.billingAddress = updates.billingAddress;
+      console.log('  → Updating billingAddress:', updates.billingAddress);
+    }
 
 
     console.log('\n🔧 Executing UPDATE query...');
@@ -470,19 +475,36 @@ export async function updateBooking(
       const dbMenuItems = await db.select().from(menuItems);
       const menuItemMap = new Map(dbMenuItems.map(m => [m.id, m]));
 
+      let newEstimatedTotal = 0;
+
       for (const itemId of selectedItemIds) {
         const menuItem = menuItemMap.get(itemId);
         if (menuItem) {
+          const quantity = itemQuantities[itemId] || 1;
+          const unitPrice = Number(menuItem.pricePerPerson);
+          const lineTotal = quantity * unitPrice;
+          newEstimatedTotal += lineTotal;
+
           await db.insert(bookingItems).values({
             id: randomUUID(),
             bookingId: id,
             itemType: "menu_item",
             itemId: itemId,
-            quantity: itemQuantities[itemId] || 1,
+            quantity: quantity,
             unitPrice: menuItem.pricePerPerson,
           });
         }
       }
+
+      // Update the booking's estimated total
+      await db.update(bookings)
+        .set({ estimatedTotal: newEstimatedTotal.toString() })
+        .where(eq(bookings.id, id));
+      
+      console.log('  → Recalculated total:', newEstimatedTotal);
+      
+      // Update local booking object so audit log reflects the new total
+      (booking as any).estimatedTotal = newEstimatedTotal.toString();
     }
 
     console.log('\n✅ SUCCESS: Booking updated in database');

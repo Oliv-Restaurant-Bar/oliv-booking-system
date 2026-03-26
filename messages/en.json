@@ -114,7 +114,7 @@
     "new": "New",
     "pending": "Pending",
     "confirmed": "Confirmed",
-    "touchbase": "Touchbase",
+    "touchbase": "TouchBase",
     "declined": "Declined",
     "cancelled": "Cancelled",
     "completed": "Completed",
@@ -400,7 +400,7 @@
         "new": "New",
         "pending": "Pending",
         "confirmed": "Confirmed",
-        "touchbase": "Touchbase",
+        "touchbase": "TouchBase",
         "declined": "Declined",
         "completed": "Completed"
       },
@@ -691,7 +691,6 @@
         "pricingMode": "Pricing Mode",
         "pricingModePrice": "Price",
         "pricingModeVariants": "Variants",
-
         "itemSettingsOpt": "Item Settings (Optional)",
         "addonsOpt": "Addons & Choices (Optional)",
         "selected": "selected",
@@ -771,7 +770,6 @@
         "consumptionDesc": "Billed based on actual usage"
       },
       "descriptions": {
-
         "addDietaryInfo": "Add dietary information like vegetarian, vegan, or non-vegetarian labels to this item.",
         "selectAddonGroups": "Choose which {type} this group belongs to",
         "optionalGroup": "Customers can choose any number of items",
@@ -1106,8 +1104,8 @@
       "proceedToMenu": "Proceed to menu selection",
       "nextCategory": "Next Category",
       "continueToSummary": "Continue to Summary",
-      "submitRequest": "Submit Request",
-      "updateRequest": "Update Request",
+      "submitRequest": "Submit the request",
+      "updateRequest": "Update the request",
       "requestEdit": "Request Edit",
       "show": "Show",
       "hide": "Hide",

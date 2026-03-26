@@ -110,13 +110,15 @@ export function MenuCart({
   const addons = cartItems.filter(item => item.category === 'Add-ons' || (isFlatFee(item) && item.category !== 'Beverages'));
 
   const ppFoodItems = foodItems.filter(item => isPerPerson(item));
-  const vegItems = ppFoodItems.filter(item => item.dietaryType === 'veg' || item.dietaryType === 'vegan');
+  const pureVegItems = ppFoodItems.filter(item => item.dietaryType === 'veg');
+  const veganItems = ppFoodItems.filter(item => item.dietaryType === 'vegan');
   const nonVegItems = ppFoodItems.filter(item => item.dietaryType === 'non-veg');
   const otherFoodItems = ppFoodItems.filter(item => item.dietaryType !== 'veg' && item.dietaryType !== 'vegan' && item.dietaryType !== 'non-veg');
 
-  const vegPerPersonSubtotal = vegItems.reduce((sum, item) => sum + getItemPerPersonPrice(item), 0);
-  const nonVegPerPersonSubtotal = nonVegItems.reduce((sum, item) => sum + getItemPerPersonPrice(item), 0);
-  const otherPerPersonSubtotal = otherFoodItems.reduce((sum, item) => sum + getItemPerPersonPrice(item), 0);
+  const pureVegPerPersonSubtotal = pureVegItems.length > 0 ? Math.max(...pureVegItems.map(item => getItemPerPersonPrice(item))) : 0;
+  const veganPerPersonSubtotal = veganItems.length > 0 ? Math.max(...veganItems.map(item => getItemPerPersonPrice(item))) : 0;
+  const nonVegPerPersonSubtotal = nonVegItems.length > 0 ? Math.max(...nonVegItems.map(item => getItemPerPersonPrice(item))) : 0;
+  const otherPerPersonSubtotal = otherFoodItems.length > 0 ? Math.max(...otherFoodItems.map(item => getItemPerPersonPrice(item))) : 0;
 
   const updateQuantity = (itemId: string, delta: number) => {
     setItemQuantities(prev => {
@@ -162,9 +164,9 @@ export function MenuCart({
               </span>
             </div>
           </div>
-          <span className="text-xs font-bold text-secondary shrink-0">
-            CHF {(price / (quantity || 1)).toFixed(2)} {isConsumption(item) ? ' (consumption)' : isFlatFee(item) ? ' (flat fee)' : '/ person'}
-          </span>
+          {/* <span className="text-xs font-bold text-secondary shrink-0">
+            CHF {price.toFixed(2)} {isConsumption(item) ? ' (consumption)' : isFlatFee(item) ? ' (flat fee)' : '/ person'}
+          </span> */}
         </div>
 
         {/* Selected Variant & Add-ons */}
@@ -444,10 +446,16 @@ export function MenuCart({
               <div className="space-y-3">
                 {viewMode === 'per-person' ? (
                   <div className="space-y-3">
-                    {vegItems.length > 0 && (
+                    {pureVegItems.length > 0 && (
                       <div className="flex justify-between items-center text-[13px]">
-                        <span className="text-[#6b7280]">Veg Selection ({vegItems.length})</span>
-                        <span className="text-[#2c2f34] font-bold">CHF {vegPerPersonSubtotal.toFixed(2)}</span>
+                        <span className="text-[#6b7280]">Veg Selection ({pureVegItems.length})</span>
+                        <span className="text-[#2c2f34] font-bold">CHF {pureVegPerPersonSubtotal.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {veganItems.length > 0 && (
+                      <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-[#6b7280]">Vegan Selection ({veganItems.length})</span>
+                        <span className="text-[#2c2f34] font-bold">CHF {veganPerPersonSubtotal.toFixed(2)}</span>
                       </div>
                     )}
                     {nonVegItems.length > 0 && (

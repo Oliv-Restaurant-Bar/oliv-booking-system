@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Wheat } from 'lucide-react';
+import { Leaf } from 'lucide-react';
 
 interface DietaryIconProps {
   type: 'vegetarian' | 'non-vegetarian' | 'vegan' | 'none' | 'veg' | 'non-veg';
@@ -44,12 +44,10 @@ export function DietaryIcon({ type, size = 'md' }: DietaryIconProps) {
     );
   }
 
-  // vegan
+  // vegan - leaf icon
   return (
     <div className="flex items-center gap-1">
-      <div className={`${sizeClass} rounded-sm border-[1.5px] border-emerald-600 flex items-center justify-center flex-shrink-0`}>
-        <div className={`${dotClass} rounded-full bg-emerald-600`}></div>
-      </div>
+      <Leaf className={`${sizeClass} text-emerald-600 flex-shrink-0`} />
     </div>
   );
 }

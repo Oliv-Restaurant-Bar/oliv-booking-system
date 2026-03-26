@@ -723,3 +723,135 @@ export function SkeletonWizard() {
     </>
   );
 }
+
+/**
+ * Menu Selection Skeleton - Specific for the Step 2 of the customer wizard
+ */
+export function SkeletonMenuSelection() {
+  return (
+    <div className="bg-[#f7f7f8] min-h-screen flex">
+      {/* Left Column: Menu Content */}
+      <div className="flex-1 min-w-0 pb-[100px]">
+        <div className="mx-auto px-6 pt-6">
+          {/* Title Section */}
+          <div className="mb-8 space-y-3">
+            <div className="flex items-center gap-3">
+              <Skeleton className="size-[36px] rounded-xl" />
+              <Skeleton className="h-10 w-64" />
+            </div>
+            <Skeleton className="h-4 w-96 ml-[49px]" />
+          </div>
+
+          {/* Sticky Search + Tabs Area Placeholder */}
+          <div className="space-y-4 mb-8">
+            <Skeleton className="h-[42px] w-full rounded-full" />
+            <div className="flex gap-2">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton key={i} className="h-9 w-24 rounded-[10px]" />
+              ))}
+            </div>
+          </div>
+
+          {/* Menu Items Grid */}
+          <div className="space-y-8">
+            {/* Category 1 */}
+            <div>
+              <div className="flex justify-between items-baseline mb-4 border-b border-[#f3f4f6] pb-2">
+                <Skeleton className="h-7 w-32" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="bg-white rounded-[16px] border border-[#e5e7eb] flex h-[140px] overflow-hidden">
+                    <Skeleton className="w-[140px] h-full shrink-0" />
+                    <div className="flex-1 p-4 space-y-3">
+                      <div className="flex gap-2">
+                        <Skeleton className="size-4 rounded-full" />
+                        <Skeleton className="h-5 w-32" />
+                      </div>
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-3/4" />
+                      <div className="flex justify-between items-center mt-2">
+                        <div className="space-y-1">
+                          <Skeleton className="h-5 w-20" />
+                          <Skeleton className="h-3 w-12" />
+                        </div>
+                        <Skeleton className="h-[34px] w-20 rounded-[10px]" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Category 2 */}
+            <div>
+              <div className="flex justify-between items-baseline mb-4 border-b border-[#f3f4f6] pb-2">
+                <Skeleton className="h-7 w-32" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="bg-white rounded-[16px] border border-[#e5e7eb] flex h-[140px] overflow-hidden">
+                    <Skeleton className="w-[140px] h-full shrink-0" />
+                    <div className="flex-1 p-4 space-y-3">
+                      <div className="flex gap-2">
+                        <Skeleton className="size-4 rounded-full" />
+                        <Skeleton className="h-5 w-32" />
+                      </div>
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-3/4" />
+                      <div className="flex justify-between items-center mt-2">
+                        <div className="space-y-1">
+                          <Skeleton className="h-5 w-20" />
+                          <Skeleton className="h-3 w-12" />
+                        </div>
+                        <Skeleton className="h-[34px] w-20 rounded-[10px]" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Column: Sidebar Cart */}
+      <div className="hidden lg:flex w-[380px] shrink-0 border-l border-[#e5e7eb] bg-white h-screen flex-col p-6 space-y-6">
+        <div className="flex items-center justify-between mb-2">
+          <Skeleton className="h-8 w-40" />
+          <Skeleton className="size-8 rounded-full" />
+        </div>
+        <div className="space-y-4">
+          <Skeleton className="h-24 w-full rounded-xl" />
+          <div className="p-4 border border-[#e5e7eb] rounded-xl space-y-4">
+            <Skeleton className="h-5 w-32" />
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex gap-3">
+                  <Skeleton className="size-12 rounded-lg" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="pt-4 border-t border-[#e5e7eb] space-y-3">
+            <div className="flex justify-between">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-16" />
+            </div>
+            <div className="flex justify-between">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-4 w-16" />
+            </div>
+            <Skeleton className="h-12 w-full rounded-xl mt-4" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

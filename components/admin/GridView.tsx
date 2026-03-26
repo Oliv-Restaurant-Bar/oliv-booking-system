@@ -71,12 +71,12 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
                 <h4
                   className="text-foreground truncate"
                   style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}
-                  title={booking.customer.name}
+                  title={booking.customer?.name}
                 >
-                  {booking.customer.name}
+                  {booking.customer?.name || 'Unknown'}
                 </h4>
-                <p className="text-muted-foreground truncate" style={{ fontSize: 'var(--text-small)' }} title={booking.event.occasion}>
-                  {booking.event.occasion}
+                <p className="text-muted-foreground truncate" style={{ fontSize: 'var(--text-small)' }} title={booking.event?.occasion}>
+                  {booking.event?.occasion || ''}
                 </p>
               </div>
             </div>
@@ -99,13 +99,13 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <Mail className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
                 <span className="text-muted-foreground truncate" style={{ fontSize: 'var(--text-small)' }}>
-                  {booking.customer.email}
+                  {booking.customer?.email || ''}
                 </span>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
                 <span className="text-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                  {booking.event.date}
+                  {booking.event?.date || ''}
                 </span>
               </div>
             </div>
@@ -115,13 +115,13 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <Phone className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
                 <span className="text-muted-foreground truncate" style={{ fontSize: 'var(--text-small)' }}>
-                  {booking.customer.phone}
+                  {booking.customer?.phone || ''}
                 </span>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Users className="w-3.5 h-3.5 text-muted-foreground" />
                 <span className="text-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                  {calendarT('guests', { count: booking.guests })}
+                  {calendarT('guests', { count: booking.guests || 0 })}
                 </span>
               </div>
             </div>
@@ -157,7 +157,7 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
 
               {/* Venue + Amount - often grouped together at the end */}
               <div className="flex items-center gap-4 flex-shrink-0 ml-auto md:ml-0">
-                {booking.event.location && (
+                {booking.event?.location && (
                   <div className="flex items-center gap-1.5 text-primary font-medium" style={{ fontSize: 'var(--text-small)' }}>
                     <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
                     <span className="truncate max-w-[120px]" title={booking.event.location}>

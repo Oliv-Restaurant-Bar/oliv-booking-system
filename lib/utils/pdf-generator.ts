@@ -48,7 +48,7 @@ export type PdfGenerationMode = 'offer' | 'kitchen';
  * Unified PDF Generation for both Customer Offers and Internal Kitchen Sheets.
  */
 export async function generateBookingPdf(
-  data: PdfBookingData, 
+  data: PdfBookingData,
   mode: PdfGenerationMode = 'offer'
 ): Promise<jsPDF> {
   const doc = new jsPDF();
@@ -61,18 +61,18 @@ export async function generateBookingPdf(
   // --- Helper Functions ---
   const drawHeader = (isContinuation = false) => {
     const isKitchen = mode === 'kitchen';
-    
+
     if (isContinuation && !isKitchen) {
       // Minimal Continuation Header for Offers
       doc.setDrawColor(...COLORS.primary);
       doc.setLineWidth(0.5);
       doc.line(margin, 15, pageWidth - margin, 15);
-      
+
       doc.setFontSize(8);
       doc.setTextColor(...COLORS.muted);
       doc.text(`KUNDENANGEBOT (FORTS.) - ANFRAGE-NR: ${data.id.substring(data.id.length - 8).toUpperCase()}`, margin, 12);
       doc.text(`Datum: ${new Date().toLocaleDateString('de-CH')}`, pageWidth - margin, 12, { align: 'right' });
-      
+
       yPos = 25;
       return;
     }
@@ -107,7 +107,7 @@ export async function generateBookingPdf(
     doc.setFontSize(22);
     doc.setTextColor(...COLORS.secondary);
     doc.setFont("helvetica", "bold");
-    const title = mode === 'kitchen' ? "KITCHEN SHEET" : "KUNDENANGEBOT";
+    const title = mode === 'kitchen' ? "KÜCHENPAPIER" : "";
     doc.text(title + (isContinuation ? " (FORTS.)" : ""), margin, 34);
 
     // Meta (Right side)
@@ -168,13 +168,13 @@ export async function generateBookingPdf(
   const leftX = margin;
   const rightX = pageWidth / 2 + 5;
   const detailLineHeight = 5;
-  
+
   doc.setFontSize(14);
   doc.setTextColor(...COLORS.title);
   doc.setFont("helvetica", "bold");
-  doc.text(mode === 'kitchen' ? "CUSTOMER DETAILS" : "KUNDENDATEN", leftX, yPos);
-  doc.text(mode === 'kitchen' ? "EVENT DETAILS" : "EVENTDATEN", rightX, yPos);
-  
+  doc.text("KUNDENDATEN", leftX, yPos);
+  doc.text("EVENTDATEN", rightX, yPos);
+
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   let leftY = yPos + 8;
@@ -182,113 +182,175 @@ export async function generateBookingPdf(
 
   // Helper to render multi-line field and return new Y
   const renderField = (label: string, value: string | number, x: number, y: number, width: number) => {
-    const text = `${label}: ${value}`;
-    const lines = doc.splitTextToSize(text, width);
-    doc.text(lines, x + 2, y);
+    doc.setFont("helvetica", "bold");
+    const labelText = `${label}: `;
+    doc.text(labelText, x + 2, y);
+
+    const labelWidth = doc.getTextWidth(labelText);
+    doc.setFont("helvetica", "normal");
+
+    const valueText = String(value);
+    const availableWidth = width - labelWidth - 2;
+    const lines = doc.splitTextToSize(valueText, availableWidth);
+
+    // First line after the label
+    doc.text(lines[0], x + 2 + labelWidth, y);
+
+    // Subsequent lines (if any)
+    if (lines.length > 1) {
+      for (let i = 1; i < lines.length; i++) {
+        doc.text(lines[i], x + 2, y + (i * detailLineHeight));
+      }
+    }
+
     return y + (lines.length * detailLineHeight) + 1;
   };
 
   // Customer Side
-  leftY = renderField(mode === 'kitchen' ? 'Name' : 'Kunde', data.customerName, leftX, leftY, colW);
+  leftY = renderField('Kunde', data.customerName, leftX, leftY, colW);
   if (data.business) {
+    doc.setFont("helvetica", "bold");
     const bizLines = doc.splitTextToSize(data.business, colW);
     doc.text(bizLines, leftX + 2, leftY);
     leftY += (bizLines.length * detailLineHeight) + 1;
+    doc.setFont("helvetica", "normal");
   }
-  leftY = renderField(mode === 'kitchen' ? 'Guests' : 'Personen', data.guestCount, leftX, leftY, colW);
+  leftY = renderField('Personen', data.guestCount, leftX, leftY, colW);
   if (data.billingAddress) {
-    leftY = renderField(mode === 'kitchen' ? 'Address' : 'Adresse', data.billingAddress, leftX, leftY, colW);
+    leftY = renderField('Adresse', data.billingAddress, leftX, leftY, colW);
   }
 
   // Event Side
-  rightY = renderField(mode === 'kitchen' ? 'Date' : 'Datum', data.eventDate, rightX, rightY, colW);
-  rightY = renderField(mode === 'kitchen' ? 'Time' : 'Zeit', data.eventTime, rightX, rightY, colW);
-  rightY = renderField(mode === 'kitchen' ? 'Occasion' : 'Anlass', data.occasion || '-', rightX, rightY, colW);
-  rightY = renderField(mode === 'kitchen' ? 'Venue' : 'Ort', data.location || 'Restaurant Oliv', rightX, rightY, colW);
+  rightY = renderField('Datum', data.eventDate, rightX, rightY, colW);
+  rightY = renderField('Zeit', data.eventTime, rightX, rightY, colW);
+  rightY = renderField('Anlass', data.occasion || '-', rightX, rightY, colW);
+  rightY = renderField('Ort', data.location || 'Restaurant Oliv', rightX, rightY, colW);
 
   yPos = Math.max(leftY, rightY) + 8;
 
   // Table
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
-  doc.text(mode === 'kitchen' ? "MENU SELECTION" : "IHRE AUSWAHL", margin, yPos);
+  doc.text("IHRE AUSWAHL", margin, yPos);
   yPos += 8;
 
   renderTableHeaders();
 
-  // Sorting
-  const categoryOrder = ["Vorspeisen", "Hauptgänge", "Desserts", "Snacks", "Apéro", "Menü", "Drink", "Softdrinks", "Wein", "Bier", "Kaffee", "Drinks"];
-  const sortedItems = [...data.items].sort((a, b) => {
-    const idxA = categoryOrder.indexOf(a.category);
-    const idxB = categoryOrder.indexOf(b.category);
-    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-    return a.category.localeCompare(b.category);
+  // Helpers for grouping
+  const isFlatFee = (item: PdfBookingItem) => item.pricingType === 'flat-rate' || item.pricingType === 'flat_fee';
+
+  const foodItemsList = data.items.filter(item => item.category !== 'Beverages' && item.category !== 'Add-ons' && !isFlatFee(item) && item.category !== 'Drinks' && item.category !== 'Wine' && item.category !== 'Beer');
+  const beveragesList = data.items.filter(item => item.category === 'Beverages' || item.category === 'Drink' || item.category === 'Drinks' || item.category === 'Softdrinks' || item.category === 'Wein' || item.category === 'Bier' || item.category === 'Coffee' || item.category === 'Drinks' || item.category === 'Kaffee' || item.category === 'Drink' || item.category === 'Wein' || item.category === 'Beer' || item.category === 'Wine');
+  // Re-filtering as beveragesList might overlap if we are not careful
+  const finalFoodItems = data.items.filter(item => {
+    const isBev = item.category === 'Beverages' || item.category === 'Drink' || item.category === 'Drinks' || item.category === 'Softdrinks' || item.category === 'Wein' || item.category === 'Bier' || item.category === 'Kaffee' || item.category === 'Wine' || item.category === 'Beer';
+    const isAddon = item.category === 'Add-ons' || isFlatFee(item);
+    return !isBev && !isAddon;
+  });
+  const finalBeverages = data.items.filter(item => {
+    return item.category === 'Beverages' || item.category === 'Drink' || item.category === 'Drinks' || item.category === 'Softdrinks' || item.category === 'Wein' || item.category === 'Bier' || item.category === 'Kaffee' || item.category === 'Wine' || item.category === 'Beer';
+  });
+  const finalAddons = data.items.filter(item => {
+    const isBev = item.category === 'Beverages' || item.category === 'Drink' || item.category === 'Drinks' || item.category === 'Softdrinks' || item.category === 'Wein' || item.category === 'Bier' || item.category === 'Kaffee' || item.category === 'Wine' || item.category === 'Beer';
+    return (item.category === 'Add-ons' || isFlatFee(item)) && !isBev;
   });
 
-  let lastCategory = "";
-  sortedItems.forEach(item => {
-    const itemMaxWidth = mode === 'kitchen' ? 120 : 95;
-    const nameLines = doc.splitTextToSize(item.name, itemMaxWidth);
-    const rowH = Math.max(nameLines.length * 5, 8);
-    
-    // Check if category changed to draw header
-    if (item.category !== lastCategory) {
-      checkPageBreak(15, true);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.setTextColor(...COLORS.title);
-      yPos += 8;
-      doc.text(item.category.toUpperCase(), margin + 3, yPos);
-      yPos += 4; // Tighter gap
-      lastCategory = item.category;
-    }
-
-    checkPageBreak(rowH + 5, true);
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
+  // Helper for multi-line item info (Add-ons/Notes)
+  const renderItemInfo = (label: string, text?: string, color: [number, number, number] = [180, 83, 9]) => {
+    if (!text || !text.trim()) return;
+    const infoLines = doc.splitTextToSize(`${label}: ${text}`, contentWidth - 20);
+    const infoH = (infoLines.length * 4) + 1;
+    checkPageBreak(infoH + 2);
+    doc.setTextColor(...color);
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8.5);
+    doc.text(infoLines, margin + 10, yPos - 1);
+    yPos += infoH + 1;
     doc.setTextColor(...COLORS.title);
+  };
 
-    if (mode === 'kitchen') {
-      doc.text(nameLines, margin + 10, yPos + 4);
-      
-      doc.text(String(item.quantity), margin + 130, yPos + 4, { align: 'center' });
-      doc.setDrawColor(203, 213, 225);
-      doc.rect(margin + 160 - 3, yPos + 4 - 3.5, 6, 6);
-    } else {
-      // Offer mode: items clearly indented under category
-      doc.text(nameLines, margin + 10, yPos + 4);
+  const mainGroups = [
+    { name: "Food Items", items: finalFoodItems },
+    { name: "Beverages", items: finalBeverages },
+    { name: "Add-ons", items: finalAddons }
+  ].filter(g => g.items.length > 0);
 
-      doc.setTextColor(...COLORS.text);
-      const qtyLabel = item.pricingType === 'per_person' ? 'guests' : '';
-      const qtyTxt = `${item.quantity} ${qtyLabel} x ${Number(item.unitPrice).toFixed(0)} CHF`.replace(/\s+/g, ' ').trim();
-      doc.text(qtyTxt, margin + 105, yPos + 4);
+  const categoryOrder = ["Vorspeisen", "Hauptgänge", "Desserts", "Snacks", "Apéro", "Menü"];
 
-      doc.setFont("helvetica", "bold");
+  mainGroups.forEach(group => {
+    checkPageBreak(20, true);
+
+    // Main Group Header
+    doc.setFillColor(248, 250, 252); // slate-50
+    doc.rect(margin, yPos, contentWidth, 10, 'F');
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(...COLORS.secondary);
+    yPos += 7;
+    doc.text(group.name.toUpperCase(), margin + 3, yPos);
+    yPos += 8;
+
+    const sortedItemsInGroup = [...group.items].sort((a, b) => {
+      const idxA = categoryOrder.indexOf(a.category);
+      const idxB = categoryOrder.indexOf(b.category);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      return a.category.localeCompare(b.category);
+    });
+
+    let lastCategory = "";
+    sortedItemsInGroup.forEach(item => {
+      const itemMaxWidth = mode === 'kitchen' ? 120 : 95;
+      const nameLines = doc.splitTextToSize(item.name, itemMaxWidth);
+      const rowH = Math.max(nameLines.length * 5, 8);
+
+      // Check if sub-category changed
+      if (item.category !== lastCategory) {
+        checkPageBreak(15, true);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(...COLORS.primary);
+        yPos += 6;
+        doc.text(item.category.toUpperCase(), margin + 5, yPos);
+        yPos += 5;
+        lastCategory = item.category;
+      }
+
+      checkPageBreak(rowH + 5, true);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
       doc.setTextColor(...COLORS.title);
-      doc.text(`CHF ${item.totalPrice?.toFixed(2)}`, pageWidth - margin - 3, yPos + 4, { align: 'right' });
-    }
 
-    yPos += rowH + (mode === 'kitchen' ? 5 : 2);
-    doc.setDrawColor(...COLORS.border);
-    doc.setLineWidth(0.1);
-    doc.line(margin, yPos, pageWidth - margin, yPos);
-    yPos += 3;
+      if (mode === 'kitchen') {
+        doc.text(nameLines, margin + 12, yPos + 4);
+        doc.text(String(item.quantity), margin + 130, yPos + 4, { align: 'center' });
+        doc.setDrawColor(203, 213, 225);
+        doc.rect(margin + 160 - 3, yPos + 4 - 3.5, 6, 6);
+      } else {
+        doc.text(nameLines, margin + 12, yPos + 4);
+        doc.setTextColor(...COLORS.text);
+        const qtyLabel = item.pricingType === 'per_person' ? 'guests' : '';
+        const qtyTxt = `${item.quantity} ${qtyLabel} x ${Number(item.unitPrice).toFixed(0)} CHF`.replace(/\s+/g, ' ').trim();
+        doc.text(qtyTxt, margin + 105, yPos + 4);
 
-    // Customer Comment (Special)
-    const comment = item.customerComment || item.notes;
-    if (comment) {
-      const commentLines = doc.splitTextToSize(`Note: ${comment}`, contentWidth - 20);
-      const commentH = (commentLines.length * 4) + 2;
-      checkPageBreak(commentH + 2);
-      doc.setTextColor(180, 83, 9); // amber-700
-      doc.setFont("helvetica", "italic");
-      doc.setFontSize(8.5);
-      doc.text(commentLines, margin + 10, yPos - 1);
-      yPos += commentH;
-      doc.setTextColor(...COLORS.title);
-      yPos += 2;
-    }
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...COLORS.title);
+        doc.text(`CHF ${item.totalPrice?.toFixed(2)}`, pageWidth - margin - 3, yPos + 4, { align: 'right' });
+      }
+
+      yPos += rowH + (mode === 'kitchen' ? 4 : 2);
+      doc.setDrawColor(...COLORS.border);
+      doc.setLineWidth(0.1);
+      doc.line(margin + 10, yPos, pageWidth - margin, yPos);
+      yPos += 3;
+
+      // 1. Add-ons (from item.notes)
+      renderItemInfo('Choices', item.notes, [115, 128, 106]); // darker primary
+
+      // 2. Customer Comment (from item.customerComment)
+      renderItemInfo('Note', item.customerComment, [180, 83, 9]); // amber-700
+      yPos += 1;
+    });
   });
 
   // Helper for Notes Sections
@@ -358,7 +420,7 @@ export async function generateBookingPdf(
     doc.setFontSize(9);
     doc.setFont("helvetica", "italic");
     doc.setTextColor(...COLORS.muted);
-    doc.text(`Kalkulation für ${data.guestCount} Personen (exkl. Service & Getränke nach Aufwand)`, margin, yPos);
+    doc.text(`Kalkulation for ${data.guestCount} Personen (exkl. Service & Getränke nach Aufwand)`, margin, yPos);
   }
   if (mode === 'kitchen') {
     renderNoteSection("Staff Notes", data.kitchenNotes);

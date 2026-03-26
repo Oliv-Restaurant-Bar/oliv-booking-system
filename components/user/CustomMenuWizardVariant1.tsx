@@ -10,7 +10,7 @@ import { WizardHeader } from './WizardHeader';
 import { useWizardTranslation } from '@/lib/i18n/client';
 import { DateTimePickerModal } from './DateTimePickerModal';
 import { submitWizardForm, requestBookingUnlock } from '@/lib/actions/wizard';
-import { SkeletonKPI, SkeletonPage } from '@/components/ui/skeleton-loaders';
+import { SkeletonKPI, SkeletonPage, SkeletonMenuSelection } from '@/components/ui/skeleton-loaders';
 import { customerNameSchema, customerBusinessSchema, customerPhoneSchema, customerStreetSchema, customerPlzSchema, customerLocationSchema, customerOccasionSchema, customerSpecialRequestsSchema, userEmailSchema } from '@/lib/validation/schemas';
 import { EventDetails } from '@/lib/types';
 import { CustomerDetailsForm } from './CustomerDetailsForm';
@@ -116,21 +116,49 @@ export function CustomMenuWizard() {
     const editMode = searchParams.get('edit');
 
     if (editMode === 'true') {
-      const bookingIdParam = sessionStorage.getItem('edit_booking_id');
-      const secretParam = sessionStorage.getItem('edit_secret');
+      const bookingIdParam = searchParams.get('id');
+      const secretParam = searchParams.get('secret');
 
-      if (bookingIdParam && secretParam) {
-        console.log('Edit mode activated from sessionStorage');
+      // Check temporary localStorage (for secure new tab redirection)
+      const tempId = localStorage.getItem('temp_edit_id');
+      const tempSecret = localStorage.getItem('temp_edit_secret');
+      const tempTimestamp = localStorage.getItem('temp_edit_timestamp');
+      const now = Date.now();
+
+      let finalId = bookingIdParam || sessionStorage.getItem('edit_booking_id');
+      let finalSecret = secretParam || sessionStorage.getItem('edit_secret');
+
+      // Use temporary localStorage if it's less than 60 seconds old
+      if (tempId && tempSecret && tempTimestamp && (now - parseInt(tempTimestamp) < 60000)) {
+        console.log('Edit mode activated via secure localStorage');
+        finalId = tempId;
+        finalSecret = tempSecret;
+
+        // Clean up immediately for security, then store in sessionStorage for refresh persistence
+        localStorage.removeItem('temp_edit_id');
+        localStorage.removeItem('temp_edit_secret');
+        localStorage.removeItem('temp_edit_timestamp');
+        
+        sessionStorage.setItem('edit_booking_id', tempId);
+        sessionStorage.setItem('edit_secret', tempSecret);
+      }
+
+      if (finalId && finalSecret) {
+        console.log('Edit mode activated');
         setIsLoadingEdit(true);
 
-        setBookingId(bookingIdParam);
-        setEditSecret(secretParam);
+        setBookingId(finalId);
+        setEditSecret(finalSecret);
         setIsEditMode(true);
+
+        // Sync to sessionStorage to survive refreshes
+        sessionStorage.setItem('edit_booking_id', finalId);
+        sessionStorage.setItem('edit_secret', finalSecret);
 
         // Check lock status by fetching booking
         const checkLockStatus = async () => {
           try {
-            const response = await fetch(`/api/booking/${bookingIdParam}/edit/${secretParam}`);
+            const response = await fetch(`/api/booking/${finalId}/edit/${finalSecret}`);
             if (response.ok) {
               const result = await response.json();
               if (result.success && result.data) {
@@ -209,8 +237,8 @@ export function CustomMenuWizard() {
                 // sessionStorage.removeItem('edit_secret');
                 // sessionStorage.removeItem('edit_mode');
 
-                // Go to summary page
-                setCurrentStep(3);
+                // Go to menu selection page
+                setCurrentStep(2);
               }
             }
           } catch (error) {
@@ -251,7 +279,7 @@ export function CustomMenuWizard() {
         }
 
         // Restore Add-ons
-        const addonsMatch = item.notes.match(/Add-ons: ([^|]+)/);
+        const addonsMatch = item.notes.match(/(?:Add-ons|Choices): ([^|]+)/);
         if (addonsMatch) {
           const addonNames = addonsMatch[1].split(',').map((s: string) => s.trim());
           const addonIds: string[] = [];
@@ -905,16 +933,56 @@ export function CustomMenuWizard() {
             ? (item?.variants as any[]).find(v => v.id === variantId)
             : null;
 
+          // Format Display Name with Variant
+          let displayName = item?.name || 'Unknown Item';
+          if (variant) {
+            displayName += ` (${variant.name})`;
+          }
+
+          // Format Add-ons / Choices
+          let choicesPart = '';
+          const selectedAddOnIds = itemAddOns[itemId] || [];
+          if (selectedAddOnIds.length > 0) {
+            const addOnNames: string[] = [];
+            
+            selectedAddOnIds.forEach(id => {
+              // 1. Check in legacy addOns
+              if (item?.addOns) {
+                const ao = item.addOns.find(a => a.id === id);
+                if (ao) {
+                  addOnNames.push(ao.name);
+                  return;
+                }
+              }
+              
+              // 2. Check in addonGroups
+              if (item?.addonGroups) {
+                for (const group of item.addonGroups) {
+                  const ao = group.items.find(i => i.id === id);
+                  if (ao) {
+                    addOnNames.push(ao.name);
+                    break;
+                  }
+                }
+              }
+            });
+            
+            if (addOnNames.length > 0) {
+              choicesPart = addOnNames.join(', ');
+            }
+          }
+          
           const unitPrice = variant ? Number(variant.price) : Number(item?.price || 0);
 
           return {
             id: itemId,
-            name: item?.name || 'Unknown Item',
+            name: displayName,
             category: item?.category || 'Other',
             quantity: quantity,
             unitPrice: unitPrice,
             totalPrice: unitPrice * quantity,
-            notes: itemComments[itemId],
+            notes: choicesPart,
+            customerComment: itemComments[itemId] || '',
             pricingType: item?.pricingType || 'per_person',
           };
         }),
@@ -931,6 +999,10 @@ export function CustomMenuWizard() {
       setInquiryNumber(result.data.inquiryNumber || `INQ-${Math.floor(Math.random() * 9000) + 1000}`);
       setIsEditMode(false); // Reset edit mode after successful submit
       setIsSubmitted(true);
+      
+      // Clear persistence for refresh-resilience cleanup
+      sessionStorage.removeItem('edit_booking_id');
+      sessionStorage.removeItem('edit_secret');
 
       // Show success message
       if (isEditMode) {
@@ -948,10 +1020,23 @@ export function CustomMenuWizard() {
         const newQuantities = { ...itemQuantities };
         delete newQuantities[itemId];
         setItemQuantities(newQuantities);
+
+        // Also remove variant
+        const newVariants = { ...itemVariants };
+        delete newVariants[itemId];
+        setItemVariants(newVariants);
+
         return prev.filter(id => id !== itemId);
       } else {
         // Add item with quantity 1
         setItemQuantities(prev => ({ ...prev, [itemId]: 1 }));
+
+        // Add default variant if exists
+        const item = menuItems.find(i => i.id === itemId);
+        if (item && item.variants && item.variants.length > 0) {
+          setItemVariants(prev => ({ ...prev, [itemId]: item.variants![0].id }));
+        }
+
         return [...prev, itemId];
       }
     });
@@ -998,7 +1083,8 @@ export function CustomMenuWizard() {
       }
 
       // For per-person items, multiply by guest count
-      return total + basePrice * quantity * effectiveGuestCount;
+      // Force quantity to 1 for per-person items to avoid double multiplication if quantity contains guest count
+      return total + basePrice * 1 * effectiveGuestCount;
     }, 0);
   };
 
@@ -1136,7 +1222,8 @@ export function CustomMenuWizard() {
     }
 
     // For per-person items, multiply by guest count
-    return (basePrice + addOnsPrice) * quantity * effectiveGuestCount;
+    // Force quantity to 1 for per-person items to avoid double multiplication
+    return (basePrice + addOnsPrice) * 1 * effectiveGuestCount;
   };
 
   const getTotalPriceWithAddOns = () => {
@@ -1177,23 +1264,21 @@ export function CustomMenuWizard() {
       const variant = item.variants.find(v => v.id === variantId);
       if (variant) basePrice = variant.price;
     }
-    return (basePrice + addOnsPrice) * quantity;
+    
+    // Always return unit price (base + addons)
+    return (basePrice + addOnsPrice);
   };
 
-  // Per-person subtotal (average per person calculation)
+  // Per-person subtotal: returns the highest single item price among selected per-person items
   const getPerPersonSubtotal = () => {
-    const totalGuestCount = parseInt(eventDetails.guestCount) || 1;
-    const totalCost = selectedItems.reduce((total, itemId) => {
+    let maxPrice = 0;
+    selectedItems.forEach(itemId => {
       const item = menuItems.find(i => i.id === itemId);
-      if (!item || !isPerPerson(item)) return total;
-
+      if (!item || !isPerPerson(item)) return;
       const unitPrice = getItemPerPersonPrice(item);
-      const itemGuestCount = itemGuestCounts[itemId] || totalGuestCount;
-
-      return total + (unitPrice * itemGuestCount);
-    }, 0);
-
-    return totalCost / totalGuestCount;
+      if (unitPrice > maxPrice) maxPrice = unitPrice;
+    });
+    return maxPrice;
   };
 
   // Flat-rate subtotal (items like Technology, Decoration etc. that have a fixed price)
@@ -1201,7 +1286,8 @@ export function CustomMenuWizard() {
     return selectedItems.reduce((total, itemId) => {
       const item = menuItems.find(i => i.id === itemId);
       if (!item || !isFlatFee(item)) return total;
-      return total + getItemPerPersonPrice(item);
+      const quantity = itemQuantities[itemId] || 1;
+      return total + (getItemPerPersonPrice(item) * quantity);
     }, 0);
   };
 
@@ -1210,7 +1296,8 @@ export function CustomMenuWizard() {
     return selectedItems.reduce((total, itemId) => {
       const item = menuItems.find(i => i.id === itemId);
       if (!item || !isConsumption(item)) return total;
-      return total + getItemPerPersonPrice(item);
+      const quantity = itemQuantities[itemId] || 1;
+      return total + (getItemPerPersonPrice(item) * quantity);
     }, 0);
   };
 
@@ -1235,6 +1322,10 @@ export function CustomMenuWizard() {
           setBookingId(null);
           setEditSecret(null);
           setBookingPdfData(null);
+          
+          // Clear persistence
+          sessionStorage.removeItem('edit_booking_id');
+          sessionStorage.removeItem('edit_secret');
         }}
         onEditOrder={() => {
           // Go back to summary/review page with edit mode enabled
@@ -1260,9 +1351,7 @@ export function CustomMenuWizard() {
         <WizardHeader
           onBack={currentStep > 1 ? () => setCurrentStep(1) : undefined}
         />
-        <div className="p-8">
-          <SkeletonPage content="custom" hasHeader hasKPI={false} />
-        </div>
+        <SkeletonMenuSelection />
       </div>
     );
   }

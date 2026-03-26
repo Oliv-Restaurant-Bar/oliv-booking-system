@@ -779,11 +779,11 @@ export function CustomerSummary({
                               </span>
                             </div>
                           ))}
-                          <div className="pt-3 mt-3 border-t border-primary/30 flex justify-between">
-                            <span className="text-foreground font-bold">
+                          <div className="pt-3 mt-3 border-t border-primary/30 flex justify-between items-baseline gap-4">
+                            <span className="text-foreground font-bold min-w-0">
                               {t('labels.mealsSubtotal')}
                             </span>
-                            <span className="text-foreground font-bold">
+                            <span className="text-foreground font-bold flex-shrink-0 whitespace-nowrap">
                               CHF {mealsSubtotal.toFixed(2)}
                             </span>
                           </div>
@@ -808,81 +808,58 @@ export function CustomerSummary({
                   }, 0);
 
                   return (
-                    <>
-                      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden mb-4 shadow-sm" style={{ borderRadius: 'var(--radius)' }}>
-                        <div className="bg-gray-50/50 px-4 py-3 border-b border-gray-200">
-                          <p className="text-[#374151] font-semibold" style={{ fontSize: 'var(--text-base)' }}>
-                            {t('status.billedByConsumption')}
+                    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden mb-4 shadow-sm" style={{ borderRadius: 'var(--radius)' }}>
+                      <div className="bg-gray-50/50 px-4 py-3 border-b border-gray-200">
+                        <p className="text-[#374151] font-semibold" style={{ fontSize: 'var(--text-base)' }}>
+                          {t('status.billedByConsumption')}
+                        </p>
+                        {!includeBeveragePrices && (
+                          <p className="text-gray-500 text-xs mt-1">
+                            {t('labels.drinksExcludedWarning')}
                           </p>
-                          {!includeBeveragePrices && (
-                            <p className="text-gray-500 text-xs mt-1">
-                              {t('labels.drinksExcludedWarning')}
-                            </p>
-                          )}
-                        </div>
-                        <div className="p-4 space-y-2">
-                          {consumptionItems.map((itemId) => {
-                            const item = menuItems.find((i) => i.id === itemId);
-                            if (!item) return null;
-                            const itemTotal = getItemTotalPrice(item);
-                            const variant = itemVariants[itemId] && item.variants
-                              ? item.variants.find(v => v.id === itemVariants[itemId])
-                              : null;
-                            const quantity = itemQuantities[itemId] || 1;
+                        )}
+                      </div>
+                      <div className="p-4 space-y-2">
+                        {consumptionItems.map((itemId) => {
+                          const item = menuItems.find((i) => i.id === itemId);
+                          if (!item) return null;
+                          const itemTotal = getItemTotalPrice(item);
+                          const variant = itemVariants[itemId] && item.variants
+                            ? item.variants.find(v => v.id === itemVariants[itemId])
+                            : null;
+                          const quantity = itemQuantities[itemId] || 1;
 
-                            return (
-                              <div key={itemId} className="flex justify-between items-center py-1.5 border-b border-gray-100 last:border-0 hover:bg-gray-50/50 px-1 rounded transition-colors group">
-                                <div className="flex items-center gap-2 flex-wrap min-w-0 pr-4">
-                                  <div className="flex flex-col">
-                                    <span className="text-gray-700 font-medium truncate" style={{ fontSize: 'var(--text-small)' }}>
-                                      {item.name}
-                                    </span>
-                                    <div className="flex items-center gap-2 text-[10px] text-gray-500">
-                                      {variant && (
-                                        <span className="bg-gray-100 px-1.5 py-0.5 rounded">{variant.name}</span>
-                                      )}
-                                      <span>{quantity} × CHF {getItemPerPersonPrice(item).toFixed(2)}</span>
-                                    </div>
+                          return (
+                            <div key={itemId} className="flex justify-between items-center py-1.5 border-b border-gray-100 last:border-0 hover:bg-gray-50/50 px-1 rounded transition-colors group">
+                              <div className="flex items-center gap-2 flex-wrap min-w-0 pr-4">
+                                <div className="flex flex-col">
+                                  <span className="text-gray-700 font-medium truncate" style={{ fontSize: 'var(--text-small)' }}>
+                                    {item.name}
+                                  </span>
+                                  <div className="flex items-center gap-2 text-[10px] text-gray-500">
+                                    {variant && (
+                                      <span className="bg-gray-100 px-1.5 py-0.5 rounded">{variant.name}</span>
+                                    )}
+                                    <span>{quantity} × CHF {getItemPerPersonPrice(item).toFixed(2)}</span>
                                   </div>
                                 </div>
-                                <span className={`font-semibold flex-shrink-0 ${!includeBeveragePrices ? 'text-gray-300 line-through' : 'text-primary'}`}>
-                                  CHF {itemTotal.toFixed(2)}
-                                </span>
                               </div>
-                            );
-                          })}
-                          <div className="pt-3 mt-3 border-t border-gray-100 flex justify-between">
-                            <span className="text-[#374151] font-bold">
-                              {t('labels.consumptionSubtotal')}
-                            </span>
-                            <span className="text-[#374151] font-bold">
-                              CHF {includeBeveragePrices ? consumptionSubtotal.toFixed(2) : '0.00'}
-                            </span>
-                          </div>
+                              <span className={`font-semibold flex-shrink-0 ${!includeBeveragePrices ? 'text-gray-300 line-through' : 'text-primary'}`}>
+                                CHF {itemTotal.toFixed(2)}
+                              </span>
+                            </div>
+                          );
+                        })}
+                        <div className="pt-3 mt-3 border-t border-gray-100 flex justify-between items-baseline gap-4">
+                          <span className="text-[#374151] font-bold min-w-0">
+                            {t('labels.consumptionSubtotal')}
+                          </span>
+                          <span className="text-[#374151] font-bold flex-shrink-0 whitespace-nowrap">
+                            CHF {includeBeveragePrices ? consumptionSubtotal.toFixed(2) : '0.00'}
+                          </span>
                         </div>
                       </div>
-
-                      {/* Drink Inclusion Checkbox Card */}
-                      <div className="p-4 mb-6 shadow-sm flex items-start gap-3"
-                        style={{
-                          backgroundColor: 'var(--consumption-alert-bg)',
-                          borderColor: 'var(--consumption-alert-border)',
-                          borderRadius: 'var(--radius)'
-                        }}>
-                        <NativeCheckbox
-                          id="include-drinks"
-                          checked={includeBeveragePrices}
-                          onChange={(e) => setIncludeBeveragePrices(e.target.checked)}
-                          className="mt-1"
-                        />
-                        <label htmlFor="include-drinks" className="cursor-pointer">
-                          <span className="block text-gray-800 font-medium mb-1">{t('labels.includeDrinksEstimate')}</span>
-                          {!includeBeveragePrices && (
-                            <span className="block text-sm" style={{ color: 'var(--consumption-alert-text)' }}>{t('labels.drinksExcludedWarning')}</span>
-                          )}
-                        </label>
-                      </div>
-                    </>
+                    </div>
                   );
                 })()}
 
@@ -930,11 +907,11 @@ export function CustomerSummary({
                             </div>
                           );
                         })}
-                        <div className="pt-2 mt-2 border-t border-primary/30 flex justify-between">
-                          <span className="text-foreground font-semibold">
+                        <div className="pt-2 mt-2 border-t border-primary/30 flex justify-between items-baseline gap-4">
+                          <span className="text-foreground font-semibold min-w-0">
                             {t('labels.subtotal')} {category}:
                           </span>
-                          <span className="text-foreground font-semibold">
+                          <span className="text-foreground font-semibold flex-shrink-0 whitespace-nowrap">
                             CHF {categorySubtotal.toFixed(2)}
                           </span>
                         </div>
@@ -942,23 +919,53 @@ export function CustomerSummary({
                     </div>
                   );
                 })}
+
+                {/* Drink Inclusion Checkbox Card */}
+                {selectedItems.some(itemId => {
+                  const item = menuItems.find(i => i.id === itemId);
+                  return item && isConsumption(item);
+                }) && (
+                  <div className="p-4 mb-6 shadow-sm flex items-start gap-3"
+                    style={{
+                      backgroundColor: 'var(--consumption-alert-bg)',
+                      borderColor: 'var(--consumption-alert-border)',
+                      borderRadius: 'var(--radius)'
+                    }}>
+                    <NativeCheckbox
+                      id="include-drinks-summary"
+                      checked={includeBeveragePrices}
+                      onChange={(e) => setIncludeBeveragePrices(e.target.checked)}
+                      className="mt-1"
+                    />
+                    <label htmlFor="include-drinks-summary" className="cursor-pointer">
+                      <span className="block text-gray-800 font-medium mb-1">{t('labels.includeDrinksEstimate')}</span>
+                      {!includeBeveragePrices && (
+                        <span className="block text-sm" style={{ color: 'var(--consumption-alert-text)' }}>{t('labels.drinksExcludedWarning')}</span>
+                      )}
+                    </label>
+                  </div>
+                )}
+
               </div>
             )}
 
             {/* Grand Total & Final Actions */}
             <div className="mt-8 space-y-6">
               {/* Grand Total Section */}
-              <div className="bg-white border-2 border-[#1e293b] rounded-lg p-6 shadow-sm flex flex-col md:flex-row justify-between items-center" style={{ borderRadius: 'var(--radius)' }}>
-                <div>
-                  <h3 className="text-[#1e293b] font-bold uppercase tracking-wider mb-1" style={{ fontSize: 'var(--text-h4)' }}>
+              <div className="bg-white border-2 border-[#1e293b] rounded-lg p-6 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6" style={{ borderRadius: 'var(--radius)' }}>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-[#1e293b] font-bold uppercase tracking-wider mb-1 break-words" style={{ fontSize: 'var(--text-h4)' }}>
                     {t('labels.totalEstimate')}
                   </h3>
                   <p className="text-muted-foreground font-medium" style={{ fontSize: 'var(--text-small)' }}>
                     {t('labels.guestsCountCalculation', { count: guestCountValue })}
                   </p>
                 </div>
-                <div className="font-bold mt-4 md:mt-0" style={{ fontSize: 'var(--text-h2)', color: '#8da78d' }}>
-                  CHF {grandTotal.toFixed(2)}
+                <div className="flex flex-col items-end flex-shrink-0 text-right">
+                  <span className="text-xs font-bold text-muted-foreground mb-[-4px] uppercase tracking-widest">CHF</span>
+                  <div className="font-bold leading-none" style={{ fontSize: 'var(--text-h2)', color: '#8da78d' }}>
+                    {grandTotal.toFixed(2)}
+                  </div>
                 </div>
               </div>
             </div>

@@ -114,7 +114,7 @@
     "new": "Neu",
     "pending": "Ausstehend",
     "confirmed": "Bestätigt",
-    "touchbase": "Kontakt aufnehmen",
+    "touchbase": "Touch-Basis",
     "declined": "Abgelehnt",
     "cancelled": "Storniert",
     "completed": "Abgeschlossen",
@@ -400,7 +400,7 @@
         "new": "Neu",
         "pending": "Ausstehend",
         "confirmed": "Bestätigt",
-        "touchbase": "Kontakt aufnehmen",
+        "touchbase": "Touch-Basis",
         "declined": "Abgelehnt",
         "completed": "Abgeschlossen"
       },
@@ -691,7 +691,6 @@
         "pricingMode": "Preismodus",
         "pricingModePrice": "Preis",
         "pricingModeVariants": "Varianten",
-
         "itemSettingsOpt": "Artikeleinstellungen (Optional)",
         "addonsOpt": "Optionen & Auswahl (Optional)",
         "selected": "ausgewählt",
@@ -769,7 +768,6 @@
         "consumptionDesc": "Abrechnung nach tatsächlichem Verbrauch"
       },
       "descriptions": {
-
         "addDietaryInfo": "Fügen Sie diesem Artikel Informationen zur Ernährungsweise wie vegetarisch, vegan oder nicht-vegetarisch hinzu.",
         "selectAddonGroups": "Wählen Sie aus, zu welchem {type} diese Gruppe gehört",
         "optionalGroup": "Kunden können eine beliebige Anzahl von Artikeln wählen",

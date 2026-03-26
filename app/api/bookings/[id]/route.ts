@@ -39,6 +39,7 @@ export async function GET(
         b.is_locked,
         b.assigned_to,
         b.kitchen_notes,
+        b.edit_secret,
         l.contact_name,
         l.contact_email,
         l.contact_phone,
@@ -88,16 +89,22 @@ export async function GET(
         const unitPrice = Number(item.unit_price);
         const totalPrice = unitPrice * item.quantity;
 
-        // Parse notes to extract variant and customer comment
+        // Parse notes to extract variant, choices, and customer comment
         let variant = '';
+        let choices = '';
         let customerComment = '';
         if (item.notes) {
           const variantMatch = item.notes.match(/Variant: ([^|]+)/);
+          const addonsMatch = item.notes.match(/(?:Add-ons|Choices): ([^|]+)/);
           const commentMatch = item.notes.match(/Comment: ([^|]+)/);
           if (variantMatch) variant = variantMatch[1].trim();
+          if (addonsMatch) choices = addonsMatch[1].trim();
           if (commentMatch) customerComment = commentMatch[1].trim();
         }
 
+        // Combine choices and comment for display - NOT NEEDED ANYMORE since we handle them separately in PDF
+        // But we keep them for backward compatibility in some UI parts if needed
+        
         // Build display name with variant info only
         let displayName = item.item_name;
         if (variant) {
@@ -105,12 +112,17 @@ export async function GET(
         }
 
         return {
+          id: item.item_id, // For backward compatibility or internal use
+          itemId: item.item_id,
           item: displayName || 'Unknown Item',
           category: item.category_name || 'Unknown',
           quantity: isPerPerson
             ? `${item.quantity} guests x ${Math.round(unitPrice)} CHF`
             : `${item.quantity} x ${Math.round(unitPrice)} CHF`,
+          rawQuantity: item.quantity,
+          unitPrice: unitPrice,
           price: `CHF ${totalPrice.toFixed(2)}`,
+          notes: choices || '',
           customerComment: customerComment || '',
         };
       });
@@ -215,6 +227,7 @@ export async function GET(
       amount: booking.estimated_total
         ? `CHF ${Number(booking.estimated_total).toLocaleString()}`
         : 'CHF 0',
+      rawAmount: booking.estimated_total ? Number(booking.estimated_total) : 0,
       status: booking.status || 'pending',
       contacted: {
         by: 'Admin',
@@ -227,6 +240,7 @@ export async function GET(
       isLocked: booking.is_locked || false,
       menuItems: menuItems,
       contactHistory: contactHistory,
+      editSecret: booking.edit_secret,
     });
   } catch (error) {
     console.error("Error in GET /api/bookings/[id]:", error);

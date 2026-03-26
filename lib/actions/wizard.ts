@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from "@/lib/db";
-import { leads, bookings, bookingItems, menuItems, menuCategories } from "@/lib/db/schema";
+import { leads, bookings, bookingItems, menuItems, menuCategories, addonItems } from "@/lib/db/schema";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
 import { eq, sql } from "drizzle-orm";
@@ -116,6 +116,14 @@ export async function submitWizardForm(data: WizardFormData) {
       guestCount: menuCategories.guestCount,
     }).from(menuCategories);
 
+    const allAddonItems = await db.select({
+      id: addonItems.id,
+      name: addonItems.name,
+      price: addonItems.price,
+    }).from(addonItems);
+    
+    const addonMap = new Map(allAddonItems.map(a => [a.id, a]));
+
     const menuItemMap = new Map(allMenuItems.map(item => [item.id, item]));
     const categoryMap = new Map(allCategories.map(cat => [cat.id, cat.guestCount]));
 
@@ -140,19 +148,34 @@ export async function submitWizardForm(data: WizardFormData) {
         // Handle variant price if selected
         const selectedVariantId = data.itemVariants?.[itemId];
         if (selectedVariantId && Array.isArray(dbItem.variants)) {
-          const variant = (dbItem.variants as any[]).find(v => v.id === selectedVariantId);
+          // 1. Try lookup by ID
+          let variant = (dbItem.variants as any[]).find(v => v.id === selectedVariantId);
+          
+          // 2. Fallback: Try lookup by name (resilience for ID/name mismatch)
+          if (!variant) {
+            variant = (dbItem.variants as any[]).find(v => v.name === selectedVariantId);
+          }
+
           if (variant) {
             unitPrice = Number(variant.price);
             variantName = variant.name;
           }
         }
 
-        // Handle addons price if selected
+        // Handle addons price and names if selected
         let addonsPrice = 0;
+        let addonsNames: string[] = [];
         const selectedAddOnIds = data.itemAddOns?.[itemId] || [];
-        // We'd ideally fetch addon prices from DB here, but to keep it simple and consistent with 
-        // the client-side corrected calculation, we'll focus on variants first which was the main issue.
-        // If addons are needed, we'd need a more complex query joining addons.
+        
+        if (selectedAddOnIds.length > 0) {
+          for (const addonId of selectedAddOnIds) {
+            const addon = addonMap.get(addonId);
+            if (addon) {
+              addonsPrice += Number(addon.price || 0);
+              addonsNames.push(addon.name);
+            }
+          }
+        }
 
         // Calculate effective guest count and quantity based on pricing type
         let effectiveGuestCount = 1;
@@ -174,6 +197,7 @@ export async function submitWizardForm(data: WizardFormData) {
         // Build notes for booking_item (variant, addons, comments)
         const notesParts = [];
         if (variantName) notesParts.push(`Variant: ${variantName}`);
+        if (addonsNames.length > 0) notesParts.push(`Add-ons: ${addonsNames.join(', ')}`);
 
         const comment = data.itemComments?.[itemId];
         if (comment) notesParts.push(`Comment: ${comment}`);
@@ -182,7 +206,7 @@ export async function submitWizardForm(data: WizardFormData) {
           itemType: "menu_item",
           itemId: dbItem.id,
           quantity: effectiveQuantity,
-          unitPrice: (unitPrice + addonsPrice).toString(), // Store price including addons if we had them
+          unitPrice: (unitPrice + addonsPrice).toString(), // Store price including addons
           notes: notesParts.join(' | ') || null,
         });
       }

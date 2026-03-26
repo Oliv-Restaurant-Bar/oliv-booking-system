@@ -29,6 +29,7 @@ interface KitchenPdfActionModalProps {
       category: string;
       quantity: string;
       price: string;
+      notes?: string;
       customerComment?: string;
     }>;
     allergies?: string;
@@ -70,14 +71,21 @@ export function KitchenPdfActionModal({
       occasion: booking.event.occasion,
       location: booking.event.location,
       billingAddress: booking.billingAddress,
-      items: (booking.menuItems || []).map((item: any, idx: number) => ({
-        id: `item-${idx}`,
-        name: item.item,
-        category: item.category,
-        quantity: parseInt(item.quantity) || booking.guests,
-        pricingType: item.pricingType || 'per_person',
-        customerComment: item.customerComment
-      })),
+      items: (booking.menuItems || []).map((item: any, idx: number) => {
+        const qty = parseInt(item.quantity) || booking.guests;
+        const uPrice = Number(item.unitPrice) || 0;
+        return {
+          id: `item-${idx}`,
+          name: item.item,
+          category: item.category,
+          quantity: qty,
+          unitPrice: uPrice,
+          totalPrice: qty * uPrice,
+          pricingType: item.pricingType || 'per_person',
+          notes: item.notes,
+          customerComment: item.customerComment
+        };
+      }),
       allergies: booking.allergies,
       specialRequests: booking.notes,
       kitchenNotes: booking.kitchenNotes
