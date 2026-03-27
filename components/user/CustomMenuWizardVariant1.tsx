@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Calendar, User, Check, ChevronLeft, ChevronRight, Send, ClipboardList, MapPin, ShoppingCart, Lock } from 'lucide-react';
 import { Button } from './Button';
@@ -237,12 +237,21 @@ export function CustomMenuWizard() {
                   const guestCounts: Record<string, number> = {};
                   const comments: Record<string, string> = {};
 
+                  const totalBookingGuestCount = booking.guestCount || 0;
+
                   booking.booking_items.forEach((item: any) => {
                     const id = item.itemId || item.item_id;
                     if (id) {
                       quantities[id] = item.quantity || 1;
-                      // Load the ACTUAL item quantity from database (what admin saved)
-                      guestCounts[id] = item.quantity || 1;
+                      
+                      // Only set an individual guest count if it's different from the total
+                      // This allows items to follow the main guest count if the user updates it in Step 1
+                      if (item.quantity !== totalBookingGuestCount && totalBookingGuestCount > 0) {
+                        guestCounts[id] = item.quantity || 1;
+                        console.log(`[Edit Mode] Item ${id} has custom quantity ${item.quantity} (Total: ${totalBookingGuestCount}). Pinned.`);
+                      } else {
+                        console.log(`[Edit Mode] Item ${id} matches total ${totalBookingGuestCount}. Staying in sync.`);
+                      }
 
                       // Extract comment from notes
                       if (item.notes) {
@@ -989,7 +998,9 @@ export function CustomMenuWizard() {
         occasion: eventDetails.occasion || undefined,
         items: selectedItems.map(itemId => {
           const item = menuItems.find(i => i.id === itemId);
-          const isPerPersonItem = item?.pricingType === 'per_person';
+          if (!item) return null;
+
+          const isPerPersonItem = item.pricingType === 'per_person';
           const quantity = isPerPersonItem
             ? (itemGuestCounts[itemId] || parseInt(eventDetails.guestCount) || 1)
             : (itemQuantities[itemId] || 1);
@@ -1038,7 +1049,8 @@ export function CustomMenuWizard() {
             }
           }
 
-          const unitPrice = variant ? Number(variant.price) : Number(item?.price || 0);
+          const unitPrice = getItemPerPersonPrice(item!);
+          const totalPrice = unitPrice * quantity;
 
           return {
             id: itemId,
@@ -1046,13 +1058,13 @@ export function CustomMenuWizard() {
             category: item?.category || 'Other',
             quantity: quantity,
             unitPrice: unitPrice,
-            totalPrice: unitPrice * quantity,
+            totalPrice: totalPrice,
             notes: choicesPart,
             customerComment: itemComments[itemId] || '',
             pricingType: item?.pricingType || 'per_person',
             dietaryType: item?.dietaryType || 'none',
           };
-        }),
+        }).filter((i): i is any => i !== null),
         estimatedTotal: result.data.estimatedTotal,
         specialRequests: eventDetails.specialRequests || undefined,
       };
@@ -1150,28 +1162,20 @@ export function CustomMenuWizard() {
       if (!item) return total;
 
       const quantity = itemQuantities[itemId] || 1;
+      const unitPrice = getItemPerPersonPrice(item);
 
       // Use per-item guest count if category has guestCount enabled, otherwise use total guest count
       const effectiveGuestCount = categoryData[item.category]?.guestCount
         ? (itemGuestCounts[itemId] || parseInt(eventDetails.guestCount) || 1)
         : (parseInt(eventDetails.guestCount) || 1);
 
-      // Get price (per-person or flat fee)
-      let basePrice = item.price;
-      const selectedVariantId = itemVariants[itemId];
-      if (selectedVariantId && item.variants && item.variants.length > 0) {
-        const variant = item.variants.find(v => v.id === selectedVariantId);
-        if (variant) basePrice = variant.price;
-      }
-
       // For flat-fee items (billed by consumption), don't multiply by guest count
-      if (item.pricingType === 'flat_fee') {
-        return total + basePrice * quantity;
+      if (isFlatFee(item) || isConsumption(item)) {
+        return total + unitPrice * quantity;
       }
 
       // For per-person items, multiply by guest count
-      // Force quantity to 1 for per-person items to avoid double multiplication if quantity contains guest count
-      return total + basePrice * 1 * effectiveGuestCount;
+      return total + unitPrice * effectiveGuestCount;
     }, 0);
   };
 
@@ -1303,7 +1307,9 @@ export function CustomMenuWizard() {
   };
 
   // Per-person price (NOT multiplied by guest count) – used for cart display
-  const getItemPerPersonPrice = (item: MenuItem) => {
+  const getItemPerPersonPrice = useCallback((item: MenuItem) => {
+    if (!item) return 0;
+
     // 1. First, calculate the modern menu price based on current selection (variant + addons)
     const currentVariantId = itemVariants[item.id];
     let basePrice = item.price;
@@ -1336,12 +1342,10 @@ export function CustomMenuWizard() {
         // If original price is 0 but menu has a price, it's likely a data issue in the booking
         // We should show the real price to the user
         if (originalPrice === 0 && calculatedMenuPrice > 0) {
-          console.log(`[Edit Mode] Original price for ${item.name} is 0.00, using menu price CHF ${calculatedMenuPrice.toFixed(2)}`);
           return calculatedMenuPrice;
         }
 
         // Check if the item's configuration has changed (variant or addons)
-        // We parse the original variant name and addon names back for comparison
         let isModified = false;
 
         // Compare variants
@@ -1351,11 +1355,10 @@ export function CustomMenuWizard() {
         const currentVariantName = currentVariant?.name || null;
 
         if (originalVariantName !== currentVariantName) {
-          console.log(`[Price Calc] Item ${item.name} variant changed: "${originalVariantName}" -> "${currentVariantName}"`);
           isModified = true;
         }
 
-        // Compare addons (subset check)
+        // Compare addons
         if (!isModified) {
           const addonsMatch = bookingItem.notes?.match(/(?:Add-ons|Choices): ([^|]+)/);
           const originalAddonNames = addonsMatch
@@ -1374,7 +1377,6 @@ export function CustomMenuWizard() {
             }
           });
 
-          // Check if lengths differ or any name differs
           if (originalAddonNames.length !== currentAddonNames.length) {
             isModified = true;
           } else {
@@ -1384,35 +1386,25 @@ export function CustomMenuWizard() {
               isModified = true;
             }
           }
-
-          if (isModified) {
-            console.log(`[Price Calc] Item ${item.name} addons changed`);
-          }
         }
 
-        // If not modified, return original price (preserves manual overrides/discounts)
         if (!isModified) {
-          console.log(`[Edit Mode] Item ${item.name} is UNCHANGED. Using original price: CHF ${originalPrice.toFixed(2)}`);
           return originalPrice;
         }
-
-        // If modified, use the latest menu price
-        console.log(`[Edit Mode] Item ${item.name} is MODIFIED. Using calculated menu price: CHF ${calculatedMenuPrice.toFixed(2)}`);
       }
     }
 
-    // Default: return calculated menu price
     return calculatedMenuPrice;
-  };
+  }, [itemVariants, itemAddOns, isEditMode, editBookingData?.items]);
 
   // Per-person subtotal: returns the sum of all selected per-person items
-  const getPerPersonSubtotal = () => {
+  const getPerPersonSubtotal = useCallback(() => {
     return selectedItems.reduce((total, itemId) => {
       const item = menuItems.find(i => i.id === itemId);
       if (!item || !isPerPerson(item)) return total;
       return total + getItemPerPersonPrice(item);
     }, 0);
-  };
+  }, [selectedItems, menuItems, getItemPerPersonPrice, isPerPerson]);
 
   // Flat-rate subtotal (items like Technology, Decoration etc. that have a fixed price)
   const getFlatRateSubtotal = () => {
@@ -1759,7 +1751,7 @@ export function CustomMenuWizard() {
               </div>
               <div className="flex flex-col items-start">
                 <span style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)', lineHeight: '1' }}>
-                  CHF {getPerPersonSubtotal().toFixed(2)}
+                  CHF {getTotalPrice().toFixed(2)}
                 </span>
               </div>
             </button>

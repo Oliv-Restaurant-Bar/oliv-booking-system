@@ -90,10 +90,18 @@ export function CustomerSummary({
     return Math.max(...ppItems.map(item => itemGuestCounts[item.id] || parseInt(eventDetails.guestCount) || 1), parseInt(eventDetails.guestCount) || 0);
   }, [selectedItems, menuItems, itemGuestCounts, eventDetails.guestCount]);
 
-  const perPersonTotal = getPerPersonSubtotal();
+  const perPersonTotal = React.useMemo(() => {
+    return selectedItems.reduce((total, itemId) => {
+      const item = menuItems.find(i => i.id === itemId);
+      if (!item || !isPerPerson(item)) return total;
+      const guestCount = itemGuestCounts[item.id] || parseInt(eventDetails.guestCount) || 1;
+      return total + (getItemPerPersonPrice(item) * guestCount);
+    }, 0);
+  }, [selectedItems, menuItems, itemGuestCounts, eventDetails, getItemPerPersonPrice, isPerPerson]);
+
   const flatRateTotal = getFlatRateSubtotal();
   const consumptionTotal = includeBeveragePrices ? getConsumptionSubtotal() : 0;
-  const grandTotal = (perPersonTotal * (guestCountValue || 1)) + flatRateTotal + consumptionTotal;
+  const grandTotal = perPersonTotal + flatRateTotal + consumptionTotal;
 
   return (
     <div>
@@ -544,7 +552,7 @@ export function CustomerSummary({
                     </p>
                   </div>
                   <p className="text-primary" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                    CHF {getPerPersonSubtotal().toFixed(2)}
+                    CHF {perPersonTotal.toFixed(2)}
                   </p>
                 </div>
               </div>
@@ -727,7 +735,7 @@ export function CustomerSummary({
                     </div>
                     <div className="text-right">
                       <p className="text-primary" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-bold)' }}>
-                        CHF {getPerPersonSubtotal().toFixed(2)}
+                        CHF {perPersonTotal.toFixed(2)}
                       </p>
                     </div>
                   </div>

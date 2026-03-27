@@ -110,21 +110,21 @@ export function MenuCart({
     }
   };
 
-  const cartItems = selectedItems.map(id => menuItems.find(item => item.id === id)).filter(Boolean) as MenuItem[];
-  const foodItems = cartItems.filter(item => item.category !== 'Beverages' && item.category !== 'Add-ons' && !isFlatFee(item));
-  const beverages = cartItems.filter(item => item.category === 'Beverages');
-  const addons = cartItems.filter(item => item.category === 'Add-ons' || (isFlatFee(item) && item.category !== 'Beverages'));
+  const cartItems = React.useMemo(() => selectedItems.map(id => menuItems.find(item => item.id === id)).filter(Boolean) as MenuItem[], [selectedItems, menuItems]);
+  const foodItems = React.useMemo(() => cartItems.filter(item => item.category !== 'Beverages' && item.category !== 'Add-ons' && !isFlatFee(item)), [cartItems]);
+  const beverages = React.useMemo(() => cartItems.filter(item => item.category === 'Beverages'), [cartItems]);
+  const addons = React.useMemo(() => cartItems.filter(item => item.category === 'Add-ons' || (isFlatFee(item) && item.category !== 'Beverages')), [cartItems]);
 
-  const ppFoodItems = foodItems.filter(item => isPerPerson(item));
-  const pureVegItems = ppFoodItems.filter(item => item.dietaryType === 'veg');
-  const veganItems = ppFoodItems.filter(item => item.dietaryType === 'vegan');
-  const nonVegItems = ppFoodItems.filter(item => item.dietaryType === 'non-veg');
-  const otherFoodItems = ppFoodItems.filter(item => item.dietaryType !== 'veg' && item.dietaryType !== 'vegan' && item.dietaryType !== 'non-veg');
+  const ppFoodItems = React.useMemo(() => foodItems.filter(item => isPerPerson(item)), [foodItems]);
+  const pureVegItems = React.useMemo(() => ppFoodItems.filter(item => item.dietaryType === 'veg'), [ppFoodItems]);
+  const veganItems = React.useMemo(() => ppFoodItems.filter(item => item.dietaryType === 'vegan'), [ppFoodItems]);
+  const nonVegItems = React.useMemo(() => ppFoodItems.filter(item => item.dietaryType === 'non-veg'), [ppFoodItems]);
+  const otherFoodItems = React.useMemo(() => ppFoodItems.filter(item => item.dietaryType !== 'veg' && item.dietaryType !== 'vegan' && item.dietaryType !== 'non-veg'), [ppFoodItems]);
 
-  const pureVegPerPersonSubtotal = pureVegItems.reduce((sum, item) => sum + getItemPerPersonPrice(item), 0);
-  const veganPerPersonSubtotal = veganItems.reduce((sum, item) => sum + getItemPerPersonPrice(item), 0);
-  const nonVegPerPersonSubtotal = nonVegItems.reduce((sum, item) => sum + getItemPerPersonPrice(item), 0);
-  const otherPerPersonSubtotal = otherFoodItems.reduce((sum, item) => sum + getItemPerPersonPrice(item), 0);
+  const pureVegPerPersonSubtotal = pureVegItems.reduce((sum, item) => sum + (getItemPerPersonPrice(item) * (itemGuestCounts[item.id] || parseInt(eventDetails.guestCount) || 1)), 0);
+  const veganPerPersonSubtotal = veganItems.reduce((sum, item) => sum + (getItemPerPersonPrice(item) * (itemGuestCounts[item.id] || parseInt(eventDetails.guestCount) || 1)), 0);
+  const nonVegPerPersonSubtotal = nonVegItems.reduce((sum, item) => sum + (getItemPerPersonPrice(item) * (itemGuestCounts[item.id] || parseInt(eventDetails.guestCount) || 1)), 0);
+  const otherPerPersonSubtotal = otherFoodItems.reduce((sum, item) => sum + (getItemPerPersonPrice(item) * (itemGuestCounts[item.id] || parseInt(eventDetails.guestCount) || 1)), 0);
 
   const updateQuantity = (itemId: string, delta: number) => {
     setItemQuantities(prev => {
@@ -138,40 +138,26 @@ export function MenuCart({
     setItemGuestCounts(prev => {
       const current = prev[itemId] || parseInt(eventDetails.guestCount) || 1;
       const next = Math.max(1, current + delta);
-
-      // If originalGuestCount exists (edit mode), only update the specific item
-      // Otherwise (new booking mode), sync all per-person food items
-      const updated = { ...prev };
-
-      if (originalGuestCount && originalGuestCount.trim() !== '') {
-        // Edit mode: only update the specific item
-        updated[itemId] = next;
-      } else {
-        // New booking mode: sync all per-person food items
-        ppFoodItems.forEach(item => {
-          updated[item.id] = next;
-        });
-      }
-
-      return updated;
+      
+      // Removed global sync to allow individual item guest counts
+      return { ...prev, [itemId]: next };
     });
   };
 
   const currentGuestCount = React.useMemo(() => {
-    if (ppFoodItems.length === 0) return parseInt(eventDetails.guestCount) || 1;
+    return parseInt(eventDetails.guestCount) || 1;
+  }, [eventDetails.guestCount]);
 
-    // If originalGuestCount is provided (edit mode), use it for the TOTAL display
-    // This ensures the total never changes when cart values are modified
-    if (originalGuestCount && originalGuestCount.trim() !== '') {
-      return parseInt(originalGuestCount) || 1;
-    }
+  const perPersonTotal = React.useMemo(() => {
+    return ppFoodItems.reduce((sum, item) => {
+      const guestCount = itemGuestCounts[item.id] || parseInt(eventDetails.guestCount) || 1;
+      return sum + (getItemPerPersonPrice(item) * guestCount);
+    }, 0);
+  }, [ppFoodItems, itemGuestCounts, eventDetails.guestCount, getItemPerPersonPrice]);
 
-    // New booking mode: Extract the guest count from the first per-person food item
-    const firstItem = ppFoodItems[0];
-    return itemGuestCounts[firstItem.id] || parseInt(eventDetails.guestCount) || 1;
-  }, [ppFoodItems, eventDetails.guestCount, originalGuestCount]);
-
-  const totalAmount = (getPerPersonSubtotal() * currentGuestCount) + getFlatRateSubtotal() + (includeBeveragePrices ? getConsumptionSubtotal() : 0);
+  const totalAmount = React.useMemo(() => {
+    return perPersonTotal + getFlatRateSubtotal() + (includeBeveragePrices ? getConsumptionSubtotal() : 0);
+  }, [perPersonTotal, getFlatRateSubtotal, includeBeveragePrices, getConsumptionSubtotal]);
   const isUg1Exklusiv = eventDetails.room === 'ug1_exklusiv';
 
   const renderItemRow = (item: MenuItem, sectionColor: string) => {
@@ -354,8 +340,15 @@ export function MenuCart({
               <ShoppingCart className="w-4.5 h-4.5 text-[#2c2f34]" />
               <h2 className="font-bold text-[17px] text-[#2c2f34]">Your Menu</h2>
             </div>
-            <div className="text-[#9dae91] font-bold text-[12px]">
-              {currentGuestCount} Guests
+            <div className="flex flex-col items-end">
+              <div className="text-[#9dae91] font-bold text-[12px]">
+                {currentGuestCount} Guests
+              </div>
+              {isEditMode && originalGuestCount && parseInt(originalGuestCount) !== currentGuestCount && (
+                <div className="text-[9px] text-[#9ca3af] font-medium tracking-tight mt-[-2px]">
+                  Originally: {originalGuestCount}
+                </div>
+              )}
             </div>
           </div>
 
@@ -532,7 +525,7 @@ export function MenuCart({
                     <div className="flex justify-between items-center text-[13px]">
                       <span className="text-[#6b7280]">Food Items</span>
                       <span className="text-[#2c2f34] font-bold">
-                        CHF {(getPerPersonSubtotal() * currentGuestCount).toFixed(2)}
+                        CHF {perPersonTotal.toFixed(2)}
                       </span>
                     </div>
                     {getFlatRateSubtotal() > 0 && (
@@ -575,11 +568,7 @@ export function MenuCart({
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-[13px] font-bold text-[#2c2f34]">Total</span>
                   <span className="text-[18px] font-extrabold text-[#2c2f34] tracking-tight">
-                    CHF {(
-                      (getPerPersonSubtotal() * currentGuestCount) +
-                      getFlatRateSubtotal() +
-                      (includeBeveragePrices ? getConsumptionSubtotal() : 0)
-                    ).toFixed(2)}
+                    CHF {totalAmount.toFixed(2)}
                   </span>
                 </div>
               )}
