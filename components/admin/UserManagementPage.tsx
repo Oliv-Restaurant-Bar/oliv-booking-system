@@ -436,7 +436,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
                   {t('addNewUser')}
                 </Button>
               )}
-              <Button
+              {/* <Button
                 variant="secondary"
                 onClick={fetchUsers}
                 disabled={loading}
@@ -444,7 +444,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
                 title={commonT('refresh')}
               >
                 {commonT('refresh')}
-              </Button>
+              </Button> */}
             </div>
           </div>
         </div>
