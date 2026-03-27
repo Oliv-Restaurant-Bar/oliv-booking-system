@@ -115,6 +115,8 @@ export async function GET(
         }
 
         return {
+          id: `menu-${item.item_id}`, // Add unique ID for React keys
+          itemId: item.item_id, // IMPORTANT: This is needed for updates
           item: item.item_name || 'Unknown Item',
           variant: variant || '',
           category: item.category_name || 'Unknown',

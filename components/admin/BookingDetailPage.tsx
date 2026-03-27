@@ -570,7 +570,11 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                 setInitialKitchenNotes(kitchenNotes);
                 setInitialAssignedTo(assignedTo);
                 setHasUnsavedChanges(false);
-                window.location.reload();
+                onBookingUpdated?.();
+                // Refresh page after a short delay to show updated data
+                setTimeout(() => {
+                    window.location.reload();
+                }, 100);
             } else {
                 toast.error(t('toast.saveFailed'));
             }
@@ -666,7 +670,11 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             if (response.ok) {
                 toast.success(t('toast.saveSuccess'));
                 setIsEditingCustomer(false);
-                window.location.reload();
+                onBookingUpdated?.();
+                // Refresh page after a short delay to show updated data
+                setTimeout(() => {
+                    window.location.reload();
+                }, 100);
             } else {
                 toast.error(t('toast.saveFailed'));
             }
@@ -717,7 +725,11 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             if (response.ok) {
                 toast.success(t('toast.saveSuccess'));
                 setIsEditingEvent(false);
-                window.location.reload();
+                onBookingUpdated?.();
+                // Refresh page after a short delay to show updated data
+                setTimeout(() => {
+                    window.location.reload();
+                }, 100);
             } else {
                 toast.error(t('toast.saveFailed'));
             }
@@ -731,10 +743,20 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
     const handleEditMenu = () => {
         if (!booking || !booking.menuItems) return;
-        setTempMenuItems(booking.menuItems.map(item => ({
-            ...item,
-            rawQuantity: item.rawQuantity || 0
-        })));
+        setTempMenuItems(booking.menuItems.map(item => {
+            // Parse quantity string to extract the number (e.g., "50 guests" -> 50, "100" -> 100)
+            let parsedQuantity = item.rawQuantity || 0;
+            if (!parsedQuantity && item.quantity) {
+                const match = item.quantity.match(/^(\d+)/);
+                if (match) {
+                    parsedQuantity = parseInt(match[1], 10);
+                }
+            }
+            return {
+                ...item,
+                rawQuantity: parsedQuantity
+            };
+        }));
         setIsEditingMenu(true);
     };
 
@@ -764,7 +786,11 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             if (response.ok) {
                 toast.success(t('toast.saveSuccess'));
                 setIsEditingMenu(false);
-                window.location.reload();
+                onBookingUpdated?.();
+                // Refresh page after a short delay to show updated data
+                setTimeout(() => {
+                    window.location.reload();
+                }, 100);
             } else {
                 toast.error(t('toast.saveFailed'));
             }
@@ -1346,12 +1372,12 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     {isSaving ? (
                                         <>
                                             <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-transparent rounded-full animate-spin" />
-                                            Saving...
+                                            <span>Saving...</span>
                                         </>
                                     ) : (
                                         <>
                                             <CheckCircle2 className="w-4 h-4" />
-                                            Save Changes
+                                            <span>Save Changes</span>
                                         </>
                                     )}
                                 </button>
@@ -1390,7 +1416,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     <div className="flex items-center gap-2">
                                         <button
                                             onClick={handleCancelMenu}
-                                            className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-red-500 cursor-pointer flex items-center gap-2"
+                                            disabled={isSaving}
+                                            className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-red-500 cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                             style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                         >
                                             <X className="w-4 h-4" />
@@ -1399,11 +1426,20 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         <button
                                             onClick={handleSaveMenu}
                                             disabled={isSaving}
-                                            className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-green-600 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                                            className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-green-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                             style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                         >
-                                            <Save className="w-4 h-4" />
-                                            <span>{buttonT('save')}</span>
+                                            {isSaving ? (
+                                                <>
+                                                    <div className="w-4 h-4 border-2 border-green-600/30 border-t-transparent rounded-full animate-spin" />
+                                                    <span>Saving...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Save className="w-4 h-4" />
+                                                    <span>{buttonT('save')}</span>
+                                                </>
+                                            )}
                                         </button>
                                     </div>
                                 )}
@@ -1755,7 +1791,11 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                 // Update initial values to match current values
                                 setInitialAssignedTo(userId);
                                 setHasUnsavedChanges(false);
-                                window.location.reload();
+                                onBookingUpdated?.();
+                                // Refresh page after a short delay to show updated data
+                                setTimeout(() => {
+                                    window.location.reload();
+                                }, 100);
                             } else {
                                 toast.error(t('toast.assignmentFailed'));
                             }

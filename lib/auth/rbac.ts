@@ -164,14 +164,13 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     // Dashboard
     Permission.VIEW_DASHBOARD,
 
-    // Bookings - Full access
+    // Bookings - Full access (except delete)
     Permission.VIEW_BOOKINGS,
     Permission.CREATE_BOOKING,
     Permission.EDIT_BOOKING,
     Permission.UPDATE_BOOKING_STATUS,
     Permission.CONVERT_LEAD_TO_BOOKING,
     Permission.VIEW_BOOKING_DETAILS,
-    Permission.DELETE_BOOKING,
 
     // Leads - Full access
     Permission.VIEW_LEADS,

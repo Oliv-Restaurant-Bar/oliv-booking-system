@@ -484,6 +484,20 @@ export async function updateBooking(
     if ((updates as any).selectedItems && (updates as any).itemQuantities) {
       console.log('  → Syncing booking items...');
 
+      // Fetch existing booking items to preserve notes
+      const existingItems = await db
+        .select()
+        .from(bookingItems)
+        .where(eq(bookingItems.bookingId, id));
+
+      // Create a map of itemId to notes for preservation
+      const itemNotesMap = new Map<string, string>();
+      existingItems.forEach(item => {
+        if (item.notes) {
+          itemNotesMap.set(item.itemId, item.notes);
+        }
+      });
+
       // Delete existing items
       await db.delete(bookingItems).where(eq(bookingItems.bookingId, id));
 
@@ -499,7 +513,8 @@ export async function updateBooking(
       for (const itemId of selectedItemIds) {
         const menuItem = menuItemMap.get(itemId);
         if (menuItem) {
-          const quantity = itemQuantities[itemId] || 1;
+          // Use explicit check for undefined to allow quantity of 0
+          const quantity = itemQuantities[itemId] !== undefined ? itemQuantities[itemId] : 1;
           const unitPrice = Number(menuItem.pricePerPerson);
           const lineTotal = quantity * unitPrice;
           newEstimatedTotal += lineTotal;
@@ -511,6 +526,7 @@ export async function updateBooking(
             itemId: itemId,
             quantity: quantity,
             unitPrice: menuItem.pricePerPerson,
+            notes: itemNotesMap.get(itemId) || null, // Preserve existing notes
           });
         }
       }
