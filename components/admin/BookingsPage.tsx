@@ -11,15 +11,37 @@ import { GridView } from './GridView';
 import { CalendarView } from './CalendarView';
 import { BookingDetailPage, type Booking } from './BookingDetailPage';
 import * as XLSX from 'xlsx';
-import { useBookingTranslation, useCommonTranslation } from '@/lib/i18n/client';
 
+interface BookingsPageProps {
+  user?: any;
+  translations: {
+    bookings: Record<string, string>;
+    common: Record<string, string>;
+  };
+}
 
+// Helper function to handle translation interpolation
+function createTranslationFunction(translations: Record<string, string>) {
+  return (key: string, params?: Record<string, any>) => {
+    let translation = translations[key] || key;
 
-export function BookingsPage({ user }: { user?: any }) {
+    if (params) {
+      // Replace {key} placeholders with actual values (next-intl format)
+      Object.keys(params).forEach(paramKey => {
+        const placeholder = `{${paramKey}}`;
+        translation = translation.replace(new RegExp(placeholder, 'g'), String(params[paramKey]));
+      });
+    }
+
+    return translation;
+  };
+}
+
+export function BookingsPage({ user, translations }: BookingsPageProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const t = useBookingTranslation();
-  const commonT = useCommonTranslation();
+  const t = createTranslationFunction(translations.bookings);
+  const commonT = createTranslationFunction(translations.common);
   const [allBookingsData, setAllBookingsData] = useState<Booking[]>([]); // Store all fetched data
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState<'list' | 'detail'>('list');
@@ -84,9 +106,27 @@ export function BookingsPage({ user }: { user?: any }) {
       // Use the larger limit (1000) for both views to support calendar view
       // Sort by created_at by default, client-side will handle display
       const response = await fetch(`/api/bookings?page=1&limit=1000&sort=created_at`);
-      if (!response.ok) throw new Error('Failed to fetch bookings');
+
+      // Check for redirects (which might indicate auth issues)
+      const redirectUrl = response.redirected ? response.url : null;
+      if (redirectUrl && redirectUrl.includes('/login')) {
+        console.error('Redirected to login page - authentication failed');
+        router.push('/admin/login');
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch bookings: ${response.status} ${response.statusText}`);
+      }
+
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Expected JSON response, got ${contentType || 'empty content type'}`);
+      }
+
       const data = await response.json();
-      setAllBookingsData(data.bookings);
+      setAllBookingsData(data.bookings || []);
     } catch (error) {
       console.error('Error fetching bookings:', error);
       setAllBookingsData([]);

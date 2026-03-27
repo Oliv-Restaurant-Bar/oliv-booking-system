@@ -23,6 +23,7 @@ export interface PdfBookingItem {
   notes?: string;
   pricingType: string;
   customerComment?: string;
+  dietaryType?: 'veg' | 'non-veg' | 'vegan' | 'none';
 }
 
 export interface PdfBookingData {
@@ -269,6 +270,35 @@ export async function generateBookingPdf(
     doc.setTextColor(...COLORS.title);
   };
 
+  // Calculate dietary breakdown (only for food items, not beverages or addons)
+  const calculateDietaryBreakdown = () => {
+    const foodItems = finalFoodItems.filter(item => {
+      // Only include items with dietary type and per-person pricing
+      return item.dietaryType && item.dietaryType !== 'none' && item.pricingType === 'per_person';
+    });
+
+    const breakdown: Record<string, { total: number; perPerson: number }> = {
+      veg: { total: 0, perPerson: 0 },
+      'non-veg': { total: 0, perPerson: 0 },
+      vegan: { total: 0, perPerson: 0 }
+    };
+
+    foodItems.forEach(item => {
+      if (item.dietaryType && item.dietaryType !== 'none') {
+        if (!breakdown[item.dietaryType]) {
+          breakdown[item.dietaryType] = { total: 0, perPerson: 0 };
+        }
+        const itemTotal = item.totalPrice || 0;
+        breakdown[item.dietaryType].total += itemTotal;
+        breakdown[item.dietaryType].perPerson += item.unitPrice || 0;
+      }
+    });
+
+    return breakdown;
+  };
+
+  const dietaryBreakdown = calculateDietaryBreakdown();
+
   const mainGroups = [
     { name: "Food Items", items: finalFoodItems },
     { name: "Beverages", items: finalBeverages },
@@ -410,6 +440,59 @@ export async function generateBookingPdf(
     doc.line(margin, yPos, pageWidth - margin, yPos);
     yPos += 15;
 
+    // Dietary Breakdown Section
+    const hasDietaryData = dietaryBreakdown.veg.total > 0 ||
+                          dietaryBreakdown['non-veg'].total > 0 ||
+                          dietaryBreakdown.vegan.total > 0;
+
+    if (hasDietaryData) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.setTextColor(...COLORS.secondary);
+      doc.text("Preis pro Person (nach Diät)", margin, yPos);
+      yPos += 10;
+
+      const breakdownStartY = yPos;
+      const lineHeight = 8;
+
+      // Veg
+      if (dietaryBreakdown.veg.perPerson > 0) {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(11);
+        doc.setTextColor(...COLORS.text);
+        doc.text("Vegetarisch:", margin, yPos);
+        doc.text(`CHF ${dietaryBreakdown.veg.perPerson.toFixed(2)}`, pageWidth - margin - 60, yPos, { align: 'right' });
+        yPos += lineHeight;
+      }
+
+      // Non-Veg
+      if (dietaryBreakdown['non-veg'].perPerson > 0) {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(11);
+        doc.setTextColor(...COLORS.text);
+        doc.text("Nicht-Vegetarisch:", margin, yPos);
+        doc.text(`CHF ${dietaryBreakdown['non-veg'].perPerson.toFixed(2)}`, pageWidth - margin - 60, yPos, { align: 'right' });
+        yPos += lineHeight;
+      }
+
+      // Vegan
+      if (dietaryBreakdown.vegan.perPerson > 0) {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(11);
+        doc.setTextColor(...COLORS.text);
+        doc.text("Vegan:", margin, yPos);
+        doc.text(`CHF ${dietaryBreakdown.vegan.perPerson.toFixed(2)}`, pageWidth - margin - 60, yPos, { align: 'right' });
+        yPos += lineHeight;
+      }
+
+      yPos += 8;
+      doc.setDrawColor(...COLORS.border);
+      doc.setLineWidth(0.5);
+      doc.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 12;
+    }
+
+    // Total
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
     doc.setTextColor(...COLORS.secondary);

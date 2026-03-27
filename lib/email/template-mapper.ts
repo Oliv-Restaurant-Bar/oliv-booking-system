@@ -40,32 +40,6 @@ function generateShortBookingId(bookingId: number | string): string {
   return bookingId.toString().slice(0, 8);
 }
 
-/**
- * Prepare template data for booking confirmed email (with deposit)
- */
-export function getBookingConfirmedDepositTemplateData(
-  booking: Booking & { lead?: Lead | null },
-  estimatedTotal: number
-): TemplateData {
-  const lead = booking.lead;
-  const customerName = sanitizeText(lead?.contactName) || "Gast";
-
-  // ✅ SECURITY FIX: Sanitize user-provided content
-  const sanitized = sanitizeBookingDetails({
-    specialRequests: booking.specialRequests,
-    allergyDetails: booking.allergyDetails,
-  });
-
-  return {
-    customer_name: customerName,
-    event_date: formatGermanDate(booking.eventDate),
-    event_time: booking.eventTime,
-    guest_count: booking.guestCount,
-    booking_id: generateShortBookingId(booking.id),
-    special_requests: sanitized.specialRequests,
-    allergy_details: sanitized.allergyDetails,
-  };
-}
 
 /**
  * Prepare template data for booking confirmed email (no deposit - menu edit)
@@ -321,6 +295,9 @@ export function getCheckinReminderTemplateData(
   return {
     customer_name: customerName,
     event_date: formatGermanDate(booking.eventDate),
+    event_time: booking.eventTime,
+    guest_count: booking.guestCount,
+    booking_id: generateShortBookingId(booking.id),
     checkin_url: bookingCheckinUrl || `${process.env.NEXT_PUBLIC_APP_URL}/booking/${booking.id}/checkin`,
   };
 }
@@ -481,16 +458,12 @@ export function getTemplateData(
 
   switch (emailType) {
     case "confirmation":
-      // Return different data based on whether deposit is required
-      if (params.estimatedTotal && params.estimatedTotal >= DEPOSIT_THRESHOLD) {
-        return getBookingConfirmedDepositTemplateData(booking, params.estimatedTotal);
-      } else {
-        return getBookingConfirmedNoDepositTemplateData(
-          booking,
-          params.estimatedTotal || 0,
-          params.bookingEditUrl
-        );
-      }
+      // Always use no-deposit template for all confirmation emails
+      return getBookingConfirmedNoDepositTemplateData(
+        booking,
+        params.estimatedTotal || 0,
+        params.bookingEditUrl
+      );
 
     case "thank_you":
       // Return different data based on whether deposit is required
@@ -596,9 +569,8 @@ export function getTemplateData(
  */
 export function getTemplateName(emailType: EmailType, estimatedTotal?: number): string {
   const templateNames: Record<string, string> = {
-    // Confirmation has TWO templates based on amount
-    confirmation_deposit: process.env.ZEPTOMAIL_TEMPLATE_CONFIRMED_DEPOSIT || "booking-confirmed-deposit",
-    confirmation_no_deposit: process.env.ZEPTOMAIL_TEMPLATE_CONFIRMED_NO_DEPOSIT || "booking-confirmed-no-deposit",
+    // Confirmation - always use no-deposit template
+    confirmation: process.env.ZEPTOMAIL_TEMPLATE_CONFIRMED_NO_DEPOSIT || "booking-confirmed-no-deposit",
 
     // Thank You has TWO templates based on amount
     thank_you_deposit: process.env.ZEPTOMAIL_TEMPLATE_THANK_YOU_DEPOSIT || "booking-thank-you-deposit",
@@ -622,15 +594,6 @@ export function getTemplateName(emailType: EmailType, estimatedTotal?: number): 
     checkin_submitted: process.env.ZEPTOMAIL_TEMPLATE_CHECKIN_SUBMITTED || "checkin-submitted",
     custom: "custom-email",
   };
-
-  // For confirmation, decide based on estimated total
-  if (emailType === "confirmation") {
-    const DEPOSIT_THRESHOLD = 5000;
-    if (estimatedTotal && estimatedTotal >= DEPOSIT_THRESHOLD) {
-      return templateNames.confirmation_deposit;
-    }
-    return templateNames.confirmation_no_deposit;
-  }
 
   // For thank you, decide based on estimated total
   if (emailType === "thank_you") {

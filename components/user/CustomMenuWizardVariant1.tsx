@@ -1038,6 +1038,7 @@ export function CustomMenuWizard() {
             notes: choicesPart,
             customerComment: itemComments[itemId] || '',
             pricingType: item?.pricingType || 'per_person',
+            dietaryType: item?.dietaryType || 'none',
           };
         }),
         estimatedTotal: result.data.estimatedTotal,

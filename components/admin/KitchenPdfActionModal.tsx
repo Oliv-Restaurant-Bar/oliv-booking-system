@@ -126,7 +126,8 @@ export function KitchenPdfActionModal({
           totalPrice: qty * uPrice,
           pricingType: item.pricingType || 'per_person',
           notes: item.notes,
-          customerComment: item.customerComment
+          customerComment: item.customerComment,
+          dietaryType: item.dietaryType || 'none',
         };
       }),
       allergies: booking.allergies,

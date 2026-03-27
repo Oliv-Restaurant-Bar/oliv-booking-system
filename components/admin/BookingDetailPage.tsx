@@ -487,7 +487,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                         totalPrice: qty * uPrice,
                         pricingType: item.pricingType || 'per_person',
                         notes: item.notes,
-                        customerComment: item.customerComment
+                        customerComment: item.customerComment,
+                        dietaryType: item.dietaryType || 'none',
                     };
                 }),
                 allergies: Array.isArray(booking.allergies) ? booking.allergies.join(', ') : booking.allergies,

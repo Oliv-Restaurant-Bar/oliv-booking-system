@@ -26,6 +26,8 @@ npm run db:create-user    # Create a new admin user interactively
 npm run db:recalculate-totals  # Recalculate booking totals
 ```
 
+**Important**: Schema changes must be made in `lib/db/schema.ts`, then use `npm run db:generate` to create migrations. For development, `npm run db:push` can directly push schema changes without creating migration files.
+
 ### Email & Reminders
 ```bash
 npm run email:test   # Test email configuration
@@ -103,6 +105,8 @@ messages/
 - **bookings**: Event bookings with status, pricing, assignment
 - **booking_items**: Menu items and addons per booking
 - **menu_categories** & **menu_items**: Menu structure with i18n support
+- **menu_item_dependencies**: Item dependencies (requires, excludes, suggests) for menu validation
+- **addons**: Additional items (drinks, decorations, etc.)
 - **booking_audit_log**: Tracks all booking changes (admin + client edits)
 - **email_logs**: Email sent history
 
@@ -127,8 +131,11 @@ const rows = 'rows' in result ? result.rows : result;
 
 #### Authentication & Authorization
 - Better Auth handles sessions (7-day expiry)
-- RBAC defined in `lib/auth/rbac.ts` - check before allowing actions
+- RBAC defined in `lib/auth/rbac.ts` with granular `Permission` enum
 - Public sign-up disabled; users created by admin only
+- Use `requirePermission()`, `requireAnyPermission()`, or `requireAllPermissions()` from `lib/auth/rbac-middleware.ts` in Server Actions
+- Server Actions can be wrapped with `withPermission(action, Permission.*)` for automatic authorization
+- Role hierarchy: `super_admin` > `admin` > `moderator` > `read_only`
 - Middleware at root allows `/admin/login`, page-level checks elsewhere
 
 #### Booking Status Values
@@ -143,6 +150,7 @@ Valid statuses: `new`, `touchbase`, `pending`, `confirmed`, `completed`, `cancel
 - Use `useTranslations()` hook in components
 - All user-facing text should be in `messages/en.json` and `messages/de.json`
 - Database has `nameDe`, `descriptionDe` fields for German content
+- Configured via `i18n.ts` and `next-intl` plugin in `next.config.ts`
 
 ## Code Style Rules
 
@@ -157,7 +165,9 @@ Valid statuses: `new`, `touchbase`, `pending`, `confirmed`, `completed`, `cancel
 - **Every form field** should have proper validation using Zod schemas
 - **Every database model field** should have proper validation
 - All user inputs must be validated before database operations
-- Use `lib/validation/` for Zod schemas that define input constraints
+- Use `lib/validation/schemas.ts` for pre-defined validation schemas (userNameSchema, userEmailSchema, userPasswordSchema, etc.)
+- Passwords require: min 12 chars, uppercase, lowercase, number, special char, no common patterns
+- `next.config.ts` includes comprehensive security headers (CSP, HSTS, X-Frame-Options, etc.)
 
 ## Default Credentials
 
@@ -166,6 +176,31 @@ After running `npm run db:seed`, the default admin account is:
 - **Password:** admin123
 
 **Important:** Change this password immediately in production environments!
+
+## Key Integrations & Features
+
+### Email System
+- **Provider**: ZeptoMail (https://api.zeptomail.eu)
+- Email templates in `lib/email/`
+- Test email configuration with `npm run email:test`
+- Send booking reminders with `npm run email:send-reminders`
+- Email logs tracked in `email_logs` table
+
+### PDF Generation
+- Uses `jspdf` library for generating booking PDFs
+- PDF generation logic in booking-related server actions
+
+### Booking Wizard
+- Multi-step form at `/wizard` for public bookings
+- Form submission handled in `lib/actions/wizard.ts`
+- Includes allergy check, contact details, menu configuration
+- Creates leads that can be converted to bookings by admin
+
+### Client Booking Editing
+- Bookings have `edit_secret` for secure client access
+- Edit URL: `/booking/[id]/edit/[secret]`
+- `is_locked` field prevents concurrent edits
+- All changes tracked in `booking_audit_log` table
 
 ## Pre-Completion Checklist
 

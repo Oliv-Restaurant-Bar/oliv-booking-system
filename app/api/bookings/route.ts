@@ -1,7 +1,7 @@
 import { fetchBookings } from "@/lib/actions/fetch-bookings";
 import { NextResponse } from "next/server";
 import { requirePermissionWrapper } from "@/lib/auth/rbac-middleware";
-import { Permission } from "@/lib/auth/rbac";
+import { Permission, AuthorizationError } from "@/lib/auth/rbac";
 
 /**
  * GET /api/bookings
@@ -42,24 +42,41 @@ export async function GET(request: Request) {
       sort: sort as 'created_at' | 'event_date'
     });
 
-    return NextResponse.json(result);
+    // Explicitly set headers to ensure JSON response
+    return NextResponse.json(result, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   } catch (error) {
     console.error("Error in bookings API:", error);
 
     // Handle authorization errors
-    if (error instanceof Error && error.name === "AuthorizationError") {
+    if (error instanceof AuthorizationError) {
       return NextResponse.json(
         { error: error.message },
-        { status: 403 }
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
+    // Handle authentication errors (regular Error)
+    if (error instanceof Error && error.message.includes("Authentication required")) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Handle other errors
     return NextResponse.json({
       bookings: [],
       totalCount: 0,
       page: 1,
       limit: 10,
       totalPages: 0
-    }, { status: 500 });
+    }, {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }

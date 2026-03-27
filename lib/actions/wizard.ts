@@ -107,6 +107,7 @@ export async function submitWizardForm(data: WizardFormData) {
         pricePerPerson: menuItems.pricePerPerson,
         pricingType: menuItems.pricingType,
         variants: menuItems.variants,
+        dietaryType: menuItems.dietaryType,
       })
       .from(menuItems)
       .where(eq(menuItems.isActive, true));
@@ -539,6 +540,7 @@ export async function submitWizardForm(data: WizardFormData) {
             totalPrice: unitPrice * quantity,
             notes: data.itemComments?.[itemId],
             pricingType: dbItem?.pricingType || 'per_person',
+            dietaryType: dbItem?.dietaryType || 'none',
           };
         }),
         estimatedTotal: estimatedTotal,
