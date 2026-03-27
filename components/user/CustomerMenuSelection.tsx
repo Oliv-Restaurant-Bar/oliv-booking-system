@@ -49,6 +49,8 @@ interface CustomerMenuSelectionProps {
   isSubmitting: boolean;
   includeBeveragePrices: boolean;
   setIncludeBeveragePrices: (value: boolean) => void;
+  isEditMode?: boolean;
+  originalGuestCount?: string;
 }
 
 export function CustomerMenuSelection({
@@ -92,6 +94,8 @@ export function CustomerMenuSelection({
   isSubmitting,
   includeBeveragePrices,
   setIncludeBeveragePrices,
+  isEditMode = false,
+  originalGuestCount = '',
 }: CustomerMenuSelectionProps) {
   const [searchQuery, setSearchQuery] = React.useState('');
   const tabsScrollRef = React.useRef<HTMLDivElement>(null);
@@ -411,6 +415,8 @@ export function CustomerMenuSelection({
           setIncludeBeveragePrices={setIncludeBeveragePrices}
           setItemGuestCounts={setItemGuestCounts}
           categories={categories}
+          isEditMode={isEditMode}
+          originalGuestCount={originalGuestCount}
         />
       </div>
     </div>

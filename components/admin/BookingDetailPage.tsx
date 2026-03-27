@@ -813,6 +813,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         localStorage.setItem('temp_edit_id', booking.id);
         localStorage.setItem('temp_edit_secret', booking.editSecret);
         localStorage.setItem('temp_edit_timestamp', Date.now().toString());
+        localStorage.setItem('temp_edit_is_admin', 'true'); // Flag to indicate admin edit
 
         // Redirect to wizard with edit mode flag (creds will be picked up from localStorage)
         const url = `/wizard?edit=true`;

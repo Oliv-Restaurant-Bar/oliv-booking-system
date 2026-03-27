@@ -49,6 +49,8 @@ interface MenuCartProps {
   setItemGuestCounts: React.Dispatch<React.SetStateAction<Record<string, number>>>;
   categories: string[];
   onCloseDrawer?: () => void;
+  isEditMode?: boolean;
+  originalGuestCount?: string;
 }
 
 export function MenuCart({
@@ -83,6 +85,8 @@ export function MenuCart({
   setItemGuestCounts,
   categories,
   onCloseDrawer,
+  isEditMode = false,
+  originalGuestCount = '',
 }: MenuCartProps) {
   const [viewMode, setViewMode] = React.useState<'per-person' | 'total'>('per-person');
   const [termsAccepted, setTermsAccepted] = React.useState(false);
@@ -134,22 +138,38 @@ export function MenuCart({
     setItemGuestCounts(prev => {
       const current = prev[itemId] || parseInt(eventDetails.guestCount) || 1;
       const next = Math.max(1, current + delta);
-      
-      // Keep all per-person food items in sync as they share the same guest count for pricing
+
+      // If originalGuestCount exists (edit mode), only update the specific item
+      // Otherwise (new booking mode), sync all per-person food items
       const updated = { ...prev };
-      ppFoodItems.forEach(item => {
-        updated[item.id] = next;
-      });
+
+      if (originalGuestCount && originalGuestCount.trim() !== '') {
+        // Edit mode: only update the specific item
+        updated[itemId] = next;
+      } else {
+        // New booking mode: sync all per-person food items
+        ppFoodItems.forEach(item => {
+          updated[item.id] = next;
+        });
+      }
+
       return updated;
     });
   };
 
   const currentGuestCount = React.useMemo(() => {
     if (ppFoodItems.length === 0) return parseInt(eventDetails.guestCount) || 1;
-    // Extract the guest count from the first per-person food item, falling back to global state
+
+    // If originalGuestCount is provided (edit mode), use it for the TOTAL display
+    // This ensures the total never changes when cart values are modified
+    if (originalGuestCount && originalGuestCount.trim() !== '') {
+      return parseInt(originalGuestCount) || 1;
+    }
+
+    // New booking mode: Extract the guest count from the first per-person food item
     const firstItem = ppFoodItems[0];
     return itemGuestCounts[firstItem.id] || parseInt(eventDetails.guestCount) || 1;
-  }, [ppFoodItems, itemGuestCounts, eventDetails.guestCount]);
+  }, [ppFoodItems, eventDetails.guestCount, originalGuestCount]);
 
   const totalAmount = (getPerPersonSubtotal() * currentGuestCount) + getFlatRateSubtotal() + (includeBeveragePrices ? getConsumptionSubtotal() : 0);
   const isUg1Exklusiv = eventDetails.room === 'ug1_exklusiv';

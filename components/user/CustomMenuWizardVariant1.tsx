@@ -106,6 +106,8 @@ export function CustomMenuWizard() {
   const [editSecret, setEditSecret] = useState<string | null>(null);
   const [bookingPdfData, setBookingPdfData] = useState<any>(null); // New state for PDF
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isAdminEdit, setIsAdminEdit] = useState(false); // Track if admin initiated edit
+  const [originalGuestCount, setOriginalGuestCount] = useState<string>(''); // Store original guest count from booking
   const [isLocked, setIsLocked] = useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
 
@@ -142,23 +144,31 @@ export function CustomMenuWizard() {
 
       // Use temporary localStorage if it's less than 60 seconds old
       if (tempId && tempSecret && tempTimestamp && (now - parseInt(tempTimestamp) < 60000)) {
-        console.log('Edit mode activated via secure localStorage');
+        // Edit mode activated via secure localStorage
         finalId = tempId;
         finalSecret = tempSecret;
+
+        // Check if this is an admin-initiated edit
+        const isAdmin = localStorage.getItem('temp_edit_is_admin') === 'true';
+        setIsAdminEdit(isAdmin);
+        if (isAdmin) {
+          console.log('Admin edit mode detected');
+        }
 
         // Clean up immediately for security, then store in sessionStorage for refresh persistence
         localStorage.removeItem('temp_edit_id');
         localStorage.removeItem('temp_edit_secret');
         localStorage.removeItem('temp_edit_timestamp');
+        localStorage.removeItem('temp_edit_is_admin'); // Clean up admin flag
 
         sessionStorage.setItem('edit_booking_id', tempId);
         sessionStorage.setItem('edit_secret', tempSecret);
       }
 
       if (finalId && finalSecret) {
-        console.log('Edit mode activated');
         setIsLoadingEdit(true);
 
+        // Set edit mode FIRST before any async operations
         setBookingId(finalId);
         setEditSecret(finalSecret);
         setIsEditMode(true);
@@ -179,7 +189,9 @@ export function CustomMenuWizard() {
                 const booking = result.data;
                 const lead = booking.lead;
 
-                console.log('Booking data loaded:', booking);
+                // Store the original guest count for display in cart
+                const originalGuestCountValue = booking.guestCount?.toString() || '';
+                setOriginalGuestCount(originalGuestCountValue);
 
                 // Populate eventDetails from booking
                 setEventDetails({
@@ -192,7 +204,7 @@ export function CustomMenuWizard() {
                   location: booking.location || '',
                   eventDate: booking.eventDate ? booking.eventDate.split('T')[0] : '',
                   eventTime: booking.eventTime || '',
-                  guestCount: booking.guestCount?.toString() || '',
+                  guestCount: originalGuestCountValue,
                   occasion: booking.occasion || '',
                   specialRequests: booking.specialRequests || '',
                   reference: booking.reference || '',
@@ -229,7 +241,7 @@ export function CustomMenuWizard() {
                     const id = item.itemId || item.item_id;
                     if (id) {
                       quantities[id] = item.quantity || 1;
-                      // Guest count for per-item is stored in quantity in the latest version
+                      // Load the ACTUAL item quantity from database (what admin saved)
                       guestCounts[id] = item.quantity || 1;
 
                       // Extract comment from notes
@@ -1052,6 +1064,26 @@ export function CustomMenuWizard() {
 
       // Use the inquiry number from the server response
       setInquiryNumber(result.data.inquiryNumber || `INQ-${Math.floor(Math.random() * 9000) + 1000}`);
+
+      // Check if this is an admin editing a booking
+      // If so, redirect back to the booking details page instead of showing thank you screen
+      if (isAdminEdit && bookingId) {
+        // Admin edit mode - redirect back to booking details page
+        setIsEditMode(false); // Reset edit mode after successful submit
+        setIsAdminEdit(false); // Reset admin edit flag
+
+        // Clear persistence for refresh-resilience cleanup
+        sessionStorage.removeItem('edit_booking_id');
+        sessionStorage.removeItem('edit_secret');
+        localStorage.removeItem('temp_edit_is_admin'); // Clean up admin flag
+
+        // Show success message and redirect
+        alert('Booking updated successfully!');
+        router.push(`/admin/bookings?id=${bookingId}`);
+        return;
+      }
+
+      // Customer mode - show thank you screen
       setIsEditMode(false); // Reset edit mode after successful submit
       setIsSubmitted(true);
 
@@ -1574,6 +1606,8 @@ export function CustomMenuWizard() {
                     isSubmitting={isSubmitting}
                     includeBeveragePrices={includeBeveragePrices}
                     setIncludeBeveragePrices={setIncludeBeveragePrices}
+                    isEditMode={isEditMode}
+                    originalGuestCount={originalGuestCount || eventDetails.guestCount}
                   />
                 )}
 
@@ -1778,6 +1812,8 @@ export function CustomMenuWizard() {
                   setItemGuestCounts={setItemGuestCounts}
                   categories={categories}
                   onCloseDrawer={() => setIsMobileDrawerOpen(false)}
+                  isEditMode={isEditMode}
+                  originalGuestCount={originalGuestCount || eventDetails.guestCount}
                 />
               </div>
             </div>
