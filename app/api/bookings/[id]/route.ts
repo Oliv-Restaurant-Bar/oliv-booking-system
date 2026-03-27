@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateBooking } from "@/lib/actions/bookings";
 import { db } from "@/lib/db";
-import { sql } from "drizzle-orm";
+import { sql, eq, desc } from "drizzle-orm";
+import { bookingCheckins } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/server";
 import type { AuditContext } from "@/lib/booking-audit";
 import { z } from "zod";
@@ -40,6 +41,7 @@ export async function GET(
         b.assigned_to,
         b.kitchen_notes,
         b.edit_secret,
+        b.room,
         l.contact_name,
         l.contact_email,
         l.contact_phone,
@@ -185,6 +187,18 @@ export async function GET(
       console.error('Error fetching contact history:', e);
     }
 
+    // Fetch check-ins
+    let checkins: any[] = [];
+    try {
+      checkins = await db
+        .select()
+        .from(bookingCheckins)
+        .where(eq(bookingCheckins.bookingId, validatedId))
+        .orderBy(desc(bookingCheckins.submittedAt));
+    } catch (e) {
+      console.error('Error fetching check-ins:', e);
+    }
+
     const businessMatch = booking.internal_notes?.match(/Business: ([^\n]+)/);
     const business = businessMatch ? businessMatch[1].replace('N/A', '').trim() : '';
 
@@ -241,6 +255,8 @@ export async function GET(
       menuItems: menuItems,
       contactHistory: contactHistory,
       editSecret: booking.edit_secret,
+      room: booking.room || '',
+      checkins: checkins,
     });
   } catch (error) {
     console.error("Error in GET /api/bookings/[id]:", error);

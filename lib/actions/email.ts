@@ -194,6 +194,23 @@ export async function sendBookingReminder(params: {
 }
 
 /**
+ * Send manual reminder email (When staff tried to reach out)
+ */
+export async function sendManualBookingReminder(params: {
+  bookingId: string;
+  recipientEmail: string;
+  bookingData: Booking & { lead?: Lead | null };
+}): Promise<{ success: boolean; error?: string; emailLogId?: string }> {
+  return sendBookingEmail({
+    bookingId: params.bookingId,
+    emailType: "manual_reminder",
+    recipientEmail: params.recipientEmail,
+    bookingData: params.bookingData,
+  });
+}
+
+
+/**
  * Send "Thank You" email (after initial booking/inquiry)
  */
 export async function sendThankYouEmail(params: {
@@ -212,6 +229,46 @@ export async function sendThankYouEmail(params: {
     estimatedTotal: params.estimatedTotal,
     bookingEditUrl: params.bookingEditUrl,
     attachments: params.pdfAttachment ? [params.pdfAttachment] : undefined,
+  });
+}
+
+/**
+ * Send 4-day check-in reminder email
+ */
+export async function sendBookingCheckin(params: {
+  bookingId: string;
+  recipientEmail: string;
+  bookingData: Booking & { lead?: Lead | null };
+  checkinUrl?: string;
+}): Promise<{ success: boolean; error?: string; emailLogId?: string }> {
+  return sendBookingEmail({
+    bookingId: params.bookingId,
+    emailType: "checkin_reminder",
+    recipientEmail: params.recipientEmail,
+    bookingData: params.bookingData,
+    bookingEditUrl: params.checkinUrl,
+  });
+}
+
+/**
+ * Send booking update email with PDF attachment
+ */
+export async function sendBookingUpdate(params: {
+  bookingId: string;
+  recipientEmail: string;
+  bookingData: Booking & { lead?: Lead | null };
+  pdfBase64: string;
+}): Promise<{ success: boolean; error?: string; emailLogId?: string }> {
+  return sendBookingEmail({
+    bookingId: params.bookingId,
+    emailType: "booking_update",
+    recipientEmail: params.recipientEmail,
+    bookingData: params.bookingData,
+    attachments: [{
+      content: params.pdfBase64,
+      mime_type: "application/pdf",
+      name: `Booking_Update_${params.bookingId.slice(0, 8)}.pdf`
+    }]
   });
 }
 

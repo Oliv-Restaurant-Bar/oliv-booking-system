@@ -103,4 +103,5 @@ export interface EventDetails {
   billingReferenceError?: string;
   room: string;
   roomError?: string;
+  bookingId?: string;
 }

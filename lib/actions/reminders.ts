@@ -3,7 +3,7 @@
 import { db } from "@/lib/db";
 import { bookings, leads, emailLogs } from "@/lib/db/schema";
 import { eq, and, gte, lte } from "drizzle-orm";
-import { sendBookingReminder } from "@/lib/actions/email";
+import { sendBookingReminder, sendManualBookingReminder } from "@/lib/actions/email";
 import { subHours, addHours, startOfDay, endOfDay } from "date-fns";
 
 /**
@@ -123,3 +123,43 @@ export async function getUpcomingBookingsForReminders() {
     return { success: false, error: error.message, data: [] };
   }
 }
+
+/**
+ * Send a manual reminder for a specific booking
+ */
+export async function sendManualReminder(bookingId: string) {
+  try {
+    const [result] = await db
+      .select({
+        booking: bookings,
+        lead: leads,
+      })
+      .from(bookings)
+      .leftJoin(leads, eq(bookings.leadId, leads.id))
+      .where(eq(bookings.id, bookingId))
+      .limit(1);
+
+    if (!result) {
+      return { success: false, error: "Booking not found" };
+    }
+
+    const { booking, lead } = result;
+
+    if (!lead?.contactEmail) {
+      return { success: false, error: "No contact email found for this booking" };
+    }
+
+    const emailResult = await sendManualBookingReminder({
+      bookingId: booking.id,
+      recipientEmail: lead.contactEmail,
+      bookingData: { ...booking, lead },
+    });
+
+
+    return emailResult;
+  } catch (error: any) {
+    console.error("Error sending manual reminder:", error);
+    return { success: false, error: error.message };
+  }
+}
+

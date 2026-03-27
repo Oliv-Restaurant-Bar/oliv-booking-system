@@ -39,7 +39,7 @@ export function DietaryIcon({ type, size = 'md' }: DietaryIconProps) {
   if (normalizedType === 'none') {
     return (
       <div className="flex items-center gap-1">
-        <div className={`${sizeClass} rounded-full border-[1.5px] border-slate-300 flex items-center justify-center flex-shrink-0`}>
+        <div className={`${sizeClass} rounded-sm border-[1.5px] border-slate-300 flex items-center justify-center flex-shrink-0`}>
           <div className={`${dotClass} rounded-full bg-slate-100`}></div>
         </div>
       </div>
@@ -50,7 +50,7 @@ export function DietaryIcon({ type, size = 'md' }: DietaryIconProps) {
   if (normalizedType === 'vegetarian' || normalizedType === 'veg') {
     return (
       <div className="flex items-center gap-1">
-        <div className={`${sizeClass} rounded-full border-[1.5px] border-green-600 flex items-center justify-center flex-shrink-0`}>
+        <div className={`${sizeClass} rounded-sm border-[1.5px] border-green-600 flex items-center justify-center flex-shrink-0`}>
           <div className={`${dotClass} rounded-full bg-green-600`}></div>
         </div>
       </div>
@@ -60,7 +60,7 @@ export function DietaryIcon({ type, size = 'md' }: DietaryIconProps) {
   if (normalizedType === 'nonvegetarian' || normalizedType === 'nonveg') {
     return (
       <div className="flex items-center gap-1">
-        <div className={`${sizeClass} rounded-full border-[1.5px] border-red-600 flex items-center justify-center flex-shrink-0`}>
+        <div className={`${sizeClass} rounded-sm border-[1.5px] border-red-600 flex items-center justify-center flex-shrink-0`}>
           <div className={`${dotClass} rounded-full bg-red-600`}></div>
         </div>
       </div>

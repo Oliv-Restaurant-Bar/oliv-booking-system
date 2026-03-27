@@ -150,7 +150,7 @@ export function CustomMenuWizard() {
         localStorage.removeItem('temp_edit_id');
         localStorage.removeItem('temp_edit_secret');
         localStorage.removeItem('temp_edit_timestamp');
-        
+
         sessionStorage.setItem('edit_booking_id', tempId);
         sessionStorage.setItem('edit_secret', tempSecret);
       }
@@ -205,8 +205,9 @@ export function CustomMenuWizard() {
                   billingPlzError: undefined,
                   billingLocationError: undefined,
                   billingReference: booking.billingReference || '',
-                  room: booking.room || '',
+                  room: (booking.room || '').toLowerCase(),
                   roomError: undefined,
+                  bookingId: finalId,
                 });
 
                 // Load menu items from booking_items
@@ -270,16 +271,28 @@ export function CustomMenuWizard() {
   // Extra effect to restore variants and addons once menu data is loaded
   useEffect(() => {
     if (menuItems.length > 0 && editBookingData && !isEditRestored) {
-      console.log('Restoring variants and addons from booking notes...');
+      console.log('[Edit Mode] Restoring variants and addons from booking notes...');
+      console.log('[Edit Mode] Menu items loaded:', menuItems.length);
+      console.log('[Edit Mode] Booking items to restore:', editBookingData.items.length);
       const restoredVariants: Record<string, string> = {};
       const restoredAddOns: Record<string, string[]> = {};
 
       editBookingData.items.forEach((item: any) => {
         const itemId = item.itemId || item.item_id;
-        if (!itemId || !item.notes) return;
+        if (!itemId || !item.notes) {
+          console.log(`[Edit Mode] Skipping item ${itemId} - no notes`);
+          return;
+        }
 
         const menuItem = menuItems.find(mi => mi.id === itemId);
-        if (!menuItem) return;
+        if (!menuItem) {
+          console.warn(`[Edit Mode] Menu item ${itemId} not found in current menu!`);
+          return;
+        }
+
+        console.log(`[Edit Mode] Restoring item: ${menuItem.name}`);
+        console.log(`[Edit Mode] Notes: ${item.notes}`);
+        console.log(`[Edit Mode] Unit price from booking: ${item.unitPrice}`);
 
         // Restore Variants
         const variantMatch = item.notes.match(/Variant: ([^|]+)/);
@@ -287,8 +300,11 @@ export function CustomMenuWizard() {
           const variantName = variantMatch[1].trim();
           const variant = menuItem.variants.find(v => v.name === variantName);
           if (variant) {
-            console.log(`  â†’ Restored variant "${variantName}" for item ${menuItem.name}`);
+            console.log(`[Edit Mode] ✓ Restored variant "${variantName}" (price: ${variant.price}) for item ${menuItem.name}`);
             restoredVariants[itemId] = variant.id;
+          } else {
+            console.warn(`[Edit Mode] ✗ Variant "${variantName}" not found in current menu variants for ${menuItem.name}`);
+            console.log(`[Edit Mode] Available variants:`, menuItem.variants.map(v => v.name));
           }
         }
 
@@ -298,6 +314,8 @@ export function CustomMenuWizard() {
           const addonNames = addonsMatch[1].split(',').map((s: string) => s.trim());
           const addonIds: string[] = [];
 
+          console.log(`[Edit Mode] Restoring addons: ${addonNames.join(', ')}`);
+
           addonNames.forEach((name: string) => {
             // Check in addonGroups if they exist
             if (menuItem.addonGroups) {
@@ -305,6 +323,7 @@ export function CustomMenuWizard() {
                 const addOn = group.items.find(i => i.name === name);
                 if (addOn) {
                   addonIds.push(addOn.id);
+                  console.log(`[Edit Mode] ✓ Found addon "${name}" in group "${group.name}" (price: ${addOn.price})`);
                   break;
                 }
               }
@@ -313,24 +332,30 @@ export function CustomMenuWizard() {
               const addOn = menuItem.addOns.find(a => a.name === name);
               if (addOn) {
                 addonIds.push(addOn.id);
+                console.log(`[Edit Mode] ✓ Found legacy addon "${name}" (price: ${addOn.price})`);
               }
             }
           });
 
           if (addonIds.length > 0) {
-            console.log(`  â†’ Restored ${addonIds.length} addons for item ${menuItem.name}`);
+            console.log(`[Edit Mode] ✓ Restored ${addonIds.length}/${addonNames.length} addons for item ${menuItem.name}`);
             restoredAddOns[itemId] = addonIds;
+          } else {
+            console.warn(`[Edit Mode] ✗ Failed to restore any addons for ${menuItem.name}`);
           }
         }
       });
 
       if (Object.keys(restoredVariants).length > 0) {
+        console.log(`[Edit Mode] Setting ${Object.keys(restoredVariants).length} restored variants`);
         setItemVariants(prev => ({ ...prev, ...restoredVariants }));
       }
       if (Object.keys(restoredAddOns).length > 0) {
+        console.log(`[Edit Mode] Setting ${Object.keys(restoredAddOns).length} restored addon groups`);
         setItemAddOns(prev => ({ ...prev, ...restoredAddOns }));
       }
       setIsEditRestored(true);
+      console.log('[Edit Mode] Restoration complete!');
     }
   }, [menuItems, editBookingData, isEditRestored]);
 
@@ -929,7 +954,11 @@ export function CustomMenuWizard() {
 
     if (result.success && result.data) {
       // Store booking ID
-      setBookingId(result.data.bookingId);
+      const newBookingId = result.data.bookingId;
+      setBookingId(newBookingId);
+
+      // Update eventDetails with bookingId for change request functionality
+      setEventDetails(prev => ({ ...prev, bookingId: newBookingId }));
 
       // Prepare data for PDF download on Thank You screen
       const pdfData = {
@@ -943,10 +972,10 @@ export function CustomMenuWizard() {
         items: selectedItems.map(itemId => {
           const item = menuItems.find(i => i.id === itemId);
           const isPerPersonItem = item?.pricingType === 'per_person';
-          const quantity = isPerPersonItem 
+          const quantity = isPerPersonItem
             ? (itemGuestCounts[itemId] || parseInt(eventDetails.guestCount) || 1)
             : (itemQuantities[itemId] || 1);
-          
+
           const variantId = itemVariants[itemId];
           const variant = variantId && Array.isArray(item?.variants)
             ? (item?.variants as any[]).find(v => v.id === variantId)
@@ -963,7 +992,7 @@ export function CustomMenuWizard() {
           const selectedAddOnIds = itemAddOns[itemId] || [];
           if (selectedAddOnIds.length > 0) {
             const addOnNames: string[] = [];
-            
+
             selectedAddOnIds.forEach(id => {
               // 1. Check in legacy addOns
               if (item?.addOns) {
@@ -973,7 +1002,7 @@ export function CustomMenuWizard() {
                   return;
                 }
               }
-              
+
               // 2. Check in addonGroups
               if (item?.addonGroups) {
                 for (const group of item.addonGroups) {
@@ -985,12 +1014,12 @@ export function CustomMenuWizard() {
                 }
               }
             });
-            
+
             if (addOnNames.length > 0) {
               choicesPart = addOnNames.join(', ');
             }
           }
-          
+
           const unitPrice = variant ? Number(variant.price) : Number(item?.price || 0);
 
           return {
@@ -1018,7 +1047,7 @@ export function CustomMenuWizard() {
       setInquiryNumber(result.data.inquiryNumber || `INQ-${Math.floor(Math.random() * 9000) + 1000}`);
       setIsEditMode(false); // Reset edit mode after successful submit
       setIsSubmitted(true);
-      
+
       // Clear persistence for refresh-resilience cleanup
       sessionStorage.removeItem('edit_booking_id');
       sessionStorage.removeItem('edit_secret');
@@ -1134,7 +1163,7 @@ export function CustomMenuWizard() {
 
     // Use specific variant if provided or available in state
     const currentVariantId = variantIdOverride || (itemId ? itemVariants[itemId] : null);
-    
+
     if (currentVariantId && item.variants) {
       const selectedVariant = item.variants.find(v => v.id === currentVariantId);
       if (selectedVariant?.averageConsumption) {
@@ -1203,46 +1232,21 @@ export function CustomMenuWizard() {
 
   const getItemTotalPrice = (item: MenuItem) => {
     const quantity = itemQuantities[item.id] || 1;
+    const unitPrice = getItemPerPersonPrice(item);
 
     // Use per-item guest count if category has guestCount enabled, otherwise use total guest count
     const effectiveGuestCount = categoryData[item.category]?.guestCount
       ? (itemGuestCounts[item.id] || parseInt(eventDetails.guestCount) || 1)
       : (parseInt(eventDetails.guestCount) || 1);
 
-    const addOns = itemAddOns[item.id] || [];
-    const addOnsPrice = addOns.reduce((total, addOnId) => {
-      // First check addonGroups structure (new format)
-      if (item.addonGroups && item.addonGroups.length > 0) {
-        for (const group of item.addonGroups) {
-          const groupAddOn = group.items.find(i => i.id === addOnId);
-          if (groupAddOn) {
-            return total + (groupAddOn.price || 0);
-          }
-        }
-      }
-      // Fallback to legacy addOns structure
-      const addOn = item.addOns?.find(ao => ao.id === addOnId);
-      return total + (addOn?.price || 0);
-    }, 0);
-
-    // Get price from variant if selected, otherwise use base price
-    let basePrice = item.price;
-    const variantId = itemVariants[item.id];
-    if (variantId && item.variants) {
-      const variant = item.variants.find(v => v.id === variantId);
-      if (variant) {
-        basePrice = variant.price;
-      }
-    }
-
-    // For flat-fee or consumption items, don't multiply by guest count
+    // For flat-fee or consumption items, multiply but use unit price (base + addons) from getItemPerPersonPrice
     if (isNonPerPerson(item)) {
-      return (basePrice + addOnsPrice) * quantity;
+      return unitPrice * quantity;
     }
 
     // For per-person items, multiply by guest count
     // Force quantity to 1 for per-person items to avoid double multiplication
-    return (basePrice + addOnsPrice) * 1 * effectiveGuestCount;
+    return unitPrice * effectiveGuestCount;
   };
 
   const getTotalPriceWithAddOns = () => {
@@ -1259,33 +1263,107 @@ export function CustomMenuWizard() {
     }, 0);
   };
 
-  // Per-person price (NOT multiplied by guest count) â€“ used for cart display
+  // Per-person price (NOT multiplied by guest count) – used for cart display
   const getItemPerPersonPrice = (item: MenuItem) => {
-    const quantity = itemQuantities[item.id] || 1;
-    const addOns = itemAddOns[item.id] || [];
-    const addOnsPrice = addOns.reduce((total, addOnId) => {
-      // First check addonGroups structure (new format)
+    // 1. First, calculate the modern menu price based on current selection (variant + addons)
+    const currentVariantId = itemVariants[item.id];
+    let basePrice = item.price;
+    if (currentVariantId && item.variants && item.variants.length > 0) {
+      const variant = item.variants.find(v => v.id === currentVariantId);
+      if (variant) basePrice = variant.price;
+    }
+
+    const currentAddOnIds = itemAddOns[item.id] || [];
+    const currentAddOnsPrice = currentAddOnIds.reduce((total, addOnId) => {
       if (item.addonGroups && item.addonGroups.length > 0) {
         for (const group of item.addonGroups) {
           const groupAddOn = group.items.find(i => i.id === addOnId);
-          if (groupAddOn) {
-            return total + (groupAddOn.price || 0);
-          }
+          if (groupAddOn) return total + (groupAddOn.price || 0);
         }
       }
-      // Fallback to legacy addOns structure
       const addOn = item.addOns?.find(ao => ao.id === addOnId);
       return total + (addOn?.price || 0);
     }, 0);
-    let basePrice = item.price;
-    const variantId = itemVariants[item.id];
-    if (variantId && item.variants) {
-      const variant = item.variants.find(v => v.id === variantId);
-      if (variant) basePrice = variant.price;
+
+    const calculatedMenuPrice = basePrice + currentAddOnsPrice;
+
+    // 2. In edit mode, check if we should override with the original booking price
+    if (isEditMode && editBookingData?.items) {
+      const bookingItem = editBookingData.items.find((bi: any) => (bi.itemId || bi.item_id) === item.id);
+
+      if (bookingItem) {
+        const originalPrice = Number(bookingItem.unitPrice) || 0;
+
+        // If original price is 0 but menu has a price, it's likely a data issue in the booking
+        // We should show the real price to the user
+        if (originalPrice === 0 && calculatedMenuPrice > 0) {
+          console.log(`[Edit Mode] Original price for ${item.name} is 0.00, using menu price CHF ${calculatedMenuPrice.toFixed(2)}`);
+          return calculatedMenuPrice;
+        }
+
+        // Check if the item's configuration has changed (variant or addons)
+        // We parse the original variant name and addon names back for comparison
+        let isModified = false;
+
+        // Compare variants
+        const variantMatch = bookingItem.notes?.match(/Variant: ([^|]+)/);
+        const originalVariantName = variantMatch ? variantMatch[1].trim() : null;
+        const currentVariant = item.variants?.find(v => v.id === currentVariantId);
+        const currentVariantName = currentVariant?.name || null;
+
+        if (originalVariantName !== currentVariantName) {
+          console.log(`[Price Calc] Item ${item.name} variant changed: "${originalVariantName}" -> "${currentVariantName}"`);
+          isModified = true;
+        }
+
+        // Compare addons (subset check)
+        if (!isModified) {
+          const addonsMatch = bookingItem.notes?.match(/(?:Add-ons|Choices): ([^|]+)/);
+          const originalAddonNames = addonsMatch
+            ? addonsMatch[1].split(',').map((s: string) => s.trim()).filter(Boolean)
+            : [];
+
+          const currentAddonNames: string[] = [];
+          currentAddOnIds.forEach(id => {
+            const ao = item.addOns?.find(a => a.id === id);
+            if (ao) currentAddonNames.push(ao.name);
+            else if (item.addonGroups) {
+              for (const g of item.addonGroups) {
+                const ga = g.items.find(i => i.id === id);
+                if (ga) { currentAddonNames.push(ga.name); break; }
+              }
+            }
+          });
+
+          // Check if lengths differ or any name differs
+          if (originalAddonNames.length !== currentAddonNames.length) {
+            isModified = true;
+          } else {
+            const sortedOriginal = [...originalAddonNames].sort();
+            const sortedCurrent = [...currentAddonNames].sort();
+            if (JSON.stringify(sortedOriginal) !== JSON.stringify(sortedCurrent)) {
+              isModified = true;
+            }
+          }
+
+          if (isModified) {
+            console.log(`[Price Calc] Item ${item.name} addons changed`);
+          }
+        }
+
+        // If not modified, return original price (preserves manual overrides/discounts)
+        if (!isModified) {
+          console.log(`[Edit Mode] Item ${item.name} is UNCHANGED. Using original price: CHF ${originalPrice.toFixed(2)}`);
+          return originalPrice;
+        }
+
+        // If modified, use the latest menu price
+        console.log(`[Edit Mode] Item ${item.name} is MODIFIED. Using calculated menu price: CHF ${calculatedMenuPrice.toFixed(2)}`);
+      }
     }
-    
-    // Always return unit price (base + addons)
-    return (basePrice + addOnsPrice);
+
+    // Default: return calculated menu price
+    return calculatedMenuPrice;
   };
 
   // Per-person subtotal: returns the sum of all selected per-person items
@@ -1338,7 +1416,7 @@ export function CustomMenuWizard() {
           setBookingId(null);
           setEditSecret(null);
           setBookingPdfData(null);
-          
+
           // Clear persistence
           sessionStorage.removeItem('edit_booking_id');
           sessionStorage.removeItem('edit_secret');
@@ -1365,7 +1443,13 @@ export function CustomMenuWizard() {
     return (
       <div className="min-h-screen bg-background">
         <WizardHeader
-          onBack={currentStep > 1 ? () => setCurrentStep(1) : undefined}
+          onBack={
+            currentStep > 1
+              ? () => setCurrentStep(1)
+              : (isEditMode && bookingId)
+                ? () => router.push(`/admin/bookings/${bookingId}`)
+                : undefined
+          }
         />
         <SkeletonMenuSelection />
       </div>
@@ -1375,7 +1459,13 @@ export function CustomMenuWizard() {
   return (
     <>
       <WizardHeader
-        onBack={currentStep > 1 ? () => setCurrentStep(1) : undefined}
+        onBack={
+          currentStep > 1
+            ? () => setCurrentStep(1)
+            : (isEditMode && bookingId)
+              ? () => router.push(`/admin/bookings?id=${bookingId}`)
+              : undefined
+        }
       />
       <div className="min-h-screen bg-background flex flex-col">
         {/* Mobile Step Indicator - Only visible on mobile */}
@@ -1411,7 +1501,6 @@ export function CustomMenuWizard() {
         </div>
 
         {/* Main Content - Two Column Layout */}
-        {/* <div className="flex-1 flex flex-col lg:flex-row"> */}
         <div className="flex-1 flex flex-col items-center w-full">
           {/* Right Content Area - w-full - With left margin on desktop to account for fixed sidebar */}
           <main className={`w-full bg-background ${currentStep === 2 ? "" : "p-4 lg:p-8"}`}>

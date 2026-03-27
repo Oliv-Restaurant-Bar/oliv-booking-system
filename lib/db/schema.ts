@@ -113,6 +113,9 @@ export const emailTypeEnum = [
   "assignment",
   "kitchen_pdf",
   "user_created",
+  "checkin_reminder",
+  "booking_update",
+  "manual_reminder",
 ] as const;
 export type EmailType = (typeof emailTypeEnum)[number];
 
@@ -603,6 +606,29 @@ export const systemSettings = pgTable(
   }),
 );
 
+// BOOKING_CHECKINS table
+export const bookingCheckins = pgTable(
+  "booking_checkins",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    bookingId: uuid("booking_id")
+      .notNull()
+      .references(() => bookings.id, { onDelete: "cascade" }),
+    submittedAt: timestamp("submitted_at").notNull().defaultNow(),
+    hasChanges: boolean("has_changes").notNull(),
+    guestCountChanged: boolean("guest_count_changed").notNull(),
+    newGuestCount: integer("new_guest_count"),
+    vegetarianCount: integer("vegetarian_count"),
+    nonVegetarianCount: integer("non_vegetarian_count"),
+    menuChanges: text("menu_changes"),
+    additionalDetails: text("additional_details"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    bookingIdIdx: index("booking_checkins_booking_id_idx").on(table.bookingId),
+  }),
+);
+
 // Better Auth type exports
 export type Session = typeof session.$inferSelect;
 export type NewSession = typeof session.$inferInsert;
@@ -649,3 +675,5 @@ export type LandingPageContent = typeof landingPageContent.$inferSelect;
 export type NewLandingPageContent = typeof landingPageContent.$inferSelect;
 export type SystemSettings = typeof systemSettings.$inferSelect;
 export type NewSystemSettings = typeof systemSettings.$inferInsert;
+export type BookingCheckin = typeof bookingCheckins.$inferSelect;
+export type NewBookingCheckin = typeof bookingCheckins.$inferInsert;

@@ -41,6 +41,7 @@ export interface CreateBookingInput {
   assignedTo?: string;
   kitchenNotes?: string;
   billingAddress?: string;
+  room?: string;
 }
 
 /**
@@ -436,6 +437,10 @@ export async function updateBooking(
     if (updates.billingAddress !== undefined) {
       updateData.billingAddress = updates.billingAddress;
       console.log('  → Updating billingAddress:', updates.billingAddress);
+    }
+    if (updates.room !== undefined) {
+      updateData.room = updates.room;
+      console.log('  → Updating room:', updates.room);
     }
 
 
@@ -1072,6 +1077,7 @@ export async function getBookingForClientEdit(bookingId: string) {
         location,
         reference,
         billingReference,
+        room: booking.room,
         lead: lead && lead[0] ? lead[0] : null,
         booking_items: items,
       }

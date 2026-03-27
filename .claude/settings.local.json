@@ -57,7 +57,8 @@
       "Bash(cd \"D:\\\\Oliv-Booking-System\\\\components\\\\admin\" && cp MenuConfigPageV3Complete.tsx MenuConfigPageV3Complete.tsx.backup)",
       "Bash(cd \"D:\\\\Oliv-Booking-System\\\\components\\\\admin\" && mv MenuConfigPageV3Complete.tsx MenuConfigPageV3Complete.tsx.old && mv MenuConfigPageRefactored.tsx MenuConfigPageV3Complete.tsx)",
       "Bash(node:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(tsx scripts/check-booking.ts)"
     ]
   }
 }

@@ -290,9 +290,9 @@ export function CustomerDetailsForm({
                                     let newRoom = eventDetails.room;
                                     
                                     // Room reset logic based on guest count
-                                    if (guests <= 30 && (newRoom === 'ug1' || newRoom === 'ug1_exklusiv')) {
+                                    if (guests < 30 && (newRoom === 'ug1' || newRoom === 'ug1_exklusiv')) {
                                         newRoom = '';
-                                    } else if (guests <= 50 && newRoom === 'ug1_exklusiv') {
+                                    } else if (guests < 50 && newRoom === 'ug1_exklusiv') {
                                         newRoom = 'ug1';
                                     }
 
@@ -344,11 +344,11 @@ export function CustomerDetailsForm({
                                 <option value="">{locale === 'de' ? 'Bitte wählen...' : 'Please select...'}</option>
                                 <option value="eg">{t('labels.rooms.eg')}</option>
                                 
-                                {(parseInt(eventDetails.guestCount.toString()) > 30) && (
+                                {(parseInt(eventDetails.guestCount.toString()) >= 30) && (
                                     <option value="ug1">{t('labels.rooms.ug1')}</option>
                                 )}
                                 
-                                {(parseInt(eventDetails.guestCount.toString()) > 50) && (
+                                {(parseInt(eventDetails.guestCount.toString()) >= 50) && (
                                     <option value="ug1_exklusiv">{t('labels.rooms.ug1_exklusiv')}</option>
                                 )}
                             </select>

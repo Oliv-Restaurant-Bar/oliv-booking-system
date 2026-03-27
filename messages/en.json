@@ -449,7 +449,12 @@
       "customerInfo": "Customer Information",
       "eventDetails": "Event Details",
       "venueLocation": "Venue Location",
+      "room": "Room / Area",
       "notAssigned": "Not Assigned",
+      "sendReminder": "Send Reminder",
+      "sendCheckin": "4-Day Check-in",
+      "sendUpdate": "Email Latest Changes",
+      "actions": "Actions",
       "menuItems": "Menu Items",
       "kitchenNotes": "Notes for Kitchen Staff",
       "totalAmount": "Total Amount",
@@ -467,6 +472,8 @@
       "commentsActivity": "Comments & Activity",
       "items": "items",
       "noComments": "No comments or activity yet",
+      "checkins": "Customer Check-ins",
+      "noCheckins": "No check-ins submitted yet",
       "noChanges": "No changes recorded yet",
       "system": "System",
       "occasion": "Occasion",
@@ -494,7 +501,13 @@
         "lockFailed": "Failed to lock booking",
         "unlockFailed": "Failed to unlock booking",
         "assignmentSuccess": "Assignment updated successfully",
-        "assignmentFailed": "Failed to update assignment"
+        "assignmentFailed": "Failed to update assignment",
+        "reminderSent": "Reminder email sent successfully",
+        "checkinSent": "Check-in invitation sent successfully",
+        "updateSent": "Booking update sent successfully",
+        "failedToSendReminder": "Failed to send reminder",
+        "failedToSendCheckin": "Failed to send check-in invitation",
+        "failedToSendUpdate": "Failed to send update"
       },
       "tooltips": {
         "amount": "Total amount for this booking",
@@ -705,7 +718,7 @@
         "categories": "categories",
         "type": "Type",
         "addon": "Addon",
-        "addons": "Addons",
+        "addonsLabel": "Addons",
         "choice": "Choice",
         "choices": "Choices",
         "priceHint": "0 for free",
@@ -788,7 +801,8 @@
         "addons": "Add companion items like sides, extras, or choices that can be added to this item.",
         "selectionFixed": "Selection is fixed at {count} items",
         "selectionMax": "Up to {count} items can be selected",
-        "selectionRange": "Between {min} and {max} items can be selected"
+        "selectionRange": "Between {min} and {max} items can be selected",
+        "nutritionServingSize": "All values based on {size} serving size."
       },
       "dietary": {
         "none": "None",
@@ -1046,7 +1060,7 @@
       "room": "Room / Area",
       "rooms": {
         "eg": "EG",
-        "ug1": "ug1",
+        "ug1": "UG1",
         "ug1_exklusiv": "UG1 Exclusive"
       },
       "minSpendInfo": "Minimum spend of CHF 1,000.00 required",

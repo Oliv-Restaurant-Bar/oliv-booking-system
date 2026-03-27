@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Send, User, CalendarDays, UtensilsCrossed, MessageSquare, Link, Lock, Unlock, History, FileText, RefreshCw, UserPlus, CheckCircle2, Info, Pencil, X, Save } from 'lucide-react';
+import { ArrowLeft, Send, User, CalendarDays, UtensilsCrossed, MessageSquare, Link, Lock, Unlock, History, FileText, RefreshCw, UserPlus, CheckCircle2, Info, Pencil, X, Save, Bell, Mail, ChevronDown, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { StatusDropdown } from './StatusDropdown';
 import { KitchenPdfStatusBadge } from './KitchenPdfStatusBadge';
@@ -48,7 +48,7 @@ export interface Booking {
     status: string;
     notes?: string;
     allergies?: string | string[];
-    contactHistory?: Array<{ by: string; time: string; date: string; action: string; type?: 'system' | 'manual' }>;
+    contactHistory?: Array<BookingComment>;
     isLocked?: boolean;
     kitchenPdf?: KitchenPdfStatus;
     menuItems?: Array<{ id?: string; itemId?: string; item: string; category: string; quantity: string; rawQuantity?: number; unitPrice?: number; price: string; notes?: string; customerComment?: string }>;
@@ -56,6 +56,26 @@ export interface Booking {
     kitchenNotes?: string;
     createdAt?: string;
     editSecret?: string;
+    room?: string;
+    checkins?: Array<{
+        id: string;
+        submittedAt: string;
+        hasChanges: boolean;
+        guestCountChanged: boolean;
+        newGuestCount?: number;
+        vegetarianCount?: number;
+        nonVegetarianCount?: number;
+        menuChanges?: string;
+        additionalDetails?: string;
+    }>;
+}
+
+interface BookingComment {
+    by: string;
+    time: string;
+    date: string;
+    action: string;
+    type?: 'system' | 'manual';
 }
 
 interface AuditLog {
@@ -90,9 +110,16 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
     const [booking, setBooking] = useState<Booking | null>(initialBooking || null);
     const [loading, setLoading] = useState(!initialBooking);
-    const [comments, setComments] = useState<Array<{ by: string; time: string; date: string; action: string; type?: 'system' | 'manual' }>>(
-        initialBooking?.contactHistory || []
-    );
+    const [comments, setComments] = useState<BookingComment[]>(initialBooking?.contactHistory || []);
+    const [checkins, setCheckins] = useState<Booking['checkins']>(initialBooking?.checkins || []);
+
+    const [isEmailDropdownOpen, setIsEmailDropdownOpen] = useState(false);
+    const [isReminding, setIsReminding] = useState(false);
+    const [isSendingCheckin, setIsSendingCheckin] = useState(false);
+    const [isSendingUpdate, setIsSendingUpdate] = useState(false);
+    const emailDropdownRef = React.useRef<HTMLDivElement>(null);
+
+
     const [newComment, setNewComment] = useState('');
     const [localStatus, setLocalStatus] = useState(initialBooking?.status || 'pending');
     const [allergies, setAllergies] = useState('');
@@ -105,6 +132,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
     const [auditLoading, setAuditLoading] = useState(false);
     const [editLink, setEditLink] = useState<string | null>(null);
+    const [isAddingComment, setIsAddingComment] = useState(false);
 
     // Editing states
     const [isEditingCustomer, setIsEditingCustomer] = useState(false);
@@ -126,6 +154,9 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         amount: 0
     });
 
+    // Derived value for conditional room selection
+    const currentGuests = isEditingEvent ? tempEvent.guests : (booking?.guests || 0);
+
     const [isEditingMenu, setIsEditingMenu] = useState(false);
     const [tempMenuItems, setTempMenuItems] = useState<any[]>([]);
 
@@ -142,14 +173,16 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     const [isAdminUsersLoading, setIsAdminUsersLoading] = useState(false);
     const [adminUsers, setAdminUsers] = useState<Array<{ id: string; name: string; email: string; role: string }>>([]);
 
-    const [venueLocations, setVenueLocations] = useState<string[]>([]);
+    // const [venueLocations, setVenueLocations] = useState<string[]>([]);
     const [selectedVenue, setSelectedVenue] = useState<string>(initialBooking?.event?.location || '');
+    const [selectedRoom, setSelectedRoom] = useState<string>(initialBooking?.room || '');
     const [assignedTo, setAssignedTo] = useState<string>((initialBooking as any)?.assignedTo?.id || '');
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
 
     // Track initial values to detect changes
     const [initialKitchenNotes, setInitialKitchenNotes] = useState<string>(initialBooking?.kitchenNotes || '');
     const [initialAssignedTo, setInitialAssignedTo] = useState<string>((initialBooking as any)?.assignedTo?.id || '');
+    const [initialRoom, setInitialRoom] = useState<string>(initialBooking?.room || '');
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
 
     // Validation errors
@@ -163,6 +196,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         if (initialBooking) {
             setBooking(initialBooking);
             setComments(initialBooking.contactHistory || []);
+            setCheckins(initialBooking.checkins || []);
             setLocalStatus(initialBooking.status || 'pending');
             const allergiesVal = initialBooking.allergies;
             setAllergies(Array.isArray(allergiesVal) ? (allergiesVal as string[]).join(', ') : (allergiesVal || ''));
@@ -170,11 +204,13 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             setKitchenNotes(initialBooking.kitchenNotes || '');
             setIsLocked(initialBooking.isLocked || false);
             setSelectedVenue(initialBooking.event?.location || '');
+            setSelectedRoom(initialBooking.room || '');
             setKitchenPdfStatus(initialBooking.kitchenPdf);
             setAssignedTo((initialBooking as any).assignedTo?.id || '');
             // Update initial values for change tracking
             setInitialKitchenNotes(initialBooking.kitchenNotes || '');
             setInitialAssignedTo((initialBooking as any).assignedTo?.id || '');
+            setInitialRoom(initialBooking.room || '');
             setHasUnsavedChanges(false);
         }
     }, [initialBooking]);
@@ -183,8 +219,9 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     useEffect(() => {
         const notesChanged = kitchenNotes !== initialKitchenNotes;
         const assignmentChanged = assignedTo !== initialAssignedTo;
-        setHasUnsavedChanges(notesChanged || assignmentChanged);
-    }, [kitchenNotes, assignedTo, initialKitchenNotes, initialAssignedTo]);
+        const roomChanged = selectedRoom !== initialRoom;
+        setHasUnsavedChanges(notesChanged || assignmentChanged || roomChanged);
+    }, [kitchenNotes, assignedTo, selectedRoom, initialKitchenNotes, initialAssignedTo, initialRoom]);
 
     // Always fetch fresh booking data from API to avoid stale list data
     useEffect(() => {
@@ -195,6 +232,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                     const data = await response.json();
                     setBooking(data);
                     setComments(data.contactHistory || []);
+                    setCheckins(data.checkins || []);
                     setLocalStatus(data.status || 'pending');
                     const allergiesVal = data.allergies;
                     setAllergies(Array.isArray(allergiesVal) ? (allergiesVal as string[]).join(', ') : (allergiesVal || ''));
@@ -202,11 +240,13 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                     setKitchenNotes(data.kitchenNotes || '');
                     setIsLocked(data.isLocked || false);
                     setSelectedVenue(data.event?.location || data.location || '');
+                    setSelectedRoom(data.room || '');
                     setAssignedTo(data.assignedTo?.id || '');
                     setKitchenPdfStatus(data.kitchenPdf);
                     // Update initial values for change tracking
                     setInitialKitchenNotes(data.kitchenNotes || '');
                     setInitialAssignedTo(data.assignedTo?.id || '');
+                    setInitialRoom(data.room || '');
                     setHasUnsavedChanges(false);
                 }
             } catch (error) {
@@ -219,14 +259,29 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         fetchBooking();
     }, [bookingId]);
 
-    // Fetch venue locations on mount
+    // Close email dropdown when clicking outside
     useEffect(() => {
-        const fetchVenues = async () => {
-            const locations = await VenueService.getLocations();
-            setVenueLocations(locations);
+        const handleClickOutside = (event: MouseEvent) => {
+            if (emailDropdownRef.current && !emailDropdownRef.current.contains(event.target as Node)) {
+                setIsEmailDropdownOpen(false);
+            }
         };
-        fetchVenues();
-    }, []);
+
+        if (isEmailDropdownOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+            return () => document.removeEventListener('mousedown', handleClickOutside);
+        }
+    }, [isEmailDropdownOpen]);
+
+
+    // // Fetch venue locations on mount
+    // useEffect(() => {
+    //     const fetchVenues = async () => {
+    //         const locations = await VenueService.getLocations();
+    //         setVenueLocations(locations);
+    //     };
+    //     fetchVenues();
+    // }, []);
 
     // Fetch kitchen PDF status if not provided via prop
     useEffect(() => {
@@ -401,6 +456,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             return;
         }
 
+        setIsAddingComment(true);
         try {
             const response = await fetch(`/api/bookings/${booking?.id}/comments`, {
                 method: 'POST',
@@ -411,7 +467,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             if (response.ok) {
                 const result = await response.json();
                 const now = new Date();
-                const newCommentObj = {
+                const newCommentObj: BookingComment = {
                     by: user?.name || 'Admin',
                     time: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
                     date: now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
@@ -428,6 +484,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         } catch (error) {
             console.error('Error saving comment:', error);
             toast.error(t('toast.saveFailed'));
+        } finally {
+            setIsAddingComment(false);
         }
     };
 
@@ -447,6 +505,114 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             toast.error(t('toast.statusUpdateFailed'));
         }
     };
+
+    const handleSendReminder = async () => {
+        setIsReminding(true);
+        setIsEmailDropdownOpen(false);
+        try {
+            const response = await fetch(`/api/bookings/${bookingId}/remind`, { method: 'POST' });
+            if (response.ok) {
+                toast.success(t('toast.reminderSent'));
+            } else {
+                const error = await response.json();
+                toast.error(error.error || t('toast.failedToSendReminder'));
+            }
+        } catch (error) {
+            toast.error(t('toast.failedToSendReminder'));
+        } finally {
+            setIsReminding(false);
+        }
+    };
+
+    const handleSendCheckin = async () => {
+        setIsSendingCheckin(true);
+        setIsEmailDropdownOpen(false);
+        try {
+            const response = await fetch(`/api/bookings/${bookingId}/send-checkin`, { method: 'POST' });
+            if (response.ok) {
+                toast.success(t('toast.checkinSent'));
+            } else {
+                const error = await response.json();
+                toast.error(error.error || t('toast.failedToSendCheckin'));
+            }
+        } catch (error) {
+            toast.error(t('toast.failedToSendCheckin'));
+        } finally {
+            setIsSendingCheckin(false);
+        }
+    };
+
+    const handleSendUpdate = async () => {
+        if (!booking) return;
+        setIsSendingUpdate(true);
+        setIsEmailDropdownOpen(false);
+        try {
+            // Generate PDF
+            const { generateBookingPdf } = await import('@/lib/utils/pdf-generator');
+            
+            const pdfData = {
+                id: booking.id,
+                customerName: booking.customer.name,
+                business: booking.customer.business,
+                eventDate: booking.event.date,
+                eventTime: booking.event.time,
+                guestCount: booking.guests,
+                occasion: booking.event.occasion,
+                location: selectedVenue || booking.event.location,
+                billingAddress: booking.billingAddress,
+                items: (booking.menuItems || []).map((item: any, idx: number) => {
+                    const qty = parseInt(item.quantity) || booking.guests;
+                    const uPrice = Number(item.unitPrice) || 0;
+                    return {
+                        id: item.id || `item-${idx}`,
+                        name: item.item,
+                        category: item.category,
+                        quantity: qty,
+                        unitPrice: uPrice,
+                        totalPrice: qty * uPrice,
+                        pricingType: item.pricingType || 'per_person',
+                        notes: item.notes,
+                        customerComment: item.customerComment
+                    };
+                }),
+                allergies: Array.isArray(booking.allergies) ? booking.allergies.join(', ') : booking.allergies,
+                specialRequests: booking.notes,
+                kitchenNotes: booking.kitchenNotes,
+                estimatedTotal: booking.rawAmount || 0
+            };
+
+            const doc = await generateBookingPdf(pdfData, 'offer');
+
+            // Convert PDF to Base64
+            const arrayBuffer = doc.output('arraybuffer');
+            const uint8Array = new Uint8Array(arrayBuffer);
+            let binary = '';
+            for (let i = 0; i < uint8Array.length; i++) {
+                binary += String.fromCharCode(uint8Array[i]);
+            }
+            const base64Content = btoa(binary);
+
+            // Send via API
+            const response = await fetch(`/api/bookings/${bookingId}/send-update`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pdfBase64: base64Content }),
+            });
+
+            if (response.ok) {
+                toast.success(t('toast.updateSent'));
+            } else {
+                const error = await response.json();
+                toast.error(error.error || t('toast.failedToSendUpdate'));
+            }
+        } catch (error) {
+            console.error('Error sending update:', error);
+            toast.error(t('toast.failedToSendUpdate'));
+        } finally {
+            setIsSendingUpdate(false);
+        }
+    };
+
 
     const handleVenueChange = async (value: string) => {
         if (!booking) return;
@@ -478,7 +644,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     kitchenNotes: kitchenNotes,
-                    assignedTo: assignedTo || null
+                    assignedTo: assignedTo || null,
+                    room: selectedRoom
                 }),
             });
             if (response.ok) {
@@ -636,7 +803,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             const selectedItems = tempMenuItems.map(item => item.itemId);
             const itemQuantities: Record<string, number> = {};
             tempMenuItems.forEach(item => {
-                itemQuantities[item.itemId] = item.rawQuantity;
+                itemQuantities[item.itemId!] = item.rawQuantity;
             });
 
             const response = await fetch(`/api/bookings/${booking.id}`, {
@@ -731,7 +898,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                 body: JSON.stringify({ action: actionText, type: 'system' }),
             });
 
-            const newCommentObj = {
+            const newCommentObj: BookingComment = {
                 by: user?.name || 'Admin',
                 time: timeStr,
                 date: dateStr,
@@ -743,7 +910,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         } catch (error) {
             console.error('Error logging PDF action to history:', error);
             // Still update local UI so user sees the immediate action
-            const newCommentObj = {
+            const newCommentObj: BookingComment = {
                 by: user?.name || 'Admin',
                 time: timeStr,
                 date: dateStr,
@@ -866,6 +1033,49 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                 {lockLoading ? commonT('loading') : isLocked ? <><Lock className="w-4 h-4" />{t('unlock')}</> : <><Lock className="w-4 h-4" />{t('lock')}</>}
                             </button>
                         )}
+
+                        {canEditBooking && (
+                            <div className="relative" ref={emailDropdownRef}>
+                                <button
+                                    onClick={() => setIsEmailDropdownOpen(!isEmailDropdownOpen)}
+                                    className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors flex items-center gap-2 cursor-pointer border border-border"
+                                    style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+                                >
+                                    <Mail className="w-4 h-4" />
+                                    {t('actions')}
+                                    <ChevronDown className={cn("w-4 h-4 transition-transform duration-200", isEmailDropdownOpen && "rotate-180")} />
+                                </button>
+                                {isEmailDropdownOpen && (
+                                    <div className="absolute right-0 mt-2 w-64 bg-card rounded-lg shadow-lg border border-border overflow-hidden z-50">
+                                        <button
+                                            onClick={handleSendReminder}
+                                            disabled={isReminding}
+                                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-left cursor-pointer border-b border-border disabled:opacity-50"
+                                        >
+                                            {isReminding ? <Loader2 className="w-4 h-4 animate-spin text-primary" /> : <Bell className="w-4 h-4 text-primary" />}
+                                            <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>{t('sendReminder')}</span>
+                                        </button>
+                                        <button
+                                            onClick={handleSendCheckin}
+                                            disabled={isSendingCheckin}
+                                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-left cursor-pointer border-b border-border disabled:opacity-50"
+                                        >
+                                            {isSendingCheckin ? <Loader2 className="w-4 h-4 animate-spin text-primary" /> : <Mail className="w-4 h-4 text-primary" />}
+                                            <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>{t('sendCheckin')}</span>
+                                        </button>
+                                        <button
+                                            onClick={handleSendUpdate}
+                                            disabled={isSendingUpdate}
+                                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-left cursor-pointer disabled:opacity-50"
+                                        >
+                                            {isSendingUpdate ? <Loader2 className="w-4 h-4 animate-spin text-primary" /> : <Send className="w-4 h-4 text-primary" />}
+                                            <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>{t('sendUpdate')}</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                     </div>
                 </div>
             </div>
@@ -1150,7 +1360,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.amount}</p>
                                 )}
                             </div>
-                            <div className="space-y-1">
+                            {/* <div className="space-y-1">
                                 <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('venueLocation')}</label>
                                 {canEditBooking ? (
                                     <select
@@ -1169,6 +1379,33 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     <Tooltip title={t('tooltips.notAssigned')} position="top">
                                         <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{selectedVenue || t('notAssigned')}</p>
                                     </Tooltip>
+                                )}
+                            </div> */}
+                            <div className="space-y-1">
+                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('room')}</label>
+                                {canEditBooking ? (
+                                    <select
+                                        value={selectedRoom.toLowerCase()}
+                                        disabled={isEditingEvent}
+                                        onChange={(e) => setSelectedRoom(e.target.value)}
+                                        className="w-full px-4 py-2 bg-input-background border border-border rounded-lg text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+                                        style={{ fontSize: 'var(--text-base)' }}
+                                    >
+                                        <option value="">{t('notAssigned')}</option>
+                                        {currentGuests >= 50 && (
+                                            <option value="eg">EG</option>
+                                        )}
+                                        {currentGuests >= 30 && (
+                                            <>
+                                                <option value="ug1">UG1</option>
+                                                <option value="ug1_exklusiv">UG1 Exclusive</option>
+                                            </>
+                                        )}
+                                    </select>
+                                ) : (
+                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>
+                                        {selectedRoom ? selectedRoom.toUpperCase() : t('notAssigned')}
+                                    </p>
                                 )}
                             </div>
                         </div>
@@ -1373,6 +1610,72 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                         </div>
                     </div>
 
+                    {/* Customer Check-ins */}
+                    <div className="bg-card border border-border rounded-xl p-6">
+                        <div className="flex items-center justify-between mb-5">
+                            <h3 className="text-foreground flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                <CheckCircle2 className="w-5 h-5 text-primary" /> {t('checkins')}
+                            </h3>
+                            <span className="px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-xs font-medium border border-border">
+                                {checkins?.length || 0} {t('items')}
+                            </span>
+                        </div>
+                        <div className="space-y-4">
+                            {checkins && checkins.length === 0 ? (
+                                <div className="text-center py-8 bg-muted/20 rounded-lg border border-dashed border-border">
+                                    <CheckCircle2 className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                                    <p className="text-muted-foreground text-sm">{t('noCheckins')}</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-6">
+                                    {checkins?.map((checkin) => (
+                                        <div key={checkin.id} className="p-4 bg-muted/10 border border-border rounded-xl space-y-4">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${checkin.hasChanges ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
+                                                        {checkin.hasChanges ? 'Changes Requested' : 'Confirmed'}
+                                                    </span>
+                                                    <p className="text-xs text-muted-foreground mt-1">
+                                                        {new Date(checkin.submittedAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="space-y-1">
+                                                    <p className="text-[10px] uppercase text-muted-foreground font-bold">Guest Split</p>
+                                                    <p className="text-sm">
+                                                        Total: <span className="font-semibold">{checkin.newGuestCount}</span>
+                                                        <span className="text-muted-foreground ml-2">({checkin.vegetarianCount} Veg / {checkin.nonVegetarianCount} Non-Veg)</span>
+                                                    </p>
+                                                </div>
+                                                {checkin.guestCountChanged && (
+                                                    <div className="space-y-1">
+                                                        <p className="text-[10px] uppercase text-amber-600 font-bold">Guest Count Changed</p>
+                                                        <p className="text-xs italic">Client reported a change in total guests.</p>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {checkin.menuChanges && (
+                                                <div className="space-y-1 bg-background/50 p-3 rounded-lg border border-border/50">
+                                                    <p className="text-[10px] uppercase text-primary font-bold">Menu Changes</p>
+                                                    <p className="text-sm italic">{checkin.menuChanges}</p>
+                                                </div>
+                                            )}
+
+                                            {checkin.additionalDetails && (
+                                                <div className="space-y-1 bg-background/50 p-3 rounded-lg border border-border/50">
+                                                    <p className="text-[10px] uppercase text-primary font-bold">Additional Details</p>
+                                                    <p className="text-sm italic">{checkin.additionalDetails}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
 
                     {/* Comments Section */}
                     <div className="bg-card border border-border rounded-xl p-6">
@@ -1415,11 +1718,16 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     <div className="flex justify-end">
                                         <button
                                             onClick={handleAddComment}
-                                            disabled={!newComment.trim()}
+                                            disabled={!newComment.trim() || isAddingComment}
                                             className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                                             style={{ fontSize: 'var(--text-base)' }}
                                         >
-                                            <Send className="w-4 h-4" /> {t('addComment')}
+                                            {isAddingComment ? (
+                                                <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-transparent rounded-full animate-spin" />
+                                            ) : (
+                                                <Send className="w-4 h-4" />
+                                            )}
+                                            {t('addComment')}
                                         </button>
                                     </div>
                                 </div>

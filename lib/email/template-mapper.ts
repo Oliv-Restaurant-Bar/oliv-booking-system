@@ -319,6 +319,57 @@ export function getUnlockDeclinedTemplateData(
 }
 
 /**
+ * Prepare template data for 4-day check-in reminder
+ */
+export function getCheckinReminderTemplateData(
+  booking: Booking & { lead?: Lead | null },
+  bookingCheckinUrl?: string
+): TemplateData {
+  const lead = booking.lead;
+  const customerName = lead?.contactName || "Gast";
+
+  return {
+    customer_name: customerName,
+    event_date: formatGermanDate(booking.eventDate),
+    checkin_url: bookingCheckinUrl || `${process.env.NEXT_PUBLIC_APP_URL}/booking/${booking.id}/checkin`,
+  };
+}
+
+/**
+ * Prepare template data for booking update email
+ */
+export function getBookingUpdateTemplateData(
+  booking: Booking & { lead?: Lead | null }
+): TemplateData {
+  const lead = booking.lead;
+  const customerName = lead?.contactName || "Gast";
+
+  return {
+    customer_name: customerName,
+    event_date: formatGermanDate(booking.eventDate),
+    booking_id: generateShortBookingId(booking.id),
+  };
+}
+
+/**
+ * Prepare template data for manual reminder email
+ */
+export function getManualReminderTemplateData(
+  booking: Booking & { lead?: Lead | null }
+): TemplateData {
+  const lead = booking.lead;
+  const customerName = sanitizeText(lead?.contactName) || "Gast";
+
+  return {
+    customer_name: customerName,
+    event_date: formatGermanDate(booking.eventDate),
+    event_time: booking.eventTime,
+    guest_count: booking.guestCount,
+    booking_id: generateShortBookingId(booking.id),
+  };
+}
+
+/**
  * Prepare template data for assignment notification (to admin)
  */
 export function getAssignmentTemplateData(
@@ -464,6 +515,15 @@ export function getTemplateData(
         eventDate: params.eventDate,
       });
 
+    case "checkin_reminder":
+      return getCheckinReminderTemplateData(booking, params.bookingEditUrl);
+
+    case "booking_update":
+      return getBookingUpdateTemplateData(booking);
+
+    case "manual_reminder":
+      return getManualReminderTemplateData(booking);
+
     case "custom":
       // For custom emails, return basic data
       return {
@@ -506,6 +566,9 @@ export function getTemplateName(emailType: EmailType, estimatedTotal?: number): 
     assignment: process.env.ZEPTOMAIL_TEMPLATE_ASSIGNED || "booking-assigned",
     kitchen_pdf: process.env.ZEPTOMAIL_TEMPLATE_KITCHEN_PDF || "kitchen-pdf",
     user_created: process.env.ZEPTOMAIL_TEMPLATE_USER_CREATED || "user-created",
+    checkin_reminder: process.env.ZEPTOMAIL_TEMPLATE_CHECKIN_REMINDER || "booking-checkin",
+    booking_update: process.env.ZEPTOMAIL_TEMPLATE_BOOKING_UPDATE || "booking-update",
+    manual_reminder: process.env.ZEPTOMAIL_TEMPLATE_MANUAL_REMINDER || "manual-reminder",
     custom: "custom-email",
   };
 
@@ -553,6 +616,9 @@ export function getEmailSubject(
     assignment: `Neue Buchung zugewiesen: ${booking.lead?.contactName || "Gast"}`,
     kitchen_pdf: `Küchenblatt: ${booking.lead?.contactName || "Gast"} - ${formattedDate}`,
     user_created: `Willkommen beim Oliv Buchungssystem - Ihr Konto ist bereit`,
+    checkin_reminder: `Wichtige Bestätigung: Ihre Veranstaltung am ${formattedDate} - Oliv Restaurant`,
+    booking_update: `Aktualisierte Details zu Ihrer Buchung - ${formattedDate}`,
+    manual_reminder: `Ihre Buchung bei Oliv Restaurant - Kontaktaufnahme`,
     custom: `Nachricht von Oliv Restaurant`,
   };
 

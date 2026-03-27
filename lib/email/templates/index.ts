@@ -24,6 +24,19 @@ import {
   generateBookingDeclinedEmail,
   BookingDeclinedEmailParams,
 } from "./booking-declined";
+import {
+  generateBookingCheckinEmail,
+  BookingCheckinEmailParams,
+} from "./booking-checkin";
+import {
+  generateBookingUpdateEmail,
+  BookingUpdateEmailParams,
+} from "./booking-update";
+import {
+  generateManualReminderEmail,
+  ManualReminderEmailParams,
+} from "./manual-reminder";
+
 
 export {
   generateBookingConfirmedEmail,
@@ -32,6 +45,9 @@ export {
   generateBookingReminderEmail,
   generateBookingNoShowEmail,
   generateBookingDeclinedEmail,
+  generateBookingCheckinEmail,
+  generateBookingUpdateEmail,
+  generateManualReminderEmail,
 };
 
 export type {
@@ -41,6 +57,9 @@ export type {
   BookingReminderEmailParams,
   BookingNoShowEmailParams,
   BookingDeclinedEmailParams,
+  BookingCheckinEmailParams,
+  BookingUpdateEmailParams,
+  ManualReminderEmailParams,
 };
 
 /**
@@ -82,6 +101,22 @@ export function generateEmailContent(
       return generateBookingReminderEmail({
         booking: params.booking,
         estimatedTotal: params.estimatedTotal,
+      });
+
+    case "checkin_reminder":
+      return generateBookingCheckinEmail({
+        booking: params.booking,
+        checkinUrl: params.bookingEditUrl || `${process.env.NEXT_PUBLIC_APP_URL}/booking/${params.booking.id}/checkin`,
+      });
+
+    case "booking_update":
+      return generateBookingUpdateEmail({
+        booking: params.booking,
+      });
+
+    case "manual_reminder":
+      return generateManualReminderEmail({
+        booking: params.booking,
       });
 
     case "custom":

@@ -449,7 +449,12 @@
       "customerInfo": "Kundeninformationen",
       "eventDetails": "Veranstaltungsdetails",
       "venueLocation": "Veranstaltungsort",
+      "room": "Raum / Bereich",
       "notAssigned": "Nicht zugewiesen",
+      "sendReminder": "Erinnerung senden",
+      "sendCheckin": "4-Tage Check-in",
+      "sendUpdate": "Aktualisierung senden",
+      "actions": "Aktionen",
       "menuItems": "Menüpunkte",
       "kitchenNotes": "Notizen für das Küchenpersonal",
       "totalAmount": "Gesamtbetrag",
@@ -467,6 +472,8 @@
       "commentsActivity": "Kommentare & Aktivität",
       "items": "Artikel",
       "noComments": "Noch keine Kommentare oder Aktivitäten",
+      "checkins": "Kunden-Check-ins",
+      "noCheckins": "Noch keine Check-ins eingereicht",
       "noChanges": "Noch keine Änderungen aufgezeichnet",
       "system": "System",
       "occasion": "Anlass",
@@ -494,7 +501,13 @@
         "lockFailed": "Buchung konnte nicht gesperrt werden",
         "unlockFailed": "Buchung konnte nicht entsperrt werden",
         "assignmentSuccess": "Zuweisung erfolgreich aktualisiert",
-        "assignmentFailed": "Zuweisung konnte nicht aktualisiert werden"
+        "assignmentFailed": "Zuweisung konnte nicht aktualisiert werden",
+        "reminderSent": "Erinnerungs-E-Mail erfolgreich gesendet",
+        "checkinSent": "Check-in-Einladung erfolgreich gesendet",
+        "updateSent": "Buchungsaktualisierung erfolgreich gesendet",
+        "failedToSendReminder": "Erinnerung konnte nicht gesendet werden",
+        "failedToSendCheckin": "Check-in-Einladung konnte nicht gesendet werden",
+        "failedToSendUpdate": "Aktualisierung konnte nicht gesendet werden"
       },
       "tooltips": {
         "amount": "Gesamtbetrag für diese Buchung",
@@ -685,7 +698,7 @@
         "allergens": "Allergene",
         "additives": "Zusatzstoffe",
         "nutritionalInfo": "Nährwertinformationen",
-        "addons": "Extras & Auswahl",
+        "addons": "Addons & Auswahl",
         "selectCategory": "Kategorie wählen",
         "chooseCategory": "Kategorie auswählen",
         "pricingMode": "Preismodus",
@@ -705,7 +718,7 @@
         "categories": "Kategorien",
         "type": "Typ",
         "addon": "Zusatz",
-        "addons": "Zusätze",
+        "addonsLabel": "Zusätze",
         "choice": "Auswahl",
         "choices": "Auswahlen",
         "priceHint": "0 für kostenlos",
@@ -786,7 +799,8 @@
         "addons": "Fügen Sie Begleitartikel wie Beilagen, Extras oder Auswahlmöglichkeiten hinzu.",
         "selectionFixed": "Auswahl ist auf {count} Artikel festgelegt",
         "selectionMax": "Bis zu {count} Artikel können ausgewählt werden",
-        "selectionRange": "Zwischen {min} und {max} Artikel können ausgewählt werden"
+        "selectionRange": "Zwischen {min} und {max} Artikel können ausgewählt werden",
+        "nutritionServingSize": "Alle Werte basieren auf einer Portionsgrösse von {size}."
       },
       "dietary": {
         "none": "Keine",
@@ -1051,7 +1065,7 @@
       "room": "Raum / Bereich",
       "rooms": {
         "eg": "EG",
-        "ug1": "ug1",
+        "ug1": "UG1",
         "ug1_exklusiv": "UG1 Exklusiv"
       },
       "minSpendInfo": "Mindestumsatz CHF 1'000.00 erforderlich",

@@ -92,6 +92,13 @@
       "when": 1741718400000,
       "tag": "0012_system_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1774607857780,
+      "tag": "0013_chemical_wasp",
+      "breakpoints": true
     }
   ]
 }

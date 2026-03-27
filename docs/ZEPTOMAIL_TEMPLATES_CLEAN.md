@@ -1228,6 +1228,192 @@ This document contains **clean ZeptoMail templates** with **ZERO conditional log
 
 ---
 
+## Template 15: `booking-checkin`
+
+**When to use:** Sent 4 days before event to get final guest count confirmation.
+
+**Subject:** `Wichtige Bestätigung: Ihre Veranstaltung am {{event_date}} - Oliv Restaurant`
+
+**HTML:**
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f0ede6; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #3d4a2e; color: white; padding: 40px 30px; text-align: center; border-radius: 12px 12px 0 0; }
+    .content { background-color: #ffffff; padding: 40px 30px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .details { background-color: #f9f9f9; padding: 25px; border-radius: 8px; margin: 25px 0; border: 1px solid #eee; }
+    .details h3 { color: #3d4a2e; margin-top: 0; font-size: 18px; }
+    .details p { margin: 10px 0; font-size: 15px; }
+    .button-container { text-align: center; margin: 35px 0; }
+    .button { background-color: #3d4a2e; color: #ffffff !important; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; }
+    .footer { text-align: center; margin-top: 30px; padding: 20px; color: #777; font-size: 13px; }
+    .highlight { color: #3d4a2e; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0; font-size: 26px;">Event Bestätigung</h1>
+      <p style="margin: 10px 0 0 0; opacity: 0.9;">Noch 4 Tage bis zu Ihrer Veranstaltung</p>
+    </div>
+
+    <div class="content">
+      <p>Guten Tag {{customer_name}},</p>
+      <p>Ihre geplante Veranstaltung am <span class="highlight">{{event_date}}</span> rückt näher und wir freuen uns sehr darauf, Sie bei uns im Oliv Restaurant begrüssen zu dürfen.</p>
+      
+      <p>Um alles perfekt für Sie vorzubereiten, benötigen wir jetzt Ihre <strong>finale Bestätigung</strong> der Gästeanzahl sowie eventuelle letzte Anpassungen.</p>
+
+      <div class="details">
+        <h3>📋 Aktuelle Buchungsübersicht</h3>
+        <p><strong>Datum:</strong> {{event_date}}</p>
+        <p><strong>Uhrzeit:</strong> {{event_time}} Uhr</p>
+        <p><strong>Gästeanzahl (provisorisch):</strong> {{guest_count}} Personen</p>
+        <p><strong>ID:</strong> {{booking_id}}</p>
+      </div>
+
+      <p>Bitte klicken Sie auf den untenstehenden Button, um uns die Personenzahl definitiv zu bestätigen oder uns über Änderungen zu informieren.</p>
+
+      <div class="button-container">
+        <a href="{{checkin_url}}" class="button">Jetzt Details bestätigen</a>
+      </div>
+
+      <p>Wir freuen uns auf Sie!</p>
+      <p>Herzliche Grüsse,<br/>Ihr Oliv-Team</p>
+    </div>
+
+    <div class="footer">
+      <p>Oliv Restaurant | Schweiz</p>
+      <p><a href="https://oliv-restaurant.ch" style="color: #3d4a2e;">www.oliv-restaurant.ch</a></p>
+    </div>
+  </div>
+</body>
+</html>
+```
+
+**Variables:**
+- `customer_name`
+- `event_date`
+- `event_time`
+- `guest_count`
+- `booking_id`
+- `checkin_url`
+
+---
+
+## Template 16: `booking-update`
+
+**When to use:** Triggered manually to send the latest offer/changes to the guest (usually with PDF).
+
+**Subject:** `Aktualisierte Details zu Ihrer Buchung - {{event_date}}`
+
+**HTML:**
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f7f6; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #4a5568; color: white; padding: 40px 30px; text-align: center; border-radius: 12px 12px 0 0; }
+    .content { background-color: #ffffff; padding: 40px 30px; border-radius: 0 0 12px 12px; }
+    .footer { text-align: center; margin-top: 30px; padding: 20px; color: #718096; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0; font-size: 26px;">Buchungs-Update</h1>
+    </div>
+    <div class="content">
+      <p>Guten Tag {{customer_name}},</p>
+      <p>wir haben die Details Ihrer Buchung für den <strong>{{event_date}}</strong> aktualisiert.</p>
+      <p>Im Anhang finden Sie das aktuelle Angebot mit allen Details zu Ihrem Menü und dem Ablauf Ihrer Veranstaltung.</p>
+      <p>Bitte prüfen Sie die Unterlagen. Falls Sie noch Fragen haben, stehen wir Ihnen gerne zur Verfügung.</p>
+      <p>Herzliche Grüsse,<br/>Ihr Oliv-Team</p>
+    </div>
+    <div class="footer">
+      <p>Oliv Restaurant | Schweiz</p>
+    </div>
+  </div>
+</body>
+</html>
+```
+
+**Variables:**
+- `customer_name`
+- `event_date`
+
+---
+
+## Template 17: `manual-reminder`
+
+**When to use:** When staff tried to reach the guest by phone but was unsuccessful.
+
+**Subject:** `Ihre Buchung bei Oliv Restaurant - Kontaktaufnahme`
+
+**HTML:**
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #374151; background-color: #f9fafb; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 20px auto; padding: 0; background-color: #ffffff; border-radius: 12px; overflow: hidden; }
+    .header { background-color: #3d4a2e; color: #ffffff; padding: 40px 20px; text-align: center; }
+    .content { padding: 40px 30px; }
+    .message-box { background-color: #f0ede6; border-left: 4px solid #3d4a2e; padding: 25px; margin: 30px 0; border-radius: 0 8px 8px 0; }
+    .details { background-color: #f9fafb; padding: 25px; border-radius: 8px; border: 1px solid #e5e7eb; margin: 30px 0; }
+    .footer { text-align: center; padding: 30px; background-color: #f9fafb; color: #6b7280; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0; font-size: 24px;">Guten Tag</h1>
+    </div>
+    <div class="content">
+      <p>Hallo {{customer_name}},</p>
+      <div class="message-box">
+        <p style="margin: 0; font-size: 16px; color: #3d4a2e; font-weight: 600;">
+          Eines unserer Teammitglieder hat versucht, Sie bezüglich Ihrer Buchung zu erreichen, konnte Sie jedoch leider nicht persönlich sprechen.
+        </p>
+        <p style="margin: 10px 0 0 0; font-size: 16px;">
+          Bitte kontaktieren Sie uns bei Gelegenheit, sobald es Ihnen möglich ist.
+        </p>
+      </div>
+      <div class="details">
+        <h3 style="margin-top: 0; color: #111827; font-size: 18px;">Details zu Ihrer Buchung:</h3>
+        <p><strong>Datum:</strong> {{event_date}}</p>
+        <p><strong>Uhrzeit:</strong> {{event_time}} Uhr</p>
+        <p><strong>Gäste:</strong> {{guest_count}} Personen</p>
+      </div>
+      <p>Herzliche Grüsse,<br/>Ihr Oliv-Team</p>
+    </div>
+    <div class="footer">
+      <p>Oliv Restaurant | Schweiz</p>
+    </div>
+  </div>
+</body>
+</html>
+```
+
+**Variables:**
+- `customer_name`
+- `event_date`
+- `event_time`
+- `guest_count`
+
+---
+
 ## IMPORTANT: Backend Logic Handles ALL Conditionals
 
 The backend code decides:
@@ -1241,7 +1427,7 @@ All variables are **always sent** - empty strings if not applicable. No `{{#if}}
 
 ## Summary
 
-✅ **14 templates total**
+✅ **17 templates total**
 ✅ **ZERO conditionals** in templates
 ✅ **Only simple variable substitution** like `{{customer_name}}`
 ✅ **All logic in backend code**

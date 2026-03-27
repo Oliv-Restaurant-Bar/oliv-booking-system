@@ -379,7 +379,7 @@ export function ItemDetailsModal({
           {item.dietaryTags && item.dietaryTags.length > 0 && (
             <div className="mb-6">
               <h4 className="text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                {t('dietaryInfo')}
+                {t('labels.dietaryInfo')}
               </h4>
               <div className="flex flex-wrap gap-2">
                 {item.dietaryTags.map((tag) => (
@@ -402,7 +402,7 @@ export function ItemDetailsModal({
               <h4 className="text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
                 {mt('labels.ingredients')}
               </h4>
-              <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+              <p className="text-muted-foreground break-all" style={{ fontSize: 'var(--text-small)' }}>
                 {item.ingredients}
               </p>
             </div>
@@ -428,7 +428,7 @@ export function ItemDetailsModal({
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">
                       {mt(`nutrition.${key}`)}
                     </p>
-                    <p className="text-sm font-bold text-foreground">{value}</p>
+                    <p className="text-sm font-bold text-foreground break-all">{value}</p>
                   </div>
                 ))}
               </div>
@@ -446,11 +446,11 @@ export function ItemDetailsModal({
               <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-foreground mb-1" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-                  {mt('labels.allergens')} & {mt('labels.additives')}
+                  {t('labels.allergenInfo')}
                 </p>
                 {item.allergens && item.allergens.length > 0 && (
                   <div className="text-muted-foreground flex flex-wrap gap-x-3 gap-y-1" style={{ fontSize: 'var(--text-small)' }}>
-                    <span className="font-medium text-destructive/80 shrink-0">{t('contains')}:</span>
+                    <span className="font-medium text-destructive/80 shrink-0">{t('labels.contains')}:</span>
                     <div className="flex flex-wrap gap-2">
                       {item.allergens.map(a => (
                         <span key={a} className="flex items-center gap-1">
@@ -488,7 +488,7 @@ export function ItemDetailsModal({
                 {requiredGroups.length > 0 && (
                   <div className="mb-6">
                     <h4 className="text-foreground mb-4" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      Choices
+                      {t('labels.choices')}
                     </h4>
                     <div className="space-y-6">
                       {requiredGroups.map((group) => (
@@ -548,7 +548,7 @@ export function ItemDetailsModal({
                 {optionalGroups.length > 0 && (
                   <div className="mb-6">
                     <h4 className="text-foreground mb-4" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      Addons
+                      {t('labels.addons')}
                     </h4>
                     <div className="space-y-6">
                       {optionalGroups.map((group) => (
@@ -613,7 +613,7 @@ export function ItemDetailsModal({
             item.addOns && item.addOns.length > 0 && (
               <div className="mb-6">
                 <h4 className="text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                  Addons
+                  {t('labels.addons')}
                 </h4>
                 <div className="space-y-3">
                   {item.addOns.map((addOn) => {
@@ -655,16 +655,16 @@ export function ItemDetailsModal({
           {/* Additional Comments */}
           <div className="mb-6">
             <h4 className="text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-              Additional Comments
+              {t('labels.additionalComments')}
             </h4>
             <ValidatedTextarea
               value={tempComment}
               onChange={(e) => setTempComment(e.target.value)}
-              placeholder="Any special instructions or dietary requirements..."
+              placeholder={t('placeholders.itemComment')}
               rows={3}
               maxLength={500}
               showCharacterCount
-              helperText="Optional"
+              helperText={t('labels.optional')}
             />
           </div>
         </div>
