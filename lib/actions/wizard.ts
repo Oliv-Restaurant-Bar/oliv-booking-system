@@ -352,21 +352,25 @@ export async function submitWizardForm(data: WizardFormData) {
         } : null,
       } as any;
 
-      // Send email in background without blocking response
-      (async () => {
-        try {
-          await sendThankYouEmail({
-            bookingId: data.bookingId!,
-            recipientEmail: data.contactEmail,
-            bookingData: bookingForEmailUpdate,
-            estimatedTotal: estimatedTotal,
-            bookingEditUrl: bookingEditUrl,
-          });
-          console.log('📧 Update email sent successfully');
-        } catch (err) {
-          console.error("❌ Error sending wizard update email:", err);
+      // Send email (Awaited to ensure delivery on Vercel)
+      try {
+        console.log('📧 Sending update email...');
+        const emailResult = await sendThankYouEmail({
+          bookingId: data.bookingId!,
+          recipientEmail: data.contactEmail,
+          bookingData: bookingForEmailUpdate,
+          estimatedTotal: estimatedTotal,
+          bookingEditUrl: bookingEditUrl,
+        });
+        
+        if (emailResult.success) {
+          console.log(`   ✅ Update email sent successfully (ID: ${emailResult.emailLogId || 'unknown'})`);
+        } else {
+          console.error(`   ❌ Update email failed: ${emailResult.error}`);
         }
-      })();
+      } catch (err) {
+        console.error("❌ Exception sending wizard update email:", err);
+      }
 
       revalidatePath("/admin/bookings");
       revalidatePath("/admin/leads");
@@ -466,90 +470,93 @@ export async function submitWizardForm(data: WizardFormData) {
 
     // Send confirmation email (truly non-blocking - doesn't delay booking creation response)
     // Fire and forget - PDF generation and email sending happen in background
-    (async () => {
-      try {
-        // Convert Date objects to strings for template serialization
-        const bookingForEmail = {
-          id: booking.id,
-          leadId: booking.leadId,
-          eventDate: (booking.eventDate as any) instanceof Date ? (booking.eventDate as any).toISOString() : booking.eventDate,
-          eventTime: booking.eventTime,
-          guestCount: booking.guestCount,
-          allergyDetails: booking.allergyDetails,
-          specialRequests: booking.specialRequests,
-          estimatedTotal: booking.estimatedTotal,
-          requiresDeposit: booking.requiresDeposit,
-          status: booking.status,
-          internalNotes: booking.internalNotes,
-          termsAccepted: booking.termsAccepted,
-          termsAcceptedAt: booking.termsAcceptedAt instanceof Date ? booking.termsAcceptedAt.toISOString() : booking.termsAcceptedAt,
-          isLocked: booking.isLocked,
-          createdAt: booking.createdAt instanceof Date ? booking.createdAt.toISOString() : booking.createdAt,
-          updatedAt: booking.updatedAt instanceof Date ? booking.updatedAt.toISOString() : booking.updatedAt,
-          lead,
-        };
+    // Send confirmation email (Awaited to ensure delivery on Vercel)
+    try {
+      // Convert Date objects to strings for template serialization
+      const bookingForEmail = {
+        id: booking.id,
+        leadId: booking.leadId,
+        eventDate: (booking.eventDate as any) instanceof Date ? (booking.eventDate as any).toISOString() : booking.eventDate,
+        eventTime: booking.eventTime,
+        guestCount: booking.guestCount,
+        allergyDetails: booking.allergyDetails,
+        specialRequests: booking.specialRequests,
+        estimatedTotal: booking.estimatedTotal,
+        requiresDeposit: booking.requiresDeposit,
+        status: booking.status,
+        internalNotes: booking.internalNotes,
+        termsAccepted: booking.termsAccepted,
+        termsAcceptedAt: booking.termsAcceptedAt instanceof Date ? booking.termsAcceptedAt.toISOString() : booking.termsAcceptedAt,
+        isLocked: booking.isLocked,
+        createdAt: booking.createdAt instanceof Date ? booking.createdAt.toISOString() : booking.createdAt,
+        updatedAt: booking.updatedAt instanceof Date ? booking.updatedAt.toISOString() : booking.updatedAt,
+        lead,
+      };
 
-        // Generate PDF for the email
-        const pdfData = {
-          id: booking.id,
-          customerName: lead.contactName,
-          business: data.business || undefined,
-          eventDate: booking.eventDate, // String from Drizzle
-          eventTime: booking.eventTime,
-          guestCount: booking.guestCount,
-          occasion: data.occasion || undefined,
-          items: data.selectedItems.map(itemId => {
-            const dbItem = menuItemMap.get(itemId);
-            const isPerPersonItem = dbItem?.pricingType === 'per_person';
-            const quantity = isPerPersonItem
-              ? (data.itemGuestCounts?.[itemId] || data.guestCount || 1)
-              : (data.itemQuantities[itemId] || 1);
+      // Generate PDF for the email
+      const pdfData = {
+        id: booking.id,
+        customerName: lead.contactName,
+        business: data.business || undefined,
+        eventDate: booking.eventDate, // String from Drizzle
+        eventTime: booking.eventTime,
+        guestCount: booking.guestCount,
+        occasion: data.occasion || undefined,
+        items: data.selectedItems.map(itemId => {
+          const dbItem = menuItemMap.get(itemId);
+          const isPerPersonItem = dbItem?.pricingType === 'per_person';
+          const quantity = isPerPersonItem
+            ? (data.itemGuestCounts?.[itemId] || data.guestCount || 1)
+            : (data.itemQuantities[itemId] || 1);
 
-            const variantId = data.itemVariants?.[itemId];
-            const variant = variantId && Array.isArray(dbItem?.variants)
-              ? (dbItem?.variants as any[]).find(v => v.id === variantId)
-              : null;
+          const variantId = data.itemVariants?.[itemId];
+          const variant = variantId && Array.isArray(dbItem?.variants)
+            ? (dbItem?.variants as any[]).find(v => v.id === variantId)
+            : null;
 
-            const unitPrice = variant ? Number(variant.price) : Number(dbItem?.pricePerPerson || 0);
+          const unitPrice = variant ? Number(variant.price) : Number(dbItem?.pricePerPerson || 0);
 
-            return {
-              id: itemId,
-              name: dbItem?.name || 'Unknown Item',
-              category: allCategories.find(c => c.id === dbItem?.categoryId)?.name || 'Other',
-              quantity: quantity,
-              unitPrice: unitPrice,
-              totalPrice: unitPrice * quantity,
-              notes: data.itemComments?.[itemId],
-              pricingType: dbItem?.pricingType || 'per_person',
-            };
-          }),
-          estimatedTotal: estimatedTotal,
-          specialRequests: booking.specialRequests || undefined,
-        };
+          return {
+            id: itemId,
+            name: dbItem?.name || 'Unknown Item',
+            category: allCategories.find(c => c.id === dbItem?.categoryId)?.name || 'Other',
+            quantity: quantity,
+            unitPrice: unitPrice,
+            totalPrice: unitPrice * quantity,
+            notes: data.itemComments?.[itemId],
+            pricingType: dbItem?.pricingType || 'per_person',
+          };
+        }),
+        estimatedTotal: estimatedTotal,
+        specialRequests: booking.specialRequests || undefined,
+      };
 
-        console.log('📧 Starting PDF generation for email (background process)...');
-        const doc = await generateCustomerOfferPdf(pdfData as any);
-        const pdfBase64 = doc.output('datauristring').split(',')[1];
-        console.log('📧 PDF generated, sending email...');
+      console.log('📧 Generating PDF for record...');
+      const doc = await generateCustomerOfferPdf(pdfData as any);
+      const pdfBase64 = doc.output('datauristring').split(',')[1];
+      console.log('📧 PDF generated, sending confirmation email...');
 
-        await sendThankYouEmail({
-          bookingId: booking.id,
-          recipientEmail: data.contactEmail,
-          bookingData: bookingForEmail as any,
-          estimatedTotal: estimatedTotal,
-          bookingEditUrl: bookingEditUrl,
-          pdfAttachment: {
-            name: `Angebot_${pdfData.customerName.replace(/\s+/g, '_')}.pdf`,
-            mime_type: "application/pdf",
-            content: pdfBase64,
-          }
-        });
-        console.log('📧 Email sent successfully (background process completed)');
-      } catch (emailError) {
-        console.error("❌ Error in background email sending:", emailError);
-        // Don't throw - email failure should not affect booking creation
+      const emailResult = await sendThankYouEmail({
+        bookingId: booking.id,
+        recipientEmail: data.contactEmail,
+        bookingData: bookingForEmail as any,
+        estimatedTotal: estimatedTotal,
+        bookingEditUrl: bookingEditUrl,
+        pdfAttachment: {
+          name: `Angebot_${pdfData.customerName.replace(/\s+/g, '_')}.pdf`,
+          mime_type: "application/pdf",
+          content: pdfBase64,
+        }
+      });
+      
+      if (emailResult.success) {
+        console.log(`   ✅ Confirmation email sent successfully (ID: ${emailResult.emailLogId || 'unknown'})`);
+      } else {
+        console.error(`   ❌ Confirmation email failed: ${emailResult.error}`);
       }
-    })(); // Immediately invoke the async function - fire and forget
+    } catch (emailError) {
+      console.error("❌ Exception in confirmation email process:", emailError);
+    }
 
     revalidatePath("/admin/bookings");
     revalidatePath("/admin/leads");
