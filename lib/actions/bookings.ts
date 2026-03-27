@@ -493,25 +493,31 @@ export async function updateBooking(
       // Create a map of itemId to both notes AND unitPrice for preservation
       const itemDataMap = new Map<string, { notes: string | null, unitPrice: string }>();
       existingItems.forEach(item => {
-        itemDataMap.set(item.itemId, { 
-          notes: item.notes, 
-          unitPrice: item.unitPrice 
-        });
+        const idKey = item.itemId?.toString();
+        if (idKey) {
+          itemDataMap.set(idKey, { 
+            notes: item.notes, 
+            unitPrice: item.unitPrice 
+          });
+        }
       });
 
       // Delete existing items
       await db.delete(bookingItems).where(eq(bookingItems.bookingId, id));
 
       // Fetch menu items to get unit prices
-      const selectedItemIds = (updates as any).selectedItems;
-      const itemQuantities = (updates as any).itemQuantities;
-
       const dbMenuItems = await db.select().from(menuItems);
-      const menuItemMap = new Map(dbMenuItems.map(m => [m.id, m]));
+      const menuItemMap = new Map(dbMenuItems.map(m => [m.id?.toString(), m]));
 
       let newEstimatedTotal = 0;
 
-      for (const itemId of selectedItemIds) {
+      const selectedItemIds = (updates as any).selectedItems || [];
+      const itemQuantities = (updates as any).itemQuantities || {};
+
+      for (const rawId of selectedItemIds) {
+        const itemId = rawId?.toString();
+        if (!itemId) continue;
+
         const menuItem = menuItemMap.get(itemId);
         if (menuItem) {
           const quantity = itemQuantities[itemId] !== undefined ? itemQuantities[itemId] : 1;
@@ -533,6 +539,8 @@ export async function updateBooking(
             unitPrice: unitPriceStr,
             notes: existingData ? existingData.notes : null,
           });
+        } else {
+          console.warn(`[Admin Update] Skipping unknown item ID: ${itemId}`);
         }
       }
 
