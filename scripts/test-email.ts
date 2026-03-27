@@ -121,6 +121,7 @@ async function testBookingEmail() {
     lockedAt: null as Date | null,
     assignedTo: null as string | null,
     kitchenNotes: "",
+    room: null,
     lead: {
       id: "test-lead-id",
       contactName: "Max Mustermann",
@@ -131,6 +132,7 @@ async function testBookingEmail() {
       guestCount: 10,
       source: "website",
       status: "converted" as const,
+      room: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     },

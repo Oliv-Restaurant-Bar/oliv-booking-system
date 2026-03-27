@@ -54,8 +54,8 @@ export function MonthlyReportLayout2({ data, user, selectedYear, onYearChange, c
     const excelData = data.map(month => ({
       [commonT('month')]: monthT(month.month.toLowerCase()),
       [t('bookingsLabel')]: month.totalBookings,
-      [t('revenue')]: month.totalRevenue,
-      [t('avgRevenueLabel')]: month.avgRevenue,
+      [t('revenue')]: `${currencySymbol} ${month.totalRevenue.toLocaleString()}`,
+      [t('avgRevenueLabel')]: `${currencySymbol} ${month.avgRevenue.toLocaleString()}`,
       [statusT('pending')]: month.pending,
       [statusT('new')]: month.new,
       [statusT('touchbase')]: month.touchbase,

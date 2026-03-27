@@ -173,6 +173,7 @@ export async function createBooking(input: CreateBookingInput & { leadEmail?: st
             guestCount: input.guestCount,
             source: "booking",
             status: "converted",
+            room: null,
             createdAt: new Date(),
             updatedAt: new Date(),
           } : null,
