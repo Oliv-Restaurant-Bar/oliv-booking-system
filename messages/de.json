@@ -1048,6 +1048,13 @@
       "eventTime": "Zeit",
       "guests": "Anzahl der Gäste",
       "guestCount": "Anzahl der Gäste",
+      "room": "Raum / Bereich",
+      "rooms": {
+        "eg": "EG",
+        "ug1": "ug1",
+        "ug1_exklusiv": "UG1 Exklusiv"
+      },
+      "minSpendInfo": "Mindestumsatz CHF 1'000.00 erforderlich",
       "occasion": "Anlass",
       "specialRequests": "Allergien, Ernährungsanforderungen oder andere Kommentare",
       "paymentOption": "Zahlungsoption",

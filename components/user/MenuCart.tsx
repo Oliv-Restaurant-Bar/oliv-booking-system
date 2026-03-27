@@ -117,10 +117,10 @@ export function MenuCart({
   const nonVegItems = ppFoodItems.filter(item => item.dietaryType === 'non-veg');
   const otherFoodItems = ppFoodItems.filter(item => item.dietaryType !== 'veg' && item.dietaryType !== 'vegan' && item.dietaryType !== 'non-veg');
 
-  const pureVegPerPersonSubtotal = pureVegItems.length > 0 ? Math.max(...pureVegItems.map(item => getItemPerPersonPrice(item))) : 0;
-  const veganPerPersonSubtotal = veganItems.length > 0 ? Math.max(...veganItems.map(item => getItemPerPersonPrice(item))) : 0;
-  const nonVegPerPersonSubtotal = nonVegItems.length > 0 ? Math.max(...nonVegItems.map(item => getItemPerPersonPrice(item))) : 0;
-  const otherPerPersonSubtotal = otherFoodItems.length > 0 ? Math.max(...otherFoodItems.map(item => getItemPerPersonPrice(item))) : 0;
+  const pureVegPerPersonSubtotal = pureVegItems.reduce((sum, item) => sum + getItemPerPersonPrice(item), 0);
+  const veganPerPersonSubtotal = veganItems.reduce((sum, item) => sum + getItemPerPersonPrice(item), 0);
+  const nonVegPerPersonSubtotal = nonVegItems.reduce((sum, item) => sum + getItemPerPersonPrice(item), 0);
+  const otherPerPersonSubtotal = otherFoodItems.reduce((sum, item) => sum + getItemPerPersonPrice(item), 0);
 
   const updateQuantity = (itemId: string, delta: number) => {
     setItemQuantities(prev => {
@@ -150,6 +150,9 @@ export function MenuCart({
     const firstItem = ppFoodItems[0];
     return itemGuestCounts[firstItem.id] || parseInt(eventDetails.guestCount) || 1;
   }, [ppFoodItems, itemGuestCounts, eventDetails.guestCount]);
+
+  const totalAmount = (getPerPersonSubtotal() * currentGuestCount) + getFlatRateSubtotal() + (includeBeveragePrices ? getConsumptionSubtotal() : 0);
+  const isUg1Exklusiv = eventDetails.room === 'ug1_exklusiv';
 
   const renderItemRow = (item: MenuItem, sectionColor: string) => {
     const isPP = isPerPerson(item);
@@ -577,17 +580,25 @@ export function MenuCart({
                   </span>
                 </label>
 
+                {isUg1Exklusiv && totalAmount < 1000 && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-amber-800 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                    <p className="text-[11px] leading-relaxed font-medium">
+                      Minimum amount to spend <span className="font-bold">CHF 1,000.00</span> required for <span className="font-bold">UG1 Exclusive</span>. Please add more items.
+                    </p>
+                  </div>
+                )}
+
                 <button
                   onClick={() => {
-                    const total = getPerPersonSubtotal() * currentGuestCount + getFlatRateSubtotal() + getConsumptionSubtotal();
-                    if (total > 5000) {
+                    if (totalAmount > 5000) {
                       setIsDepositModalOpen(true);
                     } else {
                       onContinue?.();
                     }
                   }}
-                  disabled={!termsAccepted || selectedItems.length === 0 || isSubmitting}
-                  className={`w-full h-[46px] rounded-xl flex items-center justify-center font-bold text-[14px] transition-all shadow-sm ${termsAccepted && selectedItems.length > 0 && !isSubmitting
+                  disabled={!termsAccepted || selectedItems.length === 0 || isSubmitting || (isUg1Exklusiv && totalAmount < 1000)}
+                  className={`w-full h-[46px] rounded-xl flex items-center justify-center font-bold text-[14px] transition-all shadow-sm ${termsAccepted && selectedItems.length > 0 && !isSubmitting && !(isUg1Exklusiv && totalAmount < 1000)
                     ? "bg-[#9dae91] text-[#2c2f34] hover:bg-[#8da081] active:translate-y-[1px]"
                     : "bg-[#f3f4f6] text-[#9ca3af] cursor-not-allowed"
                     }`}

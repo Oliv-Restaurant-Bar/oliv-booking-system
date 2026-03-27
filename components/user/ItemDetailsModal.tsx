@@ -385,9 +385,10 @@ export function ItemDetailsModal({
                 {item.dietaryTags.map((tag) => (
                   <span
                     key={tag}
-                    className="px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20"
+                    className="px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center gap-1.5"
                     style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                   >
+                    <DietaryIcon type={tag} size="xs" />
                     {getDietaryTagLabel(tag)}
                   </span>
                 ))}
@@ -448,14 +449,30 @@ export function ItemDetailsModal({
                   {mt('labels.allergens')} & {mt('labels.additives')}
                 </p>
                 {item.allergens && item.allergens.length > 0 && (
-                  <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                    <span className="font-medium text-destructive/80">{t('contains')}:</span> {item.allergens.map(a => getAllergenLabel(a)).join(', ')}
-                  </p>
+                  <div className="text-muted-foreground flex flex-wrap gap-x-3 gap-y-1" style={{ fontSize: 'var(--text-small)' }}>
+                    <span className="font-medium text-destructive/80 shrink-0">{t('contains')}:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {item.allergens.map(a => (
+                        <span key={a} className="flex items-center gap-1">
+                          <DietaryIcon type={a} size="xs" />
+                          {getAllergenLabel(a)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 )}
                 {item.additives && item.additives.length > 0 && (
-                  <p className="text-muted-foreground mt-1" style={{ fontSize: 'var(--text-small)' }}>
-                    <span className="font-medium text-destructive/80">{mt('labels.additives')}:</span> {item.additives.map(a => getAdditiveLabel(a)).join(', ')}
-                  </p>
+                  <div className="text-muted-foreground mt-2 flex flex-wrap gap-x-3 gap-y-1" style={{ fontSize: 'var(--text-small)' }}>
+                    <span className="font-medium text-destructive/80 shrink-0">{mt('labels.additives')}:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {item.additives.map(a => (
+                        <span key={a} className="flex items-center gap-1">
+                          <DietaryIcon type={a} size="xs" />
+                          {getAdditiveLabel(a)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
             </div>

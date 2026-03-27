@@ -3,6 +3,7 @@
 import { UtensilsCrossed, X, Plus, Check, Upload, Trash2 } from 'lucide-react';
 import { Modal } from '../user/Modal';
 import { Button } from '../user/Button';
+import { DietaryIcon } from '../user/DietaryIcon';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import { useMenuConfigTranslation, useCommonTranslation } from '@/lib/i18n/client';
 import { Category, AddonGroup } from '@/lib/types';
@@ -568,13 +569,8 @@ export function AddMenuItemModal({
                       : 'border-border bg-background hover:border-border hover:bg-accent'
                       }`}
                   >
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${newMenuItem.dietaryType === type.id
-                      ? 'border-primary'
-                      : 'border-border'
-                      }`}>
-                      {newMenuItem.dietaryType === type.id && (
-                        <div className="w-3 h-3 rounded-full bg-primary" />
-                      )}
+                    <div className="flex-shrink-0">
+                      <DietaryIcon type={type.id} size="md" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
@@ -583,6 +579,14 @@ export function AddMenuItemModal({
                       <div className="text-muted-foreground break-words" style={{ fontSize: 'var(--text-small)', hyphens: 'auto' }}>
                         {type.desc}
                       </div>
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${newMenuItem.dietaryType === type.id
+                      ? 'border-primary'
+                      : 'border-border'
+                      }`}>
+                      {newMenuItem.dietaryType === type.id && (
+                        <div className="w-3 h-3 rounded-full bg-primary" />
+                      )}
                     </div>
                   </button>
                 ))}
@@ -611,6 +615,9 @@ export function AddMenuItemModal({
                       {newMenuItem.dietaryTags.includes(tag) && (
                         <Check className="w-3 h-3 text-primary-foreground" />
                       )}
+                    </div>
+                    <div className="mt-0.5">
+                      <DietaryIcon type={tag} size="sm" />
                     </div>
                     <div className="flex-1">
                       <div className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
@@ -661,6 +668,9 @@ export function AddMenuItemModal({
                         <Check className="w-3 h-3 text-primary-foreground" />
                       )}
                     </div>
+                    <div className="mt-0.5">
+                      <DietaryIcon type={allergen} size="sm" />
+                    </div>
                     <div className="flex-1">
                       <div className={newMenuItem.allergens.includes(allergen) ? 'text-destructive' : 'text-foreground'} style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                         {getAllergenLabel(allergen)}
@@ -693,6 +703,9 @@ export function AddMenuItemModal({
                       {newMenuItem.additives.includes(additive) && (
                         <Check className="w-3 h-3 text-primary-foreground" />
                       )}
+                    </div>
+                    <div className="mt-0.5">
+                      <DietaryIcon type={additive} size="sm" />
                     </div>
                     <div className="flex-1">
                       <div className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>

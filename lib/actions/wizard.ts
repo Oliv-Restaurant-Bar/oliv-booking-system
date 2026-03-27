@@ -40,6 +40,7 @@ export interface WizardFormData {
   itemAddOns?: Record<string, string[]>;
   itemComments?: Record<string, string>;
   allergyDetails?: string[];
+  room?: string;
   bookingId?: string | null; // For editing existing bookings
 }
 
@@ -212,6 +213,15 @@ export async function submitWizardForm(data: WizardFormData) {
       }
     }
 
+    // Minimum spend validation for UG1 Exclusive
+    if (data.room === 'ug1_exklusiv' && estimatedTotal < 1000) {
+      console.error('❌ Minimum spend validation failed for UG1 Exclusive:', estimatedTotal);
+      return {
+        success: false,
+        error: 'Minimum amount to spend CHF 1,000.00 required for UG1 Exclusive. Please add more items to your selection.'
+      };
+    }
+
     const eventTime = data.eventTime || '18:00:00';
 
     // If bookingId is provided, this is an UPDATE to existing booking
@@ -255,6 +265,7 @@ export async function submitWizardForm(data: WizardFormData) {
         billingAddress: billingAddress || null,
         estimatedTotal: estimatedTotal.toString(),
         requiresDeposit: estimatedTotal > 1000,
+        room: data.room || null,
         internalNotes: internalNotesParts.join('\n'),
         updatedAt: new Date(),
       };
@@ -278,6 +289,7 @@ export async function submitWizardForm(data: WizardFormData) {
               eventDate: data.eventDate,
               eventTime: eventTime,
               guestCount: data.guestCount,
+              room: data.room || null,
               updatedAt: new Date(),
             })
             .where(eq(leads.id, booking.leadId));
@@ -400,6 +412,7 @@ export async function submitWizardForm(data: WizardFormData) {
       eventDate: data.eventDate,
       eventTime: eventTime,
       guestCount: data.guestCount,
+      room: data.room || null,
       source: "website",
       status: "new",
     })
@@ -435,6 +448,7 @@ export async function submitWizardForm(data: WizardFormData) {
       estimatedTotal: estimatedTotal.toString(),
       requiresDeposit: estimatedTotal > 1000,
       status: "pending",
+      room: data.room || null,
       internalNotes: internalNotesParts.join('\n'),
       termsAccepted: true,
       termsAcceptedAt: new Date(),

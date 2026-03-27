@@ -101,4 +101,6 @@ export interface EventDetails {
   billingLocationError?: string;
   billingReference: string;
   billingReferenceError?: string;
+  room: string;
+  roomError?: string;
 }

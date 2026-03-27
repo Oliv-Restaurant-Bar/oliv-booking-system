@@ -49,6 +49,8 @@ export function CustomMenuWizard() {
     billingPlzError: undefined,
     billingLocationError: undefined,
     billingReference: '',
+    room: '',
+    roomError: undefined,
   });
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
@@ -77,6 +79,11 @@ export function CustomMenuWizard() {
     specialRequests: false,
     business: false,
     reference: false,
+    billingStreet: false,
+    billingPlz: false,
+    billingLocation: false,
+    billingReference: false,
+    room: false,
   } as Record<keyof EventDetails, boolean>);
 
   // Refs for category pill auto-scroll
@@ -198,6 +205,8 @@ export function CustomMenuWizard() {
                   billingPlzError: undefined,
                   billingLocationError: undefined,
                   billingReference: booking.billingReference || '',
+                  room: booking.room || '',
+                  roomError: undefined,
                 });
 
                 // Load menu items from booking_items
@@ -904,6 +913,7 @@ export function CustomMenuWizard() {
       billingPlz: billingPlz || '',
       billingLocation: billingLocation || '',
       billingReference: eventDetails.billingReference || '',
+      room: eventDetails.room || '',
       reference: eventDetails.reference || '',
       selectedItems,
       itemQuantities,
@@ -1278,16 +1288,13 @@ export function CustomMenuWizard() {
     return (basePrice + addOnsPrice);
   };
 
-  // Per-person subtotal: returns the highest single item price among selected per-person items
+  // Per-person subtotal: returns the sum of all selected per-person items
   const getPerPersonSubtotal = () => {
-    let maxPrice = 0;
-    selectedItems.forEach(itemId => {
+    return selectedItems.reduce((total, itemId) => {
       const item = menuItems.find(i => i.id === itemId);
-      if (!item || !isPerPerson(item)) return;
-      const unitPrice = getItemPerPersonPrice(item);
-      if (unitPrice > maxPrice) maxPrice = unitPrice;
-    });
-    return maxPrice;
+      if (!item || !isPerPerson(item)) return total;
+      return total + getItemPerPersonPrice(item);
+    }, 0);
   };
 
   // Flat-rate subtotal (items like Technology, Decoration etc. that have a fixed price)

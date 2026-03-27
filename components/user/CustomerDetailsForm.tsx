@@ -1,4 +1,4 @@
-import { User, ClipboardList, MapPin, Calendar, CreditCard, Building2 } from 'lucide-react';
+import { User, ClipboardList, MapPin, Calendar, CreditCard, Building2, Info } from 'lucide-react';
 import { ValidatedInput } from '@/components/ui/validated-input';
 import { ValidatedTextarea } from '@/components/ui/validated-textarea';
 import { Input } from '@/components/ui/input';
@@ -286,7 +286,21 @@ export function CustomerDetailsForm({
                                 type="number"
                                 value={eventDetails.guestCount}
                                 onChange={(e) => {
-                                    setEventDetails({ ...eventDetails, guestCount: e.target.value });
+                                    const guests = parseInt(e.target.value) || 1;
+                                    let newRoom = eventDetails.room;
+                                    
+                                    // Room reset logic based on guest count
+                                    if (guests <= 30 && (newRoom === 'ug1' || newRoom === 'ug1_exklusiv')) {
+                                        newRoom = '';
+                                    } else if (guests <= 50 && newRoom === 'ug1_exklusiv') {
+                                        newRoom = 'ug1';
+                                    }
+
+                                    setEventDetails({ 
+                                        ...eventDetails, 
+                                        guestCount: e.target.value,
+                                        room: newRoom
+                                    });
                                     if (errors.guestCount) setErrors({ ...errors, guestCount: undefined });
                                 }}
                                 onBlur={() => {
@@ -303,6 +317,55 @@ export function CustomerDetailsForm({
                             {displayErrors.guestCount && (
                                 <p className="text-destructive mt-1" style={{ fontSize: 'var(--text-small)' }}>
                                     {displayErrors.guestCount}
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Room Selection Dropdown */}
+                        <div>
+                            <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
+                                {t('labels.room')}
+                                <span className="text-destructive ml-1">*</span>
+                            </label>
+                            <select
+                                value={eventDetails.room}
+                                onChange={(e) => {
+                                    setEventDetails({ ...eventDetails, room: e.target.value });
+                                    if (errors.room) setErrors({ ...errors, room: undefined });
+                                }}
+                                onBlur={() => {
+                                    setTouched({ ...touched, room: true });
+                                }}
+                                className={`w-full px-4 py-2.5 bg-background border rounded-lg transition-colors focus:outline-none ${
+                                    displayErrors.room ? 'border-destructive' : 'border-border focus:border-primary'
+                                }`}
+                                style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)', appearance: 'none', backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'currentColor\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'currentColor\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.5em' }}
+                            >
+                                <option value="">{locale === 'de' ? 'Bitte wählen...' : 'Please select...'}</option>
+                                <option value="eg">{t('labels.rooms.eg')}</option>
+                                
+                                {(parseInt(eventDetails.guestCount.toString()) > 30) && (
+                                    <option value="ug1">{t('labels.rooms.ug1')}</option>
+                                )}
+                                
+                                {(parseInt(eventDetails.guestCount.toString()) > 50) && (
+                                    <option value="ug1_exklusiv">{t('labels.rooms.ug1_exklusiv')}</option>
+                                )}
+                            </select>
+
+                            {/* Minimum Spend Info for UG1 Exklusiv */}
+                            {eventDetails.room === 'ug1_exklusiv' && (
+                                <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 text-amber-800 animate-in fade-in slide-in-from-top-1 duration-200">
+                                    <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                                    <p style={{ fontSize: 'var(--text-small)' }}>
+                                        {t('labels.minSpendInfo')}
+                                    </p>
+                                </div>
+                            )}
+
+                            {displayErrors.room && (
+                                <p className="text-destructive mt-1" style={{ fontSize: 'var(--text-small)' }}>
+                                    {displayErrors.room}
                                 </p>
                             )}
                         </div>

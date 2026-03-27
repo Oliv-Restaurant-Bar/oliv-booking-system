@@ -162,19 +162,15 @@ export function ItemSettingsModal({
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
+                    type="button"
                     onClick={() => setItemSettings({ ...itemSettings, dietaryType: 'none' })}
                     className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left cursor-pointer ${itemSettings.dietaryType === 'none'
                         ? 'border-primary bg-primary/5'
                         : 'border-border bg-background hover:border-border hover:bg-accent'
                       }`}
                   >
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${itemSettings.dietaryType === 'none'
-                        ? 'border-primary'
-                        : 'border-border'
-                      }`}>
-                      {itemSettings.dietaryType === 'none' && (
-                        <div className="w-3 h-3 rounded-full bg-primary" />
-                      )}
+                    <div className="flex-shrink-0">
+                      <DietaryIcon type="none" size="md" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
@@ -184,14 +180,34 @@ export function ItemSettingsModal({
                         {t('dietary.noneDesc')}
                       </div>
                     </div>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${itemSettings.dietaryType === 'none'
+                        ? 'border-primary'
+                        : 'border-border'
+                      }`}>
+                      {itemSettings.dietaryType === 'none' && (
+                        <div className="w-3 h-3 rounded-full bg-primary" />
+                      )}
+                    </div>
                   </button>
                   <button
+                    type="button"
                     onClick={() => setItemSettings({ ...itemSettings, dietaryType: 'veg' })}
                     className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left cursor-pointer ${itemSettings.dietaryType === 'veg'
                         ? 'border-primary bg-primary/5'
                         : 'border-border bg-background hover:border-border hover:bg-accent'
                       }`}
                   >
+                    <div className="flex-shrink-0">
+                      <DietaryIcon type="veg" size="md" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>{t('dietary.veg')}</span>
+                      </div>
+                      <div className="text-muted-foreground break-words" style={{ fontSize: 'var(--text-small)', hyphens: 'auto' }}>
+                        {t('dietary.vegDesc')}
+                      </div>
+                    </div>
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${itemSettings.dietaryType === 'veg'
                         ? 'border-primary'
                         : 'border-border'
@@ -200,23 +216,26 @@ export function ItemSettingsModal({
                         <div className="w-3 h-3 rounded-full bg-primary" />
                       )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>{t('dietary.veg')}</span>
-                        <DietaryIcon type="veg" size="sm" />
-                      </div>
-                      <div className="text-muted-foreground break-words" style={{ fontSize: 'var(--text-small)', hyphens: 'auto' }}>
-                        {t('dietary.vegDesc')}
-                      </div>
-                    </div>
                   </button>
                   <button
+                    type="button"
                     onClick={() => setItemSettings({ ...itemSettings, dietaryType: 'non-veg' })}
                     className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left cursor-pointer ${itemSettings.dietaryType === 'non-veg'
                         ? 'border-primary bg-primary/5'
                         : 'border-border bg-background hover:border-border hover:bg-accent'
                       }`}
                   >
+                    <div className="flex-shrink-0">
+                      <DietaryIcon type="non-veg" size="md" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>{t('dietary.nonVeg')}</span>
+                      </div>
+                      <div className="text-muted-foreground break-words" style={{ fontSize: 'var(--text-small)', hyphens: 'auto' }}>
+                        {t('dietary.nonVegDesc')}
+                      </div>
+                    </div>
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${itemSettings.dietaryType === 'non-veg'
                         ? 'border-primary'
                         : 'border-border'
@@ -225,23 +244,26 @@ export function ItemSettingsModal({
                         <div className="w-3 h-3 rounded-full bg-primary" />
                       )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>{t('dietary.nonVeg')}</span>
-                        <DietaryIcon type="non-veg" size="sm" />
-                      </div>
-                      <div className="text-muted-foreground break-words" style={{ fontSize: 'var(--text-small)', hyphens: 'auto' }}>
-                        {t('dietary.nonVegDesc')}
-                      </div>
-                    </div>
                   </button>
                   <button
+                    type="button"
                     onClick={() => setItemSettings({ ...itemSettings, dietaryType: 'vegan' })}
-                    className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left ${itemSettings.dietaryType === 'vegan'
+                    className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left cursor-pointer ${itemSettings.dietaryType === 'vegan'
                         ? 'border-primary bg-primary/5'
                         : 'border-border bg-background hover:border-border hover:bg-accent'
                       }`}
                   >
+                    <div className="flex-shrink-0">
+                      <DietaryIcon type="vegan" size="md" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>{t('dietary.vegan')}</span>
+                      </div>
+                      <div className="text-muted-foreground break-words" style={{ fontSize: 'var(--text-small)', hyphens: 'auto' }}>
+                        {t('dietary.veganDesc')}
+                      </div>
+                    </div>
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${itemSettings.dietaryType === 'vegan'
                         ? 'border-primary'
                         : 'border-border'
@@ -249,15 +271,6 @@ export function ItemSettingsModal({
                       {itemSettings.dietaryType === 'vegan' && (
                         <div className="w-3 h-3 rounded-full bg-primary" />
                       )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>{t('dietary.vegan')}</span>
-                        <DietaryIcon type="vegan" size="sm" />
-                      </div>
-                      <div className="text-muted-foreground break-words" style={{ fontSize: 'var(--text-small)', hyphens: 'auto' }}>
-                        {t('dietary.veganDesc')}
-                      </div>
                     </div>
                   </button>
                 </div>
@@ -287,6 +300,9 @@ export function ItemSettingsModal({
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                           </svg>
                         )}
+                      </div>
+                      <div className="mt-0.5">
+                        <DietaryIcon type={tag} size="sm" />
                       </div>
                       <div className="flex-1">
                         <div className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
@@ -338,6 +354,9 @@ export function ItemSettingsModal({
                           </svg>
                         )}
                       </div>
+                      <div className="mt-0.5">
+                        <DietaryIcon type={allergen} size="sm" />
+                      </div>
                       <div className="flex-1">
                         <div className={itemSettings.allergens.includes(allergen) ? 'text-destructive' : 'text-foreground'} style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                           {getAllergenLabel(allergen)}
@@ -372,6 +391,9 @@ export function ItemSettingsModal({
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                           </svg>
                         )}
+                      </div>
+                      <div className="mt-0.5">
+                        <DietaryIcon type={additive} size="sm" />
                       </div>
                       <div className="flex-1">
                         <div className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>

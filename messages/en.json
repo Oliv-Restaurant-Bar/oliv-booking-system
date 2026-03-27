@@ -1043,6 +1043,13 @@
       "eventDate": "Event Date",
       "eventTime": "Time",
       "guestCount": "Number of Guests",
+      "room": "Room / Area",
+      "rooms": {
+        "eg": "EG",
+        "ug1": "ug1",
+        "ug1_exklusiv": "UG1 Exclusive"
+      },
+      "minSpendInfo": "Minimum spend of CHF 1,000.00 required",
       "occasion": "Occasion",
       "specialRequests": "Special Requests",
       "paymentOption": "Payment Option",

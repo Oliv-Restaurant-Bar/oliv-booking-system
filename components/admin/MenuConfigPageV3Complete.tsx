@@ -375,7 +375,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
     } else if (activeCategoryId) {
       const result = await createMenuItem({ ...itemData, categoryId: activeCategoryId } as any);
       if (result.success && result.data) {
-        setCategories(categories.map(cat =>
+        setCategories(prev => prev.map(cat =>
           cat.id === activeCategoryId
             ? { ...cat, items: [...cat.items, { ...itemData, id: result.data.id, image: newMenuItem.imageUrl }] as any[] }
             : cat
@@ -623,6 +623,19 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
     }
   };
 
+  const filteredCategories = useMemo(() => {
+    return categories
+      .map(cat => ({
+        ...cat,
+        isExpanded: searchQuery === '' ? cat.isExpanded : true,
+        items: cat.items.filter(item =>
+          item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.description?.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      }))
+      .filter(cat => searchQuery === '' || cat.items.length > 0);
+  }, [categories, searchQuery]);
+
   return (
     <div className="flex flex-col min-h-full">
       <div className="flex-1">
@@ -661,16 +674,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
             {/* Tab Content */}
             {activeTab === 'items' ? (
               <MenuCategoriesTab
-                filteredCategories={categories
-                  .map(cat => ({
-                    ...cat,
-                    isExpanded: searchQuery === '' ? cat.isExpanded : true,
-                    items: cat.items.filter(item =>
-                      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      item.description?.toLowerCase().includes(searchQuery.toLowerCase())
-                    )
-                  }))
-                  .filter(cat => searchQuery === '' || cat.items.length > 0)}
+                filteredCategories={filteredCategories}
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
                 canCreateCategory={canCreateCategory}

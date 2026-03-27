@@ -3,6 +3,7 @@
 import { Plus, X, Check } from 'lucide-react';
 import { Modal } from '../user/Modal';
 import { Button } from '../user/Button';
+import { DietaryIcon } from '../user/DietaryIcon';
 import { useMenuConfigTranslation, useCommonTranslation } from '@/lib/i18n/client';
 
 interface AddAddonItemModalProps {
@@ -114,8 +115,13 @@ export function AddAddonItemModal({
                   }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className={`w-6 h-6 rounded border-2 border-${type.color}-600 flex items-center justify-center flex-shrink-0`}>
-                    <div className={`w-3 h-3 rounded-full bg-${type.color}-600`} />
+                  <div className="flex-shrink-0">
+                    <DietaryIcon type={type.id} size="md" />
+                    {type.id === 'none' && (
+                      <div className="w-6 h-6 rounded border-2 border-slate-300 flex items-center justify-center flex-shrink-0">
+                        <div className="w-3 h-3 rounded-full bg-slate-100" />
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-foreground truncate" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>

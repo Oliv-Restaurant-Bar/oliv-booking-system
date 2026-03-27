@@ -13,7 +13,14 @@ import {
   Egg,
   Fish,
   Shell,
-  ChefHat
+  ChefHat,
+  Palette,
+  FlaskConical,
+  Pipette,
+  Sparkles,
+  ShieldCheck,
+  Wine,
+  TestTube
 } from 'lucide-react';
 
 interface DietaryIconProps {
@@ -23,31 +30,37 @@ interface DietaryIconProps {
 
 export function DietaryIcon({ type, size = 'md' }: DietaryIconProps) {
   // Normalize types from various potential sources
-  const normalizedType = type.toLowerCase().replace(/\s+/g, '');
-
-  // Don't show icon if type is none
-  if (normalizedType === 'none') {
-    return null;
-  }
+  const normalizedType = type.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
 
   const sizeClass = size === 'xs' ? 'w-3 h-3' : size === 'sm' ? 'w-4 h-4' : 'w-5 h-5';
   const dotClass = size === 'xs' ? 'w-1.5 h-1.5' : 'w-2 h-2';
 
-  // Primary types with custom shapes
+  // Neutral type for "None"
+  if (normalizedType === 'none') {
+    return (
+      <div className="flex items-center gap-1">
+        <div className={`${sizeClass} rounded-full border-[1.5px] border-slate-300 flex items-center justify-center flex-shrink-0`}>
+          <div className={`${dotClass} rounded-full bg-slate-100`}></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Primary types with circular shapes (Standard food labels)
   if (normalizedType === 'vegetarian' || normalizedType === 'veg') {
     return (
       <div className="flex items-center gap-1">
-        <div className={`${sizeClass} rounded-sm border-[1.5px] border-green-600 flex items-center justify-center flex-shrink-0`}>
+        <div className={`${sizeClass} rounded-full border-[1.5px] border-green-600 flex items-center justify-center flex-shrink-0`}>
           <div className={`${dotClass} rounded-full bg-green-600`}></div>
         </div>
       </div>
     );
   }
 
-  if (normalizedType === 'non-vegetarian' || normalizedType === 'non-veg') {
+  if (normalizedType === 'nonvegetarian' || normalizedType === 'nonveg') {
     return (
       <div className="flex items-center gap-1">
-        <div className={`${sizeClass} rounded-sm border-[1.5px] border-red-600 flex items-center justify-center flex-shrink-0`}>
+        <div className={`${sizeClass} rounded-full border-[1.5px] border-red-600 flex items-center justify-center flex-shrink-0`}>
           <div className={`${dotClass} rounded-full bg-red-600`}></div>
         </div>
       </div>
@@ -82,6 +95,15 @@ export function DietaryIcon({ type, size = 'md' }: DietaryIconProps) {
     'wheat': { icon: Wheat, color: 'text-amber-500' },
     'sesame': { icon: Droplets, color: 'text-orange-400' },
     'mustard': { icon: ChefHat, color: 'text-yellow-600' },
+
+    // Additives
+    'preservatives': { icon: ShieldCheck, color: 'text-slate-600' },
+    'artificialcolors': { icon: Palette, color: 'text-pink-500' },
+    'artificialflavors': { icon: Pipette, color: 'text-indigo-500' },
+    'msg': { icon: Sparkles, color: 'text-yellow-500' },
+    'nitrates': { icon: FlaskConical, color: 'text-red-400' },
+    'sulfites': { icon: Wine, color: 'text-purple-600' },
+    'bhabht': { icon: TestTube, color: 'text-teal-600' },
   };
 
   const IconConfig = iconMap[normalizedType];
