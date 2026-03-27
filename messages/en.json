@@ -118,6 +118,7 @@
     "declined": "Declined",
     "cancelled": "Cancelled",
     "completed": "Completed",
+    "no_show": "No Show",
     "noShow": "No Show",
     "unresponsive": "Unresponsive"
   },
@@ -230,8 +231,8 @@
     "characterLimits": {
       "firstName": "2-20 characters",
       "lastName": "2-20 characters",
-      "email": "Must be a valid email address (max 255 characters)",
-      "password": "Min. 8 characters, max. 100 characters"
+      "email": "Must be valid email (max 255)",
+      "password": "Min. 12 characters, must include uppercase, lowercase, number, and special character"
     },
     "placeholders": {
       "firstName": "Enter first name",
@@ -402,7 +403,9 @@
         "confirmed": "Confirmed",
         "touchbase": "TouchBase",
         "declined": "Declined",
-        "completed": "Completed"
+        "completed": "Completed",
+        "no_show": "No Show",
+        "cancelled": "Cancelled"
       },
       "exportColumns": {
         "customerName": "Customer Name",

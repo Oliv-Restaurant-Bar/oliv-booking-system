@@ -297,7 +297,7 @@ export function ItemDetailsModal({
           {isConsumption(item) && (() => {
             const recommended = calculateRecommendedQuantity(item, undefined, tempVariant);
             if (!recommended) return null;
-            
+
             // For display purposes, we still want to show the specific consumption rate
             const avgConsumption = (() => {
               if (tempVariant && item.variants) {
@@ -309,7 +309,7 @@ export function ItemDetailsModal({
 
             const guestCount = parseInt(eventDetails.guestCount) || 0;
             if (guestCount === 0) return null;
-            
+
             return (
               <div className="mb-4 p-3 bg-amber-50 rounded-lg border border-amber-500/30">
                 <div className="flex items-start gap-2">
@@ -432,11 +432,11 @@ export function ItemDetailsModal({
                   </div>
                 ))}
               </div>
-              {item.nutritionalInfo.servingSize && (
+              {/* {item.nutritionalInfo.servingSize && (
                 <p className="text-[10px] text-muted-foreground mt-2 italic">
                   * {mt('descriptions.nutritionServingSize', { size: item.nutritionalInfo.servingSize }) || `All values based on ${item.nutritionalInfo.servingSize} serving size.`}
                 </p>
-              )}
+              )} */}
             </div>
           )}
 
@@ -655,7 +655,7 @@ export function ItemDetailsModal({
           {/* Additional Comments */}
           <div className="mb-6">
             <h4 className="text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-              {t('labels.additionalComments')}
+              {t('labels.additionalComments')} <span className="text-muted-foreground font-normal ml-1">({t('labels.optional')})</span>
             </h4>
             <ValidatedTextarea
               value={tempComment}
@@ -664,7 +664,6 @@ export function ItemDetailsModal({
               rows={3}
               maxLength={500}
               showCharacterCount
-              helperText={t('labels.optional')}
             />
           </div>
         </div>

@@ -249,15 +249,3 @@ export async function fetchBookings(options: {
   }
 }
 
-export async function updateBookingStatus(bookingId: string, newStatus: string) {
-  try {
-    await db.update(bookings)
-      .set({ status: newStatus as any })
-      .where(eq(bookings.id, bookingId));
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error updating booking status:", error);
-    return { success: false, error: "Failed to update status" };
-  }
-}

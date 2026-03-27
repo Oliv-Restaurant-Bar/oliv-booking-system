@@ -149,7 +149,7 @@ export function AssignUserModal({
                                         </label>
                                     )}
 
-                                    {users.map(user => (
+                                    {users.filter(user => user.role !== 'read_only').map(user => (
                                         <label
                                             key={user.id}
                                             className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${selectedUser === user.id

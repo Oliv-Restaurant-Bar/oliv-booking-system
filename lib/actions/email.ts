@@ -28,6 +28,11 @@ export async function sendBookingEmail(params: {
   bookingEditUrl?: string;
   feedbackUrl?: string;
   rebookingUrl?: string;
+  hasChanges?: boolean;
+  guestCountChanged?: boolean;
+  newGuestCount?: number;
+  menuChanges?: string;
+  additionalDetails?: string;
   attachments?: Array<{
     content: string;
     mime_type: string;
@@ -63,6 +68,11 @@ export async function sendBookingEmail(params: {
         bookingEditUrl: params.bookingEditUrl,
         feedbackUrl: params.feedbackUrl,
         rebookingUrl: params.rebookingUrl,
+        hasChanges: params.hasChanges,
+        guestCountChanged: params.guestCountChanged,
+        newGuestCount: params.newGuestCount,
+        menuChanges: params.menuChanges,
+        additionalDetails: params.additionalDetails,
       });
 
       subject = getEmailSubject(params.emailType, params.bookingData);
@@ -500,7 +510,7 @@ export async function sendAssignmentNotification(params: {
     const subject = `Neue Buchung zugewiesen: ${params.customerName}`;
 
     if (useTemplates) {
-      const templateName = getTemplateName("assignment" as any);
+      const templateName = getTemplateName("assignment");
       const [fetchedBooking] = await db
         .select()
         .from(bookings)
@@ -510,7 +520,7 @@ export async function sendAssignmentNotification(params: {
 
       if (!fetchedBooking) return { success: false, error: "Booking not found" };
 
-      const templateData = getTemplateData("assignment" as any, { ...fetchedBooking.bookings, lead: fetchedBooking.leads }, {
+      const templateData = getTemplateData("assignment", { ...fetchedBooking.bookings, lead: fetchedBooking.leads }, {
         adminName: params.adminName,
         eventDate: params.eventDate,
         eventTime: params.eventTime,
@@ -594,6 +604,32 @@ export async function sendAssignmentNotification(params: {
 }
 
 /**
+ * Send notification to admins when a user submits a check-in form with changes
+ */
+export async function sendCheckinSubmittedNotification(params: {
+  bookingId: string;
+  recipientEmail: string;
+  bookingData: Booking & { lead?: Lead | null };
+  hasChanges: boolean;
+  guestCountChanged: boolean;
+  newGuestCount?: number;
+  menuChanges?: string;
+  additionalDetails?: string;
+}): Promise<{ success: boolean; error?: string; emailLogId?: string }> {
+  return sendBookingEmail({
+    bookingId: params.bookingId,
+    emailType: "checkin_submitted",
+    recipientEmail: params.recipientEmail,
+    bookingData: params.bookingData,
+    hasChanges: params.hasChanges,
+    guestCountChanged: params.guestCountChanged,
+    newGuestCount: params.newGuestCount,
+    menuChanges: params.menuChanges,
+    additionalDetails: params.additionalDetails,
+  });
+}
+
+/**
  * Send the kitchen PDF directly to internal or external staff
  */
 export async function sendKitchenPdfEmail(params: {
@@ -645,7 +681,7 @@ export async function sendKitchenPdfEmail(params: {
     console.log(`   - Filename: ${params.documentName}.pdf`);
 
     if (useTemplates) {
-      const templateName = getTemplateName("kitchen_pdf" as any);
+      const templateName = getTemplateName("kitchen_pdf");
       const [fetchedBooking] = await db
         .select()
         .from(bookings)
@@ -655,7 +691,7 @@ export async function sendKitchenPdfEmail(params: {
 
       if (!fetchedBooking) return { success: false, error: "Booking not found" };
 
-      const templateData = getTemplateData("kitchen_pdf" as any, { ...fetchedBooking.bookings, lead: fetchedBooking.leads }, {
+      const templateData = getTemplateData("kitchen_pdf", { ...fetchedBooking.bookings, lead: fetchedBooking.leads }, {
         documentName: params.documentName,
         eventDate: params.eventDate,
       });
@@ -792,25 +828,15 @@ export async function sendUserCreatedEmail(params: {
     const subject = "Willkommen beim Oliv Buchungssystem - Ihr Konto ist bereit";
 
     if (useTemplates) {
-      const templateName = process.env.ZEPTOMAIL_TEMPLATE_USER_CREATED || "user-created";
-
-      // Map role to display name
-      const roleDisplayNames: Record<string, string> = {
-        super_admin: "Super Administrator",
-        admin: "Administrator",
-        moderator: "Moderator",
-        read_only: "Read Only",
-      };
-      const displayRole = roleDisplayNames[params.userRole] || params.userRole;
-
-      const templateData = {
-        user_name: params.userName,
-        user_email: params.userEmail,
-        user_role: displayRole,
-        created_by: params.createdBy || "Systemadministrator",
-        login_url: `${process.env.NEXT_PUBLIC_APP_URL}/admin/login`,
-        temp_password: params.tempPassword,
-      };
+      const templateName = getTemplateName("user_created");
+      const templateData = getTemplateData("user_created", {} as any, {
+        userName: params.userName,
+        userEmail: params.userEmail,
+        userRole: params.userRole,
+        tempPassword: params.tempPassword,
+        createdBy: params.createdBy,
+        loginUrl: `${process.env.NEXT_PUBLIC_APP_URL}/admin/login`,
+      });
 
       // Create email log entry with pending status
       const emailLogId = randomUUID();
@@ -860,7 +886,8 @@ export async function sendUserCreatedEmail(params: {
  
             <div style="background-color: #f1f5f9; border-left: 4px solid #9DAE91; padding: 15px 20px; margin: 25px 0;">
               <p style="margin: 0 0 10px 0; font-size: 15px;"><strong>E-Mail:</strong> ${params.userEmail}</p>
-              <p style="margin: 0; font-size: 15px;"><strong>Rolle:</strong> ${displayRole}</p>
+              <p style="margin: 0 0 10px 0; font-size: 15px;"><strong>Rolle:</strong> ${displayRole}</p>
+              <p style="margin: 0; font-size: 15px;"><strong>Temporäres Passwort:</strong> <span style="color: #9DAE91; font-weight: bold;">${params.tempPassword}</span></p>
             </div>
 
             <div style="text-align: center; margin: 30px 0;">
@@ -869,9 +896,6 @@ export async function sendUserCreatedEmail(params: {
               </a>
             </div>
 
-            <p style="font-size: 14px; line-height: 1.5; color: #64748b; margin-bottom: 10px;">
-              Ihr temporäres Passwort lautet: <strong>${params.tempPassword}</strong>
-            </p>
             <p style="font-size: 14px; line-height: 1.5; color: #64748b; margin-bottom: 20px;">
               Bitte ändern Sie Ihr Passwort aus Sicherheitsgründen nach Ihrer ersten Anmeldung.
             </p>

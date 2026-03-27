@@ -43,6 +43,7 @@ export function KitchenPdfStatusBadge({
           config.text,
           config.border
         )}
+        title={t(status)}
       >
         <Icon className="w-2.5 h-2.5" />
         PDF
@@ -58,6 +59,7 @@ export function KitchenPdfStatusBadge({
         config.text,
         config.border
       )}
+      title={t(status)}
     >
       <Icon className="w-4 h-4" />
       <span style={{ fontSize: 'var(--text-small)' }}>{t(status)}</span>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { updateBookingStatus } from '@/lib/actions/fetch-bookings';
+import { updateBookingStatus } from '@/lib/actions/bookings';
 import { requirePermissionWrapper } from "@/lib/auth/rbac-middleware";
 import { Permission } from "@/lib/auth/rbac";
 import { z } from 'zod';

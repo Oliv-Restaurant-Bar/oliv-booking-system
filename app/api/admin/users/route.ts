@@ -56,9 +56,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, email, role, password } = body;
 
-    if (!name || !email) {
+    if (!name || !email || !password) {
       return NextResponse.json(
-        { error: "Name and email are required" },
+        { error: "Name, email and password are required" },
         { status: 400 }
       );
     }
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     const result = await auth.api.signUpEmail({
       body: {
         email,
-        password: password || "defaultPassword123",
+        password: password,
         name,
         role: role || "read_only",
       },
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
         userEmail: updatedUser.email,
         userRole: updatedUser.role || "read_only",
         createdBy: session?.user?.name || "System Administrator",
-        tempPassword: password || "defaultPassword123",
+        tempPassword: password,
       });
     } catch (emailError) {
       console.error("Failed to send user creation email:", emailError);

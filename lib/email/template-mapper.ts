@@ -61,9 +61,6 @@ export function getBookingConfirmedDepositTemplateData(
     event_date: formatGermanDate(booking.eventDate),
     event_time: booking.eventTime,
     guest_count: booking.guestCount,
-    estimated_total: formatCHF(estimatedTotal),
-    deposit_amount: formatCHF(estimatedTotal * 0.3),
-    deposit_percentage: "30",
     booking_id: generateShortBookingId(booking.id),
     special_requests: sanitized.specialRequests,
     allergy_details: sanitized.allergyDetails,
@@ -120,9 +117,6 @@ export function getThankYouDepositTemplateData(
     event_date: formatGermanDate(booking.eventDate),
     event_time: booking.eventTime,
     guest_count: booking.guestCount,
-    estimated_total: formatCHF(estimatedTotal),
-    deposit_amount: formatCHF(estimatedTotal * 0.3),
-    deposit_percentage: "30",
     booking_id: generateShortBookingId(booking.id),
     special_requests: sanitized.specialRequests,
     allergy_details: sanitized.allergyDetails,
@@ -194,8 +188,7 @@ export function getBookingCompletedTemplateData(
     event_date: formatGermanDate(booking.eventDate),
     event_time: booking.eventTime,
     guest_count: booking.guestCount,
-    feedback_url: feedbackUrl || "",
-    rebooking_url: rebookingUrl || "",
+    rebooking_url: `${process.env.NEXT_PUBLIC_APP_URL}/wizard`,
   };
 }
 
@@ -223,9 +216,6 @@ export function getBookingReminderTemplateData(
     event_date: formatGermanDate(booking.eventDate),
     event_time: booking.eventTime,
     guest_count: booking.guestCount,
-    estimated_total: estimatedTotal ? formatCHF(estimatedTotal) : "0.00",
-    deposit_amount: requiresDeposit ? formatCHF((estimatedTotal || 0) * 0.3) : "0.00",
-    deposit_percentage: "30",
     special_requests: sanitized.specialRequests,
     allergy_details: sanitized.allergyDetails,
   };
@@ -332,6 +322,36 @@ export function getCheckinReminderTemplateData(
     customer_name: customerName,
     event_date: formatGermanDate(booking.eventDate),
     checkin_url: bookingCheckinUrl || `${process.env.NEXT_PUBLIC_APP_URL}/booking/${booking.id}/checkin`,
+  };
+}
+
+/**
+ * Prepare template data for check-in submission notification (to admin)
+ */
+export function getCheckinSubmittedTemplateData(
+  booking: Booking & { lead?: Lead | null },
+  params: {
+    hasChanges?: boolean;
+    guestCountChanged?: boolean;
+    newGuestCount?: number;
+    menuChanges?: string;
+    additionalDetails?: string;
+    adminUrl?: string;
+  } = {}
+): TemplateData {
+  const lead = booking.lead;
+  const customerName = lead?.contactName || "Gast";
+
+  return {
+    customer_name: customerName,
+    event_date: formatGermanDate(booking.eventDate),
+    booking_id: booking.id.toString().slice(0, 8),
+    has_changes: params.hasChanges ? "Ja" : "Nein",
+    guest_count_changed: params.guestCountChanged ? "Ja" : "Nein",
+    new_guest_count: params.newGuestCount || booking.guestCount,
+    menu_changes: params.menuChanges || "Keine",
+    additional_details: params.additionalDetails || "Keine",
+    admin_url: params.adminUrl || `${process.env.NEXT_PUBLIC_APP_URL}/admin/bookings/${booking.id}`,
   };
 }
 
@@ -444,6 +464,17 @@ export function getTemplateData(
     eventTime?: string;
     bookingUrl?: string;
     documentName?: string;
+    userName?: string;
+    userEmail?: string;
+    userRole?: string;
+    tempPassword?: string;
+    createdBy?: string;
+    loginUrl?: string;
+    hasChanges?: boolean;
+    guestCountChanged?: boolean;
+    newGuestCount?: number;
+    menuChanges?: string;
+    additionalDetails?: string;
   } = {}
 ): TemplateData {
   const DEPOSIT_THRESHOLD = 5000;
@@ -525,13 +556,32 @@ export function getTemplateData(
       return getManualReminderTemplateData(booking);
 
     case "custom":
-      // For custom emails, return basic data
       return {
         customer_name: booking.lead?.contactName || "Gast",
         event_date: formatGermanDate(booking.eventDate),
         event_time: booking.eventTime,
         guest_count: booking.guestCount,
       };
+
+    case "user_created":
+      return getUserCreatedTemplateData({
+        userName: params.userName || "",
+        userEmail: params.userEmail || "",
+        userRole: params.userRole || "admin",
+        tempPassword: params.tempPassword || "",
+        createdBy: params.createdBy,
+        loginUrl: params.loginUrl,
+      });
+
+    case "checkin_submitted":
+      return getCheckinSubmittedTemplateData(booking, {
+        hasChanges: params.hasChanges,
+        guestCountChanged: params.guestCountChanged,
+        newGuestCount: params.newGuestCount,
+        menuChanges: params.menuChanges,
+        additionalDetails: params.additionalDetails,
+        adminUrl: params.bookingUrl,
+      });
 
     default:
       return {};
@@ -569,6 +619,7 @@ export function getTemplateName(emailType: EmailType, estimatedTotal?: number): 
     checkin_reminder: process.env.ZEPTOMAIL_TEMPLATE_CHECKIN_REMINDER || "booking-checkin",
     booking_update: process.env.ZEPTOMAIL_TEMPLATE_BOOKING_UPDATE || "booking-update",
     manual_reminder: process.env.ZEPTOMAIL_TEMPLATE_MANUAL_REMINDER || "manual-reminder",
+    checkin_submitted: process.env.ZEPTOMAIL_TEMPLATE_CHECKIN_SUBMITTED || "checkin-submitted",
     custom: "custom-email",
   };
 
@@ -619,6 +670,7 @@ export function getEmailSubject(
     checkin_reminder: `Wichtige Bestätigung: Ihre Veranstaltung am ${formattedDate} - Oliv Restaurant`,
     booking_update: `Aktualisierte Details zu Ihrer Buchung - ${formattedDate}`,
     manual_reminder: `Ihre Buchung bei Oliv Restaurant - Kontaktaufnahme`,
+    checkin_submitted: `Check-in eingegangen: ${booking.lead?.contactName || "Gast"} - ${formattedDate}`,
     custom: `Nachricht von Oliv Restaurant`,
   };
 

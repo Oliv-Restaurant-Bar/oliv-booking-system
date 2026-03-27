@@ -342,7 +342,7 @@ export function ClientBookingEditPage() {
           {/* Allergies/Dietary Requirements */}
           <div className="bg-card border border-border rounded-lg p-6">
             <ValidatedTextarea
-              label="Allergies & Dietary Requirements"
+              label="Allergies & Dietary Requirements (Optional)"
               value={formData.allergyDetails.join(', ')}
               onChange={(e) => {
                 setFormData(prev => ({
@@ -356,14 +356,14 @@ export function ClientBookingEditPage() {
               maxLength={500}
               showCharacterCount
               error={errors.allergyDetails}
-              helperText="Optional: Separate multiple items with commas"
+              helperText="Separate multiple items with commas"
             />
           </div>
 
           {/* Special Requests */}
           <div className="bg-card border border-border rounded-lg p-6">
             <ValidatedTextarea
-              label="Special Requests"
+              label="Special Requests (Optional)"
               value={formData.specialRequests}
               onChange={(e) => {
                 setFormData(prev => ({ ...prev, specialRequests: e.target.value }));
@@ -374,7 +374,6 @@ export function ClientBookingEditPage() {
               maxLength={1000}
               showCharacterCount
               error={errors.specialRequests}
-              helperText="Optional"
             />
           </div>
 

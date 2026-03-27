@@ -92,7 +92,7 @@ export function ReportsPage({ user }: { user?: any }) {
 
                       {/* Customer Details */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-foreground truncate" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                        <p className="text-foreground truncate" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }} title={contact.name}>
                           {contact.name}
                         </p>
                         <p className="text-muted-foreground hidden sm:block" style={{ fontSize: 'var(--text-small)' }}>

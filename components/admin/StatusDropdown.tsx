@@ -83,7 +83,7 @@ export function StatusDropdown({
             />
           )}
           {selectedOption?.icon && <selectedOption.icon className="w-4 h-4" />}
-          <span className="truncate">{selectedOption?.label || dropdownPlaceholder}</span>
+          <span className="truncate" title={selectedOption?.label || dropdownPlaceholder}>{selectedOption?.label || dropdownPlaceholder}</span>
         </div>
         <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>

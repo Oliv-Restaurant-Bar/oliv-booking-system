@@ -208,7 +208,7 @@ export function TrendingItems({ trendingData: propTrendingData }: TrendingItemsP
 
               {/* Item Details */}
               <div className="flex-1 min-w-0">
-                <h4 className="text-foreground truncate" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                <h4 className="text-foreground truncate" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }} title={item.name}>
                   {locale === 'de' && item.nameDe ? item.nameDe : item.name}
                 </h4>
                 <div className="flex items-center gap-3 mt-1">

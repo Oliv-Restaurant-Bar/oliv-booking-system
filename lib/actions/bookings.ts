@@ -131,7 +131,7 @@ export async function createBooking(input: CreateBookingInput & { leadEmail?: st
       specialRequests: input.specialRequests,
       estimatedTotal: input.estimatedTotal?.toString(),
       requiresDeposit: input.requiresDeposit || false,
-      status: "pending",
+      status: "new",
       location: input.location,
       internalNotes: input.internalNotes,
       assignedTo: input.assignedTo,
@@ -328,8 +328,9 @@ export async function updateBookingStatus(
           });
           break;
 
+        case "new":
         case "pending":
-          // No email for pending status (usually initial state)
+          // No email for new/pending status (usually initial state)
           break;
       }
     }
@@ -506,9 +507,9 @@ export async function updateBooking(
       await db.update(bookings)
         .set({ estimatedTotal: newEstimatedTotal.toString() })
         .where(eq(bookings.id, id));
-      
+
       console.log('  → Recalculated total:', newEstimatedTotal);
-      
+
       // Update local booking object so audit log reflects the new total
       (booking as any).estimatedTotal = newEstimatedTotal.toString();
     }

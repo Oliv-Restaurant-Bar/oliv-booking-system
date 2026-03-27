@@ -208,8 +208,8 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
       newErrors.email = emailResult.error.errors[0].message;
     }
 
-    // Validate password only if provided
-    if (formPassword) {
+    // Validate password
+    if (formPassword || !selectedUser) { // Always required for new users, optional for existing unless provided
       const passwordResult = userPasswordSchema.safeParse(formPassword);
       if (!passwordResult.success) {
         newErrors.password = passwordResult.error.errors[0].message;
@@ -237,7 +237,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
           name: fullName.trim(),
           email: formEmail.trim(),
           role: formRole,
-          password: formPassword || 'defaultPassword123',
+          password: formPassword.trim(),
         }),
       });
 
@@ -503,7 +503,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
                                 {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                               </span>
                             </div>
-                            <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                            <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }} title={user.name}>
                               {user.name}
                             </span>
                           </div>
@@ -511,19 +511,19 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
                         <td className="px-4 py-4 hidden lg:table-cell">
                           <div className="flex items-center gap-2">
                             <Mail className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                            <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }} title={user.email}>
                               {user.email}
                             </span>
                           </div>
                         </td>
                         <td className="px-4 py-4">
-                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${getRoleBadgeColor(user.role)}`} style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${getRoleBadgeColor(user.role)}`} style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }} title={getRoleLabel(user.role)}>
                             <Shield className="w-3.5 h-3.5" />
                             {getRoleLabel(user.role)}
                           </span>
                         </td>
                         <td className="px-4 py-4 hidden sm:table-cell">
-                          <span className={`inline-flex px-3 py-1 rounded-full ${getStatusBadgeColor(user.status)}`} style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
+                          <span className={`inline-flex px-3 py-1 rounded-full ${getStatusBadgeColor(user.status)}`} style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }} title={getStatusLabel(user.status)}>
                             {getStatusLabel(user.status)}
                           </span>
                         </td>
@@ -594,7 +594,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
               variant="primary"
               icon={Plus}
               onClick={handleAddUser}
-              disabled={!formFirstName.trim() || !formLastName.trim() || !formEmail.trim() || isSubmitting}
+              disabled={!formFirstName.trim() || !formLastName.trim() || !formEmail.trim() || !formPassword.trim() || isSubmitting}
             >
               {isSubmitting ? t('adding') : t('addUser')}
             </Button>
@@ -662,7 +662,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
           />
 
           <ValidatedInput
-            label={t('passwordOptional')}
+            label={t('password')}
             type="password"
             value={formPassword}
             onChange={(e) => {
@@ -678,6 +678,7 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
             error={displayErrors.password}
             helperText={t('characterLimits.password')}
             showPasswordToggle
+            required
           />
 
           <div>

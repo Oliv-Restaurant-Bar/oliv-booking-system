@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { Mail, Download, Users, X, Loader2, CheckSquare, ChevronLeft, Send } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Mail, Download, Users, X, Loader2, CheckSquare, ChevronLeft, Send, MessageSquare, Save } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { ValidatedTextarea } from '@/components/ui/validated-textarea';
 import { cn } from '@/lib/utils';
 import { jsPDF } from 'jspdf';
 import { toast } from 'sonner';
@@ -44,9 +46,50 @@ export function KitchenPdfActionModal({
   onActionComplete,
   booking
 }: KitchenPdfActionModalProps) {
+  const tAdmin = useTranslations('admin.bookings');
+  const tWizard = useTranslations('wizard');
   const [expandedSection, setExpandedSection] = useState<'email' | null>(null);
   const [externalEmails, setExternalEmails] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [kitchenNotes, setKitchenNotes] = useState(booking.kitchenNotes || '');
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
+  const [hasUnsavedNotes, setHasUnsavedNotes] = useState(false);
+
+  // Update notes if booking changes
+  useEffect(() => {
+    setKitchenNotes(booking.kitchenNotes || '');
+    setHasUnsavedNotes(false);
+  }, [booking.kitchenNotes]);
+
+  const handleNotesChange = (value: string) => {
+    setKitchenNotes(value);
+    setHasUnsavedNotes(value !== (booking.kitchenNotes || ''));
+  };
+
+  const handleSaveNotes = async () => {
+    if (!hasUnsavedNotes) return;
+    setIsSavingNotes(true);
+    try {
+      const response = await fetch(`/api/bookings/${booking.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ kitchenNotes }),
+      });
+
+      if (!response.ok) throw new Error('Failed to save notes');
+      
+      setHasUnsavedNotes(false);
+      toast.success(tAdmin('toast.saveSuccess'));
+      window.location.reload();
+    } catch (error) {
+      console.error('Error saving kitchen notes:', error);
+      toast.error(tAdmin('toast.saveFailed'));
+    } finally {
+      setIsSavingNotes(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -88,7 +131,7 @@ export function KitchenPdfActionModal({
       }),
       allergies: booking.allergies,
       specialRequests: booking.notes,
-      kitchenNotes: booking.kitchenNotes
+      kitchenNotes: kitchenNotes // Use current local notes
     }, 'kitchen');
   };
 
@@ -274,7 +317,42 @@ export function KitchenPdfActionModal({
           </div>
 
           <div className="p-6 overflow-y-auto">
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Kitchen Notes Section - MOVED FROM MAIN PAGE */}
+              <div className="bg-muted/30 p-4 rounded-xl border border-border/50">
+                <h4 className="text-foreground mb-3 flex items-center gap-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                  <MessageSquare className="w-5 h-5 text-primary" />
+                  {tAdmin('kitchenNotes')}
+                  <span className="text-muted-foreground font-normal ml-1">({tWizard('labels.optional')})</span>
+                </h4>
+                <div className="space-y-3">
+                  <ValidatedTextarea
+                    value={kitchenNotes}
+                    onChange={(e) => handleNotesChange(e.target.value)}
+                    rows={4}
+                    placeholder={tAdmin('kitchenNotesPlaceholder')}
+                    maxLength={1000}
+                    showCharacterCount
+                  />
+                  <div className="flex justify-end">
+                    <button
+                      onClick={handleSaveNotes}
+                      disabled={isSavingNotes || !hasUnsavedNotes}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-all font-medium text-sm cursor-pointer shadow-sm"
+                    >
+                      {isSavingNotes ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Save className="w-4 h-4" />
+                      )}
+                      Save Changes
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="h-px bg-border/50" />
+
               <p className="text-muted-foreground text-sm mb-2 font-medium">
                 Select destination for this document:
               </p>

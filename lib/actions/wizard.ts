@@ -447,7 +447,7 @@ export async function submitWizardForm(data: WizardFormData) {
       billingAddress: billingAddress || null,
       estimatedTotal: estimatedTotal.toString(),
       requiresDeposit: estimatedTotal > 1000,
-      status: "pending",
+      status: "new",
       room: data.room || null,
       internalNotes: internalNotesParts.join('\n'),
       termsAccepted: true,
@@ -567,7 +567,7 @@ export async function submitWizardForm(data: WizardFormData) {
         estimatedTotal: estimatedTotal,
         bookingEditUrl: bookingEditUrl,
         pdfAttachment: {
-          name: `Angebot_${safeCustomerName}.pdf`,
+          name: `Booking_${safeCustomerName}.pdf`,
           mime_type: "application/pdf",
           content: pdfBase64,
         }

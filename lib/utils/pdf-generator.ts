@@ -70,7 +70,7 @@ export async function generateBookingPdf(
 
       doc.setFontSize(8);
       doc.setTextColor(...COLORS.muted);
-      doc.text(`KUNDENANGEBOT (FORTS.) - ANFRAGE-NR: ${data.id.substring(data.id.length - 8).toUpperCase()}`, margin, 12);
+      doc.text(`BOOKING (CONT.) - ANFRAGE-NR: ${data.id.substring(data.id.length - 8).toUpperCase()}`, margin, 12);
       doc.text(`Datum: ${new Date().toLocaleDateString('de-CH')}`, pageWidth - margin, 12, { align: 'right' });
 
       yPos = 25;

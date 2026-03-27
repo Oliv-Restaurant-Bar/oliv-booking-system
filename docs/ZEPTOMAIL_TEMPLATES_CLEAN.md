@@ -1145,7 +1145,9 @@ This document contains **clean ZeptoMail templates** with **ZERO conditional log
 
 ---
 
-## Template 14: `user-created`
+---
+
+## Template 15: `user-created`
 
 **When to use:** New admin user account is created
 
@@ -1217,18 +1219,15 @@ This document contains **clean ZeptoMail templates** with **ZERO conditional log
 ```
 
 **Variables:**
-- `user_name` - The new user's full name
-- `user_email` - The new user's email address
-- `user_role` - Display role name (Super Administrator/Administrator/Moderator/Read Only)
-- `login_url` - Link to admin login page (https://oliv-restaurant.ch/admin/login)
-- `temp_password` - The temporary password for the new user
-- `created_by` - Name of admin who created the account
-
-**Note:** This email is sent immediately after a new admin user is created through the user management panel.
+- `user_name`
+- `user_email`
+- `user_role`
+- `login_url`
+- `temp_password`
 
 ---
 
-## Template 15: `booking-checkin`
+## Template 16: `booking-checkin`
 
 **When to use:** Sent 4 days before event to get final guest count confirmation.
 
@@ -1305,7 +1304,7 @@ This document contains **clean ZeptoMail templates** with **ZERO conditional log
 
 ---
 
-## Template 16: `booking-update`
+## Template 17: `booking-update`
 
 **When to use:** Triggered manually to send the latest offer/changes to the guest (usually with PDF).
 
@@ -1352,7 +1351,7 @@ This document contains **clean ZeptoMail templates** with **ZERO conditional log
 
 ---
 
-## Template 17: `manual-reminder`
+## Template 18: `manual-reminder`
 
 **When to use:** When staff tried to reach the guest by phone but was unsuccessful.
 
@@ -1414,6 +1413,145 @@ This document contains **clean ZeptoMail templates** with **ZERO conditional log
 
 ---
 
+---
+
+## Template 20: `custom-email`
+
+**When to use:** Generic/custom communications sent manually from the dashboard.
+
+**Subject:** `Nachricht von Oliv Restaurant`
+
+**HTML:**
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #2c3e50; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+    .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; min-height: 200px; }
+    .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0; font-size: 24px;">Nachricht von Oliv</h1>
+    </div>
+    <div class="content">
+      <p>Hallo {{customer_name}},</p>
+      <div style="margin: 20px 0;">
+        {{custom_content}}
+      </div>
+      <p>Mit freundlichen Grüßen,<br/>Ihr Oliv-Team</p>
+    </div>
+    <div class="footer">
+      <p>Oliv Restaurant | Schweiz</p>
+    </div>
+  </div>
+</body>
+</html>
+```
+
+**Variables:**
+- `customer_name`
+- `custom_content`
+
+---
+
+## Template 19: `checkin-submitted`
+
+**When to use:** Notifies admins when a guest submits their 4-day check-in.
+
+**Subject:** `Check-in eingegangen: {{customer_name}} - {{event_date}}`
+
+**HTML:**
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #3d4a2e; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background-color: #f9f9f9; padding: 30px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; }
+    .section { background-color: #fff; padding: 20px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #eee; }
+    .section-title { font-weight: bold; color: #3d4a2e; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+    .change-badge { display: inline-block; padding: 4px 12px; border-radius: 15px; font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 15px; }
+    /* Note: Conditionals like badge color are handled in backend by sending full HTML or different variables */
+    .change-status { background-color: #f1f5f9; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-weight: bold; }
+    .label { font-weight: bold; color: #666; width: 140px; display: inline-block; }
+    .value { color: #333; }
+    .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+    .button { display: inline-block; background-color: #3d4a2e; color: #fff !important; text-decoration: none; padding: 12px 25px; border-radius: 5px; font-weight: bold; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0; font-size: 24px;">Check-in Submission</h1>
+      <p style="margin: 5px 0 0 0;">Oliv Restaurant Buchungssystem</p>
+    </div>
+
+    <div class="content">
+      <p>Ein Kunde hat den 4-Tage-Status-Check durchgeführt.</p>
+
+      <div class="section">
+        <div class="section-title">Status der Änderungen</div>
+        <div class="change-status">
+          Änderungen gemeldet: {{has_changes}}
+        </div>
+        <p><span class="label">Gästeanzahl-Update:</span> <span class="value">{{guest_count_changed}}</span></p>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Buchungsübersicht (Neu)</div>
+        <p><span class="label">Kunde:</span> <span class="value">{{customer_name}}</span></p>
+        <p><span class="label">Datum:</span> <span class="value">{{event_date}}</span></p>
+        <p><span class="label">Buchungs-ID:</span> <span class="value">{{booking_id}}</span></p>
+        <p><span class="label">Gästeanzahl:</span> <span class="value" style="font-weight:bold;">{{new_guest_count}} Personen</span></p>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Details der Änderungen</div>
+        <p><strong>Menü- / Komponenten-Änderungen:</strong></p>
+        <p style="white-space: pre-wrap; background: #f5f5f5; padding: 10px; border-radius: 3px;">{{menu_changes}}</p>
+        
+        <p><strong>Zusätzliche Wünsche / Details:</strong></p>
+        <p style="white-space: pre-wrap; background: #f5f5f5; padding: 10px; border-radius: 3px;">{{additional_details}}</p>
+      </div>
+
+      <div style="text-align: center; margin-top: 30px;">
+        <a href="{{admin_url}}" class="button">In Admin-Panel öffnen</a>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>Dies ist eine automatische Benachrichtigung vom Oliv Restaurant Buchungssystem.</p>
+    </div>
+  </div>
+</body>
+</html>
+```
+
+**Variables:**
+- `customer_name`
+- `event_date`
+- `booking_id`
+- `has_changes` ("Ja" / "Nein")
+- `guest_count_changed` ("Ja" / "Nein")
+- `new_guest_count`
+- `menu_changes`
+- `additional_details`
+- `admin_url`
+
+---
+
 ## IMPORTANT: Backend Logic Handles ALL Conditionals
 
 The backend code decides:
@@ -1425,9 +1563,13 @@ All variables are **always sent** - empty strings if not applicable. No `{{#if}}
 
 ---
 
+---
+
+---
+
 ## Summary
 
-✅ **17 templates total**
+✅ **20 templates total**
 ✅ **ZERO conditionals** in templates
 ✅ **Only simple variable substitution** like `{{customer_name}}`
 ✅ **All logic in backend code**

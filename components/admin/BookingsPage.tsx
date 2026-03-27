@@ -140,6 +140,7 @@ export function BookingsPage({ user }: { user?: any }) {
     { label: t('statuses.touchbase'), value: 'touchbase', dotColor: '#9DAE91' },
     { label: t('statuses.declined'), value: 'declined', dotColor: '#ef4444' },
     { label: t('statuses.completed'), value: 'completed', dotColor: '#3b82f6' },
+    { label: t('statuses.no_show'), value: 'no_show', dotColor: '#f97316' },
   ];
 
   const handleExport = () => {

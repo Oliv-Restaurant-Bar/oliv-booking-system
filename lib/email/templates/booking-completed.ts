@@ -57,36 +57,16 @@ export function generateBookingCompletedEmail(params: BookingCompletedEmailParam
           <p>Hallo ${customerName},</p>
           <p>Wir hoffen, dass Sie einen wundervollen Abend bei uns am <strong>${formattedDate}</strong> hatten! Es war uns eine Freude, Sie und Ihre Gäste (${booking.guestCount} Personen) zu begrüssen.</p>
 
-          <div class="feedback-box">
-            <h3 style="margin: 0 0 10px 0; color: #856404;">⭐ Helfen Sie uns, besser zu werden</h3>
-            <p style="margin: 0 0 15px 0; color: #856404;">
-              Ihre Meinung ist uns sehr wichtig. Bitte nehmen Sie sich 2 Minuten Zeit, um uns Ihr Feedback zu geben.
-            </p>
-            ${feedbackUrl ? `
-              <a href="${feedbackUrl}" class="button" style="background-color: #ffc107; color: #333;">
-                Feedback geben
-              </a>
-            ` : `
-              <p style="margin: 10px 0 0 0; color: #856404;">
-                Besuchen Sie unsere Website, um Ihr Feedback abzugeben.
-              </p>
-            `}
-          </div>
+
 
           <div class="rebooking-box">
             <h3 style="margin: 0 0 10px 0; color: #0c5460;">📅 Planen Sie Ihren nächsten Anlass?</h3>
             <p style="margin: 0 0 15px 0; color: #0c5460;">
               Wir freuen uns schon darauf, Sie wiederzusehen! Buchen Sie jetzt Ihren nächsten Anlass bei uns.
             </p>
-            ${rebookingUrl ? `
-              <a href="${rebookingUrl}" class="button" style="background-color: #17a2b8;">
-                Neue Buchung erstellen
-              </a>
-            ` : `
-              <p style="margin: 10px 0 0 0; color: #0c5460;">
-                Besuchen Sie unsere Website für eine neue Buchung.
-              </p>
-            `}
+            <a href="${process.env.NEXT_PUBLIC_APP_URL}/wizard" class="button" style="background-color: #17a2b8;">
+              Neue Buchung erstellen
+            </a>
           </div>
 
           <p><strong>Erinnerung an Ihren Besuch:</strong></p>

@@ -124,7 +124,7 @@ export function AddAddonItemModal({
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-foreground truncate" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                    <p className="text-foreground truncate" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }} title={type.label}>
                       {type.label}
                     </p>
                     <p className="text-muted-foreground line-clamp-2" style={{ fontSize: 'var(--text-small)' }}>

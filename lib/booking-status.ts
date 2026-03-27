@@ -54,6 +54,20 @@ export const BOOKING_STATUS_CONFIG: Record<string, StatusConfig> = {
     border: 'border-yellow-200',
     dotColor: '#eab308',
   },
+  no_show: {
+    label: 'No Show',
+    bg: 'bg-orange-50',
+    text: 'text-orange-700',
+    border: 'border-orange-200',
+    dotColor: '#f97316',
+  },
+  cancelled: {
+    label: 'Cancelled',
+    bg: 'bg-slate-50',
+    text: 'text-slate-700',
+    border: 'border-slate-200',
+    dotColor: '#64748b',
+  },
 };
 
 export function getBookingStatusConfig(status: string): StatusConfig {

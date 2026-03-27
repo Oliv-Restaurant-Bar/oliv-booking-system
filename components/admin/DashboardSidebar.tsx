@@ -69,6 +69,7 @@ export function DashboardSidebar({ user, activeItem = 'dashboard', onNavigate }:
                       : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                       }`}
                     style={{ fontSize: 'var(--text-base)' }}
+                    title={item.label}
                   >
                     {/* Active indicator line */}
                     {isActive && (

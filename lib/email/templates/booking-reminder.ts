@@ -66,7 +66,7 @@ export function generateBookingReminderEmail(params: BookingReminderEmailParams)
             <div class="alert-box">
               <h3 style="margin: 0 0 10px 0; color: #856404;">💰 Anzahlung erinnern</h3>
               <p style="margin: 0; color: #856404; line-height: 1.6;">
-                Bitte überprüfen Sie, ob die Anzahlung von CHF ${(estimatedTotal * 0.3).toFixed(2)} (30%) bereits überwiesen wurde.
+                Bitte überprüfen Sie, ob die Anzahlung bereits überwiesen wurde.
                 Falls nicht, bitten wir um zeitnahe Überweisung auf unser Konto.
               </p>
             </div>

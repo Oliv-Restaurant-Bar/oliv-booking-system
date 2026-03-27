@@ -106,6 +106,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     const commonT = useCommonTranslation();
     const buttonT = useButtonTranslation();
     const statusT = useTranslations('bookingStatus');
+    const wizardT = useTranslations('wizard');
     const { timezone } = useSystemTimezone();
 
     const [booking, setBooking] = useState<Booking | null>(initialBooking || null);
@@ -113,11 +114,9 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     const [comments, setComments] = useState<BookingComment[]>(initialBooking?.contactHistory || []);
     const [checkins, setCheckins] = useState<Booking['checkins']>(initialBooking?.checkins || []);
 
-    const [isEmailDropdownOpen, setIsEmailDropdownOpen] = useState(false);
     const [isReminding, setIsReminding] = useState(false);
     const [isSendingCheckin, setIsSendingCheckin] = useState(false);
     const [isSendingUpdate, setIsSendingUpdate] = useState(false);
-    const emailDropdownRef = React.useRef<HTMLDivElement>(null);
 
 
     const [newComment, setNewComment] = useState('');
@@ -127,7 +126,6 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     const [kitchenNotes, setKitchenNotes] = useState(initialBooking?.kitchenNotes || '');
     const [isSaving, setIsSaving] = useState(false);
     const [isLocked, setIsLocked] = useState(initialBooking?.isLocked || false);
-    const [lockLoading, setLockLoading] = useState(false);
     const [showAuditHistory, setShowAuditHistory] = useState(false);
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
     const [auditLoading, setAuditLoading] = useState(false);
@@ -259,19 +257,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         fetchBooking();
     }, [bookingId]);
 
-    // Close email dropdown when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (emailDropdownRef.current && !emailDropdownRef.current.contains(event.target as Node)) {
-                setIsEmailDropdownOpen(false);
-            }
-        };
 
-        if (isEmailDropdownOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-            return () => document.removeEventListener('mousedown', handleClickOutside);
-        }
-    }, [isEmailDropdownOpen]);
 
 
     // // Fetch venue locations on mount
@@ -357,83 +343,9 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         }
     };
 
-    const handleToggleLock = async () => {
-        if (!booking) return;
-        setLockLoading(true);
-        try {
-            const action = isLocked ? 'unlock' : 'lock';
-            const response = await fetch(`/api/bookings/${booking.id}/lock`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action }),
-            });
 
-            if (response.ok) {
-                setIsLocked(!isLocked);
-                if (showAuditHistory) fetchAuditHistory();
-                toast.success(t(!isLocked ? 'toast.lockSuccess' : 'toast.unlockSuccess'));
-            } else {
-                const errorData = await response.json();
-                toast.error(`${t(action === 'lock' ? 'toast.lockFailed' : 'toast.unlockFailed')}: ${errorData.error || commonT('error')}`);
-            }
-        } catch (error) {
-            console.error('Error toggling lock:', error);
-            toast.error(t(!isLocked ? 'toast.lockFailed' : 'toast.unlockFailed'));
-        } finally {
-            setLockLoading(false);
-        }
-    };
 
-    const handleCopyEditLink = async () => {
-        if (!booking) return;
 
-        const copyToClipboard = async (text: string) => {
-            try {
-                if (navigator?.clipboard && window.isSecureContext) {
-                    await navigator.clipboard.writeText(text);
-                } else {
-                    throw new Error('Clipboard API not available');
-                }
-            } catch (error) {
-                console.log('Using fallback clipboard approach', error);
-                const textArea = document.createElement("textarea");
-                textArea.value = text;
-                textArea.style.position = "fixed";
-                textArea.style.left = "-999999px";
-                textArea.style.top = "-999999px";
-                document.body.appendChild(textArea);
-                textArea.focus();
-                textArea.select();
-                try {
-                    document.execCommand('copy');
-                } catch (err) {
-                    console.error('Fallback clipboard copy failed:', err);
-                } finally {
-                    textArea.remove();
-                }
-            }
-        };
-
-        try {
-            // SECURITY: editSecret is no longer returned in booking API responses
-            // Admins must generate it via the generate-secret endpoint
-            const generateResponse = await fetch(`/api/bookings/${booking.id}/generate-secret`, { method: 'POST' });
-            if (generateResponse.ok) {
-                const generateData = await generateResponse.json();
-                if (generateData.success && generateData.editSecret) {
-                    const baseUrl = window.location.origin;
-                    const editLink = `${baseUrl}/booking/${booking.id}/edit/${generateData.editSecret}`;
-                    await copyToClipboard(editLink);
-                    toast.success(t('toast.generateLinkSuccess'));
-                    return;
-                }
-            }
-            toast.error(t('toast.generateLinkFailed'));
-        } catch (error) {
-            console.error('Error copying edit link:', error);
-            toast.error(t('toast.copyLinkFailed'));
-        }
-    };
 
     const statusOptions = [
         { value: 'new', label: statusT('new'), dotColor: '#8b5cf6' },
@@ -442,6 +354,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         { value: 'confirmed', label: statusT('confirmed'), dotColor: '#10b981' },
         { value: 'completed', label: statusT('completed'), dotColor: '#3b82f6' },
         { value: 'declined', label: statusT('declined'), dotColor: '#ef4444' },
+        { value: 'no_show', label: statusT('no_show'), dotColor: '#f97316' },
     ];
 
     const handleAddComment = async () => {
@@ -508,7 +421,6 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
     const handleSendReminder = async () => {
         setIsReminding(true);
-        setIsEmailDropdownOpen(false);
         try {
             const response = await fetch(`/api/bookings/${bookingId}/remind`, { method: 'POST' });
             if (response.ok) {
@@ -526,7 +438,6 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
     const handleSendCheckin = async () => {
         setIsSendingCheckin(true);
-        setIsEmailDropdownOpen(false);
         try {
             const response = await fetch(`/api/bookings/${bookingId}/send-checkin`, { method: 'POST' });
             if (response.ok) {
@@ -545,11 +456,10 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     const handleSendUpdate = async () => {
         if (!booking) return;
         setIsSendingUpdate(true);
-        setIsEmailDropdownOpen(false);
         try {
             // Generate PDF
             const { generateBookingPdf } = await import('@/lib/utils/pdf-generator');
-            
+
             const pdfData = {
                 id: booking.id,
                 customerName: booking.customer.name,
@@ -960,12 +870,12 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                         </button>
                     </div>
                     <div className="flex items-center gap-3 flex-wrap">
-                        {kitchenPdfStatus && (
+                        {/* {kitchenPdfStatus && (
                             <KitchenPdfStatusBadge
                                 status={kitchenPdfStatus.sentStatus}
                                 lastSentAt={kitchenPdfStatus.lastSentAt}
                             />
-                        )}
+                        )} */}
 
                         {canEditBooking && (
                             <button
@@ -992,17 +902,6 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                             </button>
                         )} */}
 
-                        {canEditBooking && !isLocked && (
-                            <button
-                                onClick={handleCopyEditLink}
-                                className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors flex items-center gap-2 cursor-pointer"
-                                style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
-                            >
-                                <Link className="w-4 h-4" />
-                                {t('copyEditLink')}
-                            </button>
-                        )}
-
                         {canEditBooking && (
                             <button
                                 onClick={() => setIsAssignModalOpen(true)}
@@ -1021,58 +920,34 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                         )}
 
                         {canEditBooking && (
-                            <button
-                                onClick={handleToggleLock}
-                                // disabled={lockLoading || isLocked}
-                                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 cursor-pointer ${isLocked
-                                    ? 'bg-amber-500 text-white cursor-not-allowed'
-                                    : 'bg-primary hover:bg-primary/90 text-primary-foreground '
-                                    }`}
-                                style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
-                            >
-                                {lockLoading ? commonT('loading') : isLocked ? <><Lock className="w-4 h-4" />{t('unlock')}</> : <><Lock className="w-4 h-4" />{t('lock')}</>}
-                            </button>
-                        )}
-
-                        {canEditBooking && (
-                            <div className="relative" ref={emailDropdownRef}>
+                            <div className="flex items-center gap-2">
                                 <button
-                                    onClick={() => setIsEmailDropdownOpen(!isEmailDropdownOpen)}
-                                    className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors flex items-center gap-2 cursor-pointer border border-border"
+                                    onClick={handleSendReminder}
+                                    disabled={isReminding}
+                                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 cursor-pointer border border-border disabled:opacity-50"
                                     style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
                                 >
-                                    <Mail className="w-4 h-4" />
-                                    {t('actions')}
-                                    <ChevronDown className={cn("w-4 h-4 transition-transform duration-200", isEmailDropdownOpen && "rotate-180")} />
+                                    {isReminding ? <Loader2 className="w-4 h-4 animate-spin text-primary-foreground" /> : <Bell className="w-4 h-4 text-primary-foreground" />}
+                                    <span className="hidden sm:inline">{t('sendReminder')}</span>
                                 </button>
-                                {isEmailDropdownOpen && (
-                                    <div className="absolute right-0 mt-2 w-64 bg-card rounded-lg shadow-lg border border-border overflow-hidden z-50">
-                                        <button
-                                            onClick={handleSendReminder}
-                                            disabled={isReminding}
-                                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-left cursor-pointer border-b border-border disabled:opacity-50"
-                                        >
-                                            {isReminding ? <Loader2 className="w-4 h-4 animate-spin text-primary" /> : <Bell className="w-4 h-4 text-primary" />}
-                                            <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>{t('sendReminder')}</span>
-                                        </button>
-                                        <button
-                                            onClick={handleSendCheckin}
-                                            disabled={isSendingCheckin}
-                                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-left cursor-pointer border-b border-border disabled:opacity-50"
-                                        >
-                                            {isSendingCheckin ? <Loader2 className="w-4 h-4 animate-spin text-primary" /> : <Mail className="w-4 h-4 text-primary" />}
-                                            <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>{t('sendCheckin')}</span>
-                                        </button>
-                                        <button
-                                            onClick={handleSendUpdate}
-                                            disabled={isSendingUpdate}
-                                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-left cursor-pointer disabled:opacity-50"
-                                        >
-                                            {isSendingUpdate ? <Loader2 className="w-4 h-4 animate-spin text-primary" /> : <Send className="w-4 h-4 text-primary" />}
-                                            <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>{t('sendUpdate')}</span>
-                                        </button>
-                                    </div>
-                                )}
+                                <button
+                                    onClick={handleSendCheckin}
+                                    disabled={isSendingCheckin}
+                                    className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors flex items-center gap-2 cursor-pointer border border-border disabled:opacity-50"
+                                    style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+                                >
+                                    {isSendingCheckin ? <Loader2 className="w-4 h-4 animate-spin text-primary" /> : <Mail className="w-4 h-4 text-primary" />}
+                                    <span className="hidden sm:inline">{t('sendCheckin')}</span>
+                                </button>
+                                <button
+                                    onClick={handleSendUpdate}
+                                    disabled={isSendingUpdate}
+                                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 cursor-pointer border border-border disabled:opacity-50"
+                                    style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+                                >
+                                    {isSendingUpdate ? <Loader2 className="w-4 h-4 animate-spin text-primary-foreground" /> : <Send className="w-4 h-4 text-primary-foreground" />}
+                                    <span className="hidden sm:inline">{t('sendUpdate')}</span>
+                                </button>
                             </div>
                         )}
 
@@ -1166,7 +1041,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         style={{ fontSize: 'var(--text-base)' }}
                                     />
                                 ) : (
-                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.name}</p>
+                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={booking.customer.name}>{booking.customer.name}</p>
                                 )}
                             </div>
                             <div className="space-y-1">
@@ -1180,7 +1055,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         style={{ fontSize: 'var(--text-base)' }}
                                     />
                                 ) : (
-                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.business || '-'}</p>
+                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={booking.customer.business || ''}>{booking.customer.business || '-'}</p>
                                 )}
                             </div>
                             <div className="space-y-1">
@@ -1194,7 +1069,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         style={{ fontSize: 'var(--text-base)' }}
                                     />
                                 ) : (
-                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.email}</p>
+                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={booking.customer.email}>{booking.customer.email}</p>
                                 )}
                             </div>
                             <div className="space-y-1">
@@ -1208,7 +1083,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         style={{ fontSize: 'var(--text-base)' }}
                                     />
                                 ) : (
-                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.phone}</p>
+                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={booking.customer.phone}>{booking.customer.phone}</p>
                                 )}
                             </div>
                             <div className="sm:col-span-2 space-y-1">
@@ -1222,7 +1097,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         style={{ fontSize: 'var(--text-base)' }}
                                     />
                                 ) : (
-                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.address || '-'}</p>
+                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={booking.customer.address || ''}>{booking.customer.address || '-'}</p>
                                 )}
                             </div>
                             <div className="sm:col-span-2 space-y-1">
@@ -1236,7 +1111,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         style={{ fontSize: 'var(--text-base)' }}
                                     />
                                 ) : (
-                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.billingAddress || '-'}</p>
+                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={booking.billingAddress || ''}>{booking.billingAddress || '-'}</p>
                                 )}
                             </div>
                         </div>
@@ -1301,7 +1176,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         style={{ fontSize: 'var(--text-base)' }}
                                     />
                                 ) : (
-                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.event.date}</p>
+                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={booking.event.date}>{booking.event.date}</p>
                                 )}
                             </div>
                             <div className="space-y-1">
@@ -1315,7 +1190,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         style={{ fontSize: 'var(--text-base)' }}
                                     />
                                 ) : (
-                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.event.time}</p>
+                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={booking.event.time}>{booking.event.time}</p>
                                 )}
                             </div>
                             <div className="space-y-1">
@@ -1329,7 +1204,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         style={{ fontSize: 'var(--text-base)' }}
                                     />
                                 ) : (
-                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.guests}</p>
+                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={booking.guests.toString()}>{booking.guests}</p>
                                 )}
                             </div>
                             <div className="space-y-1">
@@ -1343,7 +1218,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         style={{ fontSize: 'var(--text-base)' }}
                                     />
                                 ) : (
-                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.event.occasion}</p>
+                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={booking.event.occasion}>{booking.event.occasion}</p>
                                 )}
                             </div>
                             <div className="space-y-1">
@@ -1357,7 +1232,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         style={{ fontSize: 'var(--text-base)' }}
                                     />
                                 ) : (
-                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.amount}</p>
+                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={booking.amount}>{booking.amount}</p>
                                 )}
                             </div>
                             {/* <div className="space-y-1">
@@ -1392,7 +1267,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         style={{ fontSize: 'var(--text-base)' }}
                                     >
                                         <option value="">{t('notAssigned')}</option>
-                                        {currentGuests >= 50 && (
+                                        {currentGuests < 50 && (
                                             <option value="eg">EG</option>
                                         )}
                                         {currentGuests >= 30 && (
@@ -1409,6 +1284,29 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                 )}
                             </div>
                         </div>
+
+                        {canEditBooking && (
+                            <div className="flex justify-end mt-4 pt-4 border-t border-border/50">
+                                <button
+                                    onClick={handleSaveChanges}
+                                    disabled={isSaving || !hasUnsavedChanges}
+                                    className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm hover:shadow-md"
+                                    style={{ fontSize: 'var(--text-base)' }}
+                                >
+                                    {isSaving ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-transparent rounded-full animate-spin" />
+                                            Saving...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CheckCircle2 className="w-4 h-4" />
+                                            Save Changes
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* Menu Items */}
@@ -1476,19 +1374,34 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         (isEditingMenu ? tempMenuItems : booking.menuItems)!.map((item: any, index: number) => (
                                             <tr key={index} className="border-t border-border">
                                                 <td className="px-4 py-3 text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                                    <div className="flex flex-col gap-1">
-                                                        <span>{item.item || item.name}</span>
+                                                    <div className="flex flex-col gap-1.5 py-1">
+                                                        <div className="font-medium text-foreground" title={item.item || item.name}>
+                                                            {item.item || item.name}
+                                                            {item.variant && (
+                                                                <span className="ml-1.5 text-muted-foreground font-normal">
+                                                                    ({item.variant})
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        {item.notes && (
+                                                            <div className="flex items-start gap-1.5 text-primary/80">
+                                                                <UtensilsCrossed className="w-3 h-3 mt-1 flex-shrink-0" />
+                                                                <span className="text-[12px] leading-tight font-medium" title={item.notes}>
+                                                                    {item.notes}
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                         {item.customerComment && (
-                                                            <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-500">
-                                                                <MessageSquare className="w-3 h-3 flex-shrink-0" />
-                                                                <span className="text-[11px] italic leading-tight">
-                                                                    Notes: {item.customerComment}
+                                                            <div className="flex items-start gap-1.5 text-amber-600 dark:text-amber-500">
+                                                                <MessageSquare className="w-3 h-3 mt-1 flex-shrink-0" />
+                                                                <span className="text-[12px] italic leading-tight" title={item.customerComment}>
+                                                                    Note: {item.customerComment}
                                                                 </span>
                                                             </div>
                                                         )}
                                                     </div>
                                                 </td>
-                                                <td className="px-4 py-3 text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>{item.category}</td>
+                                                <td className="px-4 py-3 text-muted-foreground" style={{ fontSize: 'var(--text-base)' }} title={item.category}>{item.category}</td>
                                                 <td className="px-4 py-3 text-foreground" style={{ fontSize: 'var(--text-base)' }}>
                                                     {isEditingMenu ? (
                                                         <div className="flex items-center gap-2">
@@ -1538,55 +1451,6 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                             </table>
                         </div>
 
-                        <h3 className="text-foreground mt-10 mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                            <MessageSquare className="w-5 h-5 text-primary" /> {t('kitchenNotes')}
-                        </h3>
-                        <div className="space-y-4">
-                            <div className="space-y-1">
-                                {canEditBooking ? (
-                                    <ValidatedTextarea
-                                        value={kitchenNotes}
-                                        onChange={(e) => {
-                                            setKitchenNotes(e.target.value);
-                                            if (errors.kitchenNotes) setErrors({ ...errors, kitchenNotes: undefined });
-                                        }}
-                                        rows={3}
-                                        placeholder={t('kitchenNotesPlaceholder')}
-                                        maxLength={1000}
-                                        showCharacterCount
-                                        error={errors.kitchenNotes}
-                                        helperText="Optional"
-                                    />
-                                ) : (
-                                    <div className="p-4 bg-muted/20 border border-border/50 rounded-lg text-foreground min-h-[80px] whitespace-pre-wrap" style={{ fontSize: 'var(--text-base)' }}>
-                                        {kitchenNotes || <span className="text-muted-foreground italic">{t('noDataFound')}</span>}
-                                    </div>
-                                )}
-                            </div>
-
-                            {canEditBooking && (
-                                <div className="flex justify-end pt-2">
-                                    <button
-                                        onClick={handleSaveChanges}
-                                        disabled={isSaving || !hasUnsavedChanges}
-                                        className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm hover:shadow-md"
-                                        style={{ fontSize: 'var(--text-base)' }}
-                                    >
-                                        {isSaving ? (
-                                            <>
-                                                <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-transparent rounded-full animate-spin" />
-                                                Saving...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <CheckCircle2 className="w-4 h-4" />
-                                                Save Changes
-                                            </>
-                                        )}
-                                    </button>
-                                </div>
-                            )}
-                        </div>
                     </div>
 
                     {/* Additional Information */}
@@ -1596,14 +1460,14 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                         </h3>
                         <div className="space-y-1">
                             <label className="text-muted-foreground block font-medium" style={{ fontSize: 'var(--text-small)' }}>{t('allergyDetails')}</label>
-                            <div className="p-4 bg-muted/20 border border-border/50 rounded-lg text-foreground min-h-[60px] whitespace-pre-wrap" style={{ fontSize: 'var(--text-base)' }}>
+                            <div className="p-4 bg-muted/20 border border-border/50 rounded-lg text-foreground min-h-[60px] whitespace-pre-wrap" style={{ fontSize: 'var(--text-base)' }} title={Array.isArray(allergies) ? allergies.join(', ') : (allergies || '')}>
                                 {Array.isArray(allergies) ? allergies.join(', ') : allergies || <span className="text-muted-foreground italic">{t('noDataFound')}</span>}
                             </div>
                             <p className="text-muted-foreground text-xs mt-1">{t('clientFilledField')}</p>
                         </div>
                         <div className="space-y-1 text-pt-2">
                             <label className="text-muted-foreground block font-medium" style={{ fontSize: 'var(--text-small)' }}>{t('internalNotes')}</label>
-                            <div className="p-4 bg-muted/20 border border-border/50 rounded-lg text-foreground min-h-[60px] whitespace-pre-wrap" style={{ fontSize: 'var(--text-base)' }}>
+                            <div className="p-4 bg-muted/20 border border-border/50 rounded-lg text-foreground min-h-[60px] whitespace-pre-wrap" style={{ fontSize: 'var(--text-base)' }} title={notes || ''}>
                                 {notes || <span className="text-muted-foreground italic font-normal">{t('noDataFound')}</span>}
                             </div>
                             <p className="text-muted-foreground text-xs mt-1">{t('clientFilledField')}</p>
@@ -1660,14 +1524,14 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                             {checkin.menuChanges && (
                                                 <div className="space-y-1 bg-background/50 p-3 rounded-lg border border-border/50">
                                                     <p className="text-[10px] uppercase text-primary font-bold">Menu Changes</p>
-                                                    <p className="text-sm italic">{checkin.menuChanges}</p>
+                                                    <p className="text-sm italic" title={checkin.menuChanges}>{checkin.menuChanges}</p>
                                                 </div>
                                             )}
 
                                             {checkin.additionalDetails && (
                                                 <div className="space-y-1 bg-background/50 p-3 rounded-lg border border-border/50">
                                                     <p className="text-[10px] uppercase text-primary font-bold">Additional Details</p>
-                                                    <p className="text-sm italic">{checkin.additionalDetails}</p>
+                                                    <p className="text-sm italic" title={checkin.additionalDetails}>{checkin.additionalDetails}</p>
                                                 </div>
                                             )}
                                         </div>

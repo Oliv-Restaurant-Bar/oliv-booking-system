@@ -116,6 +116,7 @@ export const emailTypeEnum = [
   "checkin_reminder",
   "booking_update",
   "manual_reminder",
+  "checkin_submitted",
 ] as const;
 export type EmailType = (typeof emailTypeEnum)[number];
 
@@ -187,7 +188,7 @@ export const bookings = pgTable(
     requiresDeposit: boolean("requires_deposit").notNull().default(false),
     status: text("status", { enum: bookingStatusEnum })
       .notNull()
-      .default("pending"),
+      .default("new"),
     location: text("location"),
     internalNotes: text("internal_notes"),
     kitchenNotes: text("kitchen_notes"),

@@ -21,6 +21,7 @@ export function BookingStatusBadge({ status, className }: BookingStatusBadgeProp
                 config.border,
                 className
             )}
+            title={config.label}
         >
             <span
                 className="w-1.5 h-1.5 rounded-full flex-shrink-0"

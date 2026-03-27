@@ -36,6 +36,10 @@ import {
   generateManualReminderEmail,
   ManualReminderEmailParams,
 } from "./manual-reminder";
+import {
+  generateBookingCheckinSubmittedEmail,
+  BookingCheckinSubmittedEmailParams,
+} from "./booking-checkin-submitted";
 
 
 export {
@@ -48,6 +52,7 @@ export {
   generateBookingCheckinEmail,
   generateBookingUpdateEmail,
   generateManualReminderEmail,
+  generateBookingCheckinSubmittedEmail,
 };
 
 export type {
@@ -60,6 +65,7 @@ export type {
   BookingCheckinEmailParams,
   BookingUpdateEmailParams,
   ManualReminderEmailParams,
+  BookingCheckinSubmittedEmailParams,
 };
 
 /**
@@ -74,6 +80,11 @@ export function generateEmailContent(
     bookingEditUrl?: string;
     feedbackUrl?: string;
     rebookingUrl?: string;
+    hasChanges?: boolean;
+    guestCountChanged?: boolean;
+    newGuestCount?: number;
+    menuChanges?: string;
+    additionalDetails?: string;
   }
 ): { subject: string; html: string } {
   switch (emailType) {
@@ -117,6 +128,34 @@ export function generateEmailContent(
     case "manual_reminder":
       return generateManualReminderEmail({
         booking: params.booking,
+      });
+
+    case "checkin_submitted":
+      return generateBookingCheckinSubmittedEmail({
+        booking: params.booking,
+        hasChanges: params.hasChanges || false,
+        guestCountChanged: params.guestCountChanged || false,
+        newGuestCount: params.newGuestCount,
+        menuChanges: params.menuChanges,
+        additionalDetails: params.additionalDetails,
+      });
+
+    case "no_show":
+      return generateBookingNoShowEmail({
+        booking: params.booking,
+      });
+
+    case "thank_you":
+      return generateBookingConfirmedEmail({
+        booking: params.booking,
+        estimatedTotal: params.estimatedTotal || 0,
+        bookingEditUrl: params.bookingEditUrl,
+      });
+
+    case "declined":
+      return generateBookingDeclinedEmail({
+        booking: params.booking,
+        reason: params.reason,
       });
 
     case "custom":

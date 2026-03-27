@@ -716,6 +716,11 @@ export function CustomMenuWizard() {
       }
     }
 
+    // Validate room selection
+    if (!eventDetails.room) {
+      newErrors.room = 'Room selection is required';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -783,9 +788,10 @@ export function CustomMenuWizard() {
       isDateValid &&
       eventDetails.guestCount !== '' &&
       parseInt(eventDetails.guestCount) >= 1 &&
-      parseInt(eventDetails.guestCount) <= 10000
+      parseInt(eventDetails.guestCount) <= 10000 &&
+      eventDetails.room !== ''
     );
-  }, [eventDetails.name, eventDetails.email, eventDetails.telephone, eventDetails.street, eventDetails.plz, eventDetails.location, eventDetails.eventDate, eventDetails.eventTime, eventDetails.guestCount]);
+  }, [eventDetails.name, eventDetails.email, eventDetails.telephone, eventDetails.street, eventDetails.plz, eventDetails.location, eventDetails.eventDate, eventDetails.eventTime, eventDetails.guestCount, eventDetails.room]);
 
   const isCurrentTabValid = useMemo(() => {
     switch (activeTab) {
@@ -1469,9 +1475,9 @@ export function CustomMenuWizard() {
       />
       <div className="min-h-screen bg-background flex flex-col">
         {/* Mobile Step Indicator - Only visible on mobile */}
-        <div className="lg:hidden sticky top-0 z-40 bg-primary text-primary-foreground px-4 py-3">
+        {/*<div className="lg:hidden sticky top-0 z-40 bg-primary text-primary-foreground px-4 py-3">
           <div className="max-w-4xl mx-auto">
-            {/* Compact Row: Step Counter + Title */}
+            {/* Compact Row: Step Counter + Title 
             <div className="flex items-center justify-between gap-3 mb-2">
               <p className="text-primary-foreground opacity-80 flex-shrink-0" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
                 {t('status.itemsAvailable', { count: currentStep })}
@@ -1480,8 +1486,7 @@ export function CustomMenuWizard() {
                 {steps[currentStep - 1]?.title || t('steps.review')}
               </h2>
             </div>
-
-            {/* Progress Bar */}
+            //progress bar
             <div className="flex items-center gap-2">
               {steps.map((step) => {
                 const isActive = currentStep === step.number;
@@ -1498,7 +1503,7 @@ export function CustomMenuWizard() {
               })}
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Main Content - Two Column Layout */}
         <div className="flex-1 flex flex-col items-center w-full">

@@ -96,7 +96,7 @@ export function ChoicesAddonsTab({
               {/* Content - Name, Description, Item Count */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <h4 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                  <h4 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }} title={group.name}>
                     {group.name}
                   </h4>
                   <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
@@ -271,7 +271,7 @@ export function ChoicesAddonsTab({
                         {item.dietaryType && item.dietaryType !== 'none' && (
                           <DietaryIcon type={item.dietaryType} size="sm" />
                         )}
-                        <h5 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                        <h5 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }} title={item.name}>
                           {item.name}
                         </h5>
                       </div>

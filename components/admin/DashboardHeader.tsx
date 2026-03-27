@@ -147,7 +147,7 @@ export function DashboardHeader({
                 </div>
               )}
             </div>
-            <span style={{ fontSize: 'var(--text-base)' }} className="hidden md:block">{displayUserName}</span>
+            <span style={{ fontSize: 'var(--text-base)' }} className="hidden md:block" title={displayUserName}>{displayUserName}</span>
             <ChevronDown
               className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''
                 }`}

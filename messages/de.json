@@ -118,6 +118,7 @@
     "declined": "Abgelehnt",
     "cancelled": "Storniert",
     "completed": "Abgeschlossen",
+    "no_show": "Nicht erschienen",
     "noShow": "Nicht erschienen",
     "unresponsive": "Keine Antwort"
   },
@@ -231,7 +232,7 @@
       "firstName": "2-20 Zeichen",
       "lastName": "2-20 Zeichen",
       "email": "Muss eine gültige E-Mail-Adresse sein (max 255 Zeichen)",
-      "password": "Min. 8 Zeichen, max. 100 Zeichen"
+      "password": "Mindestens 12 Zeichen, muss Großbuchstaben, Kleinbuchstaben, Zahl und Sonderzeichen enthalten"
     },
     "placeholders": {
       "firstName": "Vornamen eingeben",
@@ -402,7 +403,9 @@
         "confirmed": "Bestätigt",
         "touchbase": "Touch-Basis",
         "declined": "Abgelehnt",
-        "completed": "Abgeschlossen"
+        "completed": "Abgeschlossen",
+        "no_show": "Nicht erschienen",
+        "cancelled": "Storniert"
       },
       "exportColumns": {
         "customerName": "Kundenname",
@@ -917,7 +920,7 @@
       },
       "step2": {
         "title": "Menü wählen",
-        "description": "Wählen Sie aus unseren kuratierten Angeboten - von Vorspeisen bis Desserts."
+        "description": "Wählen Sie aus unseren kuratierten Bookings - von Vorspeisen bis Desserts."
       },
       "step3": {
         "title": "Überprüfen & Absenden",

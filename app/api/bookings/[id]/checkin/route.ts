@@ -56,6 +56,70 @@ export async function POST(
       })
       .returning();
 
+    // Send notification emails to admins and assigned user
+    try {
+      const { sendCheckinSubmittedNotification } = await import("@/lib/actions/email");
+      const { adminUser, leads } = await import("@/lib/db/schema");
+      const { or } = await import("drizzle-orm");
+
+      // Get booking details with lead info
+      const [bookingWithLead] = await db
+        .select()
+        .from(bookings)
+        .where(eq(bookings.id, id))
+        .leftJoin(leads, eq(bookings.leadId, leads.id))
+        .limit(1);
+
+      if (bookingWithLead) {
+        // Find admins and super admins
+        const admins = await db
+          .select()
+          .from(adminUser)
+          .where(or(eq(adminUser.role, "admin"), eq(adminUser.role, "super_admin")));
+
+        const adminEmails = admins.map(a => a.email);
+        
+        // Find assigned user email
+        if (bookingWithLead.bookings.assignedTo) {
+          const [assignedUser] = await db
+            .select()
+            .from(adminUser)
+            .where(eq(adminUser.id, bookingWithLead.bookings.assignedTo))
+            .limit(1);
+          
+          if (assignedUser && !adminEmails.includes(assignedUser.email)) {
+            adminEmails.push(assignedUser.email);
+          }
+        }
+
+        // Send unique emails to everyone
+        const uniqueRecipients = [...new Set(adminEmails)];
+        
+        const bookingData = {
+          ...bookingWithLead.bookings,
+          lead: bookingWithLead.leads
+        };
+
+        await Promise.allSettled(
+          uniqueRecipients.map(recipientEmail => 
+            sendCheckinSubmittedNotification({
+              bookingId: id,
+              recipientEmail,
+              bookingData,
+              hasChanges: validatedData.has_changes,
+              guestCountChanged: validatedData.guest_count_changed,
+              newGuestCount: validatedData.new_guest_count ?? undefined,
+              menuChanges: validatedData.menu_changes ?? undefined,
+              additionalDetails: validatedData.additional_details ?? undefined,
+            })
+          )
+        );
+      }
+    } catch (emailError) {
+      console.error("Error sending checkin notifications:", emailError);
+      // Don't fail the response if email fails
+    }
+
     return NextResponse.json({
       success: true,
       message: "Check-in submitted successfully",

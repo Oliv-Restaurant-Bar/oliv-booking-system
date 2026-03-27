@@ -24,6 +24,7 @@ export function ViewSwitcher({ currentView, onViewChange }: ViewSwitcherProps) {
       <ToggleGroup.Item
         value="grid"
         aria-label="Grid view"
+        title="Grid View"
         className={cn(
           "inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md transition-all",
           "hover:bg-background hover:shadow-sm",
@@ -39,6 +40,7 @@ export function ViewSwitcher({ currentView, onViewChange }: ViewSwitcherProps) {
       <ToggleGroup.Item
         value="calendar"
         aria-label="Calendar view"
+        title="Calendar View"
         className={cn(
           "inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md transition-all",
           "hover:bg-background hover:shadow-sm",

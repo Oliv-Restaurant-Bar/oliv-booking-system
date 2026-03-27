@@ -150,7 +150,7 @@ export function MenuCategoriesTab({
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h4 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                          <h4 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }} title={category.name}>
                             {category.name.slice(0, 25)} {category.name.length > 25 ? '...' : ''}
                           </h4>
                           {category.items && category.items.length > 0 && (
@@ -159,7 +159,7 @@ export function MenuCategoriesTab({
                             </span>
                           )}
                         </div>
-                        <p className="text-muted-foreground line-clamp-1" style={{ fontSize: 'var(--text-small)' }}>
+                        <p className="text-muted-foreground line-clamp-1" style={{ fontSize: 'var(--text-small)' }} title={category.description}>
                           {category.description.slice(0, 25)} {category.description.length > 25 ? '...' : ''}
                         </p>
                       </div>
@@ -370,13 +370,13 @@ export function MenuCategoriesTab({
 
                                     {/* Content */}
                                     <div className="flex-1 min-w-0">
-                                      <h5 className="text-foreground flex items-center gap-2 flex-wrap mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                                      <h5 className="text-foreground flex items-center gap-2 flex-wrap mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }} title={item.name}>
                                         {item.dietaryType && (
                                           <DietaryIcon type={item.dietaryType as any} size="sm" />
                                         )}
                                         <span className="text-ellipsis overflow-hidden whitespace-nowrap">{item.name.slice(0, 25)} {item.name.length > 25 ? '...' : ''}</span>
                                       </h5>
-                                      <p className="text-muted-foreground line-clamp-1" style={{ fontSize: 'var(--text-small)' }}>
+                                      <p className="text-muted-foreground line-clamp-1" style={{ fontSize: 'var(--text-small)' }} title={item.description}>
                                         {item.description}
                                       </p>
                                       {item.variants && item.variants.length > 0 && (

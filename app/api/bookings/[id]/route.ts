@@ -97,10 +97,11 @@ export async function GET(
         let customerComment = '';
         if (item.notes) {
           const variantMatch = item.notes.match(/Variant: ([^|]+)/);
-          const addonsMatch = item.notes.match(/(?:Add-ons|Choices): ([^|]+)/);
+          const selectionsMatch = item.notes.match(/((?:Add-ons|Choices): [^|]+)/);
           const commentMatch = item.notes.match(/Comment: ([^|]+)/);
+          
           if (variantMatch) variant = variantMatch[1].trim();
-          if (addonsMatch) choices = addonsMatch[1].trim();
+          if (selectionsMatch) choices = selectionsMatch[1].trim();
           if (commentMatch) customerComment = commentMatch[1].trim();
         }
 
@@ -114,9 +115,8 @@ export async function GET(
         }
 
         return {
-          id: item.item_id, // For backward compatibility or internal use
-          itemId: item.item_id,
-          item: displayName || 'Unknown Item',
+          item: item.item_name || 'Unknown Item',
+          variant: variant || '',
           category: item.category_name || 'Unknown',
           quantity: isPerPerson
             ? `${item.quantity} guests x ${Math.round(unitPrice)} CHF`

@@ -37,8 +37,7 @@ export function generateBookingConfirmedEmail(params: BookingConfirmedEmailParam
       <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin: 20px 0; border-radius: 4px;">
         <h3 style="margin: 0 0 10px 0; color: #856404;">💰 Anzahlung erforderlich</h3>
         <p style="margin: 0; color: #856404; line-height: 1.6;">
-          Da Ihre Buchung CHF ${estimatedTotal.toFixed(2)} überschreitet, bitten wir um eine Anzahlung von
-          <strong>CHF ${(estimatedTotal * 0.3).toFixed(2)} (30%)</strong>, um Ihre Reservierung zu bestätigen.
+          Da Ihre Buchung den Schwellenwert für Anzahlungen erreicht hat, bitten wir um eine Anzahlung, um Ihre Reservierung zu bestätigen.
         </p>
         <p style="margin: 10px 0 0 0; color: #856404;">
           Bitte überweisen Sie den Betrag innerhalb von 7 Tagen auf folgendes Konto:
@@ -65,18 +64,9 @@ export function generateBookingConfirmedEmail(params: BookingConfirmedEmailParam
   } else {
     depositSection = `
       <div style="background-color: #d1ecf1; border-left: 4px solid #17a2b8; padding: 20px; margin: 20px 0; border-radius: 4px;">
-        <h3 style="margin: 0 0 10px 0; color: #0c5460;">🍽️ Menü anpassen</h3>
         <p style="margin: 0; color: #0c5460; line-height: 1.6;">
-          Vielen Dank für Ihre Buchung! Sie können Ihr Menü noch anpassen, bis zu 48 Stunden vor der Veranstaltung.
+          Vielen Dank für Ihre Buchung! Wir haben Ihre Reservierung erhalten und freuen uns auf Ihren Besuch.
         </p>
-        ${bookingEditUrl ? `
-          <div style="margin-top: 15px;">
-            <a href="${bookingEditUrl}"
-               style="display: inline-block; background-color: #17a2b8; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">
-              Menü jetzt bearbeiten
-            </a>
-          </div>
-        ` : ""}
       </div>
     `;
   }

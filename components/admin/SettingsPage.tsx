@@ -263,7 +263,7 @@ export function SettingsPage({ user }: { user?: any }) {
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h4 className="text-foreground font-semibold truncate" style={{ fontSize: 'var(--text-base)' }}>
+                          <h4 className="text-foreground font-semibold truncate" style={{ fontSize: 'var(--text-base)' }} title={venue.name}>
                             {venue.name}
                           </h4>
                         </div>

@@ -837,6 +837,7 @@ export function AddMenuItemModal({
                           <span
                             className="text-foreground truncate"
                             style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+                            title={group.name}
                           >
                             {group.name}
                           </span>

@@ -39,7 +39,7 @@ export function ThankYouScreen({
     setIsGenerating(true);
     try {
       const doc = await generateCustomerOfferPdf(bookingData);
-      const filename = `Angebot_${bookingData.customerName.replace(/\s+/g, '_')}.pdf`;
+      const filename = `Booking_${bookingData.customerName.replace(/\s+/g, '_')}.pdf`;
       doc.save(filename);
       toast.success('PDF downloaded successfully');
     } catch (error) {
