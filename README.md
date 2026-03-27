@@ -1,5 +1,6 @@
 # OLIV Restaurant & Bar - Group Booking System
 
+
 A production-ready group booking system built with Next.js, Better Auth, and PostgreSQL (NeonDB).
 
 ## Features
