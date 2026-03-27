@@ -183,7 +183,7 @@ export async function sendBookingReminder(params: {
   recipientEmail: string;
   bookingData: Booking & { lead?: Lead | null };
   estimatedTotal?: number;
-}): Promise<{ success: boolean; error?: string }> {
+}): Promise<{ success: boolean; error?: string; emailLogId?: string }> {
   return sendBookingEmail({
     bookingId: params.bookingId,
     emailType: "reminder",
@@ -203,7 +203,7 @@ export async function sendThankYouEmail(params: {
   estimatedTotal?: number;
   bookingEditUrl?: string;
   pdfAttachment?: { content: string; mime_type: string; name: string };
-}): Promise<{ success: boolean; error?: string }> {
+}): Promise<{ success: boolean; error?: string; emailLogId?: string }> {
   return sendBookingEmail({
     bookingId: params.bookingId,
     emailType: "thank_you",
@@ -224,7 +224,7 @@ export async function sendBookingConfirmation(params: {
   bookingData: Booking & { lead?: Lead | null };
   estimatedTotal?: number;
   bookingEditUrl?: string;
-}): Promise<{ success: boolean; error?: string }> {
+}): Promise<{ success: boolean; error?: string; emailLogId?: string }> {
   return sendBookingEmail({
     bookingId: params.bookingId,
     emailType: "confirmation",
@@ -243,7 +243,7 @@ export async function sendBookingCancellation(params: {
   recipientEmail: string;
   bookingData: Booking & { lead?: Lead | null };
   reason?: string;
-}): Promise<{ success: boolean; error?: string }> {
+}): Promise<{ success: boolean; error?: string; emailLogId?: string }> {
   return sendBookingEmail({
     bookingId: params.bookingId,
     emailType: "cancellation",
@@ -262,7 +262,7 @@ export async function sendBookingCompletion(params: {
   bookingData: Booking & { lead?: Lead | null };
   feedbackUrl?: string;
   rebookingUrl?: string;
-}): Promise<{ success: boolean; error?: string }> {
+}): Promise<{ success: boolean; error?: string; emailLogId?: string }> {
   return sendBookingEmail({
     bookingId: params.bookingId,
     emailType: "follow_up",
@@ -280,7 +280,7 @@ export async function sendBookingNoShow(params: {
   bookingId: string;
   recipientEmail: string;
   bookingData: Booking & { lead?: Lead | null };
-}): Promise<{ success: boolean; error?: string }> {
+}): Promise<{ success: boolean; error?: string; emailLogId?: string }> {
   return sendBookingEmail({
     bookingId: params.bookingId,
     emailType: "no_show" as any,
@@ -297,7 +297,7 @@ export async function sendBookingDeclined(params: {
   recipientEmail: string;
   bookingData: Booking & { lead?: Lead | null };
   reason?: string;
-}): Promise<{ success: boolean; error?: string }> {
+}): Promise<{ success: boolean; error?: string; emailLogId?: string }> {
   return sendBookingEmail({
     bookingId: params.bookingId,
     emailType: "declined" as any,
@@ -314,7 +314,7 @@ export async function sendUnlockRequestedNotification(params: {
   bookingId: string;
   adminEmail: string;
   bookingData: Booking & { lead?: Lead | null };
-}): Promise<{ success: boolean; error?: string }> {
+}): Promise<{ success: boolean; error?: string; emailLogId?: string }> {
   return sendBookingEmail({
     bookingId: params.bookingId,
     emailType: "unlock_requested",
@@ -331,7 +331,7 @@ export async function sendUnlockGrantedEmail(params: {
   recipientEmail: string;
   bookingData: Booking & { lead?: Lead | null };
   bookingEditUrl: string;
-}): Promise<{ success: boolean; error?: string }> {
+}): Promise<{ success: boolean; error?: string; emailLogId?: string }> {
   return sendBookingEmail({
     bookingId: params.bookingId,
     emailType: "unlock_granted",
@@ -349,7 +349,7 @@ export async function sendUnlockDeclinedEmail(params: {
   recipientEmail: string;
   bookingData: Booking & { lead?: Lead | null };
   reason?: string;
-}): Promise<{ success: boolean; error?: string }> {
+}): Promise<{ success: boolean; error?: string; emailLogId?: string }> {
   return sendBookingEmail({
     bookingId: params.bookingId,
     emailType: "unlock_declined",
@@ -437,7 +437,7 @@ export async function sendAssignmentNotification(params: {
   customerName: string;
   eventDate: string;
   eventTime: string;
-}): Promise<{ success: boolean; error?: string }> {
+}): Promise<{ success: boolean; error?: string; emailLogId?: string }> {
   try {
     const useTemplates = process.env.USE_ZEPTOMAIL_TEMPLATES === "true";
     const subject = `Neue Buchung zugewiesen: ${params.customerName}`;
@@ -546,7 +546,7 @@ export async function sendKitchenPdfEmail(params: {
   pdfBase64: string;
   customerName: string;
   eventDate: string;
-}): Promise<{ success: boolean; error?: string }> {
+}): Promise<{ success: boolean; error?: string; emailLogId?: string }> {
   try {
     const useTemplates = process.env.USE_ZEPTOMAIL_TEMPLATES === "true";
     const subject = `Küchenblatt: ${params.customerName} - ${params.eventDate}`;
