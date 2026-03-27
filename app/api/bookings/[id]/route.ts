@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { updateBooking } from "@/lib/actions/bookings";
+import { updateBooking, deleteBooking } from "@/lib/actions/bookings";
 import { db } from "@/lib/db";
 import { sql, eq, desc } from "drizzle-orm";
 import { bookingCheckins } from "@/lib/db/schema";
@@ -320,6 +320,71 @@ export async function PUT(
     return NextResponse.json({ success: true, data: result.data });
   } catch (error) {
     console.error("Error in PUT /api/bookings/[id]:", error);
+
+    // Handle validation errors
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { success: false, error: "Invalid booking ID format" },
+        { status: 400 }
+      );
+    }
+
+    // Handle authentication errors
+    if (error instanceof Error && error.message.includes("Unauthorized")) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    return NextResponse.json(
+      { success: false, error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    // Validate UUID format
+    const { id } = await params;
+    const validatedId = uuidSchema.parse(id);
+
+    // Verify admin authentication
+    const session = await requireAuth();
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { adminUserId, adminUserName } = body;
+
+    if (!adminUserId || !adminUserName) {
+      return NextResponse.json(
+        { success: false, error: "Missing admin user information" },
+        { status: 400 }
+      );
+    }
+
+    const result = await deleteBooking(validatedId, adminUserId, adminUserName);
+
+    if (!result.success) {
+      return NextResponse.json(
+        { success: false, error: result.error },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({ success: true, message: result.message });
+  } catch (error) {
+    console.error("Error in DELETE /api/bookings/[id]:", error);
 
     // Handle validation errors
     if (error instanceof z.ZodError) {

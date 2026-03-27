@@ -226,6 +226,9 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
               accessibility: {
                 enabled: false,
               },
+              credits: {
+                enabled: false,
+              },
               tooltip: {
                 pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>',
               },

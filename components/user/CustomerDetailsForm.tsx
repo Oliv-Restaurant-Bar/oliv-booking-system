@@ -309,7 +309,7 @@ export function CustomerDetailsForm({
                                 }}
                                 className={`w-full px-4 py-2.5 bg-background border rounded-lg transition-colors ${displayErrors.guestCount ? 'border-destructive' : 'border-border focus:border-primary'
                                     }`}
-                                placeholder="10"
+                                placeholder="Anzahl der Gäste"
                                 min="1"
                                 max="10000"
                                 style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
@@ -616,4 +616,4 @@ export function CustomerDetailsForm({
             </div>
         </div>
     );
-}
+}

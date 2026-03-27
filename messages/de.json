@@ -354,6 +354,20 @@
       "assignedSuccess": "Benutzer erfolgreich zugewiesen",
       "failedToAssign": "Benutzer konnte nicht zugewiesen werden"
     },
+    "deleteBooking": {
+      "title": "Buchung löschen",
+      "buttonLabel": "Löschen",
+      "buttonTooltip": "Diese Buchung dauerhaft löschen",
+      "confirmMessage": "Möchten Sie diese Buchung wirklich löschen?",
+      "warningMessage": "Diese Aktion kann nicht rückgängig gemacht werden. Dies wird dauerhaft gelöscht:",
+      "bookingLabel": "Buchung",
+      "consequence1": "Alle Buchungselemente und Menüauswahlen",
+      "consequence2": "Alle Kontaktverläufe und Kommentare",
+      "consequence3": "Alle Audit-Protokolle und Check-in-Datensätze",
+      "deleteButton": "Buchung löschen",
+      "success": "Buchung erfolgreich gelöscht",
+      "failedToDelete": "Löschen der Buchung fehlgeschlagen"
+    },
     "gridView": {
       "noBookings": "Keine Buchungen gefunden",
       "tryAdjustFilters": "Versuchen Sie, Ihre Filter oder Suchanfrage anzupassen"
@@ -510,7 +524,9 @@
         "updateSent": "Buchungsaktualisierung erfolgreich gesendet",
         "failedToSendReminder": "Erinnerung konnte nicht gesendet werden",
         "failedToSendCheckin": "Check-in-Einladung konnte nicht gesendet werden",
-        "failedToSendUpdate": "Aktualisierung konnte nicht gesendet werden"
+        "failedToSendUpdate": "Aktualisierung konnte nicht gesendet werden",
+        "deleteSuccess": "Buchung erfolgreich gelöscht",
+        "deleteFailed": "Löschen der Buchung fehlgeschlagen"
       },
       "tooltips": {
         "amount": "Gesamtbetrag für diese Buchung",

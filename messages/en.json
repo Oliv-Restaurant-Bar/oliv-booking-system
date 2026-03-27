@@ -354,6 +354,20 @@
       "assignedSuccess": "User assigned successfully",
       "failedToAssign": "Failed to assign user"
     },
+    "deleteBooking": {
+      "title": "Delete Booking",
+      "buttonLabel": "Delete",
+      "buttonTooltip": "Delete this booking permanently",
+      "confirmMessage": "Are you sure you want to delete this booking?",
+      "warningMessage": "This action cannot be undone. This will permanently delete:",
+      "bookingLabel": "Booking",
+      "consequence1": "All booking items and menu selections",
+      "consequence2": "All contact history and comments",
+      "consequence3": "All audit logs and check-in records",
+      "deleteButton": "Delete Booking",
+      "success": "Booking deleted successfully",
+      "failedToDelete": "Failed to delete booking"
+    },
     "gridView": {
       "noBookings": "No bookings found",
       "tryAdjustFilters": "Try adjusting your filters or search query"
@@ -510,7 +524,9 @@
         "updateSent": "Booking update sent successfully",
         "failedToSendReminder": "Failed to send reminder",
         "failedToSendCheckin": "Failed to send check-in invitation",
-        "failedToSendUpdate": "Failed to send update"
+        "failedToSendUpdate": "Failed to send update",
+        "deleteSuccess": "Booking deleted successfully",
+        "deleteFailed": "Failed to delete booking"
       },
       "tooltips": {
         "amount": "Total amount for this booking",

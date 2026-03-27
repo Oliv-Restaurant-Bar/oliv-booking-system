@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Send, User, CalendarDays, UtensilsCrossed, MessageSquare, Link, Lock, Unlock, History, FileText, RefreshCw, UserPlus, CheckCircle2, Info, Pencil, X, Save, Bell, Mail, ChevronDown, Loader2 } from 'lucide-react';
+import { ArrowLeft, Send, User, CalendarDays, UtensilsCrossed, MessageSquare, Link, Lock, Unlock, History, FileText, RefreshCw, UserPlus, CheckCircle2, Info, Pencil, X, Save, Bell, Mail, ChevronDown, Loader2, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { StatusDropdown } from './StatusDropdown';
 import { KitchenPdfStatusBadge } from './KitchenPdfStatusBadge';
@@ -13,6 +13,7 @@ import { Tooltip } from '@/components/user/Tooltip';
 import { toast } from 'sonner';
 import { Permission, hasPermission } from '@/lib/auth/rbac';
 import { AssignUserModal } from './AssignUserModal';
+import { DeleteBookingModal } from './DeleteBookingModal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonBookingDetail } from '@/components/ui/skeleton-loaders';
 import { ValidatedTextarea } from '@/components/ui/validated-textarea';
@@ -162,6 +163,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     const canEditBooking = hasPermission(userRole, Permission.EDIT_BOOKING);
     const canUpdateStatus = hasPermission(userRole, Permission.UPDATE_BOOKING_STATUS);
     const canViewAudit = hasPermission(userRole, Permission.VIEW_BOOKING_DETAILS);
+    const canManageUsers = hasPermission(userRole, Permission.MANAGE_USERS);
+    const canDeleteBooking = hasPermission(userRole, Permission.DELETE_BOOKING);
 
     // Kitchen PDF state
     const [kitchenPdfStatus, setKitchenPdfStatus] = useState<KitchenPdfStatus | undefined>(
@@ -176,6 +179,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     const [selectedRoom, setSelectedRoom] = useState<string>(initialBooking?.room || '');
     const [assignedTo, setAssignedTo] = useState<string>((initialBooking as any)?.assignedTo?.id || '');
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     // Track initial values to detect changes
     const [initialKitchenNotes, setInitialKitchenNotes] = useState<string>(initialBooking?.kitchenNotes || '');
@@ -576,6 +581,36 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         }
     };
 
+    const handleDeleteBooking = async () => {
+        if (!booking || !user) return;
+        setIsDeleting(true);
+        try {
+            const response = await fetch(`/api/bookings/${booking.id}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    adminUserId: user.id,
+                    adminUserName: user.name || user.email
+                }),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                toast.success(t('toast.deleteSuccess'));
+                // Redirect to bookings list after successful deletion
+                router.push('/admin/bookings');
+            } else {
+                toast.error(result.error || t('toast.deleteFailed'));
+            }
+        } catch (error) {
+            console.error('Error deleting booking:', error);
+            toast.error(t('toast.deleteFailed'));
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     const updateFieldInNotes = (notes: string, field: string, value: string) => {
         const regex = new RegExp(`^${field}: .*$`, 'm');
         const fieldLine = `${field}: ${value || 'N/A'}`;
@@ -902,7 +937,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                             </button>
                         )} */}
 
-                        {canEditBooking && (
+                        {canManageUsers && (
                             <button
                                 onClick={() => setIsAssignModalOpen(true)}
                                 className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors flex items-center gap-2 cursor-pointer border border-border"
@@ -977,15 +1012,29 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                         </p>
                     </div>
 
-                    <div className="my-4 max-w-xs">
-                        <StatusDropdown
-                            options={statusOptions}
-                            value={localStatus}
-                            onChange={handleStatusChange}
-                            placeholder={statusT('all')}
-                            className="w-full"
-                            disabled={!canUpdateStatus}
-                        />
+                    <div className="flex items-center gap-3">
+                        <div className="my-4 max-w-xs">
+                            <StatusDropdown
+                                options={statusOptions}
+                                value={localStatus}
+                                onChange={handleStatusChange}
+                                placeholder={statusT('all')}
+                                className="w-full"
+                                disabled={!canUpdateStatus}
+                            />
+                        </div>
+
+                        {canDeleteBooking && (
+                            <button
+                                onClick={() => setIsDeleteModalOpen(true)}
+                                className="px-3 py-2 bg-destructive/10 text-destructive hover:bg-destructive/20 rounded-lg transition-colors flex items-center gap-2 cursor-pointer border border-destructive/30"
+                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                title={('deleteBooking.buttonTooltip')}
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                <span className="hidden sm:inline">{('Delete Booking')}</span>
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -1715,6 +1764,17 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                         }
                     }}
                     isLoading={isAdminUsersLoading}
+                />
+            )}
+
+            {/* Delete Booking Modal */}
+            {isDeleteModalOpen && (
+                <DeleteBookingModal
+                    isOpen={isDeleteModalOpen}
+                    onClose={() => setIsDeleteModalOpen(false)}
+                    onDelete={handleDeleteBooking}
+                    isLoading={isDeleting}
+                    bookingTitle={booking ? `${booking.customer.name} - ${booking.event.date}` : undefined}
                 />
             )}
         </div>

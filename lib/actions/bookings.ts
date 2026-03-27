@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from "@/lib/db";
-import { bookings, bookingItems, bookingContactHistory, emailLogs, leads, menuItems, adminUser } from "@/lib/db/schema";
+import { bookings, bookingItems, bookingContactHistory, emailLogs, leads, menuItems, adminUser, bookingAuditLog, bookingCheckins } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
@@ -25,7 +25,7 @@ import {
 } from "@/lib/booking-audit";
 import { ensureBookingSecret } from "@/lib/booking-security";
 import { requirePermissionWrapper } from "@/lib/auth/rbac-middleware";
-import { Permission } from "@/lib/auth/rbac";
+import { Permission, AuthorizationError } from "@/lib/auth/rbac";
 
 export interface CreateBookingInput {
   leadId?: string;
@@ -120,6 +120,12 @@ export async function createBooking(input: CreateBookingInput & { leadEmail?: st
   try {
     // Require CREATE_BOOKING permission
     await requirePermissionWrapper(Permission.CREATE_BOOKING);
+
+    // Additional permission check for assigning staff to bookings
+    // Only super_admin with MANAGE_USERS permission can assign staff
+    if (input.assignedTo !== undefined) {
+      await requirePermissionWrapper(Permission.MANAGE_USERS);
+    }
 
     // @ts-ignore - Drizzle ORM type compatibility issue
     const [booking] = await db.insert(bookings).values({
@@ -355,6 +361,12 @@ export async function updateBooking(
     // Client edits (actorType: "client") are allowed without authentication
     if (auditContext?.actorType !== "client") {
       await requirePermissionWrapper(Permission.EDIT_BOOKING);
+
+      // Additional permission check for assigning staff to bookings
+      // Only super_admin with MANAGE_USERS permission can assign staff
+      if (updates.assignedTo !== undefined) {
+        await requirePermissionWrapper(Permission.MANAGE_USERS);
+      }
     }
 
     console.log('\n========================================');
@@ -1086,5 +1098,103 @@ export async function getBookingForClientEdit(bookingId: string) {
   } catch (error) {
     console.error("Error fetching booking for client edit:", error);
     return { success: false, error: "Failed to fetch booking", data: null };
+  }
+}
+
+/**
+ * Delete a booking permanently
+ * Only super_admin with DELETE_BOOKING permission can perform this action
+ *
+ * @param bookingId - The booking ID to delete
+ * @param adminUserId - The admin user ID performing the deletion
+ * @param adminUserName - The admin user name for audit log
+ * @returns Success status
+ */
+export async function deleteBooking(
+  bookingId: string,
+  adminUserId: string,
+  adminUserName: string
+) {
+  try {
+    console.log('\n========================================');
+    console.log('🗑️ DELETE BOOKING FUNCTION START');
+    console.log('========================================');
+    console.log(`📋 Booking ID to DELETE: ${bookingId}`);
+    console.log(`👤 Admin: ${adminUserName} (${adminUserId})`);
+
+    // Require DELETE_BOOKING permission (only super_admin has this)
+    await requirePermissionWrapper(Permission.DELETE_BOOKING);
+
+    // Check if booking exists
+    const [booking] = await db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.id, bookingId))
+      .limit(1);
+
+    if (!booking) {
+      console.error('❌ ERROR: Booking not found with ID:', bookingId);
+      console.log('========================================\n');
+      return { success: false, error: "Booking not found" };
+    }
+
+    console.log('✅ Booking found:', booking.id);
+
+    // Delete related records in order (due to foreign key constraints)
+
+    // 1. Delete booking items
+    console.log('🔄 Deleting booking items...');
+    await db
+      .delete(bookingItems)
+      .where(eq(bookingItems.bookingId, bookingId));
+    console.log('✅ Deleted booking items');
+
+    // 2. Delete contact history
+    console.log('🔄 Deleting contact history...');
+    await db
+      .delete(bookingContactHistory)
+      .where(eq(bookingContactHistory.bookingId, bookingId));
+    console.log('✅ Deleted contact history entries');
+
+    // 3. Delete audit logs
+    console.log('🔄 Deleting audit logs...');
+    await db
+      .delete(bookingAuditLog)
+      .where(eq(bookingAuditLog.bookingId, bookingId));
+    console.log('✅ Deleted audit log entries');
+
+    // 4. Delete check-ins
+    console.log('🔄 Deleting check-ins...');
+    await db
+      .delete(bookingCheckins)
+      .where(eq(bookingCheckins.bookingId, bookingId));
+    console.log('✅ Deleted check-ins');
+
+    // 5. Delete the booking itself
+    console.log('🔄 Deleting booking...');
+    await db
+      .delete(bookings)
+      .where(eq(bookings.id, bookingId));
+    console.log('✅ Booking deleted successfully');
+
+    // Revalidate paths
+    console.log('🔄 Revalidating paths: /admin/bookings');
+    revalidatePath("/admin/bookings");
+    revalidatePath(`/admin/bookings/${bookingId}`);
+
+    console.log('✅ DELETE BOOKING FUNCTION COMPLETE');
+    console.log('========================================\n');
+
+    return { success: true, message: "Booking deleted successfully" };
+  } catch (error) {
+    console.error("❌ Error deleting booking:", error);
+    console.log('========================================\n');
+
+    // Check if it's a permission error
+    if (error instanceof AuthorizationError) {
+      return { success: false, error: "You don't have permission to delete bookings" };
+    }
+
+    return { success: false, error: "Failed to delete booking" };
   }
 }
