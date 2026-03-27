@@ -533,9 +533,19 @@ export async function submitWizardForm(data: WizardFormData) {
 
       console.log('📧 Generating PDF for record...');
       const doc = await generateCustomerOfferPdf(pdfData as any);
-      const pdfBase64 = doc.output('datauristring').split(',')[1];
-      console.log('📧 PDF generated, sending confirmation email...');
+      const pdfBase64Raw = doc.output('datauristring').split(',')[1];
+      
+      // Clean base64 (remove any potential whitespaces/newlines)
+      const pdfBase64 = pdfBase64Raw.replace(/\s/g, '');
+      
+      console.log(`📧 PDF generated. Length: ${pdfBase64.length} chars. Header: ${pdfBase64.substring(0, 10)}...`);
+      console.log('📧 Sending confirmation email...');
 
+      // Sanitize filename for non-ASCII characters
+      const safeCustomerName = pdfData.customerName
+        .replace(/[^\x00-\x7F]/g, "") // Remove non-ASCII
+        .replace(/\s+/g, '_');
+        
       const emailResult = await sendThankYouEmail({
         bookingId: booking.id,
         recipientEmail: data.contactEmail,
@@ -543,7 +553,7 @@ export async function submitWizardForm(data: WizardFormData) {
         estimatedTotal: estimatedTotal,
         bookingEditUrl: bookingEditUrl,
         pdfAttachment: {
-          name: `Angebot_${pdfData.customerName.replace(/\s+/g, '_')}.pdf`,
+          name: `Angebot_${safeCustomerName}.pdf`,
           mime_type: "application/pdf",
           content: pdfBase64,
         }

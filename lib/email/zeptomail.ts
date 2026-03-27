@@ -190,12 +190,34 @@ export async function sendTemplateEmail(params: TemplateEmailParams): Promise<{ 
     console.log(`   From     : ${fromEmail}`);
     console.log(`   Endpoint : ${templateUrl}`);
 
-    // Log attachment info if present
+    // Log and validate attachment info if present
     if (params.attachments && params.attachments.length > 0) {
       console.log(`   Attachments: ${params.attachments.length} file(s)`);
       params.attachments.forEach((att, idx) => {
         console.log(`     [${idx + 1}] ${att.name} (${att.mime_type})`);
         console.log(`         Base64 length: ${att.content?.length || 0} chars`);
+        
+        if (att.content) {
+          const hasWhitespace = /\s/.test(att.content);
+          if (hasWhitespace) {
+            console.error(`         ❌ ERROR: Attachment ${idx + 1} contains whitespace!`);
+          } else {
+            console.log(`         ✅ No whitespace in base64`);
+          }
+
+          // Try to decode first few bytes to validate
+          try {
+            const decoded = atob(att.content.substring(0, 100));
+            const header = decoded.substring(0, 5);
+            if (header === '%PDF-') {
+              console.log(`         ✅ Valid PDF header detected`);
+            } else {
+              console.error(`         ❌ ERROR: Invalid PDF header! Got: ${header}`);
+            }
+          } catch (decodeError) {
+            console.error(`         ❌ ERROR: Base64 decode failed!`, decodeError);
+          }
+        }
       });
     }
 
