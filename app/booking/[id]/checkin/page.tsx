@@ -102,11 +102,6 @@ export default function EventCheckinPage() {
     additional_details: '',
   });
 
-  const [changeOptions, setChangeOptions] = useState({
-    guestCount: false,
-    menu: false,
-    additional: false,
-  });
 
   // Fetch Booking Data
   useEffect(() => {
@@ -158,28 +153,12 @@ export default function EventCheckinPage() {
   // Validation
   const isSplitValid = formData.vegetarian_count + formData.non_vegetarian_count === (formData.has_changes ? formData.new_guest_count : booking?.guests);
 
-  const canContinueFromOptions = changeOptions.guestCount || changeOptions.menu || changeOptions.additional;
 
   // Branching Logic for "Has Changes"
   const getNextChangeStep = (current: Step) => {
-    if (current === 'CHANGE_OPTIONS') {
-      if (changeOptions.guestCount) return 'GUEST_COUNT';
-      if (changeOptions.menu) return 'MENU_CHANGES';
-      if (changeOptions.additional) return 'ADDITIONAL_DETAILS';
-      return 'REVIEW';
-    }
-    if (current === 'GUEST_COUNT') {
-      if (changeOptions.menu) return 'MENU_CHANGES';
-      if (changeOptions.additional) return 'ADDITIONAL_DETAILS';
-      return 'REVIEW';
-    }
-    if (current === 'MENU_CHANGES') {
-      if (changeOptions.additional) return 'ADDITIONAL_DETAILS';
-      return 'REVIEW';
-    }
-    if (current === 'ADDITIONAL_DETAILS') {
-      return 'REVIEW';
-    }
+    if (current === 'GUEST_COUNT') return 'MENU_CHANGES';
+    if (current === 'MENU_CHANGES') return 'ADDITIONAL_DETAILS';
+    if (current === 'ADDITIONAL_DETAILS') return 'REVIEW';
     return 'REVIEW';
   };
 
@@ -191,12 +170,12 @@ export default function EventCheckinPage() {
         booking_id: bookingId,
         submitted_at: new Date().toISOString(),
         has_changes: formData.has_changes,
-        guest_count_changed: changeOptions.guestCount,
+        guest_count_changed: formData.has_changes, // Assume changed if in changes flow
         new_guest_count: formData.has_changes ? formData.new_guest_count : booking?.guests,
         vegetarian_count: formData.vegetarian_count,
         non_vegetarian_count: formData.non_vegetarian_count,
-        menu_changes: changeOptions.menu ? formData.menu_changes : null,
-        additional_details: changeOptions.additional ? formData.additional_details : null,
+        menu_changes: formData.menu_changes.trim() || null,
+        additional_details: formData.additional_details.trim() || null,
       };
 
       const response = await fetch(`/api/bookings/${bookingId}/checkin`, {
@@ -265,7 +244,7 @@ export default function EventCheckinPage() {
                   <Button
                     onClick={() => {
                       setFormData({ ...formData, has_changes: true });
-                      goToStep('CHANGE_OPTIONS');
+                      goToStep('GUEST_COUNT');
                     }}
                     variant="outline"
                     className="w-full py-4"
@@ -332,57 +311,6 @@ export default function EventCheckinPage() {
                       Continue
                     </Button>
                   </div>
-                </div>
-              </Card>
-            )}
-
-            {/* STEP 2B: CHANGE OPTIONS */}
-            {currentStep === 'CHANGE_OPTIONS' && (
-              <Card>
-                <h2 className="text-xl font-semibold text-gray-900 mb-8">What would you like to change?</h2>
-
-                <div className="space-y-3 mb-8">
-                  {[
-                    { id: 'guestCount', label: 'Guest Count has changed' },
-                    { id: 'menu', label: 'Menu needs to be changed' },
-                    { id: 'additional', label: 'Additional details / special requests' }
-                  ].map((option) => (
-                    <label
-                      key={option.id}
-                      className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${changeOptions[option.id as keyof typeof changeOptions]
-                        ? 'border-[#3d4a2e] bg-[#3d4a2e]/5'
-                        : 'border-gray-100 hover:border-gray-200'
-                        }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={changeOptions[option.id as keyof typeof changeOptions]}
-                        onChange={() => setChangeOptions({
-                          ...changeOptions,
-                          [option.id]: !changeOptions[option.id as keyof typeof changeOptions]
-                        })}
-                        className="hidden"
-                      />
-                      <div className={`w-5 h-5 rounded flex items-center justify-center border ${changeOptions[option.id as keyof typeof changeOptions]
-                        ? 'bg-[#3d4a2e] border-[#3d4a2e]'
-                        : 'border-gray-300'
-                        }`}>
-                        {changeOptions[option.id as keyof typeof changeOptions] && <CheckCircle2 className="w-4 h-4 text-white" />}
-                      </div>
-                      <span className="font-medium text-gray-800">{option.label}</span>
-                    </label>
-                  ))}
-                </div>
-
-                <div className="flex gap-4">
-                  <Button onClick={goBack} variant="secondary" className="flex-1">Back</Button>
-                  <Button
-                    onClick={() => goToStep(getNextChangeStep('CHANGE_OPTIONS'))}
-                    disabled={!canContinueFromOptions}
-                    className="flex-1"
-                  >
-                    Continue <ChevronRight className="w-4 h-4" />
-                  </Button>
                 </div>
               </Card>
             )}
@@ -462,7 +390,6 @@ export default function EventCheckinPage() {
                     <Button onClick={goBack} variant="secondary" className="flex-1">Back</Button>
                     <Button
                       onClick={() => goToStep(getNextChangeStep('MENU_CHANGES'))}
-                      disabled={formData.menu_changes.trim().length === 0}
                       className="flex-1"
                     >
                       Continue
@@ -492,7 +419,6 @@ export default function EventCheckinPage() {
                     <Button onClick={goBack} variant="secondary" className="flex-1">Back</Button>
                     <Button
                       onClick={() => goToStep(getNextChangeStep('ADDITIONAL_DETAILS'))}
-                      disabled={formData.additional_details.trim().length === 0}
                       className="flex-1"
                     >
                       Continue
@@ -523,14 +449,14 @@ export default function EventCheckinPage() {
                       </span>
                     </div>
 
-                    {changeOptions.menu && (
+                    {formData.menu_changes.trim() && (
                       <div className="space-y-1 border-b border-gray-100 pb-2">
                         <span className="text-xs text-gray-500 font-bold uppercase">Menu Changes</span>
                         <p className="text-sm text-gray-700 italic">"{formData.menu_changes}"</p>
                       </div>
                     )}
 
-                    {changeOptions.additional && (
+                    {formData.additional_details.trim() && (
                       <div className="space-y-1 pb-2">
                         <span className="text-xs text-gray-500 font-bold uppercase">Additional Details</span>
                         <p className="text-sm text-gray-700 italic">"{formData.additional_details}"</p>
