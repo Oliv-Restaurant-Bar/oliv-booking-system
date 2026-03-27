@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
         password: password,
         name,
         role: role || "read_only",
+        emailVerified: true,
       },
     });
 

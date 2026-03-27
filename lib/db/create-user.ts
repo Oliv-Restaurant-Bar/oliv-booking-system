@@ -34,6 +34,7 @@ async function createUserWithBetterAuth() {
         password: "admin123",
         name: "Super Admin",
         role: "super_admin",
+        emailVerified: true,
       },
       headers: headers as any,
     });

@@ -1361,7 +1361,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                             </div>
                         </div>
 
-                        {canEditBooking && (
+                        {/* {canEditBooking && (
                             <div className="flex justify-end mt-4 pt-4 border-t border-border/50">
                                 <button
                                     onClick={handleSaveChanges}
@@ -1382,7 +1382,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     )}
                                 </button>
                             </div>
-                        )}
+                        )} */}
                     </div>
 
                     {/* Menu Items */}

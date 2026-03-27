@@ -19,11 +19,14 @@ export const auth = betterAuth({
       role: {
         type: "string",
       },
+      emailVerified: {
+        type: "boolean",
+      },
     },
   },
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false,
+    requireEmailVerification: true,
     // Disable public sign-up - users can only be created by admin
     sendPasswordResetEmail: async () => {
       // TODO: Implement email sending

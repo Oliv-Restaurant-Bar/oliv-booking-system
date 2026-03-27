@@ -79,7 +79,7 @@ export function KitchenPdfActionModal({
       });
 
       if (!response.ok) throw new Error('Failed to save notes');
-      
+
       setHasUnsavedNotes(false);
       toast.success(tAdmin('toast.saveSuccess'));
       window.location.reload();
@@ -104,7 +104,7 @@ export function KitchenPdfActionModal({
 
   const generatePdf = async () => {
     const { generateBookingPdf } = await import('@/lib/utils/pdf-generator');
-    
+
     return generateBookingPdf({
       id: booking.id,
       customerName: booking.customer.name,
@@ -325,17 +325,7 @@ export function KitchenPdfActionModal({
                   <MessageSquare className="w-5 h-5 text-primary" />
                   {tAdmin('kitchenNotes')}
                   <span className="text-muted-foreground font-normal ml-1">({tWizard('labels.optional')})</span>
-                </h4>
-                <div className="space-y-3">
-                  <ValidatedTextarea
-                    value={kitchenNotes}
-                    onChange={(e) => handleNotesChange(e.target.value)}
-                    rows={4}
-                    placeholder={tAdmin('kitchenNotesPlaceholder')}
-                    maxLength={1000}
-                    showCharacterCount
-                  />
-                  <div className="flex justify-end">
+                  <div className="flex justify-end ml-auto">
                     <button
                       onClick={handleSaveNotes}
                       disabled={isSavingNotes || !hasUnsavedNotes}
@@ -349,6 +339,16 @@ export function KitchenPdfActionModal({
                       Save Changes
                     </button>
                   </div>
+                </h4>
+                <div className="space-y-3">
+                  <ValidatedTextarea
+                    value={kitchenNotes}
+                    onChange={(e) => handleNotesChange(e.target.value)}
+                    rows={4}
+                    placeholder={tAdmin('kitchenNotesPlaceholder')}
+                    maxLength={1000}
+                    showCharacterCount
+                  />
                 </div>
               </div>
 

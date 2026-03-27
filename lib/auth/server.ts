@@ -24,6 +24,12 @@ export async function getSession() {
       } as HeadersInit,
     });
 
+    // Check if user is active (emailVerified MUST be true for active users)
+    if (session && session.user && !session.user.emailVerified) {
+      console.warn(`User ${session.user.email} is inactive. Rejecting session.`);
+      return null;
+    }
+
     return session;
   } catch (error) {
     return null;

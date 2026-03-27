@@ -256,11 +256,11 @@ export default function EventCheckinPage() {
                     <span>{booking?.event.date}</span>
                     <span>{booking?.guests} Guests</span>
                   </div>
-                  <p className="text-[10px] text-gray-400 mt-2">ID: {bookingId}</p>
+                  {/* <p className="text-[10px] text-gray-400 mt-2">ID: {bookingId}</p> */}
                 </div>
 
                 <h2 className="text-xl font-semibold text-gray-900 mb-8">Do you have any changes to your event?</h2>
-                
+
                 <div className="space-y-4">
                   <Button
                     onClick={() => {
@@ -340,7 +340,7 @@ export default function EventCheckinPage() {
             {currentStep === 'CHANGE_OPTIONS' && (
               <Card>
                 <h2 className="text-xl font-semibold text-gray-900 mb-8">What would you like to change?</h2>
-                
+
                 <div className="space-y-3 mb-8">
                   {[
                     { id: 'guestCount', label: 'Guest Count has changed' },
@@ -349,11 +349,10 @@ export default function EventCheckinPage() {
                   ].map((option) => (
                     <label
                       key={option.id}
-                      className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
-                        changeOptions[option.id as keyof typeof changeOptions]
-                          ? 'border-[#3d4a2e] bg-[#3d4a2e]/5'
-                          : 'border-gray-100 hover:border-gray-200'
-                      }`}
+                      className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${changeOptions[option.id as keyof typeof changeOptions]
+                        ? 'border-[#3d4a2e] bg-[#3d4a2e]/5'
+                        : 'border-gray-100 hover:border-gray-200'
+                        }`}
                     >
                       <input
                         type="checkbox"
@@ -364,11 +363,10 @@ export default function EventCheckinPage() {
                         })}
                         className="hidden"
                       />
-                      <div className={`w-5 h-5 rounded flex items-center justify-center border ${
-                        changeOptions[option.id as keyof typeof changeOptions]
-                          ? 'bg-[#3d4a2e] border-[#3d4a2e]'
-                          : 'border-gray-300'
-                      }`}>
+                      <div className={`w-5 h-5 rounded flex items-center justify-center border ${changeOptions[option.id as keyof typeof changeOptions]
+                        ? 'bg-[#3d4a2e] border-[#3d4a2e]'
+                        : 'border-gray-300'
+                        }`}>
                         {changeOptions[option.id as keyof typeof changeOptions] && <CheckCircle2 className="w-4 h-4 text-white" />}
                       </div>
                       <span className="font-medium text-gray-800">{option.label}</span>
@@ -393,7 +391,7 @@ export default function EventCheckinPage() {
             {currentStep === 'GUEST_COUNT' && (
               <Card>
                 <h2 className="text-xl font-semibold text-gray-900 mb-8">What is your updated guest count?</h2>
-                
+
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700">New total guest count</label>
@@ -448,7 +446,7 @@ export default function EventCheckinPage() {
             {currentStep === 'MENU_CHANGES' && (
               <Card>
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Please describe your menu changes:</h2>
-                
+
                 <div className="space-y-4">
                   <textarea
                     value={formData.menu_changes}
@@ -478,7 +476,7 @@ export default function EventCheckinPage() {
             {currentStep === 'ADDITIONAL_DETAILS' && (
               <Card>
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Any additional details or special requests?</h2>
-                
+
                 <div className="space-y-4">
                   <textarea
                     value={formData.additional_details}
@@ -508,7 +506,7 @@ export default function EventCheckinPage() {
             {currentStep === 'REVIEW' && (
               <Card>
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Review & Submit</h2>
-                
+
                 <div className="space-y-4 mb-8">
                   <div className="p-4 bg-gray-50 rounded-lg space-y-3">
                     <div className="flex justify-between items-center text-sm border-b border-gray-100 pb-2">
@@ -566,7 +564,7 @@ export default function EventCheckinPage() {
                     Your updates have been received. Our team will review and confirm within 24 hours.
                   </p>
                   <div className="pt-4">
-                    <Button onClick={() => window.location.reload()} variant="outline" className="w-full">
+                    <Button onClick={() => window.location.href = "/"} variant="outline" className="w-full">
                       Done
                     </Button>
                   </div>
