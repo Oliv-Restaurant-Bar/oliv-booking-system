@@ -490,12 +490,13 @@ export async function updateBooking(
         .from(bookingItems)
         .where(eq(bookingItems.bookingId, id));
 
-      // Create a map of itemId to notes for preservation
-      const itemNotesMap = new Map<string, string>();
+      // Create a map of itemId to both notes AND unitPrice for preservation
+      const itemDataMap = new Map<string, { notes: string | null, unitPrice: string }>();
       existingItems.forEach(item => {
-        if (item.notes) {
-          itemNotesMap.set(item.itemId, item.notes);
-        }
+        itemDataMap.set(item.itemId, { 
+          notes: item.notes, 
+          unitPrice: item.unitPrice 
+        });
       });
 
       // Delete existing items
@@ -513,10 +514,14 @@ export async function updateBooking(
       for (const itemId of selectedItemIds) {
         const menuItem = menuItemMap.get(itemId);
         if (menuItem) {
-          // Use explicit check for undefined to allow quantity of 0
           const quantity = itemQuantities[itemId] !== undefined ? itemQuantities[itemId] : 1;
-          const unitPrice = Number(menuItem.pricePerPerson);
-          const lineTotal = quantity * unitPrice;
+          
+          // CRITICAL: Preserve existing unit price if it already has variant/addon pricing
+          const existingData = itemDataMap.get(itemId);
+          const unitPriceStr = existingData ? existingData.unitPrice : menuItem.pricePerPerson;
+          const unitPriceNum = Number(unitPriceStr);
+          
+          const lineTotal = quantity * unitPriceNum;
           newEstimatedTotal += lineTotal;
 
           await db.insert(bookingItems).values({
@@ -525,8 +530,8 @@ export async function updateBooking(
             itemType: "menu_item",
             itemId: itemId,
             quantity: quantity,
-            unitPrice: menuItem.pricePerPerson,
-            notes: itemNotesMap.get(itemId) || null, // Preserve existing notes
+            unitPrice: unitPriceStr,
+            notes: existingData ? existingData.notes : null,
           });
         }
       }
