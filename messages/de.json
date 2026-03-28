@@ -1087,7 +1087,7 @@
         "ug1": "UG1",
         "ug1_exklusiv": "UG1 Exklusiv"
       },
-      "minSpendInfo": "Mindestumsatz CHF 1'000.00 erforderlich",
+      "minSpendInfo": "Mindestbuchungswert von CHF 1.000.00 erforderlich",
       "occasion": "Anlass",
       "specialRequests": "Allergien, Ernährungsanforderungen oder andere Kommentare",
       "paymentOption": "Zahlungsoption",

@@ -121,10 +121,10 @@ export function MenuCart({
   const nonVegItems = React.useMemo(() => ppFoodItems.filter(item => item.dietaryType === 'non-veg'), [ppFoodItems]);
   const otherFoodItems = React.useMemo(() => ppFoodItems.filter(item => item.dietaryType !== 'veg' && item.dietaryType !== 'vegan' && item.dietaryType !== 'non-veg'), [ppFoodItems]);
 
-  const pureVegPerPersonSubtotal = pureVegItems.reduce((sum, item) => sum + (getItemPerPersonPrice(item) * (itemGuestCounts[item.id] || parseInt(eventDetails.guestCount) || 1)), 0);
-  const veganPerPersonSubtotal = veganItems.reduce((sum, item) => sum + (getItemPerPersonPrice(item) * (itemGuestCounts[item.id] || parseInt(eventDetails.guestCount) || 1)), 0);
-  const nonVegPerPersonSubtotal = nonVegItems.reduce((sum, item) => sum + (getItemPerPersonPrice(item) * (itemGuestCounts[item.id] || parseInt(eventDetails.guestCount) || 1)), 0);
-  const otherPerPersonSubtotal = otherFoodItems.reduce((sum, item) => sum + (getItemPerPersonPrice(item) * (itemGuestCounts[item.id] || parseInt(eventDetails.guestCount) || 1)), 0);
+  const pureVegPerPersonSubtotal = pureVegItems.length > 0 ? Math.max(...pureVegItems.map(item => getItemPerPersonPrice(item))) : 0;
+  const veganPerPersonSubtotal = veganItems.length > 0 ? Math.max(...veganItems.map(item => getItemPerPersonPrice(item))) : 0;
+  const nonVegPerPersonSubtotal = nonVegItems.length > 0 ? Math.max(...nonVegItems.map(item => getItemPerPersonPrice(item))) : 0;
+  const otherPerPersonSubtotal = otherFoodItems.length > 0 ? Math.max(...otherFoodItems.map(item => getItemPerPersonPrice(item))) : 0;
 
   const updateQuantity = (itemId: string, delta: number) => {
     setItemQuantities(prev => {

@@ -1300,17 +1300,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                             </div>
                             <div className="space-y-1">
                                 <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('amount')} (CHF)</label>
-                                {isEditingEvent ? (
-                                    <input
-                                        type="number"
-                                        value={tempEvent.amount}
-                                        onChange={(e) => setTempEvent({ ...tempEvent, amount: parseFloat(e.target.value) || 0 })}
-                                        className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
-                                        style={{ fontSize: 'var(--text-base)' }}
-                                    />
-                                ) : (
-                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={booking.amount}>{booking.amount}</p>
-                                )}
+                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={booking.amount}>{booking.amount}</p>
                             </div>
                             {/* <div className="space-y-1">
                                 <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('venueLocation')}</label>
