@@ -933,7 +933,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     return (
         <div className="min-h-screen bg-background">
             {/* Detail Header */}
-            <div className="px-6 py-4 border-b border-border">
+            <div className="px-6 py-auto">
                 <div className="flex items-center gap-4">
                     <button
                         onClick={onBack || (() => router.back())}
@@ -941,7 +941,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                         style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
                     >
                         <ArrowLeft className="w-5 h-5" />
-                        <span className="hidden sm:inline">{t('backToBookings')}</span>
+                        <span>{t('backToBookings')}</span>
                     </button>
                 </div>
             </div>
@@ -961,7 +961,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                     )}
 
                     <Tabs defaultValue="event-details" className="w-full">
-                        <TabsList className="mb-6 w-full flex flex-wrap sm:flex-nowrap">
+                        <TabsList className="mb-6 w-full flex flex-wrap gap-2">
                             <TabsTrigger value="event-details" className="flex-1 min-w-max px-3 py-2 text-sm sm:text-base">Event Details</TabsTrigger>
                             <TabsTrigger value="menu-details" className="flex-1 min-w-max px-3 py-2 text-sm sm:text-base">Menu Details</TabsTrigger>
                             <TabsTrigger value="comments-activities" className="flex-1 min-w-max px-3 py-2 text-sm sm:text-base">Comments & Activities</TabsTrigger>
