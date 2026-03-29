@@ -79,6 +79,7 @@ export async function GET(
           bi.notes,
           mi.name as item_name,
           mi.pricing_type,
+          mi.dietary_type,
           mc.name as category_name,
           mc.guest_count as category_guest_count
         FROM booking_items bi
@@ -128,6 +129,8 @@ export async function GET(
           rawQuantity: item.quantity,
           unitPrice: unitPrice,
           price: `CHF ${totalPrice.toFixed(2)}`,
+          pricingType: item.pricing_type || 'fixed',
+          dietaryType: item.dietary_type || 'none',
           notes: choices || '',
           customerComment: customerComment || '',
         };
@@ -152,9 +155,51 @@ export async function GET(
         : booking.allergy_details
       : '';
 
-    // Extract address from internal notes
-    const addressMatch = booking.internal_notes?.match(/Address: ([^\n]+)/);
-    const address = addressMatch ? addressMatch[1].replace('N/A', '').trim() : '';
+    // Extract granular address fields from internal notes - using case-insensitive regex for robustness
+    const streetMatch = booking.internal_notes?.match(/Street:\s*([^\r\n]+)/i);
+    const plzMatch = booking.internal_notes?.match(/PLZ:\s*([^\r\n]+)/i);
+    const locationMatch = booking.internal_notes?.match(/Location:\s*([^\r\n]+)/i);
+    let street = streetMatch ? streetMatch[1].replace('N/A', '').trim() : '';
+    let plz = plzMatch ? plzMatch[1].replace('N/A', '').trim() : '';
+    let city = locationMatch ? locationMatch[1].replace('N/A', '').trim() : '';
+
+    // Extract reference information
+    const referenceMatch = booking.internal_notes?.match(/Reference:\s*([^\r\n]+)/i);
+    const reference = referenceMatch ? referenceMatch[1].replace('N/A', '').trim() : '';
+
+    const billingRefMatch = booking.internal_notes?.match(/Billing Reference:\s*([^\r\n]+)/i);
+    let billingReference = billingRefMatch ? billingRefMatch[1].replace('N/A', '').trim() : '';
+
+    // If billingReference is empty, fallback to the main reference for UI mapping consistency
+    if (!billingReference && reference) {
+        billingReference = reference;
+    }
+
+    const paymentMatch = booking.internal_notes?.match(/(?:Payment Method|Payment Option):\s*([^\r\n]+)/i);
+    let paymentMethod = paymentMatch ? paymentMatch[1].replace('N/A', '').trim() : '';
+
+    // Standardize legacy 'cash_card' to 'ec_card' for internal consistency
+    if (paymentMethod === 'cash_card') {
+        paymentMethod = 'ec_card';
+    }
+
+    // Fallback for full address if granular fields are missing (backward compatibility)
+    const addressMatch = booking.internal_notes?.match(/Address:\s*([^\r\n]+)/i);
+    let address = addressMatch ? addressMatch[1].replace('N/A', '').trim() : '';
+    
+    // Reverse Reconstruction: If granular fields are missing but Address field exists, try to split it
+    if (address && !street && !plz && !city) {
+        // Address: Esse fuga ..., 1232, Ratione ...
+        const parts = address.split(',').map((p: string) => p.trim());
+        if (parts.length >= 1) street = parts[0];
+        if (parts.length >= 2) plz = parts[1];
+        if (parts.length >= 3) city = parts[2];
+    }
+    
+    // Forward Reconstruction: Reconstruct address if granular fields exist but full Address label is old/missing
+    if (!address && (street || plz || city)) {
+        address = [street, plz, city].filter(Boolean).join(', ');
+    }
 
     // Extract menu selection from internal notes for display in notes
     const menuMatch = booking.internal_notes?.match(/Menu Selection: ([^\n]+)/);
@@ -203,11 +248,11 @@ export async function GET(
       console.error('Error fetching check-ins:', e);
     }
 
-    const businessMatch = booking.internal_notes?.match(/Business: ([^\n]+)/);
+    const businessMatch = booking.internal_notes?.match(/Business:\s*([^\r\n]+)/i);
     const business = businessMatch ? businessMatch[1].replace('N/A', '').trim() : '';
 
-    const occasionMatch = booking.internal_notes?.match(/Occasion: ([^\n]+)/);
-    const occasion = occasionMatch ? occasionMatch[1].replace('N/A', '').trim() : '';
+    const occasionMatch = booking.internal_notes?.match(/Occasion:\s*([^\r\n]+)/i);
+    const occasion = (occasionMatch && !occasionMatch[1].includes('N/A')) ? occasionMatch[1].trim() : '';
 
     return NextResponse.json({
       id: booking.id,
@@ -225,9 +270,15 @@ export async function GET(
         avatar: contactName.charAt(0).toUpperCase() || 'G',
         avatarColor: '#9DAE91',
         address: address,
+        street: street,
+        plz: plz,
+        location: city,
         business: business,
+        reference: reference,
       },
       billingAddress: booking.billing_address || '',
+      billingReference: billingReference,
+      paymentMethod: paymentMethod,
       event: {
         date: booking.event_date ? (typeof booking.event_date === 'string' ? booking.event_date : new Date(booking.event_date).toISOString().split('T')[0]) : '',
         time: booking.event_time ? (typeof booking.event_time === 'string' ? booking.event_time.split('.')[0] : booking.event_time) : '',
@@ -235,6 +286,7 @@ export async function GET(
         rawTime: booking.event_time ? (typeof booking.event_time === 'string' ? booking.event_time.split('.')[0] : booking.event_time) : '',
         occasion: occasion || 'Event',
         location: booking.location || undefined,
+        reference: reference, // Include in event as well if needed for UI mapping
       },
       location: booking.location || '',
       guests: booking.guest_count || 0,

@@ -91,6 +91,7 @@ export function getThankYouDepositTemplateData(
     event_date: formatGermanDate(booking.eventDate),
     event_time: booking.eventTime,
     guest_count: booking.guestCount,
+    estimated_total: formatCHF(estimatedTotal),
     booking_id: generateShortBookingId(booking.id),
     special_requests: sanitized.specialRequests,
     allergy_details: sanitized.allergyDetails,

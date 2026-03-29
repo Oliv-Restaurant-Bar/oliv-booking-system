@@ -431,14 +431,14 @@ export function CustomerDetailsForm({
                     </p>
                     <div className="space-y-3">
                         <label
-                            className={`flex items-center gap-3 cursor-pointer p-4 rounded-lg border-2 transition-all ${eventDetails.paymentMethod === 'cash_card' ? 'border-primary bg-primary/5' : 'border-border hover:border-border/80'}`}
+                            className={`flex items-center gap-3 cursor-pointer p-4 rounded-lg border-2 transition-all ${eventDetails.paymentMethod === 'ec_card' ? 'border-primary bg-primary/5' : 'border-border hover:border-border/80'}`}
                             style={{ borderRadius: 'var(--radius)' }}
                         >
                             <NativeRadio
                                 name="paymentMethod"
-                                checked={eventDetails.paymentMethod === 'cash_card'}
+                                checked={eventDetails.paymentMethod === 'ec_card'}
                                 onChange={() => {
-                                    setEventDetails({ ...eventDetails, paymentMethod: 'cash_card' });
+                                    setEventDetails({ ...eventDetails, paymentMethod: 'ec_card' });
                                     setTimeout(() => {
                                         window.scrollTo({
                                             top: document.documentElement.scrollHeight,

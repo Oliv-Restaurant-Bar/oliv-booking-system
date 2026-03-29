@@ -256,6 +256,10 @@ export async function submitWizardForm(data: WizardFormData) {
         `Occasion: ${data.occasion || 'N/A'}`,
         `Reference: ${data.reference || 'N/A'}`,
         `Billing Reference: ${data.billingReference || 'N/A'}`,
+        `Payment Method: ${data.paymentMethod || 'N/A'}`,
+        `Street: ${data.street || 'N/A'}`,
+        `PLZ: ${data.plz || 'N/A'}`,
+        `Location: ${data.location || 'N/A'}`,
         `Address: ${fullAddress || 'N/A'}`,
       ];
 
@@ -370,6 +374,10 @@ export async function submitWizardForm(data: WizardFormData) {
       `Occasion: ${data.occasion || 'N/A'}`,
       `Reference: ${data.reference || 'N/A'}`,
       `Billing Reference: ${data.billingReference || 'N/A'}`,
+      `Payment Method: ${data.paymentMethod || 'N/A'}`,
+      `Street: ${data.street || 'N/A'}`,
+      `PLZ: ${data.plz || 'N/A'}`,
+      `Location: ${data.location || 'N/A'}`,
       `Address: ${fullAddress || 'N/A'}`,
     ].filter(Boolean);
 
