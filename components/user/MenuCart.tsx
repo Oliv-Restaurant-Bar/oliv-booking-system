@@ -138,7 +138,7 @@ export function MenuCart({
     setItemGuestCounts(prev => {
       const current = prev[itemId] || parseInt(eventDetails.guestCount) || 1;
       const next = Math.max(1, current + delta);
-      
+
       // Removed global sync to allow individual item guest counts
       return { ...prev, [itemId]: next };
     });
@@ -536,7 +536,7 @@ export function MenuCart({
                         </span>
                       </div>
                     )}
-                    <div className="flex justify-between items-center text-[13px]">
+                    {getConsumptionSubtotal() > 0 && (<div className="flex justify-between items-center text-[13px]">
                       <div className="flex items-baseline gap-1">
                         <span className="text-[#6b7280]">Beverages</span>
                         <span className="text-[10px] text-[#9ca3af]">(by consumption)</span>
@@ -544,7 +544,7 @@ export function MenuCart({
                       <span className={`font-bold ${includeBeveragePrices ? "text-[#2c2f34]" : "text-[#9ca3af] line-through decoration-2"}`}>
                         CHF {getConsumptionSubtotal().toFixed(2)}
                       </span>
-                    </div>
+                    </div>)}
 
                     <label className="flex items-center gap-2.5 cursor-pointer pt-1">
                       <div className="relative flex items-center shrink-0">

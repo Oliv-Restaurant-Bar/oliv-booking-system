@@ -105,7 +105,7 @@ export function BookingsPage({ user, translations }: BookingsPageProps) {
       // Fetch all bookings without server-side filters
       // Use the larger limit (1000) for both views to support calendar view
       // Sort by created_at by default, client-side will handle display
-      const response = await fetch(`/api/bookings?page=1&limit=1000&sort=created_at`);
+      const response = await fetch(`/api/bookings?page=1&limit=1000&sort=created_at`, { cache: 'no-store' });
 
       // Check for redirects (which might indicate auth issues)
       const redirectUrl = response.redirected ? response.url : null;
@@ -146,7 +146,7 @@ export function BookingsPage({ user, translations }: BookingsPageProps) {
     if (bookingId && (!selectedBooking || selectedBooking.id !== bookingId)) {
       const fetchSingleBooking = async () => {
         try {
-          const res = await fetch(`/api/bookings/${bookingId}`);
+          const res = await fetch(`/api/bookings/${bookingId}`, { cache: 'no-store' });
           if (res.ok) {
             const data = await res.json();
             setSelectedBooking(data);

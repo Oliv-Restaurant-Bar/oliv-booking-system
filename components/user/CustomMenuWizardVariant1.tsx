@@ -1478,7 +1478,7 @@ export function CustomMenuWizard() {
             currentStep > 1
               ? () => setCurrentStep(1)
               : (isEditMode && bookingId)
-                ? () => router.push(`/admin/bookings/${bookingId}`)
+                ? () => router.push(`/admin/bookings?id=${bookingId}`)
                 : undefined
           }
         />

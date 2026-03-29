@@ -55,9 +55,12 @@ export async function submitWizardForm(data: WizardFormData) {
     // VALIDATE INPUT DATA
     try {
       wizardEventDetailsSchema.parse(data);
+      console.log('✅ Validation passed');
+      console.log('Target Date:', data.eventDate);
+      console.log('Target Time:', data.eventTime);
     } catch (error) {
       if (error instanceof ZodError) {
-        console.error('❌ Validation Error:', error.errors);
+        console.error('❌ Validation Error:', JSON.stringify(error.errors, null, 2));
         return {
           success: false,
           error: 'Invalid form data',
@@ -123,7 +126,7 @@ export async function submitWizardForm(data: WizardFormData) {
       name: addonItems.name,
       price: addonItems.price,
     }).from(addonItems);
-    
+
     const addonMap = new Map(allAddonItems.map(a => [a.id, a]));
 
     const menuItemMap = new Map(allMenuItems.map(item => [item.id, item]));
@@ -152,7 +155,7 @@ export async function submitWizardForm(data: WizardFormData) {
         if (selectedVariantId && Array.isArray(dbItem.variants)) {
           // 1. Try lookup by ID
           let variant = (dbItem.variants as any[]).find(v => v.id === selectedVariantId);
-          
+
           // 2. Fallback: Try lookup by name (resilience for ID/name mismatch)
           if (!variant) {
             variant = (dbItem.variants as any[]).find(v => v.name === selectedVariantId);
@@ -168,7 +171,7 @@ export async function submitWizardForm(data: WizardFormData) {
         let addonsPrice = 0;
         let addonsNames: string[] = [];
         const selectedAddOnIds = data.itemAddOns?.[itemId] || [];
-        
+
         if (selectedAddOnIds.length > 0) {
           for (const addonId of selectedAddOnIds) {
             const addon = addonMap.get(addonId);
@@ -271,6 +274,8 @@ export async function submitWizardForm(data: WizardFormData) {
         updatedAt: new Date(),
       };
 
+      console.log('📊 Update Data Prepared:', JSON.stringify(updateData, null, 2));
+
       // 🔒 CRITICAL FIX: Use database transaction for atomicity
       // This prevents race conditions where delete succeeds but insert fails
       await db.transaction(async (tx) => {
@@ -315,79 +320,12 @@ export async function submitWizardForm(data: WizardFormData) {
       });
       // Transaction complete - all updates committed atomically
 
-      const editSecret = await ensureBookingSecret(data.bookingId);
-
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://oliv-restaurant.ch";
-      const bookingEditUrl = `${baseUrl}/booking/${data.bookingId}/edit/${editSecret}`;
-
       console.log('✅ BOOKING UPDATED SUCCESSFULLY');
       console.log('========================================\n');
 
-      console.log('\n========================================');
-      console.log('📧 BOOKING EDIT LINK (UPDATE)');
-      console.log('========================================');
-      console.log(`To: ${data.contactEmail}`);
-      console.log(`Booking ID: ${data.bookingId}`);
-      console.log(`Edit Link: ${bookingEditUrl}`);
-      console.log('========================================\n');
-
-      // Non-blocking email sending (fire and forget)
-      // Convert Date objects to strings for template serialization
-      const bookingForEmailUpdate = {
-        id: booking.id,
-        leadId: booking.leadId,
-        eventDate: (booking.eventDate as any) instanceof Date ? (booking.eventDate as any).toISOString() : booking.eventDate,
-        eventTime: booking.eventTime,
-        guestCount: booking.guestCount,
-        allergyDetails: booking.allergyDetails,
-        specialRequests: booking.specialRequests,
-        estimatedTotal: booking.estimatedTotal,
-        requiresDeposit: booking.requiresDeposit,
-        status: booking.status,
-        internalNotes: booking.internalNotes,
-        termsAccepted: booking.termsAccepted,
-        termsAcceptedAt: booking.termsAcceptedAt instanceof Date ? booking.termsAcceptedAt.toISOString() : booking.termsAcceptedAt,
-        isLocked: booking.isLocked,
-        createdAt: booking.createdAt instanceof Date ? booking.createdAt.toISOString() : booking.createdAt,
-        updatedAt: booking.updatedAt instanceof Date ? booking.updatedAt.toISOString() : booking.updatedAt,
-        lead: booking.leadId ? {
-          id: booking.leadId,
-          contactName: data.contactName,
-          contactEmail: data.contactEmail,
-          contactPhone: data.contactPhone,
-          eventDate: data.eventDate,
-          eventTime: eventTime,
-          guestCount: data.guestCount,
-          source: "website",
-          status: "new",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        } : null,
-      } as any;
-
-      // Send email (Awaited to ensure delivery on Vercel)
-      try {
-        console.log('📧 Sending update email...');
-        const emailResult = await sendThankYouEmail({
-          bookingId: data.bookingId!,
-          recipientEmail: data.contactEmail,
-          bookingData: bookingForEmailUpdate,
-          estimatedTotal: estimatedTotal,
-          bookingEditUrl: bookingEditUrl,
-        });
-        
-        if (emailResult.success) {
-          console.log(`   ✅ Update email sent successfully (ID: ${emailResult.emailLogId || 'unknown'})`);
-        } else {
-          console.error(`   ❌ Update email failed: ${emailResult.error}`);
-        }
-      } catch (err) {
-        console.error("❌ Exception sending wizard update email:", err);
-      }
-
       revalidatePath("/admin/bookings");
       revalidatePath("/admin/leads");
-      revalidatePath(`/admin/bookings/${data.bookingId}`);
+      revalidatePath(`/admin/bookings?id=${data.bookingId}`);
 
       return {
         success: true,
@@ -550,10 +488,10 @@ export async function submitWizardForm(data: WizardFormData) {
       console.log('📧 Generating PDF for record...');
       const doc = await generateCustomerOfferPdf(pdfData as any);
       const pdfBase64Raw = doc.output('datauristring').split(',')[1];
-      
+
       // Clean base64 (remove any potential whitespaces/newlines)
       const pdfBase64 = pdfBase64Raw.replace(/\s/g, '');
-      
+
       console.log(`📧 PDF generated. Length: ${pdfBase64.length} chars. Header: ${pdfBase64.substring(0, 10)}...`);
       console.log('📧 Sending confirmation email...');
 
@@ -561,7 +499,7 @@ export async function submitWizardForm(data: WizardFormData) {
       const safeCustomerName = pdfData.customerName
         .replace(/[^\x00-\x7F]/g, "") // Remove non-ASCII
         .replace(/\s+/g, '_');
-        
+
       const emailResult = await sendThankYouEmail({
         bookingId: booking.id,
         recipientEmail: data.contactEmail,
@@ -574,7 +512,7 @@ export async function submitWizardForm(data: WizardFormData) {
           content: pdfBase64,
         }
       });
-      
+
       if (emailResult.success) {
         console.log(`   ✅ Confirmation email sent successfully (ID: ${emailResult.emailLogId || 'unknown'})`);
       } else {

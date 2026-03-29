@@ -466,7 +466,7 @@
       "customerInfo": "Kundeninformationen",
       "eventDetails": "Veranstaltungsdetails",
       "venueLocation": "Veranstaltungsort",
-      "room": "Raum / Bereich",
+      "room": "Veranstaltungsort",
       "notAssigned": "Nicht zugewiesen",
       "sendReminder": "Erinnerung senden",
       "sendCheckin": "4-Tage Check-in",
@@ -550,7 +550,11 @@
         "showMore": "+{count} weitere",
         "guests": "{count} Gäste",
         "view": "Ansehen"
-      }
+      },
+      "quickActions": "Schnellaktionen",
+      "assignUser": "Benutzer zuweisen",
+      "assigned": "Zugewiesen",
+      "assignedTo": "Zugewiesen an"
     },
     "reports": {
       "title": "Berichte",
@@ -1081,7 +1085,7 @@
       "eventTime": "Zeit",
       "guests": "Anzahl der Gäste",
       "guestCount": "Anzahl der Gäste",
-      "room": "Raum / Bereich",
+      "room": "Veranstaltungsort",
       "rooms": {
         "eg": "EG",
         "ug1": "UG1",

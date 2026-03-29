@@ -7,6 +7,8 @@ import { requireAuth } from "@/lib/auth/server";
 import type { AuditContext } from "@/lib/booking-audit";
 import { z } from "zod";
 
+export const dynamic = 'force-dynamic';
+
 // UUID validation schema
 const uuidSchema = z.string().uuid("Invalid booking ID format");
 
@@ -227,14 +229,10 @@ export async function GET(
       },
       billingAddress: booking.billing_address || '',
       event: {
-        date: booking.event_date
-          ? new Date(booking.event_date).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-          })
-          : '',
-        time: booking.event_time ? booking.event_time.substring(0, 5) : '',
+        date: booking.event_date ? (typeof booking.event_date === 'string' ? booking.event_date : new Date(booking.event_date).toISOString().split('T')[0]) : '',
+        time: booking.event_time ? (typeof booking.event_time === 'string' ? booking.event_time.split('.')[0] : booking.event_time) : '',
+        rawDate: booking.event_date ? (typeof booking.event_date === 'string' ? booking.event_date : new Date(booking.event_date).toISOString().split('T')[0]) : '',
+        rawTime: booking.event_time ? (typeof booking.event_time === 'string' ? booking.event_time.split('.')[0] : booking.event_time) : '',
         occasion: occasion || 'Event',
         location: booking.location || undefined,
       },

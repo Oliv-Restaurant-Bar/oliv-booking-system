@@ -466,7 +466,7 @@
       "customerInfo": "Customer Information",
       "eventDetails": "Event Details",
       "venueLocation": "Venue Location",
-      "room": "Room / Area",
+      "room": "Venue",
       "notAssigned": "Not Assigned",
       "sendReminder": "Send Reminder",
       "sendCheckin": "4-Day Check-in",
@@ -550,7 +550,11 @@
         "showMore": "+{count} more",
         "guests": "{count} guests",
         "view": "View"
-      }
+      },
+      "quickActions": "Quick Actions",
+      "assignUser": "Assign User",
+      "assigned": "Assigned",
+      "assignedTo": "Assigned To"
     },
     "reports": {
       "title": "Reports",
@@ -1076,7 +1080,7 @@
       "eventDate": "Event Date",
       "eventTime": "Time",
       "guestCount": "Number of Guests",
-      "room": "Room / Area",
+      "room": "Venue",
       "rooms": {
         "eg": "EG",
         "ug1": "UG1",

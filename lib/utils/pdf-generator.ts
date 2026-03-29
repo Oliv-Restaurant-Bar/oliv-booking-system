@@ -434,16 +434,16 @@ export async function generateBookingPdf(
   // Footer / Totals (Final piece for Customer)
   if (mode === 'offer') {
     checkPageBreak(30);
-    yPos += 15;
+    yPos += 10;
     doc.setDrawColor(...COLORS.primary);
     doc.setLineWidth(1);
     doc.line(margin, yPos, pageWidth - margin, yPos);
-    yPos += 15;
+    yPos += 10;
 
     // Dietary Breakdown Section
     const hasDietaryData = dietaryBreakdown.veg.total > 0 ||
-                          dietaryBreakdown['non-veg'].total > 0 ||
-                          dietaryBreakdown.vegan.total > 0;
+      dietaryBreakdown['non-veg'].total > 0 ||
+      dietaryBreakdown.vegan.total > 0;
 
     if (hasDietaryData) {
       doc.setFont("helvetica", "bold");
@@ -485,11 +485,11 @@ export async function generateBookingPdf(
         yPos += lineHeight;
       }
 
-      yPos += 8;
+      yPos += 2;
       doc.setDrawColor(...COLORS.border);
       doc.setLineWidth(0.5);
       doc.line(margin, yPos, pageWidth - margin, yPos);
-      yPos += 12;
+      yPos += 10;
     }
 
     // Total

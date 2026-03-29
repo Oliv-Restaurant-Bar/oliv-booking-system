@@ -9,6 +9,7 @@ import { toast } from "sonner";
 export default function AdminLoginPage() {
   const router = useRouter();
   const t = useTranslations('admin.login');
+  const tAuth = useTranslations('auth');
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -79,7 +80,12 @@ export default function AdminLoginPage() {
         throw new Error("Login failed - no user data returned");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      let message = err instanceof Error ? err.message : "An error occurred";
+      // If user is inactive/unverified, show generic error instead of specific verification message
+      if (message.toLowerCase().includes("verified")) {
+        message = tAuth('invalidCredentials');
+      }
+      setError(message);
       setIsLoggingIn(false);
     } finally {
       setLoading(false);

@@ -199,7 +199,9 @@ export async function fetchBookings(options: {
               year: 'numeric',
             })
             : '',
+          rawDate: booking.event_date ? (typeof booking.event_date === 'string' ? booking.event_date.split(' ')[0] : new Date(booking.event_date).toISOString().split('T')[0]) : '',
           time: booking.event_time ? booking.event_time.substring(0, 5) : '',
+          rawTime: booking.event_time ? booking.event_time.substring(0, 5) : '',
           occasion: occasion || 'Event',
           location: booking.location || '',
         },

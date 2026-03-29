@@ -98,7 +98,7 @@ export function generateBookingCheckinSubmittedEmail(params: BookingCheckinSubmi
           `}
 
           <div style="text-align: center; margin-top: 30px;">
-            <a href="${process.env.NEXT_PUBLIC_APP_URL}/admin/bookings/${booking.id}" class="button">Buchung im Admin-Panel öffnen</a>
+            <a href="${process.env.NEXT_PUBLIC_APP_URL}/admin/bookings?id=${booking.id}" class="button">Buchung im Admin-Panel öffnen</a>
           </div>
         </div>
 

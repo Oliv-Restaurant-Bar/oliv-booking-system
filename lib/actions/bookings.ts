@@ -342,7 +342,7 @@ export async function updateBookingStatus(
     }
 
     revalidatePath("/admin/bookings");
-    revalidatePath(`/admin/bookings/${id}`);
+    revalidatePath(`/admin/bookings?id${id}`);
 
     return { success: true, data: updatedBooking };
   } catch (error) {
@@ -495,9 +495,9 @@ export async function updateBooking(
       existingItems.forEach(item => {
         const idKey = item.itemId?.toString();
         if (idKey) {
-          itemDataMap.set(idKey, { 
-            notes: item.notes, 
-            unitPrice: item.unitPrice 
+          itemDataMap.set(idKey, {
+            notes: item.notes,
+            unitPrice: item.unitPrice
           });
         }
       });
@@ -521,12 +521,12 @@ export async function updateBooking(
         const menuItem = menuItemMap.get(itemId);
         if (menuItem) {
           const quantity = itemQuantities[itemId] !== undefined ? itemQuantities[itemId] : 1;
-          
+
           // CRITICAL: Preserve existing unit price if it already has variant/addon pricing
           const existingData = itemDataMap.get(itemId);
           const unitPriceStr = existingData ? existingData.unitPrice : menuItem.pricePerPerson;
           const unitPriceNum = Number(unitPriceStr);
-          
+
           const lineTotal = quantity * unitPriceNum;
           newEstimatedTotal += lineTotal;
 
@@ -854,7 +854,7 @@ export async function lockBooking(
     });
 
     revalidatePath("/admin/bookings");
-    revalidatePath(`/admin/bookings/${bookingId}`);
+    revalidatePath(`/admin/bookings?id=${bookingId}`);
 
     return { success: true, data: booking };
   } catch (error) {
@@ -926,7 +926,7 @@ export async function unlockBooking(
     }
 
     revalidatePath("/admin/bookings");
-    revalidatePath(`/admin/bookings/${bookingId}`);
+    revalidatePath(`/admin/bookings?id=${bookingId}`);
 
     return { success: true, data: booking };
   } catch (error) {
@@ -987,7 +987,7 @@ export async function declineUnlockRequest(
     }
 
     revalidatePath("/admin/bookings");
-    revalidatePath(`/admin/bookings/${bookingId}`);
+    revalidatePath(`/admin/bookings?id=${bookingId}`);
 
     return { success: true };
   } catch (error) {
@@ -1209,7 +1209,7 @@ export async function deleteBooking(
     // Revalidate paths
     console.log('🔄 Revalidating paths: /admin/bookings');
     revalidatePath("/admin/bookings");
-    revalidatePath(`/admin/bookings/${bookingId}`);
+    revalidatePath(`/admin/bookings?id=${bookingId}`);
 
     console.log('✅ DELETE BOOKING FUNCTION COMPLETE');
     console.log('========================================\n');

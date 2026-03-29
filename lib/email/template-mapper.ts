@@ -244,7 +244,7 @@ export function getUnlockRequestedTemplateData(
     customer_name: customerName,
     event_date: formatGermanDate(booking.eventDate),
     booking_id: generateShortBookingId(booking.id),
-    admin_url: `${process.env.NEXT_PUBLIC_APP_URL}/admin/bookings/${booking.id}`,
+    admin_url: `${process.env.NEXT_PUBLIC_APP_URL}/admin/bookings?id=${booking.id}`,
   };
 }
 
@@ -328,7 +328,7 @@ export function getCheckinSubmittedTemplateData(
     new_guest_count: params.newGuestCount || booking.guestCount,
     menu_changes: params.menuChanges || "Keine",
     additional_details: params.additionalDetails || "Keine",
-    admin_url: params.adminUrl || `${process.env.NEXT_PUBLIC_APP_URL}/admin/bookings/${booking.id}`,
+    admin_url: params.adminUrl || `${process.env.NEXT_PUBLIC_APP_URL}/admin/bookings?id=${booking.id}`,
   };
 }
 

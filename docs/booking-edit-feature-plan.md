@@ -98,7 +98,7 @@ CREATE INDEX booking_audit_log_created_at_idx ON booking_audit_log(created_at DE
   - Secret: 64-character hex string (256-bit random)
   - Example: `/booking/a1b2c3d4/edit/9f8e7d6c5b4a3210fedcba9876543210...`
 
-- **Admin route:** `/admin/bookings/{id}/edit`
+- **Admin route:** `/admin/bookings?id=${bookingId}{id}/edit`
   - Requires authenticated session
   - Bypasses lock (admin can always edit)
 
@@ -475,7 +475,7 @@ GET  /api/bookings/:id/audit           # Get audit log (admin)
 
 **Files:**
 - `components/admin/BookingDetailPage.tsx` (MODIFY)
-- `app/admin/bookings/[id]/edit/page.tsx` (NEW - optional)
+- `app/admin/bookings?id=${bookingId}[id]/edit/page.tsx` (NEW - optional)
 
 **Features:**
 ```tsx
