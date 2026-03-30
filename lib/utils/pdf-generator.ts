@@ -108,23 +108,26 @@ export async function generateBookingPdf(
     doc.setFontSize(22);
     doc.setTextColor(...COLORS.secondary);
     doc.setFont("helvetica", "bold");
-    const title = mode === 'kitchen' ? "KÜCHENPAPIER" : "";
+    const title = String(mode === 'kitchen' ? "KÜCHENPAPIER" : "");
     doc.text(title + (isContinuation ? " (FORTS.)" : ""), margin, 34);
 
     // Meta (Right side)
     doc.setFontSize(10);
     doc.setTextColor(...COLORS.secondary);
+    const safeId = String(data.id || 'Unknown');
+    const shortId = safeId.length > 8 ? safeId.substring(safeId.length - 8).toUpperCase() : safeId.toUpperCase();
+    
     if (mode === 'kitchen') {
       doc.setFont("helvetica", "bold");
       doc.text("INTERNAL USE ONLY", pageWidth - margin, 20, { align: 'right' });
     } else {
-      doc.text(`ANFRAGE-NR: ${data.id.substring(data.id.length - 8).toUpperCase()}`, pageWidth - margin, 20, { align: 'right' });
+      doc.text(`ANFRAGE-NR: ${shortId}`, pageWidth - margin, 20, { align: 'right' });
     }
 
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
     const dateStr = mode === 'kitchen' ? `Generated: ${new Date().toLocaleDateString('de-CH')}` : `Datum: ${new Date().toLocaleDateString('de-CH')}`;
-    doc.text(dateStr, pageWidth - margin, 34, { align: 'right' });
+    doc.text(String(dateStr), pageWidth - margin, 34, { align: 'right' });
 
     yPos = 60;
   };
@@ -208,24 +211,24 @@ export async function generateBookingPdf(
   };
 
   // Customer Side
-  leftY = renderField('Kunde', data.customerName, leftX, leftY, colW);
+  leftY = renderField('Kunde', String(data.customerName || 'Gast'), leftX, leftY, colW);
   if (data.business) {
     doc.setFont("helvetica", "bold");
-    const bizLines = doc.splitTextToSize(data.business, colW);
+    const bizLines = doc.splitTextToSize(String(data.business), colW);
     doc.text(bizLines, leftX + 2, leftY);
     leftY += (bizLines.length * detailLineHeight) + 1;
     doc.setFont("helvetica", "normal");
   }
-  leftY = renderField('Personen', data.guestCount, leftX, leftY, colW);
+  leftY = renderField('Personen', String(data.guestCount || 0), leftX, leftY, colW);
   if (data.billingAddress) {
-    leftY = renderField('Adresse', data.billingAddress, leftX, leftY, colW);
+    leftY = renderField('Adresse', String(data.billingAddress), leftX, leftY, colW);
   }
 
   // Event Side
-  rightY = renderField('Datum', data.eventDate, rightX, rightY, colW);
-  rightY = renderField('Zeit', data.eventTime, rightX, rightY, colW);
-  rightY = renderField('Anlass', data.occasion || '-', rightX, rightY, colW);
-  rightY = renderField('Ort', data.location || 'Restaurant Oliv', rightX, rightY, colW);
+  rightY = renderField('Datum', String(data.eventDate || 'N/A'), rightX, rightY, colW);
+  rightY = renderField('Zeit', String(data.eventTime || 'N/A'), rightX, rightY, colW);
+  rightY = renderField('Anlass', String(data.occasion || 'Event'), rightX, rightY, colW);
+  rightY = renderField('Ort', String(data.location || 'Restaurant Oliv'), rightX, rightY, colW);
 
   yPos = Math.max(leftY, rightY) + 8;
 
@@ -422,13 +425,18 @@ export async function generateBookingPdf(
   };
 
   // Render Notes BEFORE Footer for Customer Offer
+  const allergies = data.allergies ? String(data.allergies) : undefined;
+  const requests = data.specialRequests ? String(data.specialRequests) : undefined;
+  const kitchen = data.kitchenNotes ? String(data.kitchenNotes) : undefined;
+
   if (mode === 'offer') {
-    renderNoteSection("Allergien & Diätetisch", data.allergies, true);
-    renderNoteSection("Besondere Wünsche", data.specialRequests);
+    renderNoteSection("Allergien & Diätetisch", allergies, true);
+    renderNoteSection("Besondere Wünsche", requests);
   } else {
     // For Kitchen, still at the end
-    renderNoteSection("Allergies & Dietary", data.allergies, true);
-    renderNoteSection("Special Requests", data.specialRequests);
+    renderNoteSection("Allergies & Dietary", allergies, true);
+    renderNoteSection("Special Requests", requests);
+    renderNoteSection("Staff Notes", kitchen);
   }
 
   // Footer / Totals (Final piece for Customer)
@@ -504,9 +512,6 @@ export async function generateBookingPdf(
     doc.setFont("helvetica", "italic");
     doc.setTextColor(...COLORS.muted);
     doc.text(`Kalkulation for ${data.guestCount} Personen (exkl. Service & Getränke nach Aufwand)`, margin, yPos);
-  }
-  if (mode === 'kitchen') {
-    renderNoteSection("Staff Notes", data.kitchenNotes);
   }
 
   // Page Numbers

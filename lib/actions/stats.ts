@@ -416,7 +416,7 @@ export async function getTrendingItems(limit: number = 10) {
         mi.name_de as name_de,
         mc.name as category,
         mc.name_de as category_de,
-        mi.price_per_person,
+        mi.image_url,
         COUNT(DISTINCT bi.booking_id) as booking_count,
         COALESCE(SUM(bi.quantity), 0) as total_quantity,
         COALESCE(SUM(CAST(bi.unit_price AS NUMERIC) * bi.quantity), 0) as total_revenue
@@ -426,7 +426,7 @@ export async function getTrendingItems(limit: number = 10) {
       LEFT JOIN bookings b ON bi.booking_id = b.id
       WHERE mi.is_active = true
         AND (b.id IS NULL OR (b.event_date >= ${thirtyDaysAgo.toISOString()} AND b.status NOT IN ('declined', 'cancelled', 'no_show')))
-      GROUP BY mi.id, mi.name, mi.name_de, mc.name, mc.name_de, mi.price_per_person
+      GROUP BY mi.id, mi.name, mi.name_de, mc.name, mc.name_de, mi.price_per_person, mi.image_url
       ORDER BY total_quantity DESC, total_revenue DESC
       LIMIT ${limit}
     `);
@@ -462,6 +462,7 @@ export async function getTrendingItems(limit: number = 10) {
         sales: totalQuantity,
         totalRevenue: totalRevenue,
         bookingCount: Number(item.booking_count) || 0,
+        image: item.image_url || null,
       };
     });
   } catch (error) {

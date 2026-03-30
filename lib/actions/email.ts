@@ -674,10 +674,11 @@ export async function sendKitchenPdfEmail(params: {
 
     // Validate that it's actually a PDF by checking magic bytes
     try {
-      const pdfHeader = atob(base64Content.substring(0, 20));
+      const pdfBuffer = Buffer.from(base64Content.substring(0, 100), 'base64');
+      const pdfHeader = pdfBuffer.toString('latin1'); // Use latin1 to safely read binary-as-string
       if (!pdfHeader.includes('%PDF-')) {
         console.error('❌ Invalid PDF header in email attachment!');
-        console.error('   Expected: %PDF-, Got:', pdfHeader.substring(0, 20));
+        console.error('   Expected: %PDF-, Got header start:', pdfHeader.substring(0, 30).replace(/[^\x20-\x7E]/g, '.'));
         throw new Error("Invalid PDF file - missing PDF header");
       }
     } catch (decodeError) {
@@ -689,8 +690,10 @@ export async function sendKitchenPdfEmail(params: {
     console.log('📄 PDF Attachment Debug:');
     console.log(`   - Original length: ${params.pdfBase64.length}`);
     console.log(`   - Cleaned length: ${base64Content.length}`);
-    console.log(`   - PDF header valid: ✅`);
     console.log(`   - Filename: ${params.documentName}.pdf`);
+    if (base64Content.length < 500) {
+      console.warn('   ⚠️ WARNING: PDF content looks suspiciously small!');
+    }
 
     if (useTemplates) {
       const templateName = getTemplateName("kitchen_pdf");

@@ -31,6 +31,9 @@ interface KitchenPdfActionModalProps {
       category: string;
       quantity: string;
       price: string;
+      unitPrice?: number | string;
+      pricingType?: string;
+      dietaryType?: 'veg' | 'non-veg' | 'vegan' | 'none';
       notes?: string;
       customerComment?: string;
     }>;
@@ -115,18 +118,20 @@ export function KitchenPdfActionModal({
       location: booking.event.location,
       billingAddress: booking.billingAddress,
       items: (booking.menuItems || []).map((item: any, idx: number) => {
-        const qty = parseInt(item.quantity) || booking.guests;
+        const qtyStr = String(item.rawQuantity || item.quantity || '1');
+        const qty = parseInt(qtyStr.split(' ')[0]) || booking.guests || 1;
         const uPrice = Number(item.unitPrice) || 0;
+        
         return {
           id: `item-${idx}`,
-          name: item.item,
-          category: item.category,
+          name: String(item.item || 'Item'),
+          category: String(item.category || 'Other'),
           quantity: qty,
           unitPrice: uPrice,
           totalPrice: qty * uPrice,
-          pricingType: item.pricingType || 'per_person',
-          notes: item.notes,
-          customerComment: item.customerComment,
+          pricingType: String(item.pricingType || 'per_person'),
+          notes: item.notes || '',
+          customerComment: item.customerComment || '',
           dietaryType: item.dietaryType || 'none',
         };
       }),
@@ -201,32 +206,25 @@ export function KitchenPdfActionModal({
       let base64Content: string;
 
       try {
-        // Try using arraybuffer instead of datauristring (more reliable)
-        const arrayBuffer = doc.output('arraybuffer');
-
-        // Convert ArrayBuffer to base64
-        const uint8Array = new Uint8Array(arrayBuffer);
-        let binary = '';
-        for (let i = 0; i < uint8Array.length; i++) {
-          binary += String.fromCharCode(uint8Array[i]);
+        // OFFICIAL way to get pure base64 from jsPDF for email attachments
+        // output('datauristring') is highly supported and returns a standard data URI
+        const dataUri = doc.output('datauristring');
+        
+        // Robust split: find the first comma and take everything after it
+        const parts = dataUri.split(',');
+        if (parts.length > 1) {
+          base64Content = parts[1];
+        } else {
+          base64Content = parts[0];
         }
-        base64Content = btoa(binary);
-
-        console.log(`   - Output type: arraybuffer → base64`);
-        console.log(`   - ArrayBuffer size: ${arrayBuffer.byteLength} bytes`);
+        
+        // Debug
+        console.log(`   - Output type: datauristring → base64`);
+        console.log(`   - Data URI length: ${dataUri.length}`);
         console.log(`   - Base64 length: ${base64Content.length}`);
-
-        // Verify PDF header
-        const pdfHeader = String.fromCharCode(...uint8Array.slice(0, 5));
-        if (pdfHeader !== '%PDF-') {
-          console.error('❌ Invalid PDF header in ArrayBuffer:', pdfHeader);
-          throw new Error('Generated PDF has invalid header');
-        }
-        console.log(`   - PDF header: ${pdfHeader} ✅`);
-
       } catch (error) {
-        console.error('❌ Error generating PDF as arraybuffer:', error);
-        throw new Error('Failed to generate PDF - arraybuffer method failed');
+        console.error('❌ Error generating PDF as base64:', error);
+        throw new Error('Failed to generate PDF - base64 conversion failed');
       }
 
       // Validate base64 content

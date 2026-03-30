@@ -1160,7 +1160,9 @@
       "specialRequests": "z.B. 2 Personen vegetarisch, 1 person glutenfrei...",
       "itemComment": "Spezielle Anweisungen oder Ernährungsanforderungen...",
       "name": "Vor- und Nachname",
-      "searchDishes": "Nach Gerichten suchen..."
+      "searchDishes": "Nach Gerichten suchen...",
+      "billingAddress": "Strasse, Hausnummer, PLZ, Ort",
+      "billingReference": "z.B. Kostenstelle oder Referenz"
     },
     "status": {
       "loading": "Menü wird geladen...",

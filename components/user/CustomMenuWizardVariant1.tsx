@@ -195,10 +195,10 @@ export function CustomMenuWizard() {
 
                 // Populate eventDetails from booking
                 setEventDetails({
-                  name: lead?.contactName || '',
-                  business: booking.businessName || '',
-                  email: lead?.contactEmail || '',
-                  telephone: lead?.contactPhone || '',
+                  name: booking.name || lead?.contactName || '',
+                  business: booking.business || '',
+                  email: booking.email || lead?.contactEmail || '',
+                  telephone: booking.telephone || lead?.contactPhone || '',
                   street: booking.street || '',
                   plz: booking.plz || '',
                   location: booking.location || '',
@@ -415,7 +415,7 @@ export function CustomMenuWizard() {
                 category: category?.name || 'Other',
                 price: Number(item.pricePerPerson) || 0,
                 pricingType: item.pricingType || 'per_person',
-                image: item.imageUrl || 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=400&fit=crop',
+                image: item.imageUrl || '',
                 // Mapping logic:
                 // 1. If it's a beverage category, default to 'none'
                 // 2. Otherwise: vegan > vegetarian > non-vegetarian

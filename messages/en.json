@@ -1155,7 +1155,9 @@
       "specialRequests": "e.g. 2 people vegetarian, 1 person gluten-free...",
       "itemComment": "Any special instructions or dietary requirements...",
       "name": "First and Last Name",
-      "searchDishes": "Search for dishes..."
+      "searchDishes": "Search for dishes...",
+      "billingAddress": "Street, House Number, ZIP, City",
+      "billingReference": "e.g. Cost Center or Reference"
     },
     "status": {
       "loading": "Loading menu...",

@@ -21,6 +21,8 @@ import { ValidatedTextarea } from '@/components/ui/validated-textarea';
 import { bookingKitchenNotesSchema, bookingCommentSchema } from '@/lib/validation/schemas';
 import { useBookingTranslation, useCommonTranslation, useButtonTranslation } from '@/lib/i18n/client';
 import { useTranslations } from 'next-intl';
+import { NativeRadio } from '@/components/ui/NativeRadio';
+import { useLocale } from 'next-intl';
 import { toReadableDate } from '@/lib/utils/date';
 import { useSystemTimezone } from '@/lib/hooks/useSystemTimezone';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -120,6 +122,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     const buttonT = useButtonTranslation();
     const statusT = useTranslations('bookingStatus');
     const wizardT = useTranslations('wizard');
+    const locale = useLocale();
     const { timezone } = useSystemTimezone();
 
     const [booking, setBooking] = useState<Booking | null>(initialBooking || null);
@@ -1562,56 +1565,105 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         </div>
                                     )}
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.paymentOption')}</label>
-                                        {isEditingPayment ? (
-                                            <select
-                                                value={tempCustomer.paymentMethod}
-                                                onChange={(e) => setTempCustomer({ ...tempCustomer, paymentMethod: e.target.value })}
-                                                className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
-                                                style={{ fontSize: 'var(--text-base)' }}
-                                            >
-                                                <option value="on_bill">{wizardT('labels.onInvoice')}</option>
-                                                <option value="ec_card">{wizardT('labels.ecCard') || 'EC-Karte / Karte vor Ort'}</option>
-                                                <option value="cash">{wizardT('labels.cash') || 'Barzahlung'}</option>
-                                            </select>
-                                        ) : (
-                                            <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>
-                                                {booking.paymentMethod === 'on_bill' ? wizardT('labels.onInvoice') :
-                                                    booking.paymentMethod === 'ec_card' ? (wizardT('labels.ecCard') || 'EC-Karte / Karte vor Ort') :
-                                                        booking.paymentMethod === 'cash' ? (wizardT('labels.cash') || 'Barzahlung') : (booking.paymentMethod || '-')}
+
+                                <div className="space-y-6">
+                                    {isEditingPayment ? (
+                                        <div className="space-y-4">
+                                            <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                                {wizardT('labels.choosePayment')}
                                             </p>
-                                        )}
-                                    </div>
-                                    <div className="sm:col-span-2 space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('sections.billingAddress')}</label>
-                                        {isEditingPayment ? (
-                                            <ValidatedTextarea
-                                                value={tempCustomer.billingAddress}
-                                                onChange={(e) => setTempCustomer({ ...tempCustomer, billingAddress: e.target.value })}
-                                                className="w-full bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
-                                                style={{ fontSize: 'var(--text-base)' }}
-                                                rows={2}
-                                            />
-                                        ) : (
-                                            <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.billingAddress || '-'}</p>
-                                        )}
-                                    </div>
-                                    <div className="sm:col-span-2 space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.reference')}</label>
-                                        {isEditingPayment ? (
-                                            <input
-                                                type="text"
-                                                value={tempCustomer.billingReference}
-                                                onChange={(e) => setTempCustomer({ ...tempCustomer, billingReference: e.target.value })}
-                                                className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
-                                                style={{ fontSize: 'var(--text-base)' }}
-                                            />
-                                        ) : (
-                                            <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.billingReference || '-'}</p>
-                                        )}
-                                    </div>
+                                            <div className="grid grid-cols-1 gap-4">
+                                                <label
+                                                    className={`flex items-center gap-3 cursor-pointer p-4 rounded-lg border-2 transition-all ${tempCustomer.paymentMethod === 'ec_card' ? 'border-primary bg-primary/5' : 'border-border hover:border-border/80'}`}
+                                                    style={{ borderRadius: 'var(--radius)' }}
+                                                >
+                                                    <NativeRadio
+                                                        name="paymentMethodAdmin"
+                                                        checked={tempCustomer.paymentMethod === 'ec_card'}
+                                                        onChange={() => setTempCustomer({ ...tempCustomer, paymentMethod: 'ec_card' })}
+                                                    />
+                                                    <div className="flex-1">
+                                                        <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                                                            {wizardT('labels.ecCard') || 'EC-Karte / Karte vor Ort'}
+                                                        </span>
+                                                    </div>
+                                                </label>
+
+                                                <label
+                                                    className={`flex items-center gap-3 cursor-pointer p-4 rounded-lg border-2 transition-all ${tempCustomer.paymentMethod === 'on_bill' ? 'border-primary bg-primary/5' : 'border-border hover:border-border/80'}`}
+                                                    style={{ borderRadius: 'var(--radius)' }}
+                                                >
+                                                    <NativeRadio
+                                                        name="paymentMethodAdmin"
+                                                        checked={tempCustomer.paymentMethod === 'on_bill'}
+                                                        onChange={() => setTempCustomer({ ...tempCustomer, paymentMethod: 'on_bill' })}
+                                                    />
+                                                    <div className="flex-1">
+                                                        <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                                                            {wizardT('labels.onInvoice') || 'Auf Rechnung'}
+                                                        </span>
+                                                    </div>
+                                                </label>
+                                            </div>
+
+                                            <div className="space-y-4 mt-6 pt-6 border-t border-border">
+                                                <div className="space-y-1">
+                                                    <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('sections.billingAddress')}</label>
+                                                    <ValidatedTextarea
+                                                        value={tempCustomer.billingAddress}
+                                                        onChange={(e) => setTempCustomer({ ...tempCustomer, billingAddress: e.target.value })}
+                                                        className="w-full bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
+                                                        style={{ fontSize: 'var(--text-base)' }}
+                                                        rows={3}
+                                                        placeholder={wizardT('placeholders.billingAddress') || 'Geben Sie die Rechnungsadresse ein'}
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.reference')}</label>
+                                                    <input
+                                                        type="text"
+                                                        value={tempCustomer.billingReference}
+                                                        onChange={(e) => setTempCustomer({ ...tempCustomer, billingReference: e.target.value })}
+                                                        className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
+                                                        style={{ fontSize: 'var(--text-base)' }}
+                                                        placeholder={wizardT('placeholders.billingReference') || 'Referenznummer hinzufügen'}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 gap-6">
+                                            <div className="space-y-1">
+                                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.paymentOption')}</label>
+                                                <div className="flex items-center gap-3 p-3 bg-muted/20 border border-border rounded-lg">
+                                                    <div className={`w-3 h-3 rounded-full bg-primary`} />
+                                                    <span className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>
+                                                        {booking.paymentMethod === 'on_bill' ? (wizardT('labels.onInvoice')) :
+                                                            (wizardT('labels.ecCard') || 'EC-Karte / Karte vor Ort')}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-4">
+                                                <div className="space-y-2">
+                                                    <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('sections.billingAddress')}</label>
+                                                    <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
+                                                        <p className="text-foreground whitespace-pre-wrap" style={{ fontSize: 'var(--text-base)' }}>
+                                                            {booking.billingAddress || '-'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.reference')}</label>
+                                                    <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
+                                                        <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                                            {booking.billingReference || '-'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </TabsContent>

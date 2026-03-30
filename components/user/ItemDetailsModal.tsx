@@ -277,14 +277,15 @@ export function ItemDetailsModal({
 
         {/* Modal Content */}
         <div className="p-6">
-          {/* Item Image */}
-          <div className="mb-6 rounded-lg overflow-hidden" style={{ borderRadius: 'var(--radius-card)' }}>
-            <img
-              src={item.image}
-              alt={item.name}
-              className="w-full h-64 object-cover"
-            />
-          </div>
+          {item.image && (
+            <div className="mb-6 rounded-lg overflow-hidden" style={{ borderRadius: 'var(--radius-card)' }}>
+              <img
+                src={item.image}
+                alt={item.name}
+                className="w-full h-64 object-cover"
+              />
+            </div>
+          )}
 
           {/* Description */}
           <div className="mb-6">

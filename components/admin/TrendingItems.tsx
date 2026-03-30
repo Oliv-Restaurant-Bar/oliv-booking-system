@@ -19,6 +19,7 @@ interface TrendingItem {
   sales: number;
   totalRevenue: number;
   bookingCount: number;
+  image?: string | null;
 }
 
 interface TrendingItemsProps {
@@ -48,7 +49,6 @@ const getCategoryColor = (categoryName: string): string => {
 };
 
 // Default image for items without image
-const defaultImage = 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=400&fit=crop';
 
 export function TrendingItems({ trendingData: propTrendingData }: TrendingItemsProps) {
   const t = useTranslations('admin.reports');
@@ -198,13 +198,16 @@ export function TrendingItems({ trendingData: propTrendingData }: TrendingItemsP
               </div>
 
               {/* Item Image */}
-              <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
-                <ImageWithFallback
-                  src={defaultImage}
-                  alt={item.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              {item.image && (
+                <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
+                  <ImageWithFallback
+                    src={item.image}
+                    alt={item.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+
 
               {/* Item Details */}
               <div className="flex-1 min-w-0">

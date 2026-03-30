@@ -355,18 +355,20 @@ export function MenuCategoriesTab({
                                       </button>
                                     )}
                                     {/* Image - Smaller for items */}
-                                    <div className="hidden sm:block w-16 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted relative">
-                                      <ImageWithFallback
-                                        src={item.image}
-                                        alt={item.name}
-                                        className="w-full h-full object-cover"
-                                      />
-                                      {!item.isActive && (
-                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                                          <EyeOff className="w-4 h-4 text-white" />
-                                        </div>
-                                      )}
-                                    </div>
+                                    {item.image && (
+                                      <div className="hidden sm:block w-16 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted relative">
+                                        <ImageWithFallback
+                                          src={item.image}
+                                          alt={item.name}
+                                          className="w-full h-full object-cover"
+                                        />
+                                        {!item.isActive && (
+                                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                            <EyeOff className="w-4 h-4 text-white" />
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
 
                                     {/* Content */}
                                     <div className="flex-1 min-w-0">

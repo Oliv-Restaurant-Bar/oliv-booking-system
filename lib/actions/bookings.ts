@@ -55,65 +55,76 @@ function parseInternalNotes(notes: string | null) {
   let location = '';
   let reference = '';
   let billingReference = '';
+  let useSameAddressForBilling = true;
+  let paymentMethod = 'ec_card';
 
   if (notes) {
-    const lines = notes.split('\n');
+    // Split by both \n and \r\n
+    const lines = notes.split(/\r?\n/);
     for (const line of lines) {
-      if (line.startsWith('Business: ')) {
-        businessName = line.replace('Business: ', '').replace('N/A', '').trim();
-      } else if (line.startsWith('Occasion: ')) {
-        occasion = line.replace('Occasion: ', '').replace('N/A', '').trim();
-      } else if (line.startsWith('Reference: ')) {
-        reference = line.replace('Reference: ', '').replace('N/A', '').trim();
-      } else if (line.startsWith('Billing Reference: ')) {
-        billingReference = line.replace('Billing Reference: ', '').replace('N/A', '').trim();
-      } else if (line.startsWith('Address: ')) {
-        const address = line.replace('Address: ', '').replace('N/A', '').trim();
+      const trimmedLine = line.trim();
+      if (trimmedLine.startsWith('Business: ')) {
+        businessName = trimmedLine.replace('Business: ', '').replace('N/A', '').trim();
+      } else if (trimmedLine.startsWith('Occasion: ')) {
+        occasion = trimmedLine.replace('Occasion: ', '').replace('N/A', '').trim();
+      } else if (trimmedLine.startsWith('Reference: ')) {
+        reference = trimmedLine.replace('Reference: ', '').replace('N/A', '').trim();
+      } else if (trimmedLine.startsWith('Billing Reference: ')) {
+        billingReference = trimmedLine.replace('Billing Reference: ', '').replace('N/A', '').trim();
+      } else if (trimmedLine.startsWith('Payment Method: ')) {
+        paymentMethod = trimmedLine.replace('Payment Method: ', '').replace('N/A', '').trim();
+      } else if (trimmedLine.startsWith('Street: ')) {
+        const val = trimmedLine.replace('Street: ', '').replace('N/A', '').trim();
+        if (val) street = val;
+      } else if (trimmedLine.startsWith('PLZ: ')) {
+        const val = trimmedLine.replace('PLZ: ', '').replace('N/A', '').trim();
+        if (val) plz = val;
+      } else if (trimmedLine.startsWith('Location: ')) {
+        const val = trimmedLine.replace('Location: ', '').replace('N/A', '').trim();
+        if (val) location = val;
+      } else if (trimmedLine.startsWith('Use Same Address: ')) {
+        const val = trimmedLine.replace('Use Same Address: ', '').trim();
+        if (val === 'false') useSameAddressForBilling = false;
+        else if (val === 'true') useSameAddressForBilling = true;
+      } else if (trimmedLine.startsWith('Address: ') && (!street || !plz || !location)) {
+        // Only use Address fallback if individual parts aren't already set
+        const address = trimmedLine.replace('Address: ', '').replace('N/A', '').trim();
         if (!address) continue;
 
         const addressParts = address.split(',').map(s => s.trim());
 
-        if (addressParts.length >= 3) {
-          // Format: Street, PLZ, Location
-          street = addressParts[0];
-          plz = addressParts[1];
-          location = addressParts.slice(2).join(', ');
-        } else if (addressParts.length === 2) {
-          // Format: Street, PLZ Location OR PLZ, Ort
-          const part1 = addressParts[0];
-          const part2 = addressParts[1];
+        // Smarter parsing: try to find the PLZ part (usually 4-5 digits)
+        let plzIndex = -1;
+        for (let i = 0; i < addressParts.length; i++) {
+          if (addressParts[i].match(/^\d{4,5}$/)) {
+            plzIndex = i;
+            break;
+          }
+        }
 
-          // Check if first part is exactly a PLZ
-          const firstPartPlzMatch = part1.match(/^(\d{4,5})$/);
-          if (firstPartPlzMatch) {
-            plz = part1;
-            location = part2;
-          } else {
-            street = part1;
-            // Try to split second part into PLZ and Location
-            const plzMatch = part2.match(/^(\d{4,5})\s+(.+)$/);
-            if (plzMatch) {
-              plz = plzMatch[1];
-              location = plzMatch[2];
-            } else {
-              location = part2;
-            }
+        if (plzIndex !== -1) {
+          // If we found a PLZ
+          plz = addressParts[plzIndex];
+          // Everything before PLZ is Street
+          if (plzIndex > 0) {
+            street = addressParts.slice(0, plzIndex).join(', ');
           }
-        } else if (addressParts.length === 1) {
-          // Check if it's just a PLZ ORT
-          const plzMatch = addressParts[0].match(/^(\d{4,5})\s+(.+)$/);
-          if (plzMatch) {
-            plz = plzMatch[1];
-            location = plzMatch[2];
-          } else {
-            street = addressParts[0];
+          // Everything after PLZ is Location
+          if (plzIndex < addressParts.length - 1) {
+            location = addressParts.slice(plzIndex + 1).join(', ');
           }
+        } else if (addressParts.length >= 2) {
+          // Fallback if no numeric PLZ found but have parts
+          street = addressParts[0];
+          location = addressParts.slice(1).join(', ');
+        } else {
+          street = address;
         }
       }
     }
   }
 
-  return { businessName, occasion, street, plz, location, reference, billingReference };
+  return { businessName, occasion, street, plz, location, reference, billingReference, useSameAddressForBilling, paymentMethod };
 }
 
 export async function createBooking(input: CreateBookingInput & { leadEmail?: string; leadName?: string }) {
@@ -692,19 +703,22 @@ export async function getBookingWithDetails(id: string) {
     const items = await db.select().from(bookingItems).where(eq(bookingItems.bookingId, id));
 
     // Parse internalNotes to extract business, address, occasion and references
-    const { businessName, occasion, street, plz, location, reference, billingReference } = parseInternalNotes(booking.internalNotes);
+    const { businessName, occasion, street, plz, location, reference, billingReference, useSameAddressForBilling, paymentMethod } = parseInternalNotes(booking.internalNotes);
 
     return {
       success: true,
       data: {
         ...booking,
-        businessName,
+        business: businessName,
+        businessName, // keep for compatibility
         occasion,
         street,
         plz,
         location,
         reference,
         billingReference,
+        useSameAddressForBilling,
+        paymentMethod,
         lead: lead && lead[0] ? lead[0] : null,
         booking_items: items
       }
@@ -1101,7 +1115,30 @@ export async function getBookingForClientEdit(bookingId: string) {
     const items = await db.select().from(bookingItems).where(eq(bookingItems.bookingId, bookingId));
 
     // Parse internalNotes to extract business, address, occasion and references
-    const { businessName, occasion, street, plz, location, reference, billingReference } = parseInternalNotes(booking.internalNotes);
+    console.log(`[DEBUG] Internal Notes for Booking ${bookingId}:`, booking.internalNotes);
+    const { businessName, occasion, street, plz, location, reference, billingReference, useSameAddressForBilling, paymentMethod } = parseInternalNotes(booking.internalNotes);
+    console.log(`[DEBUG] Parsed Data:`, { businessName, street, plz, location, reference, paymentMethod });
+
+    // Split billingAddress if it exists
+    let billingStreet = '';
+    let billingPlz = '';
+    let billingLocation = '';
+
+    if (booking.billingAddress) {
+      const parts = booking.billingAddress.split(',').map(s => s.trim());
+      if (parts.length >= 3) {
+        billingStreet = parts[0];
+        billingPlz = parts[1];
+        billingLocation = parts.slice(2).join(', ');
+      } else if (parts.length === 2) {
+        billingStreet = parts[0];
+        billingPlz = parts[1];
+      } else {
+        billingStreet = parts[0];
+      }
+    }
+
+    const l = lead && lead[0] ? lead[0] : null;
 
     return {
       success: true,
@@ -1112,15 +1149,24 @@ export async function getBookingForClientEdit(bookingId: string) {
         guestCount: booking.guestCount,
         allergyDetails: booking.allergyDetails,
         specialRequests: booking.specialRequests,
-        businessName,
+        business: businessName,
+        businessName, // keep for compatibility
+        name: l?.contactName || '',
+        email: l?.contactEmail || '',
+        telephone: l?.contactPhone || '',
         occasion,
         street,
         plz,
         location,
         reference,
         billingReference,
+        useSameAddressForBilling,
+        paymentMethod,
+        billingStreet,
+        billingPlz,
+        billingLocation,
         room: booking.room,
-        lead: lead && lead[0] ? lead[0] : null,
+        lead: l,
         booking_items: items,
       }
     };
