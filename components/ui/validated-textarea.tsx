@@ -12,6 +12,8 @@ interface ValidatedTextareaProps extends React.ComponentProps<'textarea'> {
   helperText?: string;
   required?: boolean;
   resize?: 'none' | 'both' | 'horizontal' | 'vertical' | 'block';
+  actionContainerClassName?: string;
+  children?: React.ReactNode;
 }
 
 /**
@@ -41,6 +43,8 @@ export function ValidatedTextarea({
   className,
   value,
   rows = 3,
+  actionContainerClassName,
+  children,
   ...props
 }: ValidatedTextareaProps) {
   const characterCount = (value && typeof value === 'string') ? value.length : 0;
@@ -80,11 +84,17 @@ export function ValidatedTextarea({
             resize === 'horizontal' && 'resize-x',
             resize === 'vertical' && 'resize-y',
             resize === 'block' && 'resize',
+            children && 'pb-12', // Add padding at bottom if we have an action
             className
           )}
           aria-invalid={!!error}
           {...props}
         />
+        {children && (
+          <div className={cn("absolute bottom-3 right-3", actionContainerClassName)}>
+            {children}
+          </div>
+        )}
       </div>
 
       {/* Helper Text, Error Message, and Character Count */}

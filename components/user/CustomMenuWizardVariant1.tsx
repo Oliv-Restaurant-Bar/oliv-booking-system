@@ -1164,12 +1164,15 @@ export function CustomMenuWizard() {
       const quantity = itemQuantities[itemId] || 1;
       const unitPrice = getItemPerPersonPrice(item);
 
-      // Use per-item guest count if category has guestCount enabled, otherwise use total guest count
-      const effectiveGuestCount = categoryData[item.category]?.guestCount
-        ? (itemGuestCounts[itemId] || parseInt(eventDetails.guestCount) || 1)
-        : (parseInt(eventDetails.guestCount) || 1);
+      // Fix: Prioritize individual guest counts if they've been edited (exists in itemGuestCounts)
+      // Otherwise, check categoryData if enabled, or fallback to global guest count
+      const effectiveGuestCount = itemGuestCounts[itemId] 
+        ? itemGuestCounts[itemId]
+        : (categoryData[item.category]?.guestCount
+           ? (parseInt(eventDetails.guestCount) || 1)
+           : (parseInt(eventDetails.guestCount) || 1));
 
-      // For flat-fee items (billed by consumption), don't multiply by guest count
+      // For flat-fee items (billed by consumption), use quantity
       if (isFlatFee(item) || isConsumption(item)) {
         return total + unitPrice * quantity;
       }
@@ -1277,18 +1280,19 @@ export function CustomMenuWizard() {
     const quantity = itemQuantities[item.id] || 1;
     const unitPrice = getItemPerPersonPrice(item);
 
-    // Use per-item guest count if category has guestCount enabled, otherwise use total guest count
-    const effectiveGuestCount = categoryData[item.category]?.guestCount
-      ? (itemGuestCounts[item.id] || parseInt(eventDetails.guestCount) || 1)
-      : (parseInt(eventDetails.guestCount) || 1);
+    // Fix: Prioritize individual guest counts if they've been edited
+    const effectiveGuestCount = itemGuestCounts[item.id]
+      ? itemGuestCounts[item.id]
+      : (categoryData[item.category]?.guestCount
+         ? (parseInt(eventDetails.guestCount) || 1)
+         : (parseInt(eventDetails.guestCount) || 1));
 
-    // For flat-fee or consumption items, multiply but use unit price (base + addons) from getItemPerPersonPrice
+    // For flat-fee or consumption items, multiply by quantity
     if (isNonPerPerson(item)) {
       return unitPrice * quantity;
     }
 
     // For per-person items, multiply by guest count
-    // Force quantity to 1 for per-person items to avoid double multiplication
     return unitPrice * effectiveGuestCount;
   };
 
@@ -1470,19 +1474,15 @@ export function CustomMenuWizard() {
     );
   }
 
-  if (isLoadingEdit) {
+  if (isLoadingEdit || loadingMenu) {
     return (
-      <div className="min-h-screen bg-background">
-        <WizardHeader
-          onBack={
-            currentStep > 1
-              ? () => setCurrentStep(1)
-              : (isEditMode && bookingId)
-                ? () => router.push(`/admin/bookings?id=${bookingId}`)
-                : undefined
-          }
-        />
-        <SkeletonMenuSelection />
+      <div className="min-h-screen bg-[#f7f7f8] flex flex-col items-center justify-center">
+        <div className="relative">
+          <div className="size-[64px] border-4 border-[#9dae91]/20 border-t-[#9dae91] rounded-full animate-spin" />
+        </div>
+        <p className="mt-4 text-[15px] font-medium text-[#6b7280]">
+          {loadingMenu ? "Bereitstellung des Menüs..." : "Laden Ihrer Buchung..."}
+        </p>
       </div>
     );
   }

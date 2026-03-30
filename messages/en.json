@@ -910,7 +910,7 @@
   "landing": {
     "hero": {
       "welcome": "WELCOME TO PREMIUM DINING",
-      "premiumCatering": "Premium Catering & Fine Dining",
+      "premiumCatering": "Premium Gastronomy & Fine Dining",
       "craft": "Craft",
       "unforgettable": "Unforgettable",
       "diningExperiences": "Dining Experiences",
@@ -1099,6 +1099,7 @@
       "paymentMethod": "Choose your preferred payment method",
       "ecCard": "EC Card / Card on Site",
       "onInvoice": "On Invoice",
+      "cash": "Cash",
       "choosePayment": "Choose your preferred payment method",
       "sameAddress": "Use same address for billing",
       "invoiceTarget": "Specify where the invoice should be sent",

@@ -7,6 +7,9 @@ export interface BookingCheckinSubmittedEmailParams {
   hasChanges: boolean;
   guestCountChanged: boolean;
   newGuestCount?: number;
+  vegetarianCount?: number;
+  veganCount?: number;
+  nonVegetarianCount?: number;
   menuChanges?: string;
   additionalDetails?: string;
 }
@@ -19,7 +22,7 @@ export function generateBookingCheckinSubmittedEmail(params: BookingCheckinSubmi
   subject: string;
   html: string;
 } {
-  const { booking, hasChanges, guestCountChanged, newGuestCount, menuChanges, additionalDetails } = params;
+  const { booking, hasChanges, guestCountChanged, newGuestCount, vegetarianCount, veganCount, nonVegetarianCount, menuChanges, additionalDetails } = params;
   const lead = booking.lead;
   const customerName = lead?.contactName || "Gast";
 
@@ -79,6 +82,13 @@ export function generateBookingCheckinSubmittedEmail(params: BookingCheckinSubmi
             <p><span class="label">Datum:</span> <span class="value">${formattedDate}</span></p>
             <p><span class="label">Uhrzeit:</span> <span class="value">${booking.eventTime} Uhr</span></p>
             <p><span class="label">Gästeanzahl:</span> <span class="value" style="font-weight:bold; font-size: 1.1em;">${newGuestCount || booking.guestCount} Personen</span></p>
+            ${(vegetarianCount || veganCount || nonVegetarianCount) ? `
+            <p style="margin-left: 20px; font-size: 0.9em; color: #666;">
+              ${vegetarianCount ? `• Vegetarisch: ${vegetarianCount}<br>` : ""}
+              ${veganCount ? `• Vegan: ${veganCount}<br>` : ""}
+              ${nonVegetarianCount ? `• Non-Veg: ${nonVegetarianCount}` : ""}
+            </p>
+            ` : ""}
             <p><span class="label">Provisorisch war:</span> <span class="value">${booking.guestCount} Personen</span></p>
           </div>
 

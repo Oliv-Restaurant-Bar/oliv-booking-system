@@ -908,7 +908,7 @@
   "landing": {
     "hero": {
       "welcome": "WILLKOMMEN BEI PREMIUM DINING",
-      "premiumCatering": "Premium-Catering & Fine Dining",
+      "premiumCatering": "Premium-Gastronomie & Feines Essen",
       "craft": "Handwerk",
       "unforgettable": "Unvergessliche",
       "diningExperiences": "Dining-Erlebnisse",
@@ -1105,6 +1105,7 @@
       "choosePayment": "Wählen Sie Ihre bevorzugte Zahlungsmethode",
       "ecCard": "EC-Karte / Karte vor Ort",
       "onInvoice": "Auf Rechnung",
+      "cash": "Barzahlung",
       "sameAddress": "Gleiche Adresse für Rechnungsstellung verwenden",
       "invoiceTarget": "Geben Sie an, wohin die Rechnung gesendet werden soll",
       "billingStreet": "Rechnungsstrasse & Nr.",

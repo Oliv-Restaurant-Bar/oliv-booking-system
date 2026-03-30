@@ -312,6 +312,9 @@ export function getCheckinSubmittedTemplateData(
     hasChanges?: boolean;
     guestCountChanged?: boolean;
     newGuestCount?: number;
+    vegetarianCount?: number;
+    veganCount?: number;
+    nonVegetarianCount?: number;
     menuChanges?: string;
     additionalDetails?: string;
     adminUrl?: string;
@@ -327,6 +330,9 @@ export function getCheckinSubmittedTemplateData(
     has_changes: params.hasChanges ? "Ja" : "Nein",
     guest_count_changed: params.guestCountChanged ? "Ja" : "Nein",
     new_guest_count: params.newGuestCount || booking.guestCount,
+    vegetarian_count: params.vegetarianCount || 0,
+    vegan_count: params.veganCount || 0,
+    non_vegetarian_count: params.nonVegetarianCount || 0,
     menu_changes: params.menuChanges || "Keine",
     additional_details: params.additionalDetails || "Keine",
     admin_url: params.adminUrl || `${process.env.NEXT_PUBLIC_APP_URL}/admin/bookings?id=${booking.id}`,
@@ -451,6 +457,9 @@ export function getTemplateData(
     hasChanges?: boolean;
     guestCountChanged?: boolean;
     newGuestCount?: number;
+    vegetarianCount?: number;
+    veganCount?: number;
+    nonVegetarianCount?: number;
     menuChanges?: string;
     additionalDetails?: string;
   } = {}
@@ -552,6 +561,9 @@ export function getTemplateData(
         hasChanges: params.hasChanges,
         guestCountChanged: params.guestCountChanged,
         newGuestCount: params.newGuestCount,
+        vegetarianCount: params.vegetarianCount,
+        veganCount: params.veganCount,
+        nonVegetarianCount: params.nonVegetarianCount,
         menuChanges: params.menuChanges,
         additionalDetails: params.additionalDetails,
         adminUrl: params.bookingUrl,

@@ -620,6 +620,7 @@ export const bookingCheckins = pgTable(
     guestCountChanged: boolean("guest_count_changed").notNull(),
     newGuestCount: integer("new_guest_count"),
     vegetarianCount: integer("vegetarian_count"),
+    veganCount: integer("vegan_count"),
     nonVegetarianCount: integer("non_vegetarian_count"),
     menuChanges: text("menu_changes"),
     additionalDetails: text("additional_details"),

@@ -76,6 +76,7 @@ export interface Booking {
         guestCountChanged: boolean;
         newGuestCount?: number;
         vegetarianCount?: number;
+        veganCount?: number;
         nonVegetarianCount?: number;
         menuChanges?: string;
         additionalDetails?: string;
@@ -146,6 +147,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
     // Editing states
     const [isEditingCustomer, setIsEditingCustomer] = useState(false);
+    const [isEditingAddress, setIsEditingAddress] = useState(false);
+    const [isEditingPayment, setIsEditingPayment] = useState(false);
     const [tempCustomer, setTempCustomer] = useState({
         name: '',
         business: '',
@@ -167,7 +170,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         time: '',
         guests: 0,
         occasion: '',
-        amount: 0
+        amount: 0,
+        location: ''
     });
 
     // Derived value for conditional room selection
@@ -216,7 +220,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     const [isAdminUsersLoading, setIsAdminUsersLoading] = useState(false);
     const [adminUsers, setAdminUsers] = useState<Array<{ id: string; name: string; email: string; role: string }>>([]);
 
-    // const [venueLocations, setVenueLocations] = useState<string[]>([]);
+    const [venueLocations, setVenueLocations] = useState<string[]>([]);
     const [selectedVenue, setSelectedVenue] = useState<string>(initialBooking?.event?.location || '');
     const [selectedRoom, setSelectedRoom] = useState<string>(initialBooking?.room || '');
     const [assignedTo, setAssignedTo] = useState<string>((initialBooking as any)?.assignedTo?.id || '');
@@ -307,14 +311,14 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
 
 
-    // // Fetch venue locations on mount
-    // useEffect(() => {
-    //     const fetchVenues = async () => {
-    //         const locations = await VenueService.getLocations();
-    //         setVenueLocations(locations);
-    //     };
-    //     fetchVenues();
-    // }, []);
+    // Fetch venue locations on mount
+    useEffect(() => {
+        const fetchVenues = async () => {
+            const locations = await VenueService.getLocations();
+            setVenueLocations(locations);
+        };
+        fetchVenues();
+    }, []);
 
     // Fetch kitchen PDF status if not provided via prop
     useEffect(() => {
@@ -572,25 +576,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     };
 
 
-    const handleVenueChange = async (value: string) => {
-        if (!booking) return;
-        setSelectedVenue(value);
-        try {
-            const response = await fetch(`/api/bookings/${booking.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ location: value }),
-            });
-            if (response.ok) {
-                toast.success(t('toast.venueUpdated'));
-                onBookingUpdated?.();
-            } else {
-                toast.error(t('toast.saveFailed'));
-            }
-        } catch (error) {
-            console.error('Error updating venue:', error);
-            toast.error(t('toast.saveFailed'));
-        }
+    const handleVenueChange = (value: string) => {
+        setTempEvent(prev => ({ ...prev, location: value }));
     };
 
     const handleSaveChanges = async () => {
@@ -603,7 +590,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                 body: JSON.stringify({
                     kitchenNotes: kitchenNotes,
                     assignedTo: assignedTo || null,
-                    room: selectedRoom
+                    room: selectedRoom,
+                    location: selectedVenue
                 }),
             });
             if (response.ok) {
@@ -691,8 +679,54 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         setIsEditingCustomer(false);
     };
 
-    const handleSaveCustomer = async () => {
+    const handleEditAddress = () => {
         if (!booking) return;
+        setTempCustomer({
+            name: booking.customer.name,
+            business: booking.customer.business || '',
+            email: booking.customer.email,
+            phone: booking.customer.phone,
+            address: booking.customer.address || '',
+            street: booking.customer.street || '',
+            plz: booking.customer.plz || '',
+            location: booking.customer.location || '',
+            reference: booking.customer.reference || '',
+            billingAddress: booking.billingAddress || '',
+            billingReference: booking.billingReference || '',
+            paymentMethod: booking.paymentMethod || ''
+        });
+        setIsEditingAddress(true);
+    };
+
+    const handleCancelAddress = () => {
+        setIsEditingAddress(false);
+    };
+
+    const handleEditPayment = () => {
+        if (!booking) return;
+        setTempCustomer({
+            name: booking.customer.name,
+            business: booking.customer.business || '',
+            email: booking.customer.email,
+            phone: booking.customer.phone,
+            address: booking.customer.address || '',
+            street: booking.customer.street || '',
+            plz: booking.customer.plz || '',
+            location: booking.customer.location || '',
+            reference: booking.customer.reference || '',
+            billingAddress: booking.billingAddress || '',
+            billingReference: booking.billingReference || '',
+            paymentMethod: booking.paymentMethod || ''
+        });
+        setIsEditingPayment(true);
+    };
+
+    const handleCancelPayment = () => {
+        setIsEditingPayment(false);
+    };
+
+    const performSaveCustomer = async () => {
+        if (!booking) return false;
         setIsSaving(true);
         try {
             // Construct updated internal notes
@@ -706,7 +740,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             newInternalNotes = updateFieldInNotes(newInternalNotes, 'Reference', tempCustomer.reference);
             newInternalNotes = updateFieldInNotes(newInternalNotes, 'Billing Reference', tempCustomer.billingReference);
             newInternalNotes = updateFieldInNotes(newInternalNotes, 'Payment Method', tempCustomer.paymentMethod);
-            
+
             // Also update the legacy Address field for compatibility
             const fullAddress = [tempCustomer.street, tempCustomer.plz, tempCustomer.location].filter(Boolean).join(', ');
             newInternalNotes = updateFieldInNotes(newInternalNotes, 'Address', fullAddress);
@@ -727,21 +761,38 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
             if (response.ok) {
                 toast.success(t('toast.saveSuccess'));
-                setIsEditingCustomer(false);
                 onBookingUpdated?.();
                 // Refresh page after a short delay to show updated data
                 setTimeout(() => {
                     window.location.reload();
                 }, 100);
+                return true;
             } else {
                 toast.error(t('toast.saveFailed'));
+                return false;
             }
         } catch (error) {
             console.error('Error saving customer info:', error);
             toast.error(t('toast.saveFailed'));
+            return false;
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const handleSaveCustomer = async () => {
+        const success = await performSaveCustomer();
+        if (success) setIsEditingCustomer(false);
+    };
+
+    const handleSaveAddress = async () => {
+        const success = await performSaveCustomer();
+        if (success) setIsEditingAddress(false);
+    };
+
+    const handleSavePayment = async () => {
+        const success = await performSaveCustomer();
+        if (success) setIsEditingPayment(false);
     };
 
     const handleEditEvent = () => {
@@ -761,7 +812,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             time: booking.event.rawTime || booking.event.time,
             guests: booking.guests,
             occasion: booking.event.occasion,
-            amount: booking.rawAmount || 0
+            amount: booking.rawAmount || 0,
+            location: selectedVenue || booking.event.location || ''
         });
         setIsEditingEvent(true);
     };
@@ -788,12 +840,14 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                     estimatedTotal: tempEvent.amount,
                     internalNotes: newInternalNotes,
                     allergyDetails: allergies,
-                    specialRequests: notes
+                    specialRequests: notes,
+                    location: tempEvent.location
                 }),
             });
 
             if (response.ok) {
                 toast.success(t('toast.saveSuccess'));
+                setSelectedVenue(tempEvent.location);
                 setIsEditingEvent(false);
                 onBookingUpdated?.();
                 // Refresh page after a short delay to show updated data
@@ -1138,9 +1192,9 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         </div>
                                         {wizardT('sections.address')}
                                     </h3>
-                                    {canEditBooking && !isLocked && !isEditingCustomer && (
+                                    {canEditBooking && !isLocked && !isEditingAddress && (
                                         <button
-                                            onClick={handleEditCustomer}
+                                            onClick={handleEditAddress}
                                             className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary cursor-pointer flex items-center gap-2"
                                             style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                         >
@@ -1148,11 +1202,32 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                             <span>{buttonT('edit')}</span>
                                         </button>
                                     )}
+                                    {isEditingAddress && (
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={handleCancelAddress}
+                                                className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-red-500 cursor-pointer flex items-center gap-2"
+                                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                            >
+                                                <X className="w-4 h-4" />
+                                                <span>{buttonT('cancel')}</span>
+                                            </button>
+                                            <button
+                                                onClick={handleSaveAddress}
+                                                disabled={isSaving}
+                                                className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-green-600 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                            >
+                                                <Save className="w-4 h-4" />
+                                                <span>{buttonT('save')}</span>
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="sm:col-span-2 space-y-1">
                                         <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.street')}</label>
-                                        {isEditingCustomer ? (
+                                        {isEditingAddress ? (
                                             <input
                                                 type="text"
                                                 value={tempCustomer.street}
@@ -1166,7 +1241,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.plz')}</label>
-                                        {isEditingCustomer ? (
+                                        {isEditingAddress ? (
                                             <input
                                                 type="text"
                                                 value={tempCustomer.plz}
@@ -1180,7 +1255,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.location')}</label>
-                                        {isEditingCustomer ? (
+                                        {isEditingAddress ? (
                                             <input
                                                 type="text"
                                                 value={tempCustomer.location}
@@ -1194,7 +1269,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     </div>
                                     <div className="sm:col-span-2 space-y-1">
                                         <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.reference')}</label>
-                                        {isEditingCustomer ? (
+                                        {isEditingAddress ? (
                                             <input
                                                 type="text"
                                                 value={tempCustomer.reference}
@@ -1219,12 +1294,12 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         {wizardT('sections.eventDetails')}
                                     </h3>
                                     <div className="flex items-center gap-2">
-                                        {kitchenPdfStatus && !isEditingEvent && (
+                                        {/* {kitchenPdfStatus && !isEditingEvent && (
                                             <KitchenPdfStatusBadge
                                                 status={kitchenPdfStatus.sentStatus}
                                                 lastSentAt={kitchenPdfStatus.lastSentAt}
                                             />
-                                        )}
+                                        )} */}
                                         {canEditBooking && !isLocked && !isEditingEvent && (
                                             <button
                                                 onClick={handleEditEvent}
@@ -1298,7 +1373,9 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                 style={{ fontSize: 'var(--text-base)' }}
                                             />
                                         ) : (
-                                            <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={booking.guests.toString()}>{booking.guests}</p>
+                                            <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={booking.guests.toString()} translate="no">
+                                                <span>{booking.guests}</span>
+                                            </p>
                                         )}
                                     </div>
                                     <div className="space-y-1">
@@ -1317,37 +1394,35 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('amount')} (CHF)</label>
-                                        <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={booking.amount}>{booking.amount}</p>
+                                        <p className="text-foreground font-medium py-1" style={{ fontSize: 'var(--text-base)' }} title={booking.amount} translate="no">
+                                            <span>{booking.amount}</span>
+                                        </p>
                                     </div>
                                     {/* <div className="space-y-1">
-                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('venueLocation')}</label>
-                                {canEditBooking ? (
-                                    <select
-                                        value={selectedVenue}
-                                        disabled={isEditingEvent}
-                                        onChange={(e) => handleVenueChange(e.target.value)}
-                                        className="w-full px-4 py-2 bg-input-background border border-border rounded-lg text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
-                                        style={{ fontSize: 'var(--text-base)' }}
-                                    >
-                                        <option value="">{t('notAssigned')}</option>
-                                        {venueLocations.map((loc: string) => (
-                                            <option key={loc} value={loc}>{loc}</option>
-                                        ))}
-                                    </select>
-                                ) : (
-                                    <Tooltip title={t('tooltips.notAssigned')} position="top">
-                                        <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{selectedVenue || t('notAssigned')}</p>
-                                    </Tooltip>
-                                )}
-                            </div> */}
+                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('venueLocation')}</label>
+                                        {isEditingEvent ? (
+                                            <select
+                                                value={tempEvent.location}
+                                                onChange={(e) => handleVenueChange(e.target.value)}
+                                                className="w-full px-4 py-2 bg-input-background border border-border rounded-lg text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                                style={{ fontSize: 'var(--text-base)' }}
+                                            >
+                                                <option value="">{t('notAssigned')}</option>
+                                                {venueLocations.map((loc: string) => (
+                                                    <option key={loc} value={loc}>{loc}</option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{selectedVenue || t('notAssigned')}</p>
+                                        )}
+                                    </div> */}
                                     <div className="space-y-1">
                                         <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.room')}</label>
-                                        {canEditBooking ? (
+                                        {isEditingEvent ? (
                                             <select
                                                 value={selectedRoom.toLowerCase()}
-                                                disabled={isEditingEvent}
                                                 onChange={(e) => setSelectedRoom(e.target.value)}
-                                                className="w-full px-4 py-2 bg-input-background border border-border rounded-lg text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+                                                className="w-full px-4 py-2 bg-input-background border border-border rounded-lg text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20"
                                                 style={{ fontSize: 'var(--text-base)' }}
                                             >
                                                 <option value="">{t('notAssigned')}</option>
@@ -1455,9 +1530,9 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         </div>
                                         {wizardT('sections.paymentOptions')}
                                     </h3>
-                                    {canEditBooking && !isLocked && !isEditingCustomer && (
+                                    {canEditBooking && !isLocked && !isEditingPayment && (
                                         <button
-                                            onClick={handleEditCustomer}
+                                            onClick={handleEditPayment}
                                             className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary cursor-pointer flex items-center gap-2"
                                             style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                         >
@@ -1465,11 +1540,32 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                             <span>{buttonT('edit')}</span>
                                         </button>
                                     )}
+                                    {isEditingPayment && (
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={handleCancelPayment}
+                                                className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-red-500 cursor-pointer flex items-center gap-2"
+                                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                            >
+                                                <X className="w-4 h-4" />
+                                                <span>{buttonT('cancel')}</span>
+                                            </button>
+                                            <button
+                                                onClick={handleSavePayment}
+                                                disabled={isSaving}
+                                                className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-green-600 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                            >
+                                                <Save className="w-4 h-4" />
+                                                <span>{buttonT('save')}</span>
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-1">
                                         <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.paymentOption')}</label>
-                                        {isEditingCustomer ? (
+                                        {isEditingPayment ? (
                                             <select
                                                 value={tempCustomer.paymentMethod}
                                                 onChange={(e) => setTempCustomer({ ...tempCustomer, paymentMethod: e.target.value })}
@@ -1482,15 +1578,15 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                             </select>
                                         ) : (
                                             <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>
-                                                {booking.paymentMethod === 'on_bill' ? wizardT('labels.onInvoice') : 
-                                                 booking.paymentMethod === 'ec_card' ? (wizardT('labels.ecCard') || 'EC-Karte / Karte vor Ort') :
-                                                 booking.paymentMethod === 'cash' ? (wizardT('labels.cash') || 'Barzahlung') : (booking.paymentMethod || '-')}
+                                                {booking.paymentMethod === 'on_bill' ? wizardT('labels.onInvoice') :
+                                                    booking.paymentMethod === 'ec_card' ? (wizardT('labels.ecCard') || 'EC-Karte / Karte vor Ort') :
+                                                        booking.paymentMethod === 'cash' ? (wizardT('labels.cash') || 'Barzahlung') : (booking.paymentMethod || '-')}
                                             </p>
                                         )}
                                     </div>
                                     <div className="sm:col-span-2 space-y-1">
                                         <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('sections.billingAddress')}</label>
-                                        {isEditingCustomer ? (
+                                        {isEditingPayment ? (
                                             <ValidatedTextarea
                                                 value={tempCustomer.billingAddress}
                                                 onChange={(e) => setTempCustomer({ ...tempCustomer, billingAddress: e.target.value })}
@@ -1504,7 +1600,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     </div>
                                     <div className="sm:col-span-2 space-y-1">
                                         <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.reference')}</label>
-                                        {isEditingCustomer ? (
+                                        {isEditingPayment ? (
                                             <input
                                                 type="text"
                                                 value={tempCustomer.billingReference}
@@ -1595,11 +1691,11 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         <tbody>
                                             {(isEditingMenu ? tempMenuItems : booking.menuItems) && (isEditingMenu ? tempMenuItems : booking.menuItems)!.length > 0 ? (
                                                 (isEditingMenu ? tempMenuItems : booking.menuItems)!.map((item: any, index: number) => (
-                                                    <tr key={index} className="border-t border-border">
+                                                    <tr key={item.id || item.itemId || `row-${index}`} className="border-t border-border">
                                                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-foreground text-xs sm:text-sm">
                                                             <div className="flex flex-col gap-1.5 py-1">
                                                                 <div className="font-medium text-foreground" title={item.item || item.name}>
-                                                                    {item.item || item.name}
+                                                                    <span>{item.item || item.name}</span>
                                                                     {item.variant && (
                                                                         <span className="ml-1.5 text-muted-foreground font-normal">
                                                                             ({item.variant})
@@ -1627,7 +1723,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-muted-foreground text-xs sm:text-sm hidden sm:table-cell" title={item.category}>{item.category}</td>
                                                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-foreground text-xs sm:text-sm">
                                                             {isEditingMenu ? (
-                                                                <div className="flex items-center gap-2">
+                                                                <div className="flex items-center gap-2" translate="no">
                                                                     <input
                                                                         type="number"
                                                                         value={item.rawQuantity}
@@ -1647,24 +1743,24 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                                     </span>
                                                                 </div>
                                                             ) : (
-                                                                <div className="flex items-center gap-1 whitespace-nowrap">
+                                                                <div className="flex items-center gap-1 whitespace-nowrap" translate="no">
                                                                     {item.pricingType === 'per_person' ? (
                                                                         <>
-                                                                            {item.rawQuantity}
+                                                                            <span>{item.rawQuantity}</span>
                                                                             <Users className="w-3.5 h-3.5 text-muted-foreground" />
                                                                             <span>x {Math.round(item.unitPrice || 0)} CHF</span>
                                                                         </>
                                                                     ) : (
-                                                                        item.quantity
+                                                                        <span>{item.quantity}</span>
                                                                     )}
                                                                 </div>
                                                             )}
                                                         </td>
-                                                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>
+                                                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }} translate="no">
                                                             {isEditingMenu ? (
-                                                                `CHF ${((item.rawQuantity || 0) * (item.unitPrice || 0)).toFixed(2)}`
+                                                                <span>CHF {((item.rawQuantity || 0) * (item.unitPrice || 0)).toFixed(2)}</span>
                                                             ) : (
-                                                                item.price
+                                                                <span>{item.price}</span>
                                                             )}
                                                         </td>
                                                     </tr>
@@ -1675,11 +1771,11 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                             {booking.menuItems && booking.menuItems.length > 0 && (
                                                 <tr className="border-t-2 border-border bg-muted">
                                                     <td colSpan={3} className="px-2 sm:px-4 py-2 sm:py-3 text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{t('totalAmount')}</td>
-                                                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>
+                                                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }} translate="no">
                                                         {isEditingMenu ? (
-                                                            `CHF ${tempMenuItems.reduce((sum, item) => sum + ((item.rawQuantity || 0) * (item.unitPrice || 0)), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                                            <span>CHF {tempMenuItems.reduce((sum, item) => sum + ((item.rawQuantity || 0) * (item.unitPrice || 0)), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                                         ) : (
-                                                            booking.amount
+                                                            <span>{booking.amount}</span>
                                                         )}
                                                     </td>
                                                 </tr>
@@ -1726,7 +1822,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     </div>
                                 </div>
                             )}
-                            {/* Additional Information */}
+                            {/* Additional Information
                             <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
                                 <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
                                     <MessageSquare className="w-5 h-5 text-primary" /> {t('additionalInfo')}
@@ -1745,7 +1841,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     </div>
                                     <p className="text-muted-foreground text-xs mt-1">{t('clientFilledField')}</p>
                                 </div>
-                            </div>
+                            </div> */}
                         </TabsContent>
 
                         {/* Comments and Activities Tab */}
@@ -1779,7 +1875,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     </div>
 
                                     {canEditBooking && (
-                                        <div className="space-y-3 pt-4 border-t border-border/50">
+                                        <div className="pt-4 border-t border-border/50">
                                             <ValidatedTextarea
                                                 value={newComment}
                                                 onChange={(e) => {
@@ -1789,24 +1885,28 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                 placeholder={t('commentPlaceholder')}
                                                 rows={3}
                                                 maxLength={500}
-                                                showCharacterCount
+                                                showCharacterCount={false}
                                                 error={errors.comment}
-                                            />
-                                            <div className="flex justify-end">
+                                                className="focus:ring-1 focus:ring-primary/20 border-border/60"
+                                                actionContainerClassName="flex items-center gap-3"
+                                            >
+                                                <span className="text-[10px] tabular-nums font-semibold uppercase tracking-wider text-muted-foreground/60">
+                                                    {newComment.length} / 500
+                                                </span>
                                                 <button
                                                     onClick={handleAddComment}
                                                     disabled={!newComment.trim() || isAddingComment}
-                                                    className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                                                    style={{ fontSize: 'var(--text-base)' }}
+                                                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-sm shadow-primary/10 hover:shadow-primary/20 active:scale-95"
+                                                    style={{ fontSize: 'var(--text-small)' }}
                                                 >
                                                     {isAddingComment ? (
-                                                        <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-transparent rounded-full animate-spin" />
+                                                        <div className="w-3.5 h-3.5 border-2 border-primary-foreground/30 border-t-transparent rounded-full animate-spin" />
                                                     ) : (
-                                                        <Send className="w-4 h-4" />
+                                                        <Send className="w-3.5 h-3.5" />
                                                     )}
-                                                    {t('addComment')}
+                                                    <span>{t('addComment')}</span>
                                                 </button>
-                                            </div>
+                                            </ValidatedTextarea>
                                         </div>
                                     )}
                                 </div>
@@ -1884,7 +1984,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                                 <p className="text-[10px] uppercase text-muted-foreground font-bold">Guest Split</p>
                                                                 <p className="text-sm">
                                                                     Total: <span className="font-semibold">{latestCheckin.newGuestCount}</span>
-                                                                    <span className="text-muted-foreground ml-2">({latestCheckin.vegetarianCount} Veg / {latestCheckin.nonVegetarianCount} Non-Veg)</span>
+                                                                    <span className="text-muted-foreground ml-2">({latestCheckin.vegetarianCount} Veg / {latestCheckin.veganCount} Vegan / {latestCheckin.nonVegetarianCount} Non-Veg)</span>
                                                                 </p>
                                                             </div>
                                                             {latestCheckin.guestCountChanged && (
@@ -1965,7 +2065,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                 >
                                     <UserPlus className="w-4 h-4" />
                                     {assignedTo ? (
-                                        <span className="truncate">{adminUsers.find(u => u.id === assignedTo)?.name || commonT('assigned')}</span>
+                                        <span className="truncate">{adminUsers.find(u => u.id === assignedTo)?.name || t('assigned')}</span>
                                     ) : (
                                         <span>{t('assignUser')}</span>
                                     )}

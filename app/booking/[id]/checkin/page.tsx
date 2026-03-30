@@ -97,6 +97,7 @@ export default function EventCheckinPage() {
     guest_count_changed: false,
     new_guest_count: 0,
     vegetarian_count: 0,
+    vegan_count: 0,
     non_vegetarian_count: 0,
     menu_changes: '',
     additional_details: '',
@@ -116,8 +117,9 @@ export default function EventCheckinPage() {
         setFormData(prev => ({
           ...prev,
           new_guest_count: data.guests,
-          vegetarian_count: Math.floor(data.guests / 2), // Reasonable start
-          non_vegetarian_count: data.guests - Math.floor(data.guests / 2),
+          vegetarian_count: 0,
+          vegan_count: 0,
+          non_vegetarian_count: data.guests,
         }));
       } catch (err) {
         console.error(err);
@@ -151,7 +153,7 @@ export default function EventCheckinPage() {
   };
 
   // Validation
-  const isSplitValid = formData.vegetarian_count + formData.non_vegetarian_count === (formData.has_changes ? formData.new_guest_count : booking?.guests);
+  const isSplitValid = formData.vegetarian_count + formData.vegan_count + formData.non_vegetarian_count === (formData.has_changes ? formData.new_guest_count : booking?.guests);
 
 
   // Branching Logic for "Has Changes"
@@ -173,6 +175,7 @@ export default function EventCheckinPage() {
         guest_count_changed: formData.has_changes, // Assume changed if in changes flow
         new_guest_count: formData.has_changes ? formData.new_guest_count : booking?.guests,
         vegetarian_count: formData.vegetarian_count,
+        vegan_count: formData.vegan_count,
         non_vegetarian_count: formData.non_vegetarian_count,
         menu_changes: formData.menu_changes.trim() || null,
         additional_details: formData.additional_details.trim() || null,
@@ -281,6 +284,15 @@ export default function EventCheckinPage() {
                     />
                   </div>
                   <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">Vegan guests</label>
+                    <input
+                      type="number"
+                      value={formData.vegan_count}
+                      onChange={(e) => setFormData({ ...formData, vegan_count: parseInt(e.target.value) || 0 })}
+                      className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#3d4a2e]/20 outline-none"
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700">Non-vegetarian guests</label>
                     <input
                       type="number"
@@ -292,7 +304,7 @@ export default function EventCheckinPage() {
 
                   <div className={`p-4 rounded-lg flex items-center justify-between ${isSplitValid ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}>
                     <span className="text-sm">Total guests: {booking?.guests}</span>
-                    <span className="text-sm font-bold">Sum: {formData.vegetarian_count + formData.non_vegetarian_count}</span>
+                    <span className="text-sm font-bold">Sum: {formData.vegetarian_count + formData.vegan_count + formData.non_vegetarian_count}</span>
                   </div>
 
                   {!isSplitValid && (
@@ -330,14 +342,23 @@ export default function EventCheckinPage() {
                       className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#3d4a2e]/20 outline-none"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Vegetarian</label>
+                      <label className="text-sm font-medium text-gray-700">Veg</label>
                       <input
                         type="number"
                         value={formData.vegetarian_count}
                         onChange={(e) => setFormData({ ...formData, vegetarian_count: parseInt(e.target.value) || 0 })}
-                        className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#3d4a2e]/20 outline-none"
+                        className="w-full px-3 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#3d4a2e]/20 outline-none"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Vegan</label>
+                      <input
+                        type="number"
+                        value={formData.vegan_count}
+                        onChange={(e) => setFormData({ ...formData, vegan_count: parseInt(e.target.value) || 0 })}
+                        className="w-full px-3 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#3d4a2e]/20 outline-none"
                       />
                     </div>
                     <div className="space-y-2">
@@ -346,14 +367,14 @@ export default function EventCheckinPage() {
                         type="number"
                         value={formData.non_vegetarian_count}
                         onChange={(e) => setFormData({ ...formData, non_vegetarian_count: parseInt(e.target.value) || 0 })}
-                        className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#3d4a2e]/20 outline-none"
+                        className="w-full px-3 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#3d4a2e]/20 outline-none"
                       />
                     </div>
                   </div>
 
                   <div className={`p-4 rounded-lg flex items-center justify-between ${isSplitValid ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}>
                     <span className="text-sm">New Total: {formData.new_guest_count}</span>
-                    <span className="text-sm font-bold">Sum: {formData.vegetarian_count + formData.non_vegetarian_count}</span>
+                    <span className="text-sm font-bold">Sum: {formData.vegetarian_count + formData.vegan_count + formData.non_vegetarian_count}</span>
                   </div>
 
                   <div className="flex gap-4">
@@ -445,7 +466,7 @@ export default function EventCheckinPage() {
                     <div className="flex justify-between items-center text-sm border-b border-gray-100 pb-2">
                       <span className="text-gray-500">Guest Count</span>
                       <span className="font-bold">
-                        {formData.has_changes ? formData.new_guest_count : booking?.guests} ({formData.vegetarian_count} Veg / {formData.non_vegetarian_count} Non-Veg)
+                        {formData.has_changes ? formData.new_guest_count : booking?.guests} ({formData.vegetarian_count} Veg / {formData.vegan_count} Vegan / {formData.non_vegetarian_count} Non-Veg)
                       </span>
                     </div>
 

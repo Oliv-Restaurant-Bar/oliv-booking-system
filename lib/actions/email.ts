@@ -31,6 +31,9 @@ export async function sendBookingEmail(params: {
   hasChanges?: boolean;
   guestCountChanged?: boolean;
   newGuestCount?: number;
+  vegetarianCount?: number;
+  veganCount?: number;
+  nonVegetarianCount?: number;
   menuChanges?: string;
   additionalDetails?: string;
   attachments?: Array<{
@@ -71,6 +74,9 @@ export async function sendBookingEmail(params: {
         hasChanges: params.hasChanges,
         guestCountChanged: params.guestCountChanged,
         newGuestCount: params.newGuestCount,
+        vegetarianCount: params.vegetarianCount,
+        veganCount: params.veganCount,
+        nonVegetarianCount: params.nonVegetarianCount,
         menuChanges: params.menuChanges,
         additionalDetails: params.additionalDetails,
       });
@@ -613,6 +619,9 @@ export async function sendCheckinSubmittedNotification(params: {
   hasChanges: boolean;
   guestCountChanged: boolean;
   newGuestCount?: number;
+  vegetarianCount?: number;
+  veganCount?: number;
+  nonVegetarianCount?: number;
   menuChanges?: string;
   additionalDetails?: string;
 }): Promise<{ success: boolean; error?: string; emailLogId?: string }> {
@@ -624,6 +633,9 @@ export async function sendCheckinSubmittedNotification(params: {
     hasChanges: params.hasChanges,
     guestCountChanged: params.guestCountChanged,
     newGuestCount: params.newGuestCount,
+    vegetarianCount: params.vegetarianCount,
+    veganCount: params.veganCount,
+    nonVegetarianCount: params.nonVegetarianCount,
     menuChanges: params.menuChanges,
     additionalDetails: params.additionalDetails,
   });

@@ -115,7 +115,7 @@ export function MenuCart({
   const beverages = React.useMemo(() => cartItems.filter(item => item.category === 'Beverages'), [cartItems]);
   const addons = React.useMemo(() => cartItems.filter(item => item.category === 'Add-ons' || (isFlatFee(item) && item.category !== 'Beverages')), [cartItems]);
 
-  const ppFoodItems = React.useMemo(() => foodItems.filter(item => isPerPerson(item)), [foodItems]);
+  const ppFoodItems = React.useMemo(() => foodItems.filter(item => isPerPerson(item)), [foodItems, isPerPerson]);
   const pureVegItems = React.useMemo(() => ppFoodItems.filter(item => item.dietaryType === 'veg'), [ppFoodItems]);
   const veganItems = React.useMemo(() => ppFoodItems.filter(item => item.dietaryType === 'vegan'), [ppFoodItems]);
   const nonVegItems = React.useMemo(() => ppFoodItems.filter(item => item.dietaryType === 'non-veg'), [ppFoodItems]);
@@ -150,6 +150,8 @@ export function MenuCart({
 
   const perPersonTotal = React.useMemo(() => {
     return ppFoodItems.reduce((sum, item) => {
+      // In Edit Mode, we always want to respect the manual count if it exists
+      // This fixes the issue where changing item counts didn't reflect in the total
       const guestCount = itemGuestCounts[item.id] || parseInt(eventDetails.guestCount) || 1;
       return sum + (getItemPerPersonPrice(item) * guestCount);
     }, 0);
@@ -546,7 +548,7 @@ export function MenuCart({
                       </span>
                     </div>)}
 
-                    <label className="flex items-center gap-2.5 cursor-pointer pt-1">
+                    {getConsumptionSubtotal() > 0 && (<label className="flex items-center gap-2.5 cursor-pointer pt-1">
                       <div className="relative flex items-center shrink-0">
                         <input
                           type="checkbox"
@@ -557,7 +559,7 @@ export function MenuCart({
                         <Check className="absolute size-3 text-white opacity-0 peer-checked:opacity-100 left-0.5 pointer-events-none transition-opacity" />
                       </div>
                       <span className="text-[11px] text-[#2c2f34] font-medium">Include Beverages costs in estimate</span>
-                    </label>
+                    </label>)}
                   </>
                 )}
               </div>

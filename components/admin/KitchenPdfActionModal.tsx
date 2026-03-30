@@ -331,12 +331,14 @@ export function KitchenPdfActionModal({
                       disabled={isSavingNotes || !hasUnsavedNotes}
                       className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-all font-medium text-sm cursor-pointer shadow-sm"
                     >
-                      {isSavingNotes ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Save className="w-4 h-4" />
-                      )}
-                      Save Changes
+                      <span className="flex items-center gap-2" translate="no">
+                        {isSavingNotes ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Save className="w-4 h-4" />
+                        )}
+                      </span>
+                      <span>Save Changes</span>
                     </button>
                   </div>
                 </h4>
@@ -400,8 +402,10 @@ export function KitchenPdfActionModal({
                       disabled={isProcessing || !externalEmails.trim()}
                       className="w-full py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
                     >
-                      {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                      Send Emails
+                      <span className="flex items-center gap-2" translate="no">
+                        {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      </span>
+                      <span>Send Emails</span>
                     </button>
                   </div>
                 )}
@@ -420,11 +424,13 @@ export function KitchenPdfActionModal({
                   <div className="text-foreground font-semibold mb-0.5">Download PDF</div>
                   <div className="text-muted-foreground text-sm">Save directly to your system</div>
                 </div>
-                {isProcessing && expandedSection === null ? (
-                  <Loader2 className="w-5 h-5 text-emerald-600 animate-spin" />
-                ) : (
-                  <Download className="w-5 h-5 text-muted-foreground opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
-                )}
+                <span translate="no">
+                  {isProcessing && expandedSection === null ? (
+                    <Loader2 className="w-5 h-5 text-emerald-600 animate-spin" />
+                  ) : (
+                    <Download className="w-5 h-5 text-muted-foreground opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
+                  )}
+                </span>
               </button>
 
             </div>
