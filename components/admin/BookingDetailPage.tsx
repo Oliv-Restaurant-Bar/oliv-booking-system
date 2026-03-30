@@ -18,14 +18,27 @@ import { DeleteBookingModal } from './DeleteBookingModal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonBookingDetail } from '@/components/ui/skeleton-loaders';
 import { ValidatedTextarea } from '@/components/ui/validated-textarea';
-import { bookingKitchenNotesSchema, bookingCommentSchema } from '@/lib/validation/schemas';
+import { bookingKitchenNotesSchema, bookingCommentSchema, customerNameSchema, customerBusinessSchema, userEmailSchema, customerPhoneSchema, customerStreetSchema, customerPlzSchema, customerLocationSchema, customerOccasionSchema, bookingGuestCountSchema, bookingSpecialRequestsSchema, bookingAllergiesSchema } from '@/lib/validation/schemas';
 import { useBookingTranslation, useCommonTranslation, useButtonTranslation } from '@/lib/i18n/client';
 import { useTranslations } from 'next-intl';
 import { NativeRadio } from '@/components/ui/NativeRadio';
 import { useLocale } from 'next-intl';
 import { toReadableDate } from '@/lib/utils/date';
 import { useSystemTimezone } from '@/lib/hooks/useSystemTimezone';
+import { useDateFormat } from '@/lib/contexts/SystemSettingsContext';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+
+function parseDietaryNotes(text: string | undefined | null) {
+    if (!text) return null;
+    const parts = text.split(/(\(Veg\)|\(Vegan\)|\(Non-Veg\))/i);
+    return parts.map((part, i) => {
+        const lowerPart = part.toLowerCase();
+        if (lowerPart === '(veg)') return <DietaryIcon key={i} type="veg" size="xs" />;
+        if (lowerPart === '(vegan)') return <DietaryIcon key={i} type="vegan" size="xs" />;
+        if (lowerPart === '(non-veg)') return <DietaryIcon key={i} type="non-veg" size="xs" />;
+        return <span key={i}>{part}</span>;
+    });
+}
 
 export interface Booking {
     id: string;
@@ -124,6 +137,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     const wizardT = useTranslations('wizard');
     const locale = useLocale();
     const { timezone } = useSystemTimezone();
+    const { formatDate } = useDateFormat();
 
     const [booking, setBooking] = useState<Booking | null>(initialBooking || null);
     const [loading, setLoading] = useState(!initialBooking);
@@ -133,6 +147,17 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     const [isReminding, setIsReminding] = useState(false);
     const [isSendingCheckin, setIsSendingCheckin] = useState(false);
     const [isSendingUpdate, setIsSendingUpdate] = useState(false);
+
+    // Check if check-in has been submitted (has check-ins in the array)
+    const hasCheckinSubmitted = checkins && checkins.length > 0;
+
+    // Check if check-in email was already sent (look for it in contact history)
+    const checkinEmailSent = comments.some(c =>
+        c.type === 'system' && c.action?.toLowerCase().includes('check-in email sent')
+    );
+
+    // Disable button ONLY if check-in was submitted (not just email sent)
+    const shouldDisableCheckinButton = isSendingCheckin || hasCheckinSubmitted;
 
 
     const [newComment, setNewComment] = useState('');
@@ -152,6 +177,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     const [isEditingCustomer, setIsEditingCustomer] = useState(false);
     const [isEditingAddress, setIsEditingAddress] = useState(false);
     const [isEditingPayment, setIsEditingPayment] = useState(false);
+    const [useSameAddressForBilling, setUseSameAddressForBilling] = useState(false);
     const [tempCustomer, setTempCustomer] = useState({
         name: '',
         business: '',
@@ -163,7 +189,11 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         location: '',
         reference: '',
         billingAddress: '',
+        billingStreet: '',
+        billingPlz: '',
+        billingLocation: '',
         billingReference: '',
+        billingCustomerReference: '',
         paymentMethod: ''
     });
 
@@ -176,6 +206,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         amount: 0,
         location: ''
     });
+
+    const [isEditingSpecialRequests, setIsEditingSpecialRequests] = useState(false);
 
     // Derived value for conditional room selection
     const currentGuests = isEditingEvent ? tempEvent.guests : (booking?.guests || 0);
@@ -241,6 +273,24 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     const [errors, setErrors] = useState<{
         kitchenNotes?: string;
         comment?: string;
+        customerName?: string;
+        customerEmail?: string;
+        customerPhone?: string;
+        street?: string;
+        plz?: string;
+        location?: string;
+        eventDate?: string;
+        eventTime?: string;
+        guestCount?: string;
+        occasion?: string;
+        allergies?: string;
+        specialRequests?: string;
+        billingAddress?: string;
+        billingStreet?: string;
+        billingPlz?: string;
+        billingLocation?: string;
+        billingReference?: string;
+        paymentMethod?: string;
     }>({});
 
     // Update local state when booking prop changes
@@ -437,7 +487,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                 const newCommentObj: BookingComment = {
                     by: user?.name || 'Admin',
                     time: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
-                    date: now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+                    date: formatDate(now),
                     action: newComment,
                     type: 'manual' as const
                 };
@@ -478,6 +528,16 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         try {
             const response = await fetch(`/api/bookings/${bookingId}/remind`, { method: 'POST' });
             if (response.ok) {
+                // Log reminder email activity
+                const now = new Date();
+                const newCommentObj: BookingComment = {
+                    by: user?.name || 'Admin',
+                    time: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+                    date: formatDate(now),
+                    action: 'Reminder email sent successfully',
+                    type: 'system' as const
+                };
+                setComments([...comments, newCommentObj]);
                 toast.success(t('toast.reminderSent'));
             } else {
                 const error = await response.json();
@@ -495,6 +555,16 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         try {
             const response = await fetch(`/api/bookings/${bookingId}/send-checkin`, { method: 'POST' });
             if (response.ok) {
+                // Log check-in email activity
+                const now = new Date();
+                const newCommentObj: BookingComment = {
+                    by: user?.name || 'Admin',
+                    time: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+                    date: formatDate(now),
+                    action: 'Check-in email sent successfully (4 days before event)',
+                    type: 'system' as const
+                };
+                setComments([...comments, newCommentObj]);
                 toast.success(t('toast.checkinSent'));
             } else {
                 const error = await response.json();
@@ -565,6 +635,16 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             });
 
             if (response.ok) {
+                // Log update email activity
+                const now = new Date();
+                const newCommentObj: BookingComment = {
+                    by: user?.name || 'Admin',
+                    time: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+                    date: formatDate(now),
+                    action: 'Booking update email sent successfully with PDF',
+                    type: 'system' as const
+                };
+                setComments([...comments, newCommentObj]);
                 toast.success(t('toast.updateSent'));
             } else {
                 const error = await response.json();
@@ -659,6 +739,162 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         }
     };
 
+    // Validation functions
+    const validateCustomerField = (field: keyof typeof tempCustomer, value: string) => {
+        let error = '';
+
+        switch (field) {
+            case 'name':
+                const nameResult = customerNameSchema.safeParse(value);
+                if (!nameResult.success) error = nameResult.error.errors[0].message;
+                break;
+            case 'email':
+                const emailResult = userEmailSchema.safeParse(value);
+                if (!emailResult.success) error = emailResult.error.errors[0].message;
+                break;
+            case 'phone':
+                const phoneResult = customerPhoneSchema.safeParse(value);
+                if (!phoneResult.success) error = phoneResult.error.errors[0].message;
+                break;
+            case 'street':
+                if (!value.trim()) {
+                    error = 'Street address is required';
+                } else {
+                    const streetResult = customerStreetSchema.safeParse(value);
+                    if (!streetResult.success) error = streetResult.error.errors[0].message;
+                }
+                break;
+            case 'plz':
+                if (!value.trim()) {
+                    error = 'Postal code is required';
+                } else {
+                    const plzResult = customerPlzSchema.safeParse(value);
+                    if (!plzResult.success) error = plzResult.error.errors[0].message;
+                }
+                break;
+            case 'location':
+                if (!value.trim()) {
+                    error = 'Location is required';
+                } else {
+                    const locationResult = customerLocationSchema.safeParse(value);
+                    if (!locationResult.success) error = locationResult.error.errors[0].message;
+                }
+                break;
+        }
+
+        setErrors(prev => ({
+            ...prev, [field === 'name' ? 'customerName' :
+                field === 'email' ? 'customerEmail' :
+                    field === 'phone' ? 'customerPhone' : field]: error || undefined
+        }));
+        return !error;
+    };
+
+    const validateEventField = (field: keyof typeof tempEvent, value: string | number) => {
+        let error = '';
+
+        switch (field) {
+            case 'date':
+                if (!value) {
+                    error = 'Event date is required';
+                }
+                break;
+            case 'time':
+                if (!value) {
+                    error = 'Event time is required';
+                }
+                break;
+            case 'guests':
+                const guestCount = typeof value === 'number' ? value : parseInt(value);
+                if (!guestCount || guestCount < 1) {
+                    error = 'Guest count must be at least 1';
+                } else if (guestCount > 10000) {
+                    error = 'Guest count cannot exceed 10,000';
+                }
+                break;
+            case 'occasion':
+                if (value && typeof value === 'string') {
+                    const occasionResult = customerOccasionSchema.safeParse(value);
+                    if (!occasionResult.success) error = occasionResult.error.errors[0].message;
+                }
+                break;
+        }
+
+        setErrors(prev => ({
+            ...prev, [field === 'date' ? 'eventDate' :
+                field === 'time' ? 'eventTime' :
+                    field === 'guests' ? 'guestCount' : field]: error || undefined
+        }));
+        return !error;
+    };
+
+    const validateSpecialRequests = () => {
+        let newErrors: Record<string, string> = {};
+
+        // Validate allergies (optional)
+        if (allergies && allergies.trim()) {
+            const allergiesResult = bookingAllergiesSchema.safeParse(allergies);
+            if (!allergiesResult.success) {
+                newErrors.allergies = allergiesResult.error.errors[0].message;
+            }
+        }
+
+        // Validate special requests/notes (optional)
+        if (notes && notes.trim()) {
+            const notesResult = bookingSpecialRequestsSchema.safeParse(notes);
+            if (!notesResult.success) {
+                newErrors.specialRequests = notesResult.error.errors[0].message;
+            }
+        }
+
+        setErrors(prev => ({ ...prev, ...newErrors }));
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const validatePaymentField = (field: 'paymentMethod' | 'billingReference' | 'billingStreet' | 'billingPlz' | 'billingLocation', value: string) => {
+        let error = '';
+
+        switch (field) {
+            case 'paymentMethod':
+                if (!value || value.trim() === '') {
+                    error = 'Payment method is required';
+                }
+                break;
+            case 'billingStreet':
+                if (!value.trim()) {
+                    error = 'Billing street is required';
+                } else {
+                    const streetResult = customerStreetSchema.safeParse(value);
+                    if (!streetResult.success) error = streetResult.error.errors[0].message;
+                }
+                break;
+            case 'billingPlz':
+                if (!value.trim()) {
+                    error = 'Billing postal code is required';
+                } else {
+                    const plzResult = customerPlzSchema.safeParse(value);
+                    if (!plzResult.success) error = plzResult.error.errors[0].message;
+                }
+                break;
+            case 'billingLocation':
+                if (!value.trim()) {
+                    error = 'Billing location is required';
+                } else {
+                    const locationResult = customerLocationSchema.safeParse(value);
+                    if (!locationResult.success) error = locationResult.error.errors[0].message;
+                }
+                break;
+            case 'billingReference':
+                if (value && value.trim() && value.length > 100) {
+                    error = 'Billing reference cannot exceed 100 characters';
+                }
+                break;
+        }
+
+        setErrors(prev => ({ ...prev, [field]: error || undefined }));
+        return !error;
+    };
+
     const handleEditCustomer = () => {
         if (!booking) return;
         setTempCustomer({
@@ -672,7 +908,11 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             location: booking.customer.location || '',
             reference: booking.customer.reference || '',
             billingAddress: booking.billingAddress || '',
+            billingStreet: '',
+            billingPlz: '',
+            billingLocation: '',
             billingReference: booking.billingReference || '',
+            billingCustomerReference: (booking as any).billingCustomerReference || '',
             paymentMethod: booking.paymentMethod || ''
         });
         setIsEditingCustomer(true);
@@ -695,7 +935,11 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             location: booking.customer.location || '',
             reference: booking.customer.reference || '',
             billingAddress: booking.billingAddress || '',
+            billingStreet: '',
+            billingPlz: '',
+            billingLocation: '',
             billingReference: booking.billingReference || '',
+            billingCustomerReference: (booking as any).billingCustomerReference || '',
             paymentMethod: booking.paymentMethod || ''
         });
         setIsEditingAddress(true);
@@ -718,7 +962,11 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             location: booking.customer.location || '',
             reference: booking.customer.reference || '',
             billingAddress: booking.billingAddress || '',
+            billingStreet: '',
+            billingPlz: '',
+            billingLocation: '',
             billingReference: booking.billingReference || '',
+            billingCustomerReference: (booking as any).billingCustomerReference || '',
             paymentMethod: booking.paymentMethod || ''
         });
         setIsEditingPayment(true);
@@ -726,6 +974,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
     const handleCancelPayment = () => {
         setIsEditingPayment(false);
+        setUseSameAddressForBilling(false);
     };
 
     const performSaveCustomer = async () => {
@@ -744,9 +993,24 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             newInternalNotes = updateFieldInNotes(newInternalNotes, 'Billing Reference', tempCustomer.billingReference);
             newInternalNotes = updateFieldInNotes(newInternalNotes, 'Payment Method', tempCustomer.paymentMethod);
 
+            // Update billing address fields if provided
+            if (tempCustomer.billingStreet || tempCustomer.billingPlz || tempCustomer.billingLocation) {
+                newInternalNotes = updateFieldInNotes(newInternalNotes, 'Billing Street', tempCustomer.billingStreet);
+                newInternalNotes = updateFieldInNotes(newInternalNotes, 'Billing PLZ', tempCustomer.billingPlz);
+                newInternalNotes = updateFieldInNotes(newInternalNotes, 'Billing Location', tempCustomer.billingLocation);
+
+                // Combine into full billing address
+                const fullBillingAddress = [tempCustomer.billingStreet, tempCustomer.billingPlz, tempCustomer.billingLocation].filter(Boolean).join(', ');
+                newInternalNotes = updateFieldInNotes(newInternalNotes, 'Billing Address', fullBillingAddress);
+            }
+
             // Also update the legacy Address field for compatibility
             const fullAddress = [tempCustomer.street, tempCustomer.plz, tempCustomer.location].filter(Boolean).join(', ');
             newInternalNotes = updateFieldInNotes(newInternalNotes, 'Address', fullAddress);
+
+            // Combine billing address for the API
+            const billingAddress = tempCustomer.billingAddress ||
+                ([tempCustomer.billingStreet, tempCustomer.billingPlz, tempCustomer.billingLocation].filter(Boolean).join(', '));
 
             const response = await fetch(`/api/bookings/${booking.id}`, {
                 method: 'PUT',
@@ -758,7 +1022,13 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                         phone: tempCustomer.phone
                     },
                     internalNotes: newInternalNotes,
-                    billingAddress: tempCustomer.billingAddress
+                    billingAddress: billingAddress,
+                    billingStreet: tempCustomer.billingStreet,
+                    billingPlz: tempCustomer.billingPlz,
+                    billingLocation: tempCustomer.billingLocation,
+                    billingReference: tempCustomer.billingReference,
+                    billingCustomerReference: tempCustomer.billingCustomerReference,
+                    paymentMethod: tempCustomer.paymentMethod
                 }),
             });
 
@@ -784,18 +1054,59 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     };
 
     const handleSaveCustomer = async () => {
+        // Validate all customer fields before saving
+        const isNameValid = validateCustomerField('name', tempCustomer.name);
+        const isEmailValid = validateCustomerField('email', tempCustomer.email);
+        const isPhoneValid = validateCustomerField('phone', tempCustomer.phone);
+
+        if (!isNameValid || !isEmailValid || !isPhoneValid) {
+            toast.error('Please fix validation errors before saving');
+            return;
+        }
+
         const success = await performSaveCustomer();
         if (success) setIsEditingCustomer(false);
     };
 
     const handleSaveAddress = async () => {
+        // Validate all address fields before saving
+        const isStreetValid = validateCustomerField('street', tempCustomer.street);
+        const isPlzValid = validateCustomerField('plz', tempCustomer.plz);
+        const isLocationValid = validateCustomerField('location', tempCustomer.location);
+
+        if (!isStreetValid || !isPlzValid || !isLocationValid) {
+            toast.error('Please fix validation errors before saving');
+            return;
+        }
+
         const success = await performSaveCustomer();
         if (success) setIsEditingAddress(false);
     };
 
     const handleSavePayment = async () => {
+        // Validate payment fields before saving
+        const isPaymentMethodValid = validatePaymentField('paymentMethod', tempCustomer.paymentMethod);
+        const isBillingReferenceValid = validatePaymentField('billingReference', tempCustomer.billingReference);
+
+        // Validate billing address fields if payment method is 'on_bill' and not using same address
+        let isBillingAddressValid = true;
+        if (tempCustomer.paymentMethod === 'on_bill' && !useSameAddressForBilling) {
+            const isBillingStreetValid = validatePaymentField('billingStreet', tempCustomer.billingStreet);
+            const isBillingPlzValid = validatePaymentField('billingPlz', tempCustomer.billingPlz);
+            const isBillingLocationValid = validatePaymentField('billingLocation', tempCustomer.billingLocation);
+            isBillingAddressValid = isBillingStreetValid && isBillingPlzValid && isBillingLocationValid;
+        }
+
+        if (!isPaymentMethodValid || !isBillingReferenceValid || !isBillingAddressValid) {
+            toast.error('Please fix validation errors before saving');
+            return;
+        }
+
         const success = await performSaveCustomer();
-        if (success) setIsEditingPayment(false);
+        if (success) {
+            setIsEditingPayment(false);
+            setUseSameAddressForBilling(false);
+        }
     };
 
     const handleEditEvent = () => {
@@ -825,8 +1136,72 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         setIsEditingEvent(false);
     };
 
+    const handleEditSpecialRequests = () => {
+        // Special requests editing doesn't need temp state as it directly edits allergies and notes
+        setIsEditingSpecialRequests(true);
+    };
+
+    const handleCancelSpecialRequests = () => {
+        // Reset to original values
+        const allergiesVal = booking?.allergies;
+        setAllergies(Array.isArray(allergiesVal) ? (allergiesVal as string[]).join(', ') : (allergiesVal || ''));
+        setNotes(booking?.notes || '');
+        setIsEditingSpecialRequests(false);
+    };
+
+    const handleSaveSpecialRequests = async () => {
+        if (!booking) return;
+
+        // Validate special requests before saving
+        if (!validateSpecialRequests()) {
+            toast.error('Please fix validation errors before saving');
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            const response = await fetch(`/api/bookings/${booking.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    allergyDetails: allergies,
+                    specialRequests: notes,
+                }),
+            });
+
+            if (response.ok) {
+                toast.success(t('toast.saveSuccess'));
+                setIsEditingSpecialRequests(false);
+                onBookingUpdated?.();
+                // Refresh page after a short delay to show updated data
+                setTimeout(() => {
+                    window.location.reload();
+                }, 100);
+            } else {
+                toast.error(t('toast.saveFailed'));
+            }
+        } catch (error) {
+            console.error('Error saving special requests:', error);
+            toast.error(t('toast.saveFailed'));
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     const handleSaveEvent = async () => {
         if (!booking) return;
+
+        // Validate all event fields before saving
+        const isDateValid = validateEventField('date', tempEvent.date);
+        const isTimeValid = validateEventField('time', tempEvent.time);
+        const isGuestsValid = validateEventField('guests', tempEvent.guests);
+        const isOccasionValid = validateEventField('occasion', tempEvent.occasion);
+
+        if (!isDateValid || !isTimeValid || !isGuestsValid || !isOccasionValid) {
+            toast.error('Please fix validation errors before saving');
+            return;
+        }
+
         setIsSaving(true);
         try {
             // Construct updated internal notes
@@ -953,7 +1328,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         const documentName = `Booking - ${customerName}`;
         const now = new Date();
         const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-        const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        const dateStr = formatDate(now);
 
         let actionText = '';
         if (action === 'download') {
@@ -1128,17 +1503,28 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.name')}</label>
+                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                            {wizardT('labels.name')} <span className="text-red-500">*</span>
+                                        </label>
                                         {isEditingCustomer ? (
-                                            <input
-                                                type="text"
-                                                value={tempCustomer.name}
-                                                onChange={(e) => setTempCustomer({ ...tempCustomer, name: e.target.value })}
-                                                className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
-                                                style={{ fontSize: 'var(--text-base)' }}
-                                            />
+                                            <>
+                                                <input
+                                                    type="text"
+                                                    value={tempCustomer.name}
+                                                    onChange={(e) => {
+                                                        setTempCustomer({ ...tempCustomer, name: e.target.value });
+                                                        if (errors.customerName) validateCustomerField('name', e.target.value);
+                                                    }}
+                                                    onBlur={() => validateCustomerField('name', tempCustomer.name)}
+                                                    className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.customerName ? 'border-red-500' : 'border-border'}`}
+                                                    style={{ fontSize: 'var(--text-base)' }}
+                                                />
+                                                {errors.customerName && (
+                                                    <p className="text-red-500 text-xs mt-1">{errors.customerName}</p>
+                                                )}
+                                            </>
                                         ) : (
-                                            <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.name}</p>
+                                            <p className="text-foreground font-medium truncate" style={{ fontSize: 'var(--text-base)' }} title={booking.customer.name}>{booking.customer.name}</p>
                                         )}
                                     </div>
                                     <div className="space-y-1">
@@ -1147,40 +1533,65 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                             <input
                                                 type="text"
                                                 value={tempCustomer.business}
-                                                onChange={(e) => setTempCustomer({ ...tempCustomer, business: e.target.value })}
+                                                onChange={(e) => {
+                                                    setTempCustomer({ ...tempCustomer, business: e.target.value });
+                                                    // Business is optional, no validation
+                                                }}
                                                 className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
                                                 style={{ fontSize: 'var(--text-base)' }}
                                             />
                                         ) : (
-                                            <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.business || '-'}</p>
+                                            <p className="text-foreground font-medium truncate" style={{ fontSize: 'var(--text-base)' }} title={booking.customer.business || ''}>{booking.customer.business || '-'}</p>
                                         )}
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.email')}</label>
+                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                            {wizardT('labels.email')} <span className="text-red-500">*</span>
+                                        </label>
                                         {isEditingCustomer ? (
-                                            <input
-                                                type="email"
-                                                value={tempCustomer.email}
-                                                onChange={(e) => setTempCustomer({ ...tempCustomer, email: e.target.value })}
-                                                className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
-                                                style={{ fontSize: 'var(--text-base)' }}
-                                            />
+                                            <>
+                                                <input
+                                                    type="email"
+                                                    value={tempCustomer.email}
+                                                    onChange={(e) => {
+                                                        setTempCustomer({ ...tempCustomer, email: e.target.value });
+                                                        if (errors.customerEmail) validateCustomerField('email', e.target.value);
+                                                    }}
+                                                    onBlur={() => validateCustomerField('email', tempCustomer.email)}
+                                                    className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.customerEmail ? 'border-red-500' : 'border-border'}`}
+                                                    style={{ fontSize: 'var(--text-base)' }}
+                                                />
+                                                {errors.customerEmail && (
+                                                    <p className="text-red-500 text-xs mt-1">{errors.customerEmail}</p>
+                                                )}
+                                            </>
                                         ) : (
-                                            <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.email}</p>
+                                            <p className="text-foreground font-medium truncate" style={{ fontSize: 'var(--text-base)' }} title={booking.customer.email}>{booking.customer.email}</p>
                                         )}
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.telephone')}</label>
+                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                            {wizardT('labels.telephone')} <span className="text-red-500">*</span>
+                                        </label>
                                         {isEditingCustomer ? (
-                                            <input
-                                                type="text"
-                                                value={tempCustomer.phone}
-                                                onChange={(e) => setTempCustomer({ ...tempCustomer, phone: e.target.value })}
-                                                className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
-                                                style={{ fontSize: 'var(--text-base)' }}
-                                            />
+                                            <>
+                                                <input
+                                                    type="text"
+                                                    value={tempCustomer.phone}
+                                                    onChange={(e) => {
+                                                        setTempCustomer({ ...tempCustomer, phone: e.target.value });
+                                                        if (errors.customerPhone) validateCustomerField('phone', e.target.value);
+                                                    }}
+                                                    onBlur={() => validateCustomerField('phone', tempCustomer.phone)}
+                                                    className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.customerPhone ? 'border-red-500' : 'border-border'}`}
+                                                    style={{ fontSize: 'var(--text-base)' }}
+                                                />
+                                                {errors.customerPhone && (
+                                                    <p className="text-red-500 text-xs mt-1">{errors.customerPhone}</p>
+                                                )}
+                                            </>
                                         ) : (
-                                            <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.phone}</p>
+                                            <p className="text-foreground font-medium truncate" style={{ fontSize: 'var(--text-base)' }} title={booking.customer.phone}>{booking.customer.phone}</p>
                                         )}
                                     </div>
                                 </div>
@@ -1229,43 +1640,76 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="sm:col-span-2 space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.street')}</label>
+                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                            {wizardT('labels.street')} <span className="text-red-500">*</span>
+                                        </label>
                                         {isEditingAddress ? (
-                                            <input
-                                                type="text"
-                                                value={tempCustomer.street}
-                                                onChange={(e) => setTempCustomer({ ...tempCustomer, street: e.target.value })}
-                                                className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
-                                                style={{ fontSize: 'var(--text-base)' }}
-                                            />
+                                            <>
+                                                <input
+                                                    type="text"
+                                                    value={tempCustomer.street}
+                                                    onChange={(e) => {
+                                                        setTempCustomer({ ...tempCustomer, street: e.target.value });
+                                                        if (errors.street) validateCustomerField('street', e.target.value);
+                                                    }}
+                                                    onBlur={() => validateCustomerField('street', tempCustomer.street)}
+                                                    className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.street ? 'border-red-500' : 'border-border'}`}
+                                                    style={{ fontSize: 'var(--text-base)' }}
+                                                />
+                                                {errors.street && (
+                                                    <p className="text-red-500 text-xs mt-1">{errors.street}</p>
+                                                )}
+                                            </>
                                         ) : (
                                             <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.street || '-'}</p>
                                         )}
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.plz')}</label>
+                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                            {wizardT('labels.plz')} <span className="text-red-500">*</span>
+                                        </label>
                                         {isEditingAddress ? (
-                                            <input
-                                                type="text"
-                                                value={tempCustomer.plz}
-                                                onChange={(e) => setTempCustomer({ ...tempCustomer, plz: e.target.value })}
-                                                className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
-                                                style={{ fontSize: 'var(--text-base)' }}
-                                            />
+                                            <>
+                                                <input
+                                                    type="text"
+                                                    value={tempCustomer.plz}
+                                                    onChange={(e) => {
+                                                        setTempCustomer({ ...tempCustomer, plz: e.target.value });
+                                                        if (errors.plz) validateCustomerField('plz', e.target.value);
+                                                    }}
+                                                    onBlur={() => validateCustomerField('plz', tempCustomer.plz)}
+                                                    className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.plz ? 'border-red-500' : 'border-border'}`}
+                                                    style={{ fontSize: 'var(--text-base)' }}
+                                                />
+                                                {errors.plz && (
+                                                    <p className="text-red-500 text-xs mt-1">{errors.plz}</p>
+                                                )}
+                                            </>
                                         ) : (
                                             <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.plz || '-'}</p>
                                         )}
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.location')}</label>
+                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                            {wizardT('labels.location')} <span className="text-red-500">*</span>
+                                        </label>
                                         {isEditingAddress ? (
-                                            <input
-                                                type="text"
-                                                value={tempCustomer.location}
-                                                onChange={(e) => setTempCustomer({ ...tempCustomer, location: e.target.value })}
-                                                className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
-                                                style={{ fontSize: 'var(--text-base)' }}
-                                            />
+                                            <>
+                                                <input
+                                                    type="text"
+                                                    value={tempCustomer.location}
+                                                    onChange={(e) => {
+                                                        setTempCustomer({ ...tempCustomer, location: e.target.value });
+                                                        if (errors.location) validateCustomerField('location', e.target.value);
+                                                    }}
+                                                    onBlur={() => validateCustomerField('location', tempCustomer.location)}
+                                                    className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.location ? 'border-red-500' : 'border-border'}`}
+                                                    style={{ fontSize: 'var(--text-base)' }}
+                                                />
+                                                {errors.location && (
+                                                    <p className="text-red-500 text-xs mt-1">{errors.location}</p>
+                                                )}
+                                            </>
                                         ) : (
                                             <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.location || '-'}</p>
                                         )}
@@ -1338,43 +1782,77 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.eventDate')}</label>
+                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                            {wizardT('labels.eventDate')} <span className="text-red-500">*</span>
+                                        </label>
                                         {isEditingEvent ? (
-                                            <input
-                                                type="date"
-                                                value={tempEvent.date}
-                                                onChange={(e) => setTempEvent({ ...tempEvent, date: e.target.value })}
-                                                className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
-                                                style={{ fontSize: 'var(--text-base)' }}
-                                            />
+                                            <>
+                                                <input
+                                                    type="date"
+                                                    value={tempEvent.date}
+                                                    onChange={(e) => {
+                                                        setTempEvent({ ...tempEvent, date: e.target.value });
+                                                        if (errors.eventDate) validateEventField('date', e.target.value);
+                                                    }}
+                                                    onBlur={() => validateEventField('date', tempEvent.date)}
+                                                    className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.eventDate ? 'border-red-500' : 'border-border'}`}
+                                                    style={{ fontSize: 'var(--text-base)' }}
+                                                />
+                                                {errors.eventDate && (
+                                                    <p className="text-red-500 text-xs mt-1">{errors.eventDate}</p>
+                                                )}
+                                            </>
                                         ) : (
-                                            <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={booking.event.date}>{booking.event.date}</p>
+                                            <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={formatDate(booking.event.date)}>{formatDate(booking.event.date)}</p>
                                         )}
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.eventTime')}</label>
+                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                            {wizardT('labels.eventTime')} <span className="text-red-500">*</span>
+                                        </label>
                                         {isEditingEvent ? (
-                                            <input
-                                                type="time"
-                                                value={tempEvent.time}
-                                                onChange={(e) => setTempEvent({ ...tempEvent, time: e.target.value })}
-                                                className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
-                                                style={{ fontSize: 'var(--text-base)' }}
-                                            />
+                                            <>
+                                                <input
+                                                    type="time"
+                                                    value={tempEvent.time}
+                                                    onChange={(e) => {
+                                                        setTempEvent({ ...tempEvent, time: e.target.value });
+                                                        if (errors.eventTime) validateEventField('time', e.target.value);
+                                                    }}
+                                                    onBlur={() => validateEventField('time', tempEvent.time)}
+                                                    className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.eventTime ? 'border-red-500' : 'border-border'}`}
+                                                    style={{ fontSize: 'var(--text-base)' }}
+                                                />
+                                                {errors.eventTime && (
+                                                    <p className="text-red-500 text-xs mt-1">{errors.eventTime}</p>
+                                                )}
+                                            </>
                                         ) : (
                                             <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={booking.event.time}>{booking.event.time}</p>
                                         )}
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.guestCount')}</label>
+                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                            {wizardT('labels.guestCount')} <span className="text-red-500">*</span>
+                                        </label>
                                         {isEditingEvent ? (
-                                            <input
-                                                type="number"
-                                                value={tempEvent.guests}
-                                                onChange={(e) => setTempEvent({ ...tempEvent, guests: parseInt(e.target.value) || 0 })}
-                                                className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
-                                                style={{ fontSize: 'var(--text-base)' }}
-                                            />
+                                            <>
+                                                <input
+                                                    type="number"
+                                                    value={tempEvent.guests}
+                                                    onChange={(e) => {
+                                                        const val = parseInt(e.target.value) || 0;
+                                                        setTempEvent({ ...tempEvent, guests: val });
+                                                        if (errors.guestCount) validateEventField('guests', val);
+                                                    }}
+                                                    onBlur={() => validateEventField('guests', tempEvent.guests)}
+                                                    className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.guestCount ? 'border-red-500' : 'border-border'}`}
+                                                    style={{ fontSize: 'var(--text-base)' }}
+                                                />
+                                                {errors.guestCount && (
+                                                    <p className="text-red-500 text-xs mt-1">{errors.guestCount}</p>
+                                                )}
+                                            </>
                                         ) : (
                                             <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={booking.guests.toString()} translate="no">
                                                 <span>{booking.guests}</span>
@@ -1387,8 +1865,12 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                             <input
                                                 type="text"
                                                 value={tempEvent.occasion}
-                                                onChange={(e) => setTempEvent({ ...tempEvent, occasion: e.target.value })}
-                                                className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
+                                                onChange={(e) => {
+                                                    setTempEvent({ ...tempEvent, occasion: e.target.value });
+                                                    if (errors.occasion) validateEventField('occasion', e.target.value);
+                                                }}
+                                                onBlur={() => validateEventField('occasion', tempEvent.occasion)}
+                                                className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.occasion ? 'border-red-500' : 'border-border'}`}
                                                 style={{ fontSize: 'var(--text-base)' }}
                                             />
                                         ) : (
@@ -1480,9 +1962,9 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         </div>
                                         {wizardT('sections.specialRequests')}
                                     </h3>
-                                    {canEditBooking && !isLocked && !isEditingEvent && (
+                                    {canEditBooking && !isLocked && !isEditingSpecialRequests && (
                                         <button
-                                            onClick={handleEditEvent}
+                                            onClick={handleEditSpecialRequests}
                                             className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary cursor-pointer flex items-center gap-2"
                                             style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                         >
@@ -1490,35 +1972,91 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                             <span>{buttonT('edit')}</span>
                                         </button>
                                     )}
+                                    {isEditingSpecialRequests && (
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={handleCancelSpecialRequests}
+                                                className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-red-500 cursor-pointer flex items-center gap-2"
+                                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                            >
+                                                <X className="w-4 h-4" />
+                                                <span>{buttonT('cancel')}</span>
+                                            </button>
+                                            <button
+                                                onClick={handleSaveSpecialRequests}
+                                                disabled={isSaving}
+                                                className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-green-600 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                            >
+                                                <Save className="w-4 h-4" />
+                                                <span>{buttonT('save')}</span>
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="space-y-4">
                                     <div className="space-y-1">
                                         <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('allergies')}</label>
-                                        {isEditingEvent ? (
-                                            <input
-                                                type="text"
-                                                value={allergies}
-                                                onChange={(e) => setAllergies(e.target.value)}
-                                                placeholder={wizardT('placeholders.specialRequests')}
-                                                className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
-                                                style={{ fontSize: 'var(--text-base)' }}
-                                            />
+                                        {isEditingSpecialRequests ? (
+                                            <>
+                                                <input
+                                                    type="text"
+                                                    value={allergies}
+                                                    onChange={(e) => {
+                                                        setAllergies(e.target.value);
+                                                        // Clear error on change
+                                                        if (errors.allergies) setErrors({ ...errors, allergies: undefined });
+                                                    }}
+                                                    onBlur={() => {
+                                                        // Validate on blur if not empty
+                                                        if (allergies.trim()) {
+                                                            const allergiesResult = bookingAllergiesSchema.safeParse(allergies);
+                                                            if (!allergiesResult.success) {
+                                                                setErrors({ ...errors, allergies: allergiesResult.error.errors[0].message });
+                                                            }
+                                                        }
+                                                    }}
+                                                    className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.allergies ? 'border-red-500' : 'border-border'}`}
+                                                    style={{ fontSize: 'var(--text-base)' }}
+                                                />
+                                                {errors.allergies && (
+                                                    <p className="text-red-500 text-xs mt-1">{errors.allergies}</p>
+                                                )}
+                                            </>
                                         ) : (
-                                            <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.allergies || '-'}</p>
+                                            <p className="text-foreground font-medium line-clamp-2" style={{ fontSize: 'var(--text-base)' }} title={Array.isArray(booking.allergies) ? booking.allergies.join(', ') : (booking.allergies || '')}>{Array.isArray(booking.allergies) ? booking.allergies.join(', ') : (booking.allergies || '-')}</p>
                                         )}
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('internalInstructions')}</label>
-                                        {isEditingEvent ? (
-                                            <ValidatedTextarea
-                                                value={notes}
-                                                onChange={(e) => setNotes(e.target.value)}
-                                                className="w-full bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
-                                                style={{ fontSize: 'var(--text-base)' }}
-                                                rows={3}
-                                            />
+                                        {isEditingSpecialRequests ? (
+                                            <>
+                                                <ValidatedTextarea
+                                                    value={notes}
+                                                    onChange={(e) => {
+                                                        setNotes(e.target.value);
+                                                        // Clear error on change
+                                                        if (errors.specialRequests) setErrors({ ...errors, specialRequests: undefined });
+                                                    }}
+                                                    onBlur={() => {
+                                                        // Validate on blur if not empty
+                                                        if (notes.trim()) {
+                                                            const notesResult = bookingSpecialRequestsSchema.safeParse(notes);
+                                                            if (!notesResult.success) {
+                                                                setErrors({ ...errors, specialRequests: notesResult.error.errors[0].message });
+                                                            }
+                                                        }
+                                                    }}
+                                                    className={`w-full bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.specialRequests ? 'border-red-500' : 'border-border'}`}
+                                                    style={{ fontSize: 'var(--text-base)' }}
+                                                    rows={3}
+                                                />
+                                                {errors.specialRequests && (
+                                                    <p className="text-red-500 text-xs mt-1">{errors.specialRequests}</p>
+                                                )}
+                                            </>
                                         ) : (
-                                            <p className="text-foreground font-medium whitespace-pre-wrap" style={{ fontSize: 'var(--text-base)' }}>{booking.notes || '-'}</p>
+                                            <p className="text-foreground font-medium line-clamp-3" style={{ fontSize: 'var(--text-base)' }} title={booking.notes || ''}>{booking.notes || '-'}</p>
                                         )}
                                     </div>
                                 </div>
@@ -1580,7 +2118,10 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                     <NativeRadio
                                                         name="paymentMethodAdmin"
                                                         checked={tempCustomer.paymentMethod === 'ec_card'}
-                                                        onChange={() => setTempCustomer({ ...tempCustomer, paymentMethod: 'ec_card' })}
+                                                        onChange={() => {
+                                                            setTempCustomer({ ...tempCustomer, paymentMethod: 'ec_card' });
+                                                            if (errors.paymentMethod) validatePaymentField('paymentMethod', 'ec_card');
+                                                        }}
                                                     />
                                                     <div className="flex-1">
                                                         <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
@@ -1596,7 +2137,10 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                     <NativeRadio
                                                         name="paymentMethodAdmin"
                                                         checked={tempCustomer.paymentMethod === 'on_bill'}
-                                                        onChange={() => setTempCustomer({ ...tempCustomer, paymentMethod: 'on_bill' })}
+                                                        onChange={() => {
+                                                            setTempCustomer({ ...tempCustomer, paymentMethod: 'on_bill' });
+                                                            if (errors.paymentMethod) validatePaymentField('paymentMethod', 'on_bill');
+                                                        }}
                                                     />
                                                     <div className="flex-1">
                                                         <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
@@ -1605,31 +2149,173 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                     </div>
                                                 </label>
                                             </div>
+                                            {errors.paymentMethod && (
+                                                <p className="text-red-500 text-xs">{errors.paymentMethod}</p>
+                                            )}
 
-                                            <div className="space-y-4 mt-6 pt-6 border-t border-border">
-                                                <div className="space-y-1">
-                                                    <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('sections.billingAddress')}</label>
-                                                    <ValidatedTextarea
-                                                        value={tempCustomer.billingAddress}
-                                                        onChange={(e) => setTempCustomer({ ...tempCustomer, billingAddress: e.target.value })}
-                                                        className="w-full bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
-                                                        style={{ fontSize: 'var(--text-base)' }}
-                                                        rows={3}
-                                                        placeholder={wizardT('placeholders.billingAddress') || 'Geben Sie die Rechnungsadresse ein'}
-                                                    />
+                                            {tempCustomer.paymentMethod === 'on_bill' && (
+                                                <div className="space-y-4 mt-6 pt-6 border-t border-border">
+                                                    <div className="flex items-center gap-2">
+                                                        <input
+                                                            type="checkbox"
+                                                            id="sameAddressBilling"
+                                                            checked={useSameAddressForBilling}
+                                                            onChange={(e) => {
+                                                                const checked = e.target.checked;
+                                                                setUseSameAddressForBilling(checked);
+                                                                if (checked) {
+                                                                    setTempCustomer({
+                                                                        ...tempCustomer,
+                                                                        billingStreet: tempCustomer.street,
+                                                                        billingPlz: tempCustomer.plz,
+                                                                        billingLocation: tempCustomer.location
+                                                                    });
+                                                                    // Clear validation errors for billing fields
+                                                                    setErrors(prev => ({
+                                                                        ...prev,
+                                                                        billingStreet: undefined,
+                                                                        billingPlz: undefined,
+                                                                        billingLocation: undefined
+                                                                    }));
+                                                                } else {
+                                                                    setTempCustomer({
+                                                                        ...tempCustomer,
+                                                                        billingStreet: '',
+                                                                        billingPlz: '',
+                                                                        billingLocation: ''
+                                                                    });
+                                                                }
+                                                            }}
+                                                            className="w-4 h-4 rounded border-border text-primary focus:ring-2 focus:ring-primary/20 cursor-pointer"
+                                                        />
+                                                        <label
+                                                            htmlFor="sameAddressBilling"
+                                                            className="text-sm text-foreground cursor-pointer select-none"
+                                                            style={{ fontSize: 'var(--text-small)' }}
+                                                        >
+                                                            {wizardT('labels.useSameAddress') || 'Same as customer address'}
+                                                        </label>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                        <div className="sm:col-span-2 space-y-1">
+                                                            <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                                                {wizardT('labels.street')} <span className="text-red-500">*</span>
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={tempCustomer.billingStreet}
+                                                                onChange={(e) => {
+                                                                    setTempCustomer({ ...tempCustomer, billingStreet: e.target.value });
+                                                                    if (useSameAddressForBilling) {
+                                                                        setTempCustomer(prev => ({ ...prev, street: e.target.value }));
+                                                                        if (errors.street) validateCustomerField('street', e.target.value);
+                                                                    }
+                                                                }}
+                                                                onBlur={() => {
+                                                                    if (!useSameAddressForBilling) {
+                                                                        validatePaymentField('billingStreet', tempCustomer.billingStreet);
+                                                                    }
+                                                                }}
+                                                                disabled={useSameAddressForBilling}
+                                                                className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.billingStreet ? 'border-red-500' : 'border-border'} ${useSameAddressForBilling ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                style={{ fontSize: 'var(--text-base)' }}
+                                                                placeholder={wizardT('placeholders.street') || 'Strasse eingeben'}
+                                                            />
+                                                            {errors.billingStreet && (
+                                                                <p className="text-red-500 text-xs mt-1">{errors.billingStreet}</p>
+                                                            )}
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                                                {wizardT('labels.plz')} <span className="text-red-500">*</span>
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={tempCustomer.billingPlz}
+                                                                onChange={(e) => {
+                                                                    setTempCustomer({ ...tempCustomer, billingPlz: e.target.value });
+                                                                    if (useSameAddressForBilling) {
+                                                                        setTempCustomer(prev => ({ ...prev, plz: e.target.value }));
+                                                                        if (errors.plz) validateCustomerField('plz', e.target.value);
+                                                                    }
+                                                                }}
+                                                                onBlur={() => {
+                                                                    if (!useSameAddressForBilling) {
+                                                                        validatePaymentField('billingPlz', tempCustomer.billingPlz);
+                                                                    }
+                                                                }}
+                                                                disabled={useSameAddressForBilling}
+                                                                className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.billingPlz ? 'border-red-500' : 'border-border'} ${useSameAddressForBilling ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                style={{ fontSize: 'var(--text-base)' }}
+                                                                placeholder={wizardT('placeholders.plz') || 'PLZ'}
+                                                            />
+                                                            {errors.billingPlz && (
+                                                                <p className="text-red-500 text-xs mt-1">{errors.billingPlz}</p>
+                                                            )}
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                                                {wizardT('labels.location')} <span className="text-red-500">*</span>
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={tempCustomer.billingLocation}
+                                                                onChange={(e) => {
+                                                                    setTempCustomer({ ...tempCustomer, billingLocation: e.target.value });
+                                                                    if (useSameAddressForBilling) {
+                                                                        setTempCustomer(prev => ({ ...prev, location: e.target.value }));
+                                                                        if (errors.location) validateCustomerField('location', e.target.value);
+                                                                    }
+                                                                }}
+                                                                onBlur={() => {
+                                                                    if (!useSameAddressForBilling) {
+                                                                        validatePaymentField('billingLocation', tempCustomer.billingLocation);
+                                                                    }
+                                                                }}
+                                                                disabled={useSameAddressForBilling}
+                                                                className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.billingLocation ? 'border-red-500' : 'border-border'} ${useSameAddressForBilling ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                style={{ fontSize: 'var(--text-base)' }}
+                                                                placeholder={wizardT('placeholders.location') || 'Ort'}
+                                                            />
+                                                            {errors.billingLocation && (
+                                                                <p className="text-red-500 text-xs mt-1">{errors.billingLocation}</p>
+                                                            )}
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.reference')}</label>
+                                                            <input
+                                                                type="text"
+                                                                value={tempCustomer.billingReference}
+                                                                onChange={(e) => {
+                                                                    setTempCustomer({ ...tempCustomer, billingReference: e.target.value });
+                                                                    if (errors.billingReference) validatePaymentField('billingReference', e.target.value);
+                                                                }}
+                                                                onBlur={() => validatePaymentField('billingReference', tempCustomer.billingReference)}
+                                                                className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.billingReference ? 'border-red-500' : 'border-border'}`}
+                                                                style={{ fontSize: 'var(--text-base)' }}
+                                                                placeholder={wizardT('placeholders.billingReference') || 'Referenznummer hinzufügen'}
+                                                            />
+                                                            {errors.billingReference && (
+                                                                <p className="text-red-500 text-xs mt-1">{errors.billingReference}</p>
+                                                            )}
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.customerReference') || 'Customer Reference'}</label>
+                                                            <input
+                                                                type="text"
+                                                                value={tempCustomer.billingCustomerReference}
+                                                                onChange={(e) => {
+                                                                    setTempCustomer({ ...tempCustomer, billingCustomerReference: e.target.value });
+                                                                }}
+                                                                className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
+                                                                style={{ fontSize: 'var(--text-base)' }}
+                                                                placeholder={wizardT('placeholders.customerReference') || 'Kundenreferenz hinzufügen'}
+                                                            />
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div className="space-y-1">
-                                                    <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.reference')}</label>
-                                                    <input
-                                                        type="text"
-                                                        value={tempCustomer.billingReference}
-                                                        onChange={(e) => setTempCustomer({ ...tempCustomer, billingReference: e.target.value })}
-                                                        className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
-                                                        style={{ fontSize: 'var(--text-base)' }}
-                                                        placeholder={wizardT('placeholders.billingReference') || 'Referenznummer hinzufügen'}
-                                                    />
-                                                </div>
-                                            </div>
+                                            )}
                                         </div>
                                     ) : (
                                         <div className="grid grid-cols-1 gap-6">
@@ -1644,24 +2330,50 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                 </div>
                                             </div>
 
-                                            <div className="space-y-4">
-                                                <div className="space-y-2">
-                                                    <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('sections.billingAddress')}</label>
-                                                    <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
-                                                        <p className="text-foreground whitespace-pre-wrap" style={{ fontSize: 'var(--text-base)' }}>
-                                                            {booking.billingAddress || '-'}
-                                                        </p>
+                                            {booking.paymentMethod === 'on_bill' && (
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    <div className="sm:col-span-2 space-y-2">
+                                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.street')}</label>
+                                                        <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
+                                                            <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                                                {(booking as any).billingStreet || '-'}
+                                                            </p>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.reference')}</label>
-                                                    <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
-                                                        <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                                            {booking.billingReference || '-'}
-                                                        </p>
+                                                    <div className="space-y-2">
+                                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.plz')}</label>
+                                                        <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
+                                                            <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                                                {(booking as any).billingPlz || '-'}
+                                                            </p>
+                                                        </div>
                                                     </div>
+                                                    <div className="space-y-2">
+                                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.location')}</label>
+                                                        <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
+                                                            <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                                                {(booking as any).billingLocation || '-'}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-2 sm:col-span-2">
+                                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.reference')}</label>
+                                                        <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
+                                                            <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                                                {booking.billingReference || '-'}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    {/* <div className="space-y-2">
+                                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.customerReference')}</label>
+                                                        <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
+                                                            <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                                                {(booking as any).billingCustomerReference || '-'}
+                                                            </p>
+                                                        </div>
+                                                    </div> */}
                                                 </div>
-                                            </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -1746,19 +2458,24 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                     <tr key={item.id || item.itemId || `row-${index}`} className="border-t border-border">
                                                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-foreground text-xs sm:text-sm">
                                                             <div className="flex flex-col gap-1.5 py-1">
-                                                                <div className="font-medium text-foreground" title={item.item || item.name}>
-                                                                    <span>{item.item || item.name}</span>
-                                                                    {item.variant && (
-                                                                        <span className="ml-1.5 text-muted-foreground font-normal">
-                                                                            ({item.variant})
-                                                                        </span>
+                                                                <div className="flex flex-wrap items-center gap-x-2 font-medium text-foreground" title={item.item || item.name}>
+                                                                    {item.dietaryType && item.dietaryType !== 'none' && (
+                                                                        <DietaryIcon type={item.dietaryType} size="sm" />
                                                                     )}
+                                                                    <div>
+                                                                        <span>{item.item || item.name}</span>
+                                                                        {item.variant && (
+                                                                            <span className="ml-1.5 text-muted-foreground font-normal">
+                                                                                ({item.variant})
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
                                                                 {item.notes && (
                                                                     <div className="flex items-start gap-1.5 text-primary/80">
                                                                         <UtensilsCrossed className="w-3 h-3 mt-1 flex-shrink-0" />
-                                                                        <span className="text-[12px] leading-tight font-medium" title={item.notes}>
-                                                                            {item.notes}
+                                                                        <span className="text-[12px] leading-tight font-medium inline-flex items-center flex-wrap gap-x-0.5" title={item.notes}>
+                                                                            {parseDietaryNotes(item.notes)}
                                                                         </span>
                                                                     </div>
                                                                 )}
@@ -2050,14 +2767,14 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                         {latestCheckin.menuChanges && (
                                                             <div className="space-y-1 bg-background/50 p-3 rounded-lg border border-border/50">
                                                                 <p className="text-[10px] uppercase text-primary font-bold">Menu Changes</p>
-                                                                <p className="text-sm italic" title={latestCheckin.menuChanges}>{latestCheckin.menuChanges}</p>
+                                                                <p className="text-sm italic truncate line-clamp-3" title={latestCheckin.menuChanges}>{latestCheckin.menuChanges}</p>
                                                             </div>
                                                         )}
 
                                                         {latestCheckin.additionalDetails && (
                                                             <div className="space-y-1 bg-background/50 p-3 rounded-lg border border-border/50">
                                                                 <p className="text-[10px] uppercase text-primary font-bold">Additional Details</p>
-                                                                <p className="text-sm italic" title={latestCheckin.additionalDetails}>{latestCheckin.additionalDetails}</p>
+                                                                <p className="text-sm italic truncate line-clamp-3" title={latestCheckin.additionalDetails}>{latestCheckin.additionalDetails}</p>
                                                             </div>
                                                         )}
                                                     </div>
@@ -2139,14 +2856,36 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
                                     <button
                                         onClick={handleSendCheckin}
-                                        disabled={isSendingCheckin}
-                                        className="w-full px-3 sm:px-4 py-3 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors flex items-center justify-center gap-2 cursor-pointer border border-border disabled:opacity-50 text-sm sm:text-base"
+                                        disabled={shouldDisableCheckinButton}
+                                        className={`w-full px-3 sm:px-4 py-3 rounded-lg flex items-center justify-center gap-2 border text-sm sm:text-base transition-colors ${shouldDisableCheckinButton
+                                            ? 'bg-muted text-muted-foreground cursor-not-allowed border-border opacity-60'
+                                            : 'bg-secondary text-secondary-foreground hover:bg-secondary/90 cursor-pointer border-border'
+                                            }`}
                                         style={{ fontWeight: 'var(--font-weight-medium)' }}
+                                        title={shouldDisableCheckinButton ? 'Check-in already submitted by customer' : 'Send 4-day check-in email to customer'}
                                     >
-                                        {isSendingCheckin ? <Loader2 className="w-4 h-4 animate-spin text-primary" /> : <Mail className="w-4 h-4" />}
-                                        <span className="hidden sm:inline">{t('sendCheckin')}</span>
-                                        <span className="sm:hidden">{t('sendCheckin')}</span>
+                                        {isSendingCheckin ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : shouldDisableCheckinButton ? (
+                                            <CheckCircle2 className="w-4 h-4 text-green-600" />
+                                        ) : (
+                                            <Mail className="w-4 h-4" />
+                                        )}
+                                        <span className="hidden sm:inline">
+                                            {shouldDisableCheckinButton ? 'Check-in Submitted' : t('sendCheckin')}
+                                        </span>
+                                        <span className="sm:hidden">
+                                            {shouldDisableCheckinButton ? 'Submitted' : t('sendCheckin')}
+                                        </span>
                                     </button>
+
+                                    {/* Check-in Status Indicator */}
+                                    {checkinEmailSent && !shouldDisableCheckinButton && (
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 px-2">
+                                            <Mail className="w-3 h-3 text-blue-600" />
+                                            <span>Email sent</span>
+                                        </div>
+                                    )}
 
                                     <button
                                         onClick={handleSendUpdate}
@@ -2269,7 +3008,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                     onClose={() => setIsDeleteModalOpen(false)}
                     onDelete={handleDeleteBooking}
                     isLoading={isDeleting}
-                    bookingTitle={booking ? `${booking.customer.name} - ${booking.event.date}` : undefined}
+                    bookingTitle={booking ? `${booking.customer.name} - ${formatDate(booking.event.date)}` : undefined}
                 />
             )}
         </div>

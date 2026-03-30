@@ -387,29 +387,41 @@ export function AddMenuItemModal({
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <label className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity cursor-pointer flex items-center justify-center gap-2">
-                  <Upload className="w-4 h-4" />
-                  <span style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                    {uploadingImage ? t('buttons.uploading') : t('buttons.changeImage')}
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    disabled={uploadingImage}
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        try {
-                          const imageUrl = await handleImageUpload(file);
-                          setNewMenuItem({ ...newMenuItem, image: null, imageUrl });
-                        } catch (error) {
-                          setNewMenuItem({ ...newMenuItem, image: file, imageUrl: URL.createObjectURL(file) });
+                <div className="flex gap-2">
+                  <label className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity cursor-pointer flex items-center justify-center gap-2">
+                    <Upload className="w-4 h-4" />
+                    <span style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                      {uploadingImage ? t('buttons.uploading') : t('buttons.changeImage')}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={uploadingImage}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          try {
+                            const imageUrl = await handleImageUpload(file);
+                            setNewMenuItem({ ...newMenuItem, image: null, imageUrl });
+                          } catch (error) {
+                            setNewMenuItem({ ...newMenuItem, image: file, imageUrl: URL.createObjectURL(file) });
+                          }
                         }
-                      }
-                    }}
-                    className="hidden"
-                  />
-                </label>
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setNewMenuItem({ ...newMenuItem, image: null, imageUrl: '' })}
+                    className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                      {t('buttons.removeImage')}
+                    </span>
+                  </button>
+                </div>
               </div>
             ) : (
               <label className="flex flex-col items-center justify-center py-8 cursor-pointer group">

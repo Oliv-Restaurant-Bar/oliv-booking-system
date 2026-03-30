@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { sendManualReminder } from '@/lib/actions/reminders';
+import { db } from '@/lib/db';
+import { bookingContactHistory } from '@/lib/db/schema';
 import { headers } from 'next/headers';
 
 export async function POST(
@@ -20,6 +22,16 @@ export async function POST(
   try {
     const result = await sendManualReminder(id);
     if (result.success) {
+      // Log to contact history
+      await db.insert(bookingContactHistory).values({
+        bookingId: id,
+        adminUserId: session.user?.id,
+        contactType: 'email',
+        subject: 'Manual Reminder',
+        content: 'Reminder email sent successfully',
+        isReminder: true,
+      });
+
       return NextResponse.json({ success: true });
     } else {
       return NextResponse.json({ error: result.error }, { status: 400 });

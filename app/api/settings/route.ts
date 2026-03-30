@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
         .update(systemSettings)
         .set({
           ...updates,
+          updatedAt: new Date(),
         })
         .where(eq(systemSettings.id, existingSettings.id))
         .returning();

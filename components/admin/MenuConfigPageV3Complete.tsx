@@ -355,6 +355,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
       pricePerPerson: parseFloat(newMenuItem.price) || 0,
       pricingType: newMenuItem.pricingType,
       averageConsumption: parseInt(newMenuItem.averageConsumption) || 1,
+      imageUrl: newMenuItem.imageUrl || null,
       isActive: newMenuItem.isActive,
       dietaryType: newMenuItem.dietaryType as any,
       dietaryTags: newMenuItem.dietaryTags,

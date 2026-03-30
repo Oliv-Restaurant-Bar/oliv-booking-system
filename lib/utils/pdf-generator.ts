@@ -259,17 +259,108 @@ export async function generateBookingPdf(
     return (item.category === 'Add-ons' || isFlatFee(item)) && !isBev;
   });
 
+  // Helper to draw dietary icons (geometric representation of the UI icons)
+  const drawDietaryIcon = (type: string, x: number, y: number) => {
+    if (!type || type === 'none') return;
+    
+    // Switch to graphic mode
+    doc.setLineWidth(0.3);
+    
+    if (type === 'veg') {
+      doc.setDrawColor(22, 163, 74); // green-600 border
+      doc.rect(x, y - 2.5, 3.5, 3.5);
+      doc.setFillColor(22, 163, 74); // green-600 dot
+      doc.circle(x + 1.75, y - 0.75, 1, 'F');
+    } else if (type === 'non-veg') {
+      doc.setDrawColor(220, 38, 38); // red-600 border
+      doc.rect(x, y - 2.5, 3.5, 3.5);
+      doc.setFillColor(220, 38, 38); // red-600 dot
+      doc.circle(x + 1.75, y - 0.75, 1, 'F');
+    } else if (type === 'vegan') {
+      // Draw a vector leaf outline matching the Lucide 'Leaf' reference in the UI
+      doc.setDrawColor(5, 150, 105); // emerald-600
+      doc.setLineWidth(0.35);
+      
+      // Draw bezier leaf
+      doc.lines(
+        [
+          // right side curve up: cp1_x, cp1_y, cp2_x, cp2_y, end_x, end_y
+          [1.5, -1, 1.2, -2.5, 0, -3.2], 
+          // left side curve down: cp1_x, cp1_y, cp2_x, cp2_y, end_x, end_y
+          [-1.2, 1.5, -1.5, 2.5, 0, 3.2]
+        ], 
+        x + 1.75, // bottom center X 
+        y + 0.5,  // bottom center Y
+        [1, 1], 
+        'S',      // Stroke ONLY (outline)
+        true      // Closed path
+      );
+      
+      // Draw inner leaf vein
+      doc.line(x + 1.75, y + 0.5, x + 1.75, y - 1.5);
+      // Draw bottom stem
+      doc.line(x + 1.75, y + 0.5, x + 1.75, y + 1.2);
+    }
+  };
+
   // Helper for multi-line item info (Add-ons/Notes)
   const renderItemInfo = (label: string, text?: string, color: [number, number, number] = [180, 83, 9]) => {
     if (!text || !text.trim()) return;
-    const infoLines = doc.splitTextToSize(`${label}: ${text}`, contentWidth - 20);
-    const infoH = (infoLines.length * 4) + 1;
-    checkPageBreak(infoH + 2);
+    
     doc.setTextColor(...color);
     doc.setFont("helvetica", "italic");
     doc.setFontSize(8.5);
-    doc.text(infoLines, margin + 10, yPos - 1);
-    yPos += infoH + 1;
+
+    const maxWidth = contentWidth - 20;
+    const lineH = 4;
+    
+    // Split text into tokens keeping tags, words, and whitespaces
+    const tokens = (`${label}: ` + text).match(/(\(Veg\)|\(Vegan\)|\(Non-Veg\)|\S+|\s+)/ig) || [];
+    
+    let currentX = margin + 10;
+    let currentY = yPos - 1;
+    
+    checkPageBreak(lineH + 2);
+
+    for (const token of tokens) {
+        let isTag = false;
+        let tagType = '';
+        const lowerToken = token.toLowerCase();
+        
+        if (lowerToken === '(veg)') { isTag = true; tagType = 'veg'; }
+        else if (lowerToken === '(vegan)') { isTag = true; tagType = 'vegan'; }
+        else if (lowerToken === '(non-veg)') { isTag = true; tagType = 'non-veg'; }
+        
+        let tokenWidth = isTag ? 4 : doc.getTextWidth(token);
+        
+        // Check for wrapping
+        if (!isTag && token.trim() === '') {
+            // It's whitespace. Skip if we're at the beginning of a line.
+            if (currentX === margin + 10) continue;
+        } else if (currentX + tokenWidth > margin + 10 + maxWidth) {
+            currentX = margin + 10;
+            currentY += lineH;
+            checkPageBreak(lineH + 2); // Check page break whenever we drop to a new line
+            
+            // Re-apply styles after potential page break
+            doc.setTextColor(...color);
+            doc.setFont("helvetica", "italic");
+            doc.setFontSize(8.5);
+        }
+        
+        if (isTag) {
+            drawDietaryIcon(tagType, currentX + 0.5, currentY);
+            currentX += 4.5;
+        } else {
+            const printToken = (currentX === margin + 10) ? token.replace(/^\s+/, '') : token;
+            if (printToken) {
+                doc.text(printToken, currentX, currentY);
+                currentX += doc.getTextWidth(printToken);
+            }
+        }
+    }
+    
+    yPos = currentY + lineH + 1;
     doc.setTextColor(...COLORS.title);
   };
 
@@ -332,8 +423,19 @@ export async function generateBookingPdf(
 
     let lastCategory = "";
     sortedItemsInGroup.forEach(item => {
+      let displayName = item.name;
+      
+      // Calculate layout before rendering
       const itemMaxWidth = mode === 'kitchen' ? 120 : 95;
-      const nameLines = doc.splitTextToSize(item.name, itemMaxWidth);
+      const textX = margin + 12;
+      const iconX = margin + 6.5; 
+      
+      // we remove the hardcoded text since we will draw it instead
+      // if (item.dietaryType === 'veg') displayName += ' (Veg)';
+      // else if (item.dietaryType === 'vegan') displayName += ' (Vegan)';
+      // else if (item.dietaryType === 'non-veg') displayName += ' (Non-Veg)';
+
+      const nameLines = doc.splitTextToSize(displayName, itemMaxWidth);
       const rowH = Math.max(nameLines.length * 5, 8);
 
       // Check if sub-category changed
@@ -354,13 +456,18 @@ export async function generateBookingPdf(
       doc.setFontSize(10);
       doc.setTextColor(...COLORS.title);
 
+      // Draw dietary icon for main item
+      if (item.dietaryType && item.dietaryType !== 'none') {
+        drawDietaryIcon(item.dietaryType, iconX, yPos + 4);
+      }
+
       if (mode === 'kitchen') {
-        doc.text(nameLines, margin + 12, yPos + 4);
+        doc.text(nameLines, textX, yPos + 4);
         doc.text(String(item.quantity), margin + 130, yPos + 4, { align: 'center' });
         doc.setDrawColor(203, 213, 225);
         doc.rect(margin + 160 - 3, yPos + 4 - 3.5, 6, 6);
       } else {
-        doc.text(nameLines, margin + 12, yPos + 4);
+        doc.text(nameLines, textX, yPos + 4);
         doc.setTextColor(...COLORS.text);
         const qtyLabel = item.pricingType === 'per_person' ? 'guests' : '';
         const qtyTxt = `${item.quantity} ${qtyLabel} x ${Number(item.unitPrice).toFixed(0)} CHF`.replace(/\s+/g, ' ').trim();

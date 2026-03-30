@@ -668,6 +668,7 @@
         "addChoice": "Auswahlmöglichkeit hinzufügen",
         "uploadImage": "Bild hochladen",
         "changeImage": "Bild ändern",
+        "removeImage": "Bild entfernen",
         "saveChanges": "Änderungen speichern",
         "price": "Preis",
         "addSettings": "Einstellungen hinzufügen",
@@ -1109,11 +1110,13 @@
       "onInvoice": "Auf Rechnung",
       "cash": "Barzahlung",
       "sameAddress": "Gleiche Adresse für Rechnungsstellung verwenden",
+      "useSameAddress": "Gleich wie Kundenadresse",
       "invoiceTarget": "Geben Sie an, wohin die Rechnung gesendet werden soll",
       "billingStreet": "Rechnungsstrasse & Nr.",
       "billingPlz": "Rechnungs-PLZ",
       "billingLocation": "Rechnungsort",
       "reference": "Referenzinformationen",
+      "customerReference": "Kundenreferenz",
       "optional": "Optional",
       "guest": "Gast",
       "guests_plural": "Gäste",
@@ -1164,7 +1167,8 @@
       "name": "Vor- und Nachname",
       "searchDishes": "Nach Gerichten suchen...",
       "billingAddress": "Strasse, Hausnummer, PLZ, Ort",
-      "billingReference": "z.B. Kostenstelle oder Referenz"
+      "billingReference": "z.B. Kostenstelle oder Referenz",
+      "customerReference": "z.B. Kundennummer oder Bestellnummer"
     },
     "status": {
       "loading": "Menü wird geladen...",

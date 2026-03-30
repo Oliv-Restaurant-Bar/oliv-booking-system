@@ -4,6 +4,7 @@ import { Users, Clock, MapPin, Calendar as CalendarIcon, CheckCircle2 } from 'lu
 import { BookingStatusBadge } from './BookingStatusBadge';
 import { Tooltip } from '@/components/user/Tooltip';
 import { useTranslations } from 'next-intl';
+import { useDateFormat } from '@/lib/contexts/SystemSettingsContext';
 
 interface BookingMiniCardProps {
   booking: {
@@ -30,6 +31,7 @@ interface BookingMiniCardProps {
 
 export function BookingMiniCard({ booking, onClick, showDate = true }: BookingMiniCardProps) {
   const t = useTranslations('admin.bookings');
+  const { formatDate } = useDateFormat();
 
   return (
     <div
@@ -67,7 +69,9 @@ export function BookingMiniCard({ booking, onClick, showDate = true }: BookingMi
         {showDate && (
           <div className="flex items-center gap-1.5 text-muted-foreground min-w-0">
             <CalendarIcon className="w-3.5 h-3.5 shrink-0 text-primary/70" />
-            <span className="text-[11px] font-medium truncate" title={booking.event?.date || ''}>{booking.event?.date || ''}</span>
+            <span className="text-[11px] font-medium truncate" title={booking.event?.date || ''}>
+              {booking.event?.date ? formatDate(booking.event.date) : ''}
+            </span>
           </div>
         )}
 

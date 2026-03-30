@@ -11,6 +11,7 @@ import { SettingsService } from '@/services/settings.service';
 import type { Venue } from '@/services/venue.service';
 import { toast } from 'sonner';
 import { useSettingsTranslation, useCommonTranslation, useMessageTranslation } from '@/lib/i18n/client';
+import { useSystemSettings } from '@/lib/contexts/SystemSettingsContext';
 
 export function SettingsPage({ user }: { user?: any }) {
   const t = useSettingsTranslation();
@@ -18,6 +19,7 @@ export function SettingsPage({ user }: { user?: any }) {
   const messageT = useMessageTranslation();
   const userRole = user?.role;
   const canUpdateSettings = hasPermission(userRole, Permission.UPDATE_SETTINGS);
+  const { refreshSettings } = useSystemSettings();
 
   const [language, setLanguage] = useState('English');
   const [timeZone, setTimeZone] = useState('UTC');
@@ -80,6 +82,8 @@ export function SettingsPage({ user }: { user?: any }) {
       });
 
       if (result) {
+        // Immediately refresh settings across the entire app
+        await refreshSettings();
         toast.success(t('toast.saveSuccess'));
         setHasChanges(false);
       } else {

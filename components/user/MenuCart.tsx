@@ -197,14 +197,10 @@ export function MenuCart({
               <div className={`size-2 rounded-full shrink-0 ${sectionColor}`} />
             )}
             <div className="flex items-baseline gap-1.5 min-w-0">
-              {!isFlatFee(item) && (
-                <>
-                  {!useQtyLabel && <Users className="w-3 h-3" />}
-                  <span className="text-xs font-bold text-secondary shrink-0">
-                    {useQtyLabel ? `${quantity}X` : (isPP ? `${guestCount}X` : `${quantity}X`)}
-                  </span>
-                </>
-              )}
+              {!useQtyLabel && <Users className="w-3 h-3" />}
+              <span className="text-xs font-bold text-secondary shrink-0">
+                {useQtyLabel ? `${quantity}X` : (isPP ? `${guestCount}X` : `${quantity}X`)}
+              </span>
               <span className={`text-xs font-bold text-secondary uppercase truncate ${isConsumption(item) ? 'line-clamp-1' : 'line-clamp-2'} flex items-center gap-1.5`}>
                 {item.name}
               </span>
@@ -322,30 +318,28 @@ export function MenuCart({
             </button>
           </div>
 
-          {!isFlatFee(item) && (
-            <div className="flex items-center gap-3">
-              <span className="text-[10px] font-bold text-[#9ca3af] uppercase tracking-wider">
-                {item.category === 'Beverages' || isFlatFee(item) ? 'Qty' : 'Guests'}
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] font-bold text-[#9ca3af] uppercase tracking-wider">
+              {item.category === 'Beverages' || isFlatFee(item) ? 'Qty' : 'Guests'}
+            </span>
+            <div className="flex items-center bg-[#f9fafb] border border-[#e5e7eb] rounded-lg p-0.5">
+              <button
+                onClick={() => isPP ? updateGuestCount(item.id, -1) : updateQuantity(item.id, -1)}
+                className="size-[24px] flex items-center justify-center hover:bg-white hover:shadow-sm rounded-md transition-all"
+              >
+                <Minus className="w-2.5 h-2.5 text-[#6b7280]" />
+              </button>
+              <span className="min-w-[28px] text-center font-bold text-[11px] text-[#2c2f34]">
+                {isPP ? guestCount : quantity}
               </span>
-              <div className="flex items-center bg-[#f9fafb] border border-[#e5e7eb] rounded-lg p-0.5">
-                <button
-                  onClick={() => isPP ? updateGuestCount(item.id, -1) : updateQuantity(item.id, -1)}
-                  className="size-[24px] flex items-center justify-center hover:bg-white hover:shadow-sm rounded-md transition-all"
-                >
-                  <Minus className="w-2.5 h-2.5 text-[#6b7280]" />
-                </button>
-                <span className="min-w-[28px] text-center font-bold text-[11px] text-[#2c2f34]">
-                  {isPP ? guestCount : quantity}
-                </span>
-                <button
-                  onClick={() => isPP ? updateGuestCount(item.id, 1) : updateQuantity(item.id, 1)}
-                  className="size-[24px] flex items-center justify-center hover:bg-white hover:shadow-sm rounded-md transition-all"
-                >
-                  <Plus className="w-2.5 h-2.5 text-[#6b7280]" />
-                </button>
-              </div>
+              <button
+                onClick={() => isPP ? updateGuestCount(item.id, 1) : updateQuantity(item.id, 1)}
+                className="size-[24px] flex items-center justify-center hover:bg-white hover:shadow-sm rounded-md transition-all"
+              >
+                <Plus className="w-2.5 h-2.5 text-[#6b7280]" />
+              </button>
             </div>
-          )}
+          </div>
         </div>
       </div>
     );

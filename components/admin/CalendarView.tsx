@@ -7,6 +7,7 @@ import { BookingMiniCard } from './BookingMiniCard';
 
 import { useTranslations, useLocale } from 'next-intl';
 import { useCommonTranslation } from '@/lib/i18n/client';
+import { useDateFormat } from '@/lib/contexts/SystemSettingsContext';
 // Date utilities
 const parseEventDate = (dateStr: string): Date => {
   if (!dateStr) return new Date();
@@ -95,6 +96,7 @@ function DayBookingsModal({ isOpen, onClose, date, bookings, onOpenBooking }: Da
   const t = useTranslations('admin.bookings');
   const commonT = useCommonTranslation();
   const locale = useLocale();
+  const { formatDate } = useDateFormat();
 
   if (!isOpen || !date) return null;
 
@@ -110,7 +112,7 @@ function DayBookingsModal({ isOpen, onClose, date, bookings, onOpenBooking }: Da
               {bookings.length} {bookings.length === 1 ? t('calendar.booking') : t('calendar.bookings')}
             </h2>
             <p className="text-sm text-muted-foreground">
-              {date.toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+              {formatDate(date)}
             </p>
           </div>
           <button
@@ -167,7 +169,7 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
       grouped.get(dateKey)!.push(booking);
     });
     return grouped;
-  }, [bookings]);
+  }, [bookings, locale]);
 
   // Get upcoming bookings (next 10, sorted by date AND time)
   const upcomingBookings = useMemo(() => {
@@ -198,7 +200,7 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
       .sort((a, b) => a.parsedDateTime.getTime() - b.parsedDateTime.getTime())
       .slice(0, 10)
       .map(({ parsedDateTime, ...rest }) => rest);
-  }, [bookings]);
+  }, [bookings, locale]);
 
   // Generate calendar days
   const calendarDays = useMemo(() => {
@@ -381,7 +383,7 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
       <div className="lg:col-span-1">
         <div className="bg-card border border-border rounded-xl p-4 sticky top-4">
           <h3 className="text-lg font-semibold text-foreground mb-4">
-            {upcomingBookings.length} {t('calendar.upcomingBookings')}
+            <span translate="no">{upcomingBookings.length}</span> {t('calendar.upcomingBookings')}
           </h3>
 
           {upcomingBookings.length === 0 ? (

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { bookings, leads } from '@/lib/db/schema';
+import { bookings, leads, bookingContactHistory } from '@/lib/db/schema';
 import { sendBookingCheckin } from '@/lib/actions/email';
 import { eq } from 'drizzle-orm';
 import { headers } from 'next/headers';
@@ -53,6 +53,16 @@ export async function POST(
     });
 
     if (emailResult.success) {
+      // Log to contact history
+      await db.insert(bookingContactHistory).values({
+        bookingId: id,
+        adminUserId: session.user?.id,
+        contactType: 'email',
+        subject: 'Check-in Reminder',
+        content: 'Check-in email sent successfully (4 days before event)',
+        isReminder: true,
+      });
+
       return NextResponse.json({ success: true });
     } else {
       return NextResponse.json({ error: emailResult.error }, { status: 400 });

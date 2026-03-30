@@ -1029,7 +1029,11 @@ export function CustomMenuWizard() {
               if (item?.addOns) {
                 const ao = item.addOns.find(a => a.id === id);
                 if (ao) {
-                  addOnNames.push(ao.name);
+                  let aoL = ao.name;
+                  if (ao.dietaryType === 'veg') aoL += ' (Veg)';
+                  else if (ao.dietaryType === 'vegan') aoL += ' (Vegan)';
+                  else if (ao.dietaryType === 'non-veg') aoL += ' (Non-Veg)';
+                  addOnNames.push(aoL);
                   return;
                 }
               }
@@ -1037,9 +1041,13 @@ export function CustomMenuWizard() {
               // 2. Check in addonGroups
               if (item?.addonGroups) {
                 for (const group of item.addonGroups) {
-                  const ao = group.items.find(i => i.id === id);
+                  const ao = group.items.find((i: any) => i.id === id);
                   if (ao) {
-                    addOnNames.push(ao.name);
+                    let aoL = ao.name;
+                    if ((ao as any).dietaryType === 'veg') aoL += ' (Veg)';
+                    else if ((ao as any).dietaryType === 'vegan') aoL += ' (Vegan)';
+                    else if ((ao as any).dietaryType === 'non-veg') aoL += ' (Non-Veg)';
+                    addOnNames.push(aoL);
                     break;
                   }
                 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { bookings, leads } from '@/lib/db/schema';
+import { bookings, leads, bookingContactHistory } from '@/lib/db/schema';
 import { sendBookingUpdate } from '@/lib/actions/email';
 import { eq } from 'drizzle-orm';
 import { headers } from 'next/headers';
@@ -55,6 +55,16 @@ export async function POST(
     });
 
     if (emailResult.success) {
+      // Log to contact history
+      await db.insert(bookingContactHistory).values({
+        bookingId: id,
+        adminUserId: session.user?.id,
+        contactType: 'email',
+        subject: 'Booking Update',
+        content: 'Booking update email sent successfully with PDF',
+        isReminder: false,
+      });
+
       return NextResponse.json({ success: true });
     } else {
       return NextResponse.json({ error: emailResult.error }, { status: 400 });

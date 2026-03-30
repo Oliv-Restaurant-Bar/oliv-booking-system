@@ -175,6 +175,19 @@ export async function GET(
         billingReference = reference;
     }
 
+    // Extract billing address fields from internal notes
+    const billingStreetMatch = booking.internal_notes?.match(/Billing Street:\s*([^\r\n]+)/i);
+    const billingStreet = billingStreetMatch ? billingStreetMatch[1].replace('N/A', '').trim() : '';
+
+    const billingPlzMatch = booking.internal_notes?.match(/Billing PLZ:\s*([^\r\n]+)/i);
+    const billingPlz = billingPlzMatch ? billingPlzMatch[1].replace('N/A', '').trim() : '';
+
+    const billingLocationMatch = booking.internal_notes?.match(/Billing Location:\s*([^\r\n]+)/i);
+    const billingLocation = billingLocationMatch ? billingLocationMatch[1].replace('N/A', '').trim() : '';
+
+    const billingCustomerRefMatch = booking.internal_notes?.match(/Billing Customer Reference:\s*([^\r\n]+)/i);
+    const billingCustomerReference = billingCustomerRefMatch ? billingCustomerRefMatch[1].replace('N/A', '').trim() : '';
+
     const paymentMatch = booking.internal_notes?.match(/(?:Payment Method|Payment Option):\s*([^\r\n]+)/i);
     let paymentMethod = paymentMatch ? paymentMatch[1].replace('N/A', '').trim() : '';
 
@@ -277,7 +290,11 @@ export async function GET(
         reference: reference,
       },
       billingAddress: booking.billing_address || '',
+      billingStreet: billingStreet,
+      billingPlz: billingPlz,
+      billingLocation: billingLocation,
       billingReference: billingReference,
+      billingCustomerReference: billingCustomerReference,
       paymentMethod: paymentMethod,
       event: {
         date: booking.event_date ? (typeof booking.event_date === 'string' ? booking.event_date : new Date(booking.event_date).toISOString().split('T')[0]) : '',

@@ -668,6 +668,7 @@
         "addChoice": "Add Option",
         "uploadImage": "Upload Image",
         "changeImage": "Change Image",
+        "removeImage": "Remove Image",
         "saveChanges": "Save Changes",
         "price": "Price",
         "addSettings": "Add Settings",
@@ -1104,11 +1105,13 @@
       "cash": "Cash",
       "choosePayment": "Choose your preferred payment method",
       "sameAddress": "Use same address for billing",
+      "useSameAddress": "Same as customer address",
       "invoiceTarget": "Specify where the invoice should be sent",
       "billingStreet": "Billing Street & Nr.",
       "billingPlz": "Billing PLZ",
       "billingLocation": "Billing Location",
       "reference": "Reference information",
+      "customerReference": "Customer Reference",
       "optional": "Optional",
       "guest": "guest",
       "guests_plural": "guests",
@@ -1159,7 +1162,8 @@
       "name": "First and Last Name",
       "searchDishes": "Search for dishes...",
       "billingAddress": "Street, House Number, ZIP, City",
-      "billingReference": "e.g. Cost Center or Reference"
+      "billingReference": "e.g. Cost Center or Reference",
+      "customerReference": "e.g. Customer number or PO number"
     },
     "status": {
       "loading": "Loading menu...",

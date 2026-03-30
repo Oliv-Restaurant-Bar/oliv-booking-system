@@ -729,7 +729,7 @@ export function ItemDetailsModal({
                     </div>
                   )}
                 </div>
-              ) : !isFlatFee?.(item) ? (
+              ) : (
                 <div className="flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto">
                   <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
                     Qty:
@@ -755,7 +755,7 @@ export function ItemDetailsModal({
                     </button>
                   </div>
                 </div>
-              ) : null}
+              )}
             </div>
 
             {/* Right: Add to Cart Button with Total - Full width on mobile */}

@@ -125,6 +125,7 @@ export async function submitWizardForm(data: WizardFormData) {
       id: addonItems.id,
       name: addonItems.name,
       price: addonItems.price,
+      dietaryType: addonItems.dietaryType,
     }).from(addonItems);
 
     const addonMap = new Map(allAddonItems.map(a => [a.id, a]));
@@ -177,7 +178,11 @@ export async function submitWizardForm(data: WizardFormData) {
             const addon = addonMap.get(addonId);
             if (addon) {
               addonsPrice += Number(addon.price || 0);
-              addonsNames.push(addon.name);
+              let addonLabel = addon.name;
+              if (addon.dietaryType === 'veg') addonLabel += ' (Veg)';
+              else if (addon.dietaryType === 'vegan') addonLabel += ' (Vegan)';
+              else if (addon.dietaryType === 'non-veg') addonLabel += ' (Non-Veg)';
+              addonsNames.push(addonLabel);
             }
           }
         }

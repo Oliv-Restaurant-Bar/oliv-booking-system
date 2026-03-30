@@ -7,6 +7,7 @@ import { formatRelativeTime } from '@/lib/utils/date';
 import { useAdminTranslation, useCommonTranslation, useBookingTranslation } from '@/lib/i18n/client';
 import { useTranslations } from 'next-intl';
 import { useSystemTimezone } from '@/lib/hooks/useSystemTimezone';
+import { useDateFormat } from '@/lib/contexts/SystemSettingsContext';
 
 interface GridViewProps {
   bookings: Array<{
@@ -47,6 +48,7 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
   const bookingT = useBookingTranslation();
   const calendarT = useTranslations('admin.bookings.calendar');
   const { timezone } = useSystemTimezone();
+  const { formatDate } = useDateFormat();
 
   if (bookings.length === 0) {
     return (
@@ -105,7 +107,7 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
                 <span className="text-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                  {booking.event?.date || ''}
+                  {booking.event?.date ? formatDate(booking.event.date) : ''}
                 </span>
               </div>
             </div>

@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { NextIntlClientProvider } from 'next-intl';
 import { getServerLocale, getServerMessages } from '@/lib/i18n/server';
 import { validateEnvOrThrow } from "@/lib/config/env-validation";
+import { SystemSettingsProvider } from "@/lib/contexts/SystemSettingsContext";
 
 export const metadata: Metadata = {
   title: "OLIV Restaurant & Bar - Group Bookings",
@@ -40,10 +41,12 @@ export default async function RootLayout({
   return (
     <html lang={locale}>
       <body className="antialiased">
-        <NextIntlClientProvider messages={messages} locale={locale}>
-          {children}
-        </NextIntlClientProvider>
-        <Toaster position="top-right" richColors />
+        <SystemSettingsProvider>
+          <NextIntlClientProvider messages={messages} locale={locale}>
+            {children}
+          </NextIntlClientProvider>
+          <Toaster position="top-right" richColors />
+        </SystemSettingsProvider>
       </body>
     </html>
   );
