@@ -98,6 +98,23 @@ export function MenuCart({
     setExpandedItems(prev => ({ ...prev, [itemId]: !prev[itemId] }));
   };
 
+  // ✅ Initialize guest counts ONCE (no fallback issues later)
+  React.useEffect(() => {
+    if (!eventDetails.guestCount) return;
+
+    setItemGuestCounts(prev => {
+      const updated = { ...prev };
+
+      selectedItems.forEach(id => {
+        if (updated[id] === undefined) {
+          updated[id] = parseInt(eventDetails.guestCount) || 1;
+        }
+      });
+
+      return updated;
+    });
+  }, [selectedItems, eventDetails.guestCount, setItemGuestCounts]);
+
   // Helper for formatting date: "Thu, Mar 12, 2026"
   const getFormattedDate = () => {
     if (!eventDetails.eventDate) return 'Select date';
@@ -136,11 +153,11 @@ export function MenuCart({
 
   const updateGuestCount = (itemId: string, delta: number) => {
     setItemGuestCounts(prev => {
-      const current = prev[itemId] || parseInt(eventDetails.guestCount) || 1;
-      const next = Math.max(1, current + delta);
-
-      // Removed global sync to allow individual item guest counts
-      return { ...prev, [itemId]: next };
+      const current = prev[itemId] ?? parseInt(eventDetails.guestCount) ?? 1;
+      return {
+        ...prev,
+        [itemId]: Math.max(1, current + delta),
+      };
     });
   };
 
@@ -150,12 +167,11 @@ export function MenuCart({
 
   const perPersonTotal = React.useMemo(() => {
     return ppFoodItems.reduce((sum, item) => {
-      // In Edit Mode, we always want to respect the manual count if it exists
-      // This fixes the issue where changing item counts didn't reflect in the total
-      const guestCount = itemGuestCounts[item.id] || parseInt(eventDetails.guestCount) || 1;
+      // ✅ Always use itemGuestCounts (no fallback confusion)
+      const guestCount = itemGuestCounts[item.id] ?? 1;
       return sum + (getItemPerPersonPrice(item) * guestCount);
     }, 0);
-  }, [ppFoodItems, itemGuestCounts, eventDetails.guestCount, getItemPerPersonPrice]);
+  }, [ppFoodItems, itemGuestCounts, getItemPerPersonPrice]);
 
   const totalAmount = React.useMemo(() => {
     return perPersonTotal + getFlatRateSubtotal() + (includeBeveragePrices ? getConsumptionSubtotal() : 0);
