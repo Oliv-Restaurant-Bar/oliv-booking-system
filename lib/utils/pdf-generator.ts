@@ -258,22 +258,24 @@ export async function generateBookingPdf(
     const isBev = item.category === 'Beverages' || item.category === 'Drink' || item.category === 'Drinks' || item.category === 'Softdrinks' || item.category === 'Wein' || item.category === 'Bier' || item.category === 'Kaffee' || item.category === 'Wine' || item.category === 'Beer';
     return (item.category === 'Add-ons' || isFlatFee(item)) && !isBev;
   });
-
-  // Helper to draw dietary icons (geometric representation of the UI icons)
+  // Helper to draw dietary icon (geometric representation of the UI icons)
   const drawDietaryIcon = (type: string, x: number, y: number) => {
     if (!type || type === 'none') return;
+    
+    const prevFill = doc.getFillColor();
+    const prevDraw = doc.getDrawColor();
     
     // Switch to graphic mode
     doc.setLineWidth(0.3);
     
     if (type === 'veg') {
       doc.setDrawColor(22, 163, 74); // green-600 border
-      doc.rect(x, y - 2.5, 3.5, 3.5);
+      doc.rect(x, y - 2.5, 3.5, 3.5, 'S');
       doc.setFillColor(22, 163, 74); // green-600 dot
       doc.circle(x + 1.75, y - 0.75, 1, 'F');
     } else if (type === 'non-veg') {
       doc.setDrawColor(220, 38, 38); // red-600 border
-      doc.rect(x, y - 2.5, 3.5, 3.5);
+      doc.rect(x, y - 2.5, 3.5, 3.5, 'S');
       doc.setFillColor(220, 38, 38); // red-600 dot
       doc.circle(x + 1.75, y - 0.75, 1, 'F');
     } else if (type === 'vegan') {
@@ -284,24 +286,57 @@ export async function generateBookingPdf(
       // Draw bezier leaf
       doc.lines(
         [
-          // right side curve up: cp1_x, cp1_y, cp2_x, cp2_y, end_x, end_y
-          [1.5, -1, 1.2, -2.5, 0, -3.2], 
-          // left side curve down: cp1_x, cp1_y, cp2_x, cp2_y, end_x, end_y
-          [-1.2, 1.5, -1.5, 2.5, 0, 3.2]
+          [1.5, -1.2, 1.2, -2.7, 0, -3.4], 
+          [-1.2, 1.5, -1.5, 2.7, 0, 3.4]
         ], 
-        x + 1.75, // bottom center X 
-        y + 0.5,  // bottom center Y
-        [1, 1], 
-        'S',      // Stroke ONLY (outline)
-        true      // Closed path
+        x + 1.75, y + 0.6, [1, 1], 'S', true
       );
       
       // Draw inner leaf vein
-      doc.line(x + 1.75, y + 0.5, x + 1.75, y - 1.5);
-      // Draw bottom stem
-      doc.line(x + 1.75, y + 0.5, x + 1.75, y + 1.2);
+      doc.line(x + 1.75, y + 0.6, x + 1.75, y - 1.6);
     }
+    
+    // Reset colors
+    doc.setFillColor(prevFill);
+    doc.setDrawColor(prevDraw);
   };
+
+  const drawUsersIcon = (x: number, y: number) => {
+    const prevFill = doc.getFillColor();
+    const prevDraw = doc.getDrawColor();
+    
+    doc.setFillColor(100, 116, 139); // slate-500
+    doc.setDrawColor(100, 116, 139); 
+    doc.setLineWidth(0.1);
+    
+    // Head - Solid
+    doc.circle(x + 1.75, y - 1.8, 0.8, 'F');
+    // Body - Solid rounded
+    doc.roundedRect(x + 0.5, y - 0.4, 2.5, 1.4, 0.5, 0.5, 'F');
+    
+    doc.setFillColor(prevFill);
+    doc.setDrawColor(prevDraw);
+  };
+
+  const drawPackageIcon = (x: number, y: number) => {
+    const prevFill = doc.getFillColor();
+    const prevDraw = doc.getDrawColor();
+    
+    doc.setDrawColor(100, 116, 139); // slate-500
+    doc.setLineWidth(0.3);
+    
+    // Box outline
+    doc.rect(x, y - 2.5, 3.5, 3.5, 'S');
+    // Internal lines for box flap
+    doc.setLineWidth(0.15);
+    doc.line(x + 1.75, y - 2.5, x + 1.75, y - 1);
+    doc.line(x + 0.5, y - 2.2, x + 1.75, y - 1.2);
+    doc.line(x + 3, y - 2.2, x + 1.75, y - 1.2);
+    
+    doc.setFillColor(prevFill);
+    doc.setDrawColor(prevDraw);
+  };
+
 
   // Helper for multi-line item info (Add-ons/Notes)
   const renderItemInfo = (label: string, text?: string, color: [number, number, number] = [180, 83, 9]) => {
@@ -314,48 +349,62 @@ export async function generateBookingPdf(
     const maxWidth = contentWidth - 20;
     const lineH = 4;
     
-    // Split text into tokens keeping tags, words, and whitespaces
-    const tokens = (`${label}: ` + text).match(/(\(Veg\)|\(Vegan\)|\(Non-Veg\)|\S+|\s+)/ig) || [];
+    // Reorder dietary tags to be before the name they describe: "Name (Tag)" -> "(Tag) Name"
+    const reorderedText = text.replace(/([^,:]+?)\s*(\(Veg\)|\(Vegan\)|\(Non-Veg\))/gi, (match, name, tag) => `${tag} ${name.trim()}`);
+    
+    // Split text into main parts: tags and text blocks
+    const parts = (`${label}: ` + reorderedText).split(/(\(Veg\)|\(Vegan\)|\(Non-Veg\))/gi);
     
     let currentX = margin + 10;
     let currentY = yPos - 1;
     
     checkPageBreak(lineH + 2);
 
-    for (const token of tokens) {
-        let isTag = false;
-        let tagType = '';
-        const lowerToken = token.toLowerCase();
+    for (const part of parts) {
+        if (!part) continue;
         
-        if (lowerToken === '(veg)') { isTag = true; tagType = 'veg'; }
-        else if (lowerToken === '(vegan)') { isTag = true; tagType = 'vegan'; }
-        else if (lowerToken === '(non-veg)') { isTag = true; tagType = 'non-veg'; }
-        
-        let tokenWidth = isTag ? 4 : doc.getTextWidth(token);
-        
-        // Check for wrapping
-        if (!isTag && token.trim() === '') {
-            // It's whitespace. Skip if we're at the beginning of a line.
-            if (currentX === margin + 10) continue;
-        } else if (currentX + tokenWidth > margin + 10 + maxWidth) {
-            currentX = margin + 10;
-            currentY += lineH;
-            checkPageBreak(lineH + 2); // Check page break whenever we drop to a new line
-            
-            // Re-apply styles after potential page break
-            doc.setTextColor(...color);
-            doc.setFont("helvetica", "italic");
-            doc.setFontSize(8.5);
-        }
+        const lowerPart = part.toLowerCase();
+        const isTag = lowerPart === '(veg)' || lowerPart === '(vegan)' || lowerPart === '(non-veg)';
         
         if (isTag) {
-            drawDietaryIcon(tagType, currentX + 0.5, currentY);
+            const tagType = lowerPart === '(veg)' ? 'veg' : lowerPart === '(vegan)' ? 'vegan' : 'non-veg';
+            
+            // Check for wrapping before drawing tag
+            if (currentX + 5 > margin + 10 + maxWidth) {
+                currentX = margin + 10;
+                currentY += lineH;
+                checkPageBreak(lineH + 2);
+                doc.setTextColor(...color);
+                doc.setFont("helvetica", "italic");
+                doc.setFontSize(8.5);
+            }
+            
+            drawDietaryIcon(tagType, currentX + 0.5, currentY - 0.5);
             currentX += 4.5;
         } else {
-            const printToken = (currentX === margin + 10) ? token.replace(/^\s+/, '') : token;
-            if (printToken) {
-                doc.text(printToken, currentX, currentY);
-                currentX += doc.getTextWidth(printToken);
+            // Further tokenize text by whitespaces and non-whitespaces for proper wrapping
+            const tokens = part.match(/\S+|\s+/g) || [];
+            
+            for (const token of tokens) {
+                const tokenWidth = doc.getTextWidth(token);
+                
+                if (token.trim() === '') {
+                    // Skip leading spaces on new lines
+                    if (currentX === margin + 10) continue;
+                } else if (currentX + tokenWidth > margin + 10 + maxWidth) {
+                    currentX = margin + 10;
+                    currentY += lineH;
+                    checkPageBreak(lineH + 2);
+                    doc.setTextColor(...color);
+                    doc.setFont("helvetica", "italic");
+                    doc.setFontSize(8.5);
+                }
+                
+                const printToken = (currentX === margin + 10) ? token.replace(/^\s+/, '') : token;
+                if (printToken) {
+                    doc.text(printToken, currentX, currentY);
+                    currentX += doc.getTextWidth(printToken);
+                }
             }
         }
     }
@@ -463,15 +512,47 @@ export async function generateBookingPdf(
 
       if (mode === 'kitchen') {
         doc.text(nameLines, textX, yPos + 4);
-        doc.text(String(item.quantity), margin + 130, yPos + 4, { align: 'center' });
+        
+        // Quantity with icon
+        const qtyStr = String(item.quantity);
+        const qtyW = doc.getTextWidth(qtyStr);
+        const iconW = 3.5;
+        const gap = 1.5;
+        const totalW = iconW + gap + qtyW;
+        const centerOffset = margin + 130;
+        const startX = centerOffset - (totalW / 2);
+        
+        if (item.pricingType === 'per_person') {
+          drawUsersIcon(startX, yPos + 4);
+        } else {
+          drawPackageIcon(startX, yPos + 4);
+        }
+        doc.text(qtyStr, startX + iconW + gap, yPos + 4);
+
         doc.setDrawColor(203, 213, 225);
         doc.rect(margin + 160 - 3, yPos + 4 - 3.5, 6, 6);
       } else {
         doc.text(nameLines, textX, yPos + 4);
         doc.setTextColor(...COLORS.text);
+        
         const qtyLabel = item.pricingType === 'per_person' ? 'guests' : '';
-        const qtyTxt = `${item.quantity} ${qtyLabel} x ${Number(item.unitPrice).toFixed(0)} CHF`.replace(/\s+/g, ' ').trim();
-        doc.text(qtyTxt, margin + 105, yPos + 4);
+        const qtyVal = String(item.quantity);
+        const unitPriceTxt = ` x ${Number(item.unitPrice).toFixed(0)} CHF`.replace(/\s+/g, ' ').trim();
+        const baseTxt = (qtyVal + " " + qtyLabel).trim();
+        
+        const iconW = 3.5;
+        const gap = 1.5;
+        const currentX = margin + 105;
+        
+        if (item.pricingType === 'per_person') {
+          drawUsersIcon(currentX, yPos + 4);
+        } else {
+          drawPackageIcon(currentX, yPos + 4);
+        }
+        
+        doc.text(baseTxt, currentX + iconW + gap, yPos + 4);
+        const baseWidth = doc.getTextWidth(baseTxt);
+        doc.text(unitPriceTxt, currentX + iconW + gap + baseWidth, yPos + 4);
 
         doc.setFont("helvetica", "bold");
         doc.setTextColor(...COLORS.title);
@@ -479,17 +560,18 @@ export async function generateBookingPdf(
       }
 
       yPos += rowH + (mode === 'kitchen' ? 4 : 2);
+
+      // 1. Add-ons (from item.notes) - ABOVE the line
+      renderItemInfo('Choices', item.notes, [115, 128, 106]); // darker primary
+
+      // 2. Customer Comment (from item.customerComment) - ABOVE the line
+      renderItemInfo('Note', item.customerComment, [180, 83, 9]); // amber-700
+
+      // Seprator line at the end of item block
       doc.setDrawColor(...COLORS.border);
       doc.setLineWidth(0.1);
       doc.line(margin + 10, yPos, pageWidth - margin, yPos);
       yPos += 3;
-
-      // 1. Add-ons (from item.notes)
-      renderItemInfo('Choices', item.notes, [115, 128, 106]); // darker primary
-
-      // 2. Customer Comment (from item.customerComment)
-      renderItemInfo('Note', item.customerComment, [180, 83, 9]); // amber-700
-      yPos += 1;
     });
   });
 

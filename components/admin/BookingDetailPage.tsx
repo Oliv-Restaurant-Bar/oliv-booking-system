@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Send, User, Users, MapPin, CalendarDays, UtensilsCrossed, MessageSquare, Link, Lock, Unlock, History, FileText, RefreshCw, UserPlus, CheckCircle2, Info, Pencil, X, Save, Bell, Mail, CreditCard, ChevronDown, Loader2, Trash2 } from 'lucide-react';
+import { ArrowLeft, Send, User, Users, MapPin, CalendarDays, UtensilsCrossed, MessageSquare, Link, Lock, Unlock, History, FileText, RefreshCw, UserPlus, CheckCircle2, Info, Pencil, X, Save, Bell, Mail, CreditCard, ChevronDown, Loader2, Trash2, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DietaryIcon } from '@/components/user/DietaryIcon';
 import { StatusDropdown } from './StatusDropdown';
@@ -31,13 +31,55 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 function parseDietaryNotes(text: string | undefined | null) {
     if (!text) return null;
     const parts = text.split(/(\(Veg\)|\(Vegan\)|\(Non-Veg\))/i);
-    return parts.map((part, i) => {
+    const result: React.ReactNode[] = [];
+
+    for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        if (!part) continue;
+
         const lowerPart = part.toLowerCase();
-        if (lowerPart === '(veg)') return <DietaryIcon key={i} type="veg" size="xs" />;
-        if (lowerPart === '(vegan)') return <DietaryIcon key={i} type="vegan" size="xs" />;
-        if (lowerPart === '(non-veg)') return <DietaryIcon key={i} type="non-veg" size="xs" />;
-        return <span key={i}>{part}</span>;
-    });
+        const isDietary = lowerPart === '(veg)' || lowerPart === '(vegan)' || lowerPart === '(non-veg)';
+
+        if (isDietary) {
+            const type = lowerPart.replace(/[()]/g, '') as 'veg' | 'vegan' | 'non-veg';
+            
+            // Re-arrange: try to put the icon before the name in the previous text part
+            if (result.length > 0 && typeof result[result.length - 1] === 'string') {
+                const prevText = result.pop() as string;
+                
+                // Find where the name starts. Names follow ":" or "," 
+                const lastSeparatorIndex = Math.max(
+                    prevText.lastIndexOf(':'),
+                    prevText.lastIndexOf(',')
+                );
+
+                if (lastSeparatorIndex !== -1) {
+                    const prefix = prevText.substring(0, lastSeparatorIndex + 1);
+                    const name = prevText.substring(lastSeparatorIndex + 1).trim();
+                    
+                    result.push(prefix);
+                    if (name) result.push(' ');
+                    // Add icon first, then the name
+                    result.push(<DietaryIcon key={`icon-${i}`} type={type} size="xs" />);
+                    if (name) {
+                        result.push(' ');
+                        result.push(name);
+                    }
+                } else {
+                    // No separator, the whole thing is the name
+                    result.push(<DietaryIcon key={`icon-${i}`} type={type} size="xs" />);
+                    result.push(' ');
+                    result.push(prevText.trim());
+                }
+            } else {
+                result.push(<DietaryIcon key={i} type={type} size="xs" />);
+            }
+        } else {
+            result.push(part);
+        }
+    }
+
+    return result;
 }
 
 export interface Booking {
@@ -2503,25 +2545,27 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                                         }}
                                                                         className="w-20 px-2 py-1 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
                                                                     />
-                                                                    <span className="text-muted-foreground">
-                                                                        {item.pricingType === 'per_person' ? (
-                                                                            <Users className="w-3.5 h-3.5" />
-                                                                        ) : (
-                                                                            <span className="text-sm">units</span>
-                                                                        )}
-                                                                    </span>
+                                                                    <Tooltip title={`${item.item || item.name}: ${item.rawQuantity} ${item.pricingType === 'per_person' ? t('guests') : t('quantity')}`}>
+                                                                        <span className="text-muted-foreground">
+                                                                            {item.pricingType === 'per_person' ? (
+                                                                                <Users className="w-3.5 h-3.5" />
+                                                                            ) : (
+                                                                                <Package className="w-3.5 h-3.5" />
+                                                                            )}
+                                                                        </span>
+                                                                    </Tooltip>
                                                                 </div>
                                                             ) : (
                                                                 <div className="flex items-center gap-1 whitespace-nowrap" translate="no">
-                                                                    {item.pricingType === 'per_person' ? (
-                                                                        <>
-                                                                            <span>{item.rawQuantity}</span>
+                                                                    <span>{item.rawQuantity}</span>
+                                                                    <Tooltip title={`${item.item || item.name}: ${item.rawQuantity} ${item.pricingType === 'per_person' ? t('guests') : t('quantity')}`}>
+                                                                        {item.pricingType === 'per_person' ? (
                                                                             <Users className="w-3.5 h-3.5 text-muted-foreground" />
-                                                                            <span>x {Math.round(item.unitPrice || 0)} CHF</span>
-                                                                        </>
-                                                                    ) : (
-                                                                        <span>{item.quantity}</span>
-                                                                    )}
+                                                                        ) : (
+                                                                            <Package className="w-3.5 h-3.5 text-muted-foreground" />
+                                                                        )}
+                                                                    </Tooltip>
+                                                                    <span>x {Math.round(item.unitPrice || 0)} CHF</span>
                                                                 </div>
                                                             )}
                                                         </td>
