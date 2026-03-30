@@ -698,7 +698,9 @@
         "settingsSaved": "Settings saved",
         "choicesUpdated": "Options updated",
         "groupUpdated": "Group updated",
-        "groupCreated": "Group created"
+        "groupCreated": "Group created",
+        "orderUpdated": "Order updated successfully",
+        "updateOrderFailed": "Failed to update sorting order"
       },
       "labels": {
         "categoryName": "Category Name",

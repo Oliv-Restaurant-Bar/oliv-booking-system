@@ -83,6 +83,9 @@ export function generateEmailContent(
     hasChanges?: boolean;
     guestCountChanged?: boolean;
     newGuestCount?: number;
+    vegetarianCount?: number;
+    veganCount?: number;
+    nonVegetarianCount?: number;
     menuChanges?: string;
     additionalDetails?: string;
   }
@@ -136,6 +139,9 @@ export function generateEmailContent(
         hasChanges: params.hasChanges || false,
         guestCountChanged: params.guestCountChanged || false,
         newGuestCount: params.newGuestCount,
+        vegetarianCount: params.vegetarianCount,
+        veganCount: params.veganCount,
+        nonVegetarianCount: params.nonVegetarianCount,
         menuChanges: params.menuChanges,
         additionalDetails: params.additionalDetails,
       });

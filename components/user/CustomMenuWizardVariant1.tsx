@@ -18,6 +18,7 @@ import { CustomerMenuSelection } from './CustomerMenuSelection';
 import { CustomerSummary } from './CustomerSummary';
 import { ItemDetailsModal } from './ItemDetailsModal';
 import { MenuCart } from './MenuCart';
+import { toast } from 'sonner';
 
 export function CustomMenuWizard() {
   const router = useRouter();
@@ -866,12 +867,13 @@ export function CustomMenuWizard() {
       const result = await requestBookingUnlock(bookingId, editSecret);
       if (result.success) {
         setIsUnlockRequested(true);
+        toast.success("Request sent successfully!");
       } else {
-        alert("Failed to send request. Please try again or contact us.");
+        toast.error("Failed to send request. Please try again or contact us.");
       }
     } catch (error) {
       console.error("Error requesting unlock:", error);
-      alert("An unexpected error occurred.");
+      toast.error("An unexpected error occurred.");
     } finally {
       setIsRequestingUnlock(false);
     }
@@ -1090,7 +1092,7 @@ export function CustomMenuWizard() {
         localStorage.removeItem('temp_edit_is_admin'); // Clean up admin flag
 
         // Show success message and redirect
-        alert('Booking updated successfully!');
+        toast.success('Booking updated successfully!');
         router.push(`/admin/bookings?id=${bookingId}`);
         return;
       }
@@ -1105,10 +1107,10 @@ export function CustomMenuWizard() {
 
       // Show success message
       if (isEditMode) {
-        alert(t('status.requestSent'));
+        toast.success(t('status.requestSent'));
       }
     } else {
-      alert(result.error || t('status.noItems'));
+      toast.error(result.error || t('status.noItems'));
     }
   };
 

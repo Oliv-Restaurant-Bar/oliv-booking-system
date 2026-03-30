@@ -100,6 +100,27 @@ export async function deleteMenuCategory(id: string) {
   }
 }
 
+export async function updateMenuCategoryOrder(orderedIds: string[]) {
+  try {
+    await requirePermissionWrapper(Permission.EDIT_MENU_CATEGORY);
+
+    await db.transaction(async (tx) => {
+      for (let i = 0; i < orderedIds.length; i++) {
+        await tx
+          .update(menuCategories)
+          .set({ sortOrder: i, updatedAt: new Date() })
+          .where(eq(menuCategories.id, orderedIds[i]));
+      }
+    });
+
+    revalidatePath("/admin/menu-config");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating menu category order:", error);
+    return { success: false, error: "Failed to update category order" };
+  }
+}
+
 export async function getMenuCategories() {
   try {
     const categories = await db
@@ -292,6 +313,27 @@ export async function deleteMenuItem(id: string) {
   } catch (error) {
     console.error("Error deleting menu item:", error);
     return { success: false, error: "Failed to delete menu item" };
+  }
+}
+
+export async function updateMenuItemOrder(orderedIds: string[]) {
+  try {
+    await requirePermissionWrapper(Permission.EDIT_MENU_ITEM);
+
+    await db.transaction(async (tx) => {
+      for (let i = 0; i < orderedIds.length; i++) {
+        await tx
+          .update(menuItems)
+          .set({ sortOrder: i, updatedAt: new Date() })
+          .where(eq(menuItems.id, orderedIds[i]));
+      }
+    });
+
+    revalidatePath("/admin/menu-config");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating menu item order:", error);
+    return { success: false, error: "Failed to update item order" };
   }
 }
 
@@ -743,6 +785,27 @@ export async function deleteAddonGroup(id: string) {
   }
 }
 
+export async function updateAddonGroupOrder(orderedIds: string[]) {
+  try {
+    await requirePermissionWrapper(Permission.EDIT_ADDON);
+
+    await db.transaction(async (tx) => {
+      for (let i = 0; i < orderedIds.length; i++) {
+        await tx
+          .update(addonGroups)
+          .set({ sortOrder: i, updatedAt: new Date() })
+          .where(eq(addonGroups.id, orderedIds[i]));
+      }
+    });
+
+    revalidatePath("/admin/menu-config");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating addon group order:", error);
+    return { success: false, error: "Failed to update group order" };
+  }
+}
+
 export async function getAddonGroups() {
   try {
     const groups = await db
@@ -855,6 +918,27 @@ export async function deleteAddonItem(id: string) {
   } catch (error) {
     console.error("Error deleting addon item:", error);
     return { success: false, error: "Failed to delete addon item" };
+  }
+}
+
+export async function updateAddonItemOrder(orderedIds: string[]) {
+  try {
+    await requirePermissionWrapper(Permission.EDIT_ADDON);
+
+    await db.transaction(async (tx) => {
+      for (let i = 0; i < orderedIds.length; i++) {
+        await tx
+          .update(addonItems)
+          .set({ sortOrder: i, updatedAt: new Date() })
+          .where(eq(addonItems.id, orderedIds[i]));
+      }
+    });
+
+    revalidatePath("/admin/menu-config");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating addon item order:", error);
+    return { success: false, error: "Failed to update addon item order" };
   }
 }
 

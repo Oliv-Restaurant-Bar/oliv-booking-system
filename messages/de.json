@@ -698,7 +698,9 @@
         "settingsSaved": "Einstellungen gespeichert",
         "choicesUpdated": "Auswahlmöglichkeiten aktualisiert",
         "groupUpdated": "Gruppe aktualisiert",
-        "groupCreated": "Gruppe erstellt"
+        "groupCreated": "Gruppe erstellt",
+        "orderUpdated": "Reihenfolge erfolgreich aktualisiert",
+        "updateOrderFailed": "Reihenfolge konnte nicht aktualisiert werden"
       },
       "labels": {
         "categoryName": "Kategoriename",

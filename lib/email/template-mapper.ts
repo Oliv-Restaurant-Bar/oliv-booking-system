@@ -323,6 +323,17 @@ export function getCheckinSubmittedTemplateData(
   const lead = booking.lead;
   const customerName = lead?.contactName || "Gast";
 
+  // Generate dietary breakdown HTML if any counts are provided
+  const dietaryBreakdownHtml = (params.vegetarianCount || params.veganCount || params.nonVegetarianCount)
+    ? `
+    <div class="dietary-breakdown">
+      ${params.vegetarianCount ? `<div class="dietary-item">• Vegetarisch: ${params.vegetarianCount}</div>` : ""}
+      ${params.veganCount ? `<div class="dietary-item">• Vegan: ${params.veganCount}</div>` : ""}
+      ${params.nonVegetarianCount ? `<div class="dietary-item">• Non-Veg: ${params.nonVegetarianCount}</div>` : ""}
+    </div>
+    `
+    : "";
+
   return {
     customer_name: customerName,
     event_date: formatGermanDate(booking.eventDate),
@@ -333,6 +344,7 @@ export function getCheckinSubmittedTemplateData(
     vegetarian_count: params.vegetarianCount || 0,
     vegan_count: params.veganCount || 0,
     non_vegetarian_count: params.nonVegetarianCount || 0,
+    dietary_breakdown_html: dietaryBreakdownHtml,
     menu_changes: params.menuChanges || "Keine",
     additional_details: params.additionalDetails || "Keine",
     admin_url: params.adminUrl || `${process.env.NEXT_PUBLIC_APP_URL}/admin/bookings?id=${booking.id}`,

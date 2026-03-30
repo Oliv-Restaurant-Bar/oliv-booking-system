@@ -48,6 +48,10 @@ import {
   updateCategoryAddonGroups,
   getAllAddonGroups,
   updateItemAddonGroups,
+  updateMenuCategoryOrder,
+  updateMenuItemOrder,
+  updateAddonGroupOrder,
+  updateAddonItemOrder,
 } from '@/lib/actions/menu';
 import { Permission, hasPermission } from '@/lib/auth/rbac';
 import { MenuItemData, Category, AddonGroup, AddonItem } from '@/lib/types';
@@ -563,22 +567,30 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    // Check if dragging a category
+    // 1. Handle Categories Reordering
     const activeCategoryIndex = categories.findIndex(c => c.id === active.id);
     const overCategoryIndex = categories.findIndex(c => c.id === over.id);
 
     if (activeCategoryIndex !== -1 && overCategoryIndex !== -1) {
-      // Reorder Categories
       const newCategories = [...categories];
       const [moved] = newCategories.splice(activeCategoryIndex, 1);
       newCategories.splice(overCategoryIndex, 0, moved);
       setCategories(newCategories);
-      // API call to update category order...
+
+      try {
+        const result = await updateMenuCategoryOrder(newCategories.map(c => c.id));
+        if (!result.success) {
+          toast.error(t('messages.updateOrderFailed') || 'Failed to update category order');
+        } else {
+          toast.success(t('messages.orderUpdated') || 'Order updated successfully');
+        }
+      } catch (error) {
+        toast.error(t('messages.updateOrderFailed') || 'Failed to update category order');
+      }
       return;
     }
 
-    // Check if dragging an item
-    // Find category that contains the active item
+    // 2. Handle Menu Items Reordering
     let activeItemCategory: Category | undefined;
     let activeItemIndex = -1;
 
@@ -592,7 +604,6 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
     }
 
     if (activeItemCategory) {
-      // Reorder within the same category
       const overItemIndex = activeItemCategory.items.findIndex(i => i.id === over.id);
       if (overItemIndex !== -1) {
         const newItems = [...activeItemCategory.items];
@@ -602,7 +613,78 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
         setCategories(categories.map(c =>
           c.id === activeItemCategory!.id ? { ...c, items: newItems } : c
         ));
-        // API call to update item order...
+
+        try {
+          const result = await updateMenuItemOrder(newItems.map(i => i.id));
+          if (!result.success) {
+            toast.error(t('messages.updateOrderFailed') || 'Failed to update item order');
+          } else {
+            toast.success(t('messages.orderUpdated') || 'Order updated successfully');
+          }
+        } catch (error) {
+          toast.error(t('messages.updateOrderFailed') || 'Failed to update item order');
+        }
+      }
+      return;
+    }
+
+    // 3. Handle Addon Groups Reordering
+    const activeGroupIndex = addonGroups.findIndex(g => g.id === active.id);
+    const overGroupIndex = addonGroups.findIndex(g => g.id === over.id);
+
+    if (activeGroupIndex !== -1 && overGroupIndex !== -1) {
+      const newGroups = [...addonGroups];
+      const [moved] = newGroups.splice(activeGroupIndex, 1);
+      newGroups.splice(overGroupIndex, 0, moved);
+      setAddonGroups(newGroups);
+
+      try {
+        const result = await updateAddonGroupOrder(newGroups.map(g => g.id));
+        if (!result.success) {
+          toast.error(t('messages.updateOrderFailed') || 'Failed to update group order');
+        } else {
+          toast.success(t('messages.orderUpdated') || 'Order updated successfully');
+        }
+      } catch (error) {
+        toast.error(t('messages.updateOrderFailed') || 'Failed to update group order');
+      }
+      return;
+    }
+
+    // 4. Handle Addon Items Reordering
+    let activeAddonGroup: AddonGroup | undefined;
+    let activeAddonIndex = -1;
+
+    for (const group of addonGroups) {
+      const idx = (group.items || []).findIndex(i => i.id === active.id);
+      if (idx !== -1) {
+        activeAddonGroup = group;
+        activeAddonIndex = idx;
+        break;
+      }
+    }
+
+    if (activeAddonGroup) {
+      const overAddonIndex = activeAddonGroup.items.findIndex(i => i.id === over.id);
+      if (overAddonIndex !== -1) {
+        const newItems = [...activeAddonGroup.items];
+        const [moved] = newItems.splice(activeAddonIndex, 1);
+        newItems.splice(overAddonIndex, 0, moved);
+
+        setAddonGroups(addonGroups.map(g =>
+          g.id === activeAddonGroup!.id ? { ...g, items: newItems } : g
+        ));
+
+        try {
+          const result = await updateAddonItemOrder(newItems.map(i => i.id));
+          if (!result.success) {
+            toast.error(t('messages.updateOrderFailed') || 'Failed to update addon item order');
+          } else {
+            toast.success(t('messages.orderUpdated') || 'Order updated successfully');
+          }
+        } catch (error) {
+          toast.error(t('messages.updateOrderFailed') || 'Failed to update addon item order');
+        }
       }
     }
   };
@@ -877,6 +959,10 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
                 }}
                 openAddonGroupDropdownId={openAddonGroupDropdownId}
                 setOpenAddonGroupDropdownId={setOpenAddonGroupDropdownId}
+                SortableGroup={SortableCategory}
+                SortableAddonItem={SortableItem}
+                sensors={sensorsState}
+                handleDragEnd={handleDragEnd}
               />
             )}
           </>
