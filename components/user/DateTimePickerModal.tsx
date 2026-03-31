@@ -48,7 +48,14 @@ export function DateTimePickerModal({
 }: DateTimePickerModalProps) {
   const [selectedDate, setSelectedDate] = useState<string>(initialDate || '');
   const [selectedTime, setSelectedTime] = useState<string>(initialTime || '');
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    if (initialDate) {
+      const [y, m, d] = initialDate.split('-').map(Number);
+      return new Date(y, m - 1, 1);
+    }
+    // Default to the month of minDate so the user sees available dates immediately
+    return new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+  });
   const modalRef = useRef<HTMLDivElement>(null);
   const firstFocusableRef = useRef<HTMLButtonElement>(null);
   const lastFocusableRef = useRef<HTMLButtonElement>(null);
@@ -105,7 +112,7 @@ export function DateTimePickerModal({
 
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
-    const startDayOfWeek = firstDay.getDay();
+    const startDayOfWeek = (firstDay.getDay() + 6) % 7; // Adjust for Monday start (0=Sun -> 6, 1=Mon -> 0)
     const daysInMonth = lastDay.getDate();
 
     // Previous month days
@@ -320,6 +327,10 @@ export function DateTimePickerModal({
                     {calendarDays.map((dayObj, index) => {
                       const disabled = isDateDisabled(dayObj.date);
                       const selected = isDateSelected(dayObj.date);
+                      const today = new Date();
+                      const isToday = dayObj.date.getDate() === today.getDate() && 
+                                     dayObj.date.getMonth() === today.getMonth() && 
+                                     dayObj.date.getFullYear() === today.getFullYear();
                       const dateLabel = dayObj.date.toLocaleDateString('de-CH', {
                         day: 'numeric',
                         month: 'long',
@@ -347,8 +358,12 @@ export function DateTimePickerModal({
                             ${selected && !disabled
                               ? ' text-white shadow-lg'
                               : !disabled && dayObj.isCurrentMonth
-                                ? 'hover:bg-muted text-foreground'
-                                : ''
+                                ? isToday 
+                                  ? 'bg-primary/10 text-primary border-2 border-primary/30' 
+                                  : 'hover:bg-muted text-foreground'
+                                : isToday
+                                  ? 'border-2 border-primary/20 text-primary/70'
+                                  : ''
                             }
                           `}
                           style={selected && !disabled ? { backgroundColor: 'var(--primary)' } : {}}

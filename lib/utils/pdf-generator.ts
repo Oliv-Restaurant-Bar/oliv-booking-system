@@ -69,9 +69,7 @@ export async function generateBookingPdf(
       doc.setLineWidth(0.5);
       doc.line(margin, 15, pageWidth - margin, 15);
 
-      doc.setFontSize(8);
-      doc.setTextColor(...COLORS.muted);
-      doc.text(`BOOKING (CONT.) - ANFRAGE-NR: ${data.id.substring(data.id.length - 8).toUpperCase()}`, margin, 12);
+      doc.text(`BOOKING (CONT.)`, margin, 12);
       doc.text(`Datum: ${new Date().toLocaleDateString('de-CH')}`, pageWidth - margin, 12, { align: 'right' });
 
       yPos = 25;
@@ -120,8 +118,6 @@ export async function generateBookingPdf(
     if (mode === 'kitchen') {
       doc.setFont("helvetica", "bold");
       doc.text("INTERNAL USE ONLY", pageWidth - margin, 20, { align: 'right' });
-    } else {
-      doc.text(`ANFRAGE-NR: ${shortId}`, pageWidth - margin, 20, { align: 'right' });
     }
 
     doc.setFontSize(9);

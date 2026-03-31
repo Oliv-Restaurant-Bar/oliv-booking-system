@@ -3,6 +3,7 @@
 import React from 'react';
 import { Settings, X, Check } from 'lucide-react';
 import { DietaryIcon } from '@/components/user/DietaryIcon';
+import { Button } from '@/components/user/Button';
 import { useMenuConfigTranslation, useCommonTranslation } from '@/lib/i18n/client';
 
 interface ItemSettingsModalProps {
@@ -28,6 +29,7 @@ interface ItemSettingsModalProps {
   };
   setItemSettings: React.Dispatch<React.SetStateAction<any>>;
   itemName?: string;
+  isSaving?: boolean;
 }
 
 const dietaryTagOptions = [
@@ -73,6 +75,7 @@ export function ItemSettingsModal({
   itemSettings,
   setItemSettings,
   itemName,
+  isSaving,
 }: ItemSettingsModalProps) {
   const t = useMenuConfigTranslation();
   const ct = useCommonTranslation();
@@ -546,22 +549,21 @@ export function ItemSettingsModal({
 
           {/* Footer */}
           <div className="border-t border-border px-6 py-3 flex items-center justify-end gap-3 flex-shrink-0">
-            <button
+            <Button
+              variant="secondary"
+              icon={X}
               onClick={onClose}
-              className="px-4 py-2 bg-background border border-border text-foreground rounded-lg hover:bg-accent transition-colors flex items-center gap-2"
-              style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
             >
-              <X className="w-4 h-4" />
               {ct('cancel')}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
+              icon={Check}
               onClick={onSave}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2"
-              style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+              isLoading={isSaving}
             >
-              <Check className="w-4 h-4" />
-              {t('buttons.saveChanges')}
-            </button>
+              {isSaving ? ct('saving') : t('buttons.saveChanges')}
+            </Button>
           </div>
         </div>
       </div>

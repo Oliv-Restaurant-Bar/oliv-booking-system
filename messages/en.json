@@ -851,6 +851,7 @@
           "nutFree": "Nut Free",
           "soyFree": "Soy Free",
           "sugarFree": "Sugar Free",
+          "vegan": "Vegan",
           "lowCarb": "Low Carb",
           "highProtein": "High Protein",
           "organic": "Organic",
@@ -858,8 +859,10 @@
           "seasonal": "Seasonal"
         },
         "allergens": {
+          "gluten": "Gluten",
           "peanuts": "Peanuts",
           "treeNuts": "Tree Nuts",
+          "nuts": "Nuts",
           "milk": "Milk",
           "eggs": "Eggs",
           "fish": "Fish",
