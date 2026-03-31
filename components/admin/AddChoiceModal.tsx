@@ -17,6 +17,7 @@ interface AddChoiceModalProps {
   selectedAddonGroups: string[];
   setSelectedAddonGroups: (groups: string[]) => void;
   onSave: () => Promise<void>;
+  isSaving?: boolean;
 }
 
 export function AddChoiceModal({
@@ -30,6 +31,7 @@ export function AddChoiceModal({
   selectedAddonGroups,
   setSelectedAddonGroups,
   onSave,
+  isSaving,
 }: AddChoiceModalProps) {
   const t = useMenuConfigTranslation();
   const ct = useCommonTranslation();
@@ -53,8 +55,9 @@ export function AddChoiceModal({
             variant="primary"
             icon={Check}
             onClick={onSave}
+            isLoading={isSaving}
           >
-            {t('buttons.saveChanges')}
+            {isSaving ? ct('saving') : t('buttons.saveChanges')}
           </Button>
         </>
       }

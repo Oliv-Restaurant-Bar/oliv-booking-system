@@ -241,7 +241,9 @@ export function ItemDetailsModal({
         {/* Modal Header */}
         <div className="sticky top-0 bg-card border-b border-border px-6 py-4 flex items-center justify-between z-10">
           <div className="flex items-center gap-3">
-            <DietaryIcon type={item.dietaryType} size="md" />
+            {item.dietaryType && item.dietaryType !== 'none' && (
+              <DietaryIcon type={item.dietaryType} size="md" />
+            )}
             <div>
               <h3 className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
                 {item.name}
@@ -288,11 +290,13 @@ export function ItemDetailsModal({
           )}
 
           {/* Description */}
-          <div className="mb-6">
-            <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
-              {item.description}
-            </p>
-          </div>
+          {item.description && (
+            <div className="mb-6">
+              <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                {item.description}
+              </p>
+            </div>
+          )}
 
           {/* Recommendation for consumption-based items */}
           {isConsumption(item) && (() => {
@@ -377,13 +381,13 @@ export function ItemDetailsModal({
           )}
 
           {/* Dietary Information Tags */}
-          {item.dietaryTags && item.dietaryTags.length > 0 && (
+          {item.dietaryTags && item.dietaryTags.filter(t => t.trim() !== '').length > 0 && (
             <div className="mb-6">
               <h4 className="text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
                 {t('labels.dietaryInfo')}
               </h4>
               <div className="flex flex-wrap gap-2">
-                {item.dietaryTags.map((tag) => (
+                {item.dietaryTags.filter(tag => tag.trim() !== '').map((tag) => (
                   <span
                     key={tag}
                     className="px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center gap-1.5"
@@ -398,7 +402,7 @@ export function ItemDetailsModal({
           )}
 
           {/* Ingredients */}
-          {item.ingredients && (
+          {item.ingredients && item.ingredients.trim() !== '' && (
             <div className="mb-6">
               <h4 className="text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
                 {mt('labels.ingredients')}
@@ -411,6 +415,8 @@ export function ItemDetailsModal({
 
           {/* Nutritional Info */}
           {item.nutritionalInfo && (
+            [item.nutritionalInfo.calories, item.nutritionalInfo.protein, item.nutritionalInfo.carbs, item.nutritionalInfo.fat, item.nutritionalInfo.fiber, item.nutritionalInfo.sugar, item.nutritionalInfo.sodium].some(v => v && v.toString().trim() !== '')
+          ) && (
             <div className="mb-6">
               <h4 className="text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
                 {mt('labels.nutritionalInfo')}
@@ -442,18 +448,18 @@ export function ItemDetailsModal({
           )}
 
           {/* Allergen & Additive Information */}
-          {((item.allergens && item.allergens.length > 0) || (item.additives && item.additives.length > 0)) && (
+          {((item.allergens && item.allergens.filter(a => a.trim() !== '').length > 0) || (item.additives && item.additives.filter(a => a.trim() !== '').length > 0)) && (
             <div className="mb-6 p-4 bg-destructive/5 border border-destructive/20 rounded-lg flex gap-3" style={{ borderRadius: 'var(--radius)' }}>
               <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-foreground mb-1" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
                   {t('labels.allergenInfo')}
                 </p>
-                {item.allergens && item.allergens.length > 0 && (
+                  {item.allergens && item.allergens.filter(a => a.trim() !== '').length > 0 && (
                   <div className="text-muted-foreground flex flex-wrap gap-x-3 gap-y-1" style={{ fontSize: 'var(--text-small)' }}>
                     <span className="font-medium text-destructive/80 shrink-0">{t('labels.contains')}:</span>
                     <div className="flex flex-wrap gap-2">
-                      {item.allergens.map(a => (
+                      {item.allergens.filter(a => a.trim() !== '').map(a => (
                         <span key={a} className="flex items-center gap-1">
                           <DietaryIcon type={a} size="xs" />
                           {getAllergenLabel(a)}
@@ -462,11 +468,11 @@ export function ItemDetailsModal({
                     </div>
                   </div>
                 )}
-                {item.additives && item.additives.length > 0 && (
+                {item.additives && item.additives.filter(a => a.trim() !== '').length > 0 && (
                   <div className="text-muted-foreground mt-2 flex flex-wrap gap-x-3 gap-y-1" style={{ fontSize: 'var(--text-small)' }}>
                     <span className="font-medium text-destructive/80 shrink-0">{mt('labels.additives')}:</span>
                     <div className="flex flex-wrap gap-2">
-                      {item.additives.map(a => (
+                      {item.additives.filter(a => a.trim() !== '').map(a => (
                         <span key={a} className="flex items-center gap-1">
                           <DietaryIcon type={a} size="xs" />
                           {getAdditiveLabel(a)}

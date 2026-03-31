@@ -19,6 +19,7 @@ interface AddGroupModalProps {
   };
   setNewGroup: (group: any) => void;
   onSave: () => Promise<void>;
+  isSaving?: boolean;
 }
 
 export function AddGroupModal({
@@ -28,6 +29,7 @@ export function AddGroupModal({
   newGroup,
   setNewGroup,
   onSave,
+  isSaving,
 }: AddGroupModalProps) {
   const t = useMenuConfigTranslation();
   const ct = useCommonTranslation();
@@ -52,9 +54,10 @@ export function AddGroupModal({
             variant="primary"
             icon={editingGroupId ? Check : Plus}
             onClick={onSave}
+            isLoading={isSaving}
             disabled={!newGroup.name || newGroup.name.trim() === '' || newGroup.name.length > 100}
           >
-            {editingGroupId ? t('buttons.saveChanges') : t('buttons.addGroup')}
+            {isSaving ? ct('saving') : (editingGroupId ? t('buttons.saveChanges') : t('buttons.addGroup'))}
           </Button>
         </>
       }

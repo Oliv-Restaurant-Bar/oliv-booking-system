@@ -19,6 +19,7 @@ interface AddAddonItemModalProps {
   };
   setNewAddonItem: (item: any) => void;
   onSave: () => Promise<void>;
+  isSaving?: boolean;
 }
 
 export function AddAddonItemModal({
@@ -29,6 +30,7 @@ export function AddAddonItemModal({
   newAddonItem,
   setNewAddonItem,
   onSave,
+  isSaving,
 }: AddAddonItemModalProps) {
   const t = useMenuConfigTranslation();
   const ct = useCommonTranslation();
@@ -52,9 +54,10 @@ export function AddAddonItemModal({
             variant="primary"
             icon={editingAddonItemId ? Check : Plus}
             onClick={onSave}
+            isLoading={isSaving}
             disabled={!newAddonItem.name || !newAddonItem.price || newAddonItem.name.trim() === '' || newAddonItem.name.length > 100 || parseFloat(newAddonItem.price) < 0}
           >
-            {editingAddonItemId ? t('buttons.saveChanges') : t('buttons.addItem')}
+            {isSaving ? ct('saving') : (editingAddonItemId ? t('buttons.saveChanges') : t('buttons.addItem'))}
           </Button>
         </>
       }

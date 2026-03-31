@@ -246,6 +246,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
   const [deleteAddonItemId, setDeleteAddonItemId] = useState<string | null>(null);
 
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [openAddonGroupDropdownId, setOpenAddonGroupDropdownId] = useState<string | null>(null);
 
@@ -305,154 +306,179 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
 
   // Simplified Handlers (linking to extracted components)
   const handleSaveCategory = async () => {
-    if (editingCategoryId) {
-      const result = await updateMenuCategory(editingCategoryId, {
-        name: newCategory.name,
-        nameDe: newCategory.name,
-        description: newCategory.description,
-        descriptionDe: newCategory.description,
-      });
-      if (result.success) {
-        setCategories(categories.map(cat =>
-          cat.id === editingCategoryId
-            ? { ...cat, name: newCategory.name, description: newCategory.description, image: newCategory.image ? URL.createObjectURL(newCategory.image) : newCategory.imageUrl }
-            : cat
-        ));
-        setIsAddCategoryModalOpen(false);
-        toast.success(t('messages.settingsSaved'));
-      }
-    } else {
-      const result = await createMenuCategory({
-        name: newCategory.name,
-        nameDe: newCategory.name,
-        description: newCategory.description,
-        descriptionDe: newCategory.description,
-      });
-      if (result.success && result.data) {
-        setCategories([...categories, {
-          id: result.data.id,
+    setIsSubmitting(true);
+    try {
+      if (editingCategoryId) {
+        const result = await updateMenuCategory(editingCategoryId, {
           name: newCategory.name,
+          nameDe: newCategory.name,
           description: newCategory.description,
-          image: newCategory.image ? URL.createObjectURL(newCategory.image) : newCategory.imageUrl,
-          isActive: true,
-          isExpanded: false,
-          guestCount: false,
-          items: [],
-        }]);
-        setIsAddCategoryModalOpen(false);
-        toast.success(t('messages.settingsSaved'));
+          descriptionDe: newCategory.description,
+        });
+        if (result.success) {
+          setCategories(categories.map(cat =>
+            cat.id === editingCategoryId
+              ? { ...cat, name: newCategory.name, description: newCategory.description, image: newCategory.image ? URL.createObjectURL(newCategory.image) : newCategory.imageUrl }
+              : cat
+          ));
+          setIsAddCategoryModalOpen(false);
+          toast.success(t('messages.settingsSaved'));
+        }
+      } else {
+        const result = await createMenuCategory({
+          name: newCategory.name,
+          nameDe: newCategory.name,
+          description: newCategory.description,
+          descriptionDe: newCategory.description,
+        });
+        if (result.success && result.data) {
+          setCategories([...categories, {
+            id: result.data.id,
+            name: newCategory.name,
+            description: newCategory.description,
+            image: newCategory.image ? URL.createObjectURL(newCategory.image) : newCategory.imageUrl,
+            isActive: true,
+            isExpanded: false,
+            guestCount: false,
+            items: [],
+          }]);
+          setIsAddCategoryModalOpen(false);
+          toast.success(t('messages.settingsSaved'));
+        }
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleSaveMenuItem = async () => {
-    const itemData = {
-      name: newMenuItem.name,
-      nameDe: newMenuItem.name, // Fallback
-      description: newMenuItem.description,
-      descriptionDe: newMenuItem.description, // Fallback
-      price: parseFloat(newMenuItem.price) || 0,
-      pricePerPerson: parseFloat(newMenuItem.price) || 0,
-      pricingType: newMenuItem.pricingType,
-      averageConsumption: parseInt(newMenuItem.averageConsumption) || 1,
-      imageUrl: newMenuItem.imageUrl || null,
-      isActive: newMenuItem.isActive,
-      dietaryType: newMenuItem.dietaryType as any,
-      dietaryTags: newMenuItem.dietaryTags,
-      ingredients: newMenuItem.ingredients,
-      allergens: newMenuItem.allergens,
-      additives: newMenuItem.additives,
-      nutritionalInfo: newMenuItem.nutritionalInfo as any,
-      assignedAddonGroups: newMenuItem.assignedAddonGroups,
-      variants: newMenuItem.variants,
-    };
+    setIsSubmitting(true);
+    try {
+      const itemData = {
+        name: newMenuItem.name,
+        nameDe: newMenuItem.name, // Fallback
+        description: newMenuItem.description,
+        descriptionDe: newMenuItem.description, // Fallback
+        price: parseFloat(newMenuItem.price) || 0,
+        pricePerPerson: parseFloat(newMenuItem.price) || 0,
+        pricingType: newMenuItem.pricingType,
+        averageConsumption: parseInt(newMenuItem.averageConsumption) || 1,
+        imageUrl: newMenuItem.imageUrl || null,
+        isActive: newMenuItem.isActive,
+        dietaryType: newMenuItem.dietaryType as any,
+        dietaryTags: newMenuItem.dietaryTags,
+        ingredients: newMenuItem.ingredients,
+        allergens: newMenuItem.allergens,
+        additives: newMenuItem.additives,
+        nutritionalInfo: newMenuItem.nutritionalInfo as any,
+        assignedAddonGroups: newMenuItem.assignedAddonGroups,
+        variants: newMenuItem.variants,
+      };
 
-    if (editingMenuItemId) {
-      const result = await updateMenuItem(editingMenuItemId, { ...itemData, price: itemData.price.toString() } as any);
-      if (result.success) {
-        setCategories(categories.map(cat => ({
-          ...cat,
-          items: cat.items.map(i => i.id === editingMenuItemId ? { ...i, ...itemData, image: newMenuItem.imageUrl } : i)
-        })));
-        setIsAddMenuItemModalOpen(false);
-        toast.success(t('messages.settingsSaved'));
+      if (editingMenuItemId) {
+        const result = await updateMenuItem(editingMenuItemId, { ...itemData, price: itemData.price.toString() } as any);
+        if (result.success) {
+          setCategories(categories.map(cat => ({
+            ...cat,
+            items: cat.items.map(i => i.id === editingMenuItemId ? { ...i, ...itemData, image: newMenuItem.imageUrl } : i)
+          })));
+          setIsAddMenuItemModalOpen(false);
+          toast.success(t('messages.settingsSaved'));
+        }
+      } else if (activeCategoryId) {
+        const result = await createMenuItem({ ...itemData, categoryId: activeCategoryId } as any);
+        if (result.success && result.data) {
+          setCategories(prev => prev.map(cat =>
+            cat.id === activeCategoryId
+              ? { ...cat, items: [...cat.items, { ...itemData, id: result.data.id, image: newMenuItem.imageUrl }] as any[] }
+              : cat
+          ));
+          setIsAddMenuItemModalOpen(false);
+          toast.success(t('messages.settingsSaved'));
+        }
       }
-    } else if (activeCategoryId) {
-      const result = await createMenuItem({ ...itemData, categoryId: activeCategoryId } as any);
-      if (result.success && result.data) {
-        setCategories(prev => prev.map(cat =>
-          cat.id === activeCategoryId
-            ? { ...cat, items: [...cat.items, { ...itemData, id: result.data.id, image: newMenuItem.imageUrl }] as any[] }
-            : cat
-        ));
-        setIsAddMenuItemModalOpen(false);
-        toast.success(t('messages.settingsSaved'));
-      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleSaveItemSettings = async () => {
     if (settingsMenuItemId && itemSettings) {
-      const result = await updateMenuItem(settingsMenuItemId, itemSettings as any);
-      if (result.success) {
-        setCategories(categories.map(cat => ({
-          ...cat,
-          items: cat.items.map(i => i.id === settingsMenuItemId ? { ...i, ...itemSettings } : i)
-        })));
-        setIsItemSettingsModalOpen(false);
-        toast.success(t('messages.settingsSaved'));
+      setIsSubmitting(true);
+      try {
+        const result = await updateMenuItem(settingsMenuItemId, itemSettings as any);
+        if (result.success) {
+          setCategories(categories.map(cat => ({
+            ...cat,
+            items: cat.items.map(i => i.id === settingsMenuItemId ? { ...i, ...itemSettings } : i)
+          })));
+          setIsItemSettingsModalOpen(false);
+          toast.success(t('messages.settingsSaved'));
+        }
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };
 
   const handleSaveChoice = async () => {
-    if (choiceCategoryId) {
-      const result = await updateCategoryAddonGroups(choiceCategoryId, selectedAddonGroups);
-      if (result.success) {
-        setCategories(categories.map(cat =>
-          cat.id === choiceCategoryId ? { ...cat, assignedAddonGroups: selectedAddonGroups } : cat
-        ));
-        setIsAddChoiceModalOpen(false);
-        toast.success(t('messages.choicesUpdated'));
+    setIsSubmitting(true);
+    try {
+      if (choiceCategoryId) {
+        const result = await updateCategoryAddonGroups(choiceCategoryId, selectedAddonGroups);
+        if (result.success) {
+          setCategories(categories.map(cat =>
+            cat.id === choiceCategoryId ? { ...cat, assignedAddonGroups: selectedAddonGroups } : cat
+          ));
+          setIsAddChoiceModalOpen(false);
+          toast.success(t('messages.choicesUpdated'));
+        }
+      } else if (choiceItemId && activeCategoryId) {
+        const result = await updateItemAddonGroups(choiceItemId, selectedAddonGroups);
+        if (result.success) {
+          setCategories(categories.map(cat => ({
+            ...cat,
+            items: cat.items.map(i => i.id === choiceItemId ? { ...i, assignedAddonGroups: selectedAddonGroups } : i)
+          })));
+          setIsAddChoiceModalOpen(false);
+          toast.success(t('messages.choicesUpdated'));
+        }
       }
-    } else if (choiceItemId && activeCategoryId) {
-      const result = await updateItemAddonGroups(choiceItemId, selectedAddonGroups);
-      if (result.success) {
-        setCategories(categories.map(cat => ({
-          ...cat,
-          items: cat.items.map(i => i.id === choiceItemId ? { ...i, assignedAddonGroups: selectedAddonGroups } : i)
-        })));
-        setIsAddChoiceModalOpen(false);
-        toast.success(t('messages.choicesUpdated'));
-      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleSaveGroup = async () => {
-    const groupData = {
-      name: newGroup.name,
-      nameDe: newGroup.name,
-      subtitle: newGroup.subtitle,
-      subtitleDe: newGroup.subtitle,
-      isRequired: newGroup.type === 'mandatory',
-      minSelect: newGroup.minSelect,
-      maxSelect: newGroup.maxSelect,
-    };
+    setIsSubmitting(true);
+    try {
+      const groupData = {
+        name: newGroup.name,
+        nameDe: newGroup.name,
+        subtitle: newGroup.subtitle,
+        subtitleDe: newGroup.subtitle,
+        isRequired: newGroup.type === 'mandatory',
+        minSelect: newGroup.minSelect,
+        maxSelect: newGroup.maxSelect,
+      };
 
-    if (editingGroupId) {
-      const result = await updateAddonGroup(editingGroupId, groupData as any);
-      if (result.success) {
-        setAddonGroups(addonGroups.map(g => g.id === editingGroupId ? { ...g, ...groupData } as any : g));
-        setIsAddGroupModalOpen(false);
-        toast.success(t('messages.groupUpdated') || 'Group updated');
+      if (editingGroupId) {
+        const result = await updateAddonGroup(editingGroupId, groupData as any);
+        if (result.success) {
+          setAddonGroups(addonGroups.map(g => g.id === editingGroupId ? { ...g, ...groupData } as any : g));
+          setIsAddGroupModalOpen(false);
+          toast.success(t('messages.groupUpdated') || 'Group updated');
+        }
+      } else {
+        const result = await createAddonGroup(groupData);
+        if (result.success && result.data) {
+          setAddonGroups([...addonGroups, { ...groupData, id: result.data.id, isActive: true, isExpanded: false, items: [] } as any]);
+          setIsAddGroupModalOpen(false);
+          toast.success(t('messages.groupCreated') || 'Group created');
+        }
       }
-    } else {
-      const result = await createAddonGroup(groupData);
-      if (result.success && result.data) {
-        setAddonGroups([...addonGroups, { ...groupData, id: result.data.id, isActive: true, isExpanded: false, items: [] } as any]);
-        setIsAddGroupModalOpen(false);
-        toast.success(t('messages.groupCreated') || 'Group created');
-      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -535,32 +561,37 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
   const handleSaveAddonItem = async () => {
     if (!currentGroupId) return;
 
-    const itemData = {
-      name: newAddonItem.name,
-      nameDe: newAddonItem.name, // Fallback
-      price: (parseFloat(newAddonItem.price) || 0).toString(),
-      dietaryType: newAddonItem.dietaryType,
-      isActive: newAddonItem.isActive,
-    };
+    setIsSubmitting(true);
+    try {
+      const itemData = {
+        name: newAddonItem.name,
+        nameDe: newAddonItem.name, // Fallback
+        price: (parseFloat(newAddonItem.price) || 0).toString(),
+        dietaryType: newAddonItem.dietaryType,
+        isActive: newAddonItem.isActive,
+      };
 
-    if (editingAddonItemId) {
-      const result = await updateAddonItem(editingAddonItemId, itemData as any);
-      if (result.success) {
-        setAddonGroups(addonGroups.map(g =>
-          g.id === currentGroupId ? { ...g, items: g.items.map(i => i.id === editingAddonItemId ? { ...i, ...itemData, price: parseFloat(newAddonItem.price) || 0 } : i) } : g
-        ));
-        setIsAddAddonItemModalOpen(false);
-        toast.success(t('messages.settingsSaved'));
+      if (editingAddonItemId) {
+        const result = await updateAddonItem(editingAddonItemId, itemData as any);
+        if (result.success) {
+          setAddonGroups(addonGroups.map(g =>
+            g.id === currentGroupId ? { ...g, items: g.items.map(i => i.id === editingAddonItemId ? { ...i, ...itemData, price: parseFloat(newAddonItem.price) || 0 } : i) } : g
+          ));
+          setIsAddAddonItemModalOpen(false);
+          toast.success(t('messages.settingsSaved'));
+        }
+      } else {
+        const result = await createAddonItem({ ...itemData, addonGroupId: currentGroupId, price: parseFloat(newAddonItem.price) || 0 });
+        if (result.success && result.data) {
+          setAddonGroups(addonGroups.map(g =>
+            g.id === currentGroupId ? { ...g, items: [...g.items, { ...itemData, id: result.data.id, price: parseFloat(newAddonItem.price) || 0 }] as any[] } : g
+          ));
+          setIsAddAddonItemModalOpen(false);
+          toast.success(t('messages.settingsSaved'));
+        }
       }
-    } else {
-      const result = await createAddonItem({ ...itemData, addonGroupId: currentGroupId, price: parseFloat(newAddonItem.price) || 0 });
-      if (result.success && result.data) {
-        setAddonGroups(addonGroups.map(g =>
-          g.id === currentGroupId ? { ...g, items: [...g.items, { ...itemData, id: result.data.id, price: parseFloat(newAddonItem.price) || 0 }] as any[] } : g
-        ));
-        setIsAddAddonItemModalOpen(false);
-        toast.success(t('messages.settingsSaved'));
-      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -799,6 +830,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
                     dietaryType: 'veg', dietaryTags: [], ingredients: '', allergens: [], additives: [],
                     nutritionalInfo: { servingSize: '', calories: '', protein: '', carbs: '', fat: '', fiber: '', sugar: '', sodium: '' }
                   });
+                  setPricingMode('price');
                   setIsAddMenuItemModalOpen(true);
                 }}
                 onEditMenuItem={(catId, item) => {
@@ -813,6 +845,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
                     assignedAddonGroups: item.assignedAddonGroups || [],
                     nutritionalInfo: (item as any).nutritionalInfo || { servingSize: '', calories: '', protein: '', carbs: '', fat: '', fiber: '', sugar: '', sodium: '' }
                   });
+                  setPricingMode(item.variants && item.variants.length > 0 ? 'variants' : 'price');
                   setIsAddMenuItemModalOpen(true);
                 }}
                 onDeleteMenuItem={(catId, itemId) => {
@@ -980,6 +1013,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
         uploadingImage={uploadingImage}
         handleImageUpload={handleImageUpload}
         onSave={handleSaveCategory}
+        isSaving={isSubmitting}
         displayCategoryErrors={displayCategoryErrors}
         categoryTouched={categoryTouched}
         setCategoryTouched={setCategoryTouched}
@@ -999,6 +1033,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
         uploadingImage={uploadingImage}
         handleImageUpload={handleImageUpload}
         onSave={handleSaveMenuItem}
+        isSaving={isSubmitting}
         displayMenuItemErrors={displayMenuItemErrors}
         menuItemTouched={menuItemTouched}
         setMenuItemTouched={setMenuItemTouched}
@@ -1031,6 +1066,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
         selectedAddonGroups={selectedAddonGroups}
         setSelectedAddonGroups={setSelectedAddonGroups}
         onSave={handleSaveChoice}
+        isSaving={isSubmitting}
       />
 
       <AddGroupModal
@@ -1040,6 +1076,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
         newGroup={newGroup}
         setNewGroup={setNewGroup}
         onSave={handleSaveGroup}
+        isSaving={isSubmitting}
       />
 
       <AddAddonItemModal
@@ -1050,6 +1087,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
         newAddonItem={newAddonItem}
         setNewAddonItem={setNewAddonItem}
         onSave={handleSaveAddonItem}
+        isSaving={isSubmitting}
       />
 
       {/* Confirmation Modals */}
@@ -1128,6 +1166,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
           itemSettings={itemSettings}
           setItemSettings={setItemSettings}
           onSave={handleSaveItemSettings}
+          isSaving={isSubmitting}
         />
       )}
     </div>
