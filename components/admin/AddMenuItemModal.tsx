@@ -58,7 +58,6 @@ interface AddMenuItemModalProps {
     description?: boolean;
   };
   setMenuItemTouched: (touched: any) => void;
-  isSaving?: boolean;
   showItemSettings: boolean;
   setShowItemSettings: (show: boolean) => void;
   showAddons: boolean;
@@ -87,7 +86,6 @@ export function AddMenuItemModal({
   displayMenuItemErrors,
   menuItemTouched,
   setMenuItemTouched,
-  isSaving,
   showItemSettings,
   setShowItemSettings,
   showAddons,
@@ -157,7 +155,6 @@ export function AddMenuItemModal({
             variant="primary"
             icon={editingMenuItemId ? Check : Plus}
             onClick={onSave}
-            isLoading={isSaving}
             disabled={
               !activeCategoryId ||
               !newMenuItem.name?.trim() ||
@@ -178,7 +175,7 @@ export function AddMenuItemModal({
               (newMenuItem.nutritionalInfo?.sodium?.length || 0) > 50
             }
           >
-            {isSaving ? ct('saving') : (editingMenuItemId ? t('buttons.saveChanges') : t('buttons.addItem'))}
+            {editingMenuItemId ? t('buttons.saveChanges') : t('buttons.addItem')}
           </Button>
         </>
       }

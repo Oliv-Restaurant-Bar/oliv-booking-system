@@ -28,7 +28,6 @@ interface AddCategoryModalProps {
     description?: boolean;
   };
   setCategoryTouched: (touched: any) => void;
-  isSaving?: boolean;
 }
 
 export function AddCategoryModal({
@@ -43,7 +42,6 @@ export function AddCategoryModal({
   displayCategoryErrors,
   categoryTouched,
   setCategoryTouched,
-  isSaving,
 }: AddCategoryModalProps) {
   const t = useMenuConfigTranslation();
   const ct = useCommonTranslation();
@@ -67,10 +65,9 @@ export function AddCategoryModal({
             variant="primary"
             icon={editingCategoryId ? Check : Plus}
             onClick={onSave}
-            isLoading={isSaving}
             disabled={!newCategory.name || newCategory.name.trim() === '' || newCategory.name.length > 100 || newCategory.description.length > 500}
           >
-            {isSaving ? ct('saving') : (editingCategoryId ? t('buttons.saveChanges') : t('buttons.addCategory'))}
+            {editingCategoryId ? t('buttons.saveChanges') : t('buttons.addCategory')}
           </Button>
         </>
       }
