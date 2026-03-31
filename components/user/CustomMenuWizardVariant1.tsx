@@ -112,6 +112,13 @@ export function CustomMenuWizard() {
   const [isLocked, setIsLocked] = useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
 
+  // Pre-check terms for edit mode
+  useEffect(() => {
+    if (isEditMode) {
+      setTermsAccepted(true);
+    }
+  }, [isEditMode]);
+
 
 
   const [isUnlockRequested, setIsUnlockRequested] = useState(false);
@@ -1171,6 +1178,11 @@ export function CustomMenuWizard() {
       const item = menuItems.find(i => i.id === itemId);
       if (!item) return total;
 
+      // Exclude consumption based prices (beverages) if the user opted out
+      if (isConsumption(item) && !includeBeveragePrices) {
+        return total;
+      }
+
       const quantity = itemQuantities[itemId] || 1;
       const unitPrice = getItemPerPersonPrice(item);
 
@@ -1199,13 +1211,13 @@ export function CustomMenuWizard() {
   };
 
   // Helper functions for pricing types
-  const isPerPerson = (item: MenuItem) => item.pricingType === 'per-person' || item.pricingType === 'per_person';
-  const isPerPersonItem = (item: MenuItem | null): boolean => {
+  const isPerPerson = useCallback((item: MenuItem) => item.pricingType === 'per-person' || item.pricingType === 'per_person', []);
+  const isPerPersonItem = useCallback((item: MenuItem | null): boolean => {
     return item?.pricingType === 'per_person' || item?.pricingType === 'per-person';
-  };
-  const isFlatFee = (item: MenuItem) => item.pricingType === 'flat-rate' || item.pricingType === 'flat_fee';
-  const isConsumption = (item: MenuItem) => item.pricingType === 'billed_by_consumption';
-  const isNonPerPerson = (item: MenuItem) => isFlatFee(item) || isConsumption(item);
+  }, []);
+  const isFlatFee = useCallback((item: MenuItem) => item.pricingType === 'flat-rate' || item.pricingType === 'flat_fee', []);
+  const isConsumption = useCallback((item: MenuItem) => item.pricingType === 'billed_by_consumption', []);
+  const isNonPerPerson = useCallback((item: MenuItem) => isFlatFee(item) || isConsumption(item), [isFlatFee, isConsumption]);
 
   // Calculate recommended quantity for consumption-based items
   const calculateRecommendedQuantity = (item: MenuItem, itemId?: string, variantIdOverride?: string): number | null => {
@@ -1421,24 +1433,24 @@ export function CustomMenuWizard() {
   }, [selectedItems, menuItems, getItemPerPersonPrice, isPerPerson]);
 
   // Flat-rate subtotal (items like Technology, Decoration etc. that have a fixed price)
-  const getFlatRateSubtotal = () => {
+  const getFlatRateSubtotal = useCallback(() => {
     return selectedItems.reduce((total, itemId) => {
       const item = menuItems.find(i => i.id === itemId);
       if (!item || !isFlatFee(item)) return total;
       const quantity = itemQuantities[itemId] || 1;
       return total + (getItemPerPersonPrice(item) * quantity);
     }, 0);
-  };
+  }, [selectedItems, menuItems, isFlatFee, itemQuantities, getItemPerPersonPrice]);
 
   // Consumption-based subtotal (items billed by consumption)
-  const getConsumptionSubtotal = () => {
+  const getConsumptionSubtotal = useCallback(() => {
     return selectedItems.reduce((total, itemId) => {
       const item = menuItems.find(i => i.id === itemId);
       if (!item || !isConsumption(item)) return total;
       const quantity = itemQuantities[itemId] || 1;
       return total + (getItemPerPersonPrice(item) * quantity);
     }, 0);
-  };
+  }, [selectedItems, menuItems, isConsumption, itemQuantities, getItemPerPersonPrice]);
 
   // Show thank you screen if submitted
   if (isSubmitted) {

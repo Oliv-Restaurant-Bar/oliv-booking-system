@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Send, User, Users, MapPin, CalendarDays, UtensilsCrossed, MessageSquare, Link, Lock, Unlock, History, FileText, RefreshCw, UserPlus, CheckCircle2, Info, Pencil, X, Save, Bell, Mail, CreditCard, ChevronDown, Loader2, Trash2, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DietaryIcon } from '@/components/user/DietaryIcon';
@@ -42,12 +42,12 @@ function parseDietaryNotes(text: string | undefined | null) {
 
         if (isDietary) {
             const type = lowerPart.replace(/[()]/g, '') as 'veg' | 'vegan' | 'non-veg';
-            
+
             // Re-arrange: try to put the icon before the name in the previous text part
             if (result.length > 0 && typeof result[result.length - 1] === 'string') {
                 const prevText = result.pop() as string;
-                
-                // Find where the name starts. Names follow ":" or "," 
+
+                // Find where the name starts. Names follow ":" or ","
                 const lastSeparatorIndex = Math.max(
                     prevText.lastIndexOf(':'),
                     prevText.lastIndexOf(',')
@@ -56,7 +56,7 @@ function parseDietaryNotes(text: string | undefined | null) {
                 if (lastSeparatorIndex !== -1) {
                     const prefix = prevText.substring(0, lastSeparatorIndex + 1);
                     const name = prevText.substring(lastSeparatorIndex + 1).trim();
-                    
+
                     result.push(prefix);
                     if (name) result.push(' ');
                     // Add icon first, then the name
@@ -112,7 +112,11 @@ export interface Booking {
     amount: string;
     rawAmount?: number;
     billingAddress?: string;
+    billingStreet?: string;
+    billingPlz?: string;
+    billingLocation?: string;
     billingReference?: string;
+    billingCustomerReference?: string;
     paymentMethod?: string;
     status: string;
     notes?: string;
@@ -172,6 +176,14 @@ interface BookingDetailPageProps {
 
 export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, onBookingUpdated, user }: BookingDetailPageProps) {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const activeTab = searchParams.get('tab') || 'event-details';
+
+    const handleTabChange = (value: string) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('tab', value);
+        router.replace(`${window.location.pathname}?${params.toString()}`, { scroll: false });
+    };
     const t = useBookingTranslation();
     const commonT = useCommonTranslation();
     const buttonT = useButtonTranslation();
@@ -367,40 +379,42 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         setHasUnsavedChanges(notesChanged || assignmentChanged || roomChanged);
     }, [kitchenNotes, assignedTo, selectedRoom, initialKitchenNotes, initialAssignedTo, initialRoom]);
 
-    // Always fetch fresh booking data from API to avoid stale list data
-    useEffect(() => {
-        const fetchBooking = async () => {
-            try {
-                const response = await fetch(`/api/bookings/${bookingId}`, { cache: 'no-store' });
-                if (response.ok) {
-                    const data = await response.json();
-                    setBooking(data);
-                    setComments(data.contactHistory || []);
-                    setCheckins(data.checkins || []);
-                    setLocalStatus(data.status || 'pending');
-                    const allergiesVal = data.allergies;
-                    setAllergies(Array.isArray(allergiesVal) ? (allergiesVal as string[]).join(', ') : (allergiesVal || ''));
-                    setNotes(data.notes || '');
-                    setKitchenNotes(data.kitchenNotes || '');
-                    setIsLocked(data.isLocked || false);
-                    setSelectedVenue(data.event?.location || data.location || '');
-                    setSelectedRoom(data.room || '');
-                    setAssignedTo(data.assignedTo?.id || '');
-                    setKitchenPdfStatus(data.kitchenPdf);
-                    // Update initial values for change tracking
-                    setInitialKitchenNotes(data.kitchenNotes || '');
-                    setInitialAssignedTo(data.assignedTo?.id || '');
-                    setInitialRoom(data.room || '');
-                    setHasUnsavedChanges(false);
-                }
-            } catch (error) {
-                console.error('Error fetching booking:', error);
-            } finally {
-                setLoading(false);
+    // Function to fetch fresh booking data without necessarily showing a full-page loader
+    const fetchBookingData = async (showLoading = true) => {
+        if (showLoading) setLoading(true);
+        try {
+            const response = await fetch(`/api/bookings/${bookingId}`, { cache: 'no-store' });
+            if (response.ok) {
+                const data = await response.json();
+                setBooking(data);
+                setComments(data.contactHistory || []);
+                setCheckins(data.checkins || []);
+                setLocalStatus(data.status || 'pending');
+                const allergiesVal = data.allergies;
+                setAllergies(Array.isArray(allergiesVal) ? (allergiesVal as string[]).join(', ') : (allergiesVal || ''));
+                setNotes(data.notes || '');
+                setKitchenNotes(data.kitchenNotes || '');
+                setIsLocked(data.isLocked || false);
+                setSelectedVenue(data.event?.location || data.location || '');
+                setSelectedRoom(data.room || '');
+                setAssignedTo(data.assignedTo?.id || '');
+                setKitchenPdfStatus(data.kitchenPdf);
+                // Update initial values for change tracking
+                setInitialKitchenNotes(data.kitchenNotes || '');
+                setInitialAssignedTo(data.assignedTo?.id || '');
+                setInitialRoom(data.room || '');
+                setHasUnsavedChanges(false);
             }
-        };
+        } catch (error) {
+            console.error('Error fetching booking data:', error);
+        } finally {
+            if (showLoading) setLoading(false);
+        }
+    };
 
-        fetchBooking();
+    // Initial fetch on mount or when ID changes
+    useEffect(() => {
+        fetchBookingData(true);
     }, [bookingId]);
 
 
@@ -635,6 +649,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                 guestCount: booking.guests,
                 occasion: booking.event.occasion,
                 location: selectedVenue || booking.event.location,
+                room: selectedRoom || booking.room,
                 billingAddress: booking.billingAddress,
                 items: (booking.menuItems || []).map((item: any, idx: number) => {
                     const qty = parseInt(item.quantity) || booking.guests;
@@ -1077,10 +1092,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             if (response.ok) {
                 toast.success(t('toast.saveSuccess'));
                 onBookingUpdated?.();
-                // Refresh page after a short delay to show updated data
-                setTimeout(() => {
-                    window.location.reload();
-                }, 100);
+                fetchBookingData(false); // Silent refresh of current detail view
+                router.refresh();
                 return true;
             } else {
                 toast.error(t('toast.saveFailed'));
@@ -1491,7 +1504,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                         </div>
                     )}
 
-                    <Tabs defaultValue="event-details" className="w-full">
+                    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
                         <TabsList className="mb-6 w-full flex flex-wrap gap-2">
                             <TabsTrigger value="event-details" className="flex-1 min-w-max px-3 py-2 text-sm sm:text-base">Event Details</TabsTrigger>
                             <TabsTrigger value="menu-details" className="flex-1 min-w-max px-3 py-2 text-sm sm:text-base">Menu Details</TabsTrigger>
@@ -2609,7 +2622,9 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                             <div className="flex justify-between items-center text-sm">
                                                 <div className="flex items-center gap-3">
                                                     <DietaryIcon type="veg" size="sm" />
-                                                    <span className="text-muted-foreground font-medium">Veg Selection ({dietarySummary.veg.items.length})</span>
+                                                    <span className="text-muted-foreground font-medium flex items-center gap-1.5">
+                                                        Veg Selection ({dietarySummary.veg.items.length} {dietarySummary.veg.items.length > 1 ? 'items' : 'item'})
+                                                    </span>
                                                 </div>
                                                 <span className="text-foreground font-bold">CHF {dietarySummary.veg.price.toFixed(2)}</span>
                                             </div>
@@ -2618,7 +2633,9 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                             <div className="flex justify-between items-center text-sm">
                                                 <div className="flex items-center gap-3">
                                                     <DietaryIcon type="vegan" size="sm" />
-                                                    <span className="text-muted-foreground font-medium">Vegan Selection ({dietarySummary.vegan.items.length})</span>
+                                                    <span className="text-muted-foreground font-medium flex items-center gap-1.5">
+                                                        Vegan Selection ({dietarySummary.vegan.items.length} {dietarySummary.vegan.items.length > 1 ? 'items' : 'item'})
+                                                    </span>
                                                 </div>
                                                 <span className="text-foreground font-bold">CHF {dietarySummary.vegan.price.toFixed(2)}</span>
                                             </div>
@@ -2627,7 +2644,9 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                             <div className="flex justify-between items-center text-sm">
                                                 <div className="flex items-center gap-3">
                                                     <DietaryIcon type="non-veg" size="sm" />
-                                                    <span className="text-muted-foreground font-medium">Non-Veg Selection ({dietarySummary.nonVeg.items.length})</span>
+                                                    <span className="text-muted-foreground font-medium flex items-center gap-1.5">
+                                                        Non-Veg Selection ({dietarySummary.nonVeg.items.length} {dietarySummary.nonVeg.items.length > 1 ? 'items' : 'item'})
+                                                    </span>
                                                 </div>
                                                 <span className="text-foreground font-bold">CHF {dietarySummary.nonVeg.price.toFixed(2)}</span>
                                             </div>
@@ -2994,6 +3013,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                             ...booking.event,
                             location: selectedVenue
                         },
+                        room: selectedRoom,
                         allergies: typeof allergies === 'string' ? allergies : (Array.isArray(allergies) ? (allergies as string[]).join(', ') : ''),
                         notes: notes,
                         kitchenNotes: kitchenNotes,

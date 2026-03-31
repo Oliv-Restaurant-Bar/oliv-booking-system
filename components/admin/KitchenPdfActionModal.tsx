@@ -26,7 +26,7 @@ interface KitchenPdfActionModalProps {
     };
     guests: number;
     billingAddress?: string;
-    menuItems?: Array<{
+    menuItems?: {
       item: string;
       category: string;
       quantity: string;
@@ -36,10 +36,11 @@ interface KitchenPdfActionModalProps {
       dietaryType?: 'veg' | 'non-veg' | 'vegan' | 'none';
       notes?: string;
       customerComment?: string;
-    }>;
+    }[];
     allergies?: string;
     notes?: string;
     kitchenNotes?: string;
+    room?: string;
   };
 }
 
@@ -137,7 +138,8 @@ export function KitchenPdfActionModal({
       }),
       allergies: booking.allergies,
       specialRequests: booking.notes,
-      kitchenNotes: kitchenNotes // Use current local notes
+      kitchenNotes: kitchenNotes, // Use current local notes
+      room: booking.room
     }, 'kitchen');
   };
 

@@ -162,14 +162,24 @@ export async function fetchBookings(options: {
       const internalNotes = booking.internal_notes || '';
 
       // Extract fields from internal notes
-      const businessMatch = internalNotes.match(/Business: ([^\n]+)/);
-      const business = businessMatch ? businessMatch[1].replace('N/A', '').trim() : '';
+      const extractField = (field: string) => {
+        const match = internalNotes.match(new RegExp(`${field}: ([^\\n]+)`));
+        return match ? match[1].replace('N/A', '').trim() : '';
+      };
 
-      const addressMatch = internalNotes.match(/Address: ([^\n]+)/);
-      const address = addressMatch ? addressMatch[1].replace('N/A', '').trim() : '';
-
-      const occasionMatch = internalNotes.match(/Occasion: ([^\n]+)/);
-      const occasion = occasionMatch ? occasionMatch[1].replace('N/A', '').trim() : '';
+      const business = extractField('Business');
+      const street = extractField('Street');
+      const plz = extractField('PLZ');
+      const location = extractField('Location');
+      const reference = extractField('Reference');
+      const occasion = extractField('Occasion');
+      const paymentMethod = extractField('Payment Method');
+      const billingAddress = extractField('Billing Address');
+      const billingStreet = extractField('Billing Street');
+      const billingPlz = extractField('Billing PLZ');
+      const billingLocation = extractField('Billing Location');
+      const billingReference = extractField('Billing Reference');
+      const billingCustomerReference = extractField('Billing Customer Reference');
 
       // Extract menu selection from internal notes for display in notes
       const menuMatch = internalNotes.match(/Menu Selection: ([^\n]+)/);
@@ -188,9 +198,21 @@ export async function fetchBookings(options: {
           phone: booking.contact_phone || '',
           avatar: contactName.charAt(0).toUpperCase() || 'G',
           avatarColor: '#9DAE91',
-          address: address,
+          address: street && plz && location ? `${street}, ${plz} ${location}` : (extractField('Address') || ''),
+          street: street,
+          plz: plz,
+          location: location,
           business: business,
+          reference: reference,
         },
+        billingAddress: billingAddress,
+        billingStreet: billingStreet,
+        billingPlz: billingPlz,
+        billingLocation: billingLocation,
+        billingReference: billingReference,
+        billingCustomerReference: billingCustomerReference,
+        paymentMethod: paymentMethod,
+        room: booking.location || '',
         event: {
           date: booking.event_date
             ? new Date(booking.event_date).toLocaleDateString('en-US', {

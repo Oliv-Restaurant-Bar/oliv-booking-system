@@ -41,6 +41,7 @@ export interface PdfBookingData {
   allergies?: string;
   kitchenNotes?: string;
   billingAddress?: string;
+  room?: string;
 }
 
 export type PdfGenerationMode = 'offer' | 'kitchen';
@@ -71,8 +72,8 @@ export async function generateBookingPdf(
 
       doc.setFontSize(8);
       doc.setTextColor(...COLORS.muted);
-      doc.text(`BOOKING (CONT.) - ANFRAGE-NR: ${data.id.substring(data.id.length - 8).toUpperCase()}`, margin, 12);
-      doc.text(`Datum: ${new Date().toLocaleDateString('de-CH')}`, pageWidth - margin, 12, { align: 'right' });
+      doc.text(`BOOKING (CONT.)`, margin, 12);
+      doc.text(`Datum: ${new Date().toLocaleDateString('de-CH')} ${new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })}`, pageWidth - margin, 12, { align: 'right' });
 
       yPos = 25;
       return;
@@ -119,14 +120,16 @@ export async function generateBookingPdf(
     
     if (mode === 'kitchen') {
       doc.setFont("helvetica", "bold");
-      doc.text("INTERNAL USE ONLY", pageWidth - margin, 20, { align: 'right' });
+      doc.text(`INTERNAL USE ONLY | ID: ${shortId}`, pageWidth - margin, 20, { align: 'right' });
     } else {
-      doc.text(`ANFRAGE-NR: ${shortId}`, pageWidth - margin, 20, { align: 'right' });
+      // Inquiry ID removed at user request
     }
 
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
-    const dateStr = mode === 'kitchen' ? `Generated: ${new Date().toLocaleDateString('de-CH')}` : `Datum: ${new Date().toLocaleDateString('de-CH')}`;
+    const dateStr = mode === 'kitchen' 
+      ? `Generated: ${new Date().toLocaleDateString('de-CH')} ${new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })}` 
+      : `Datum: ${new Date().toLocaleDateString('de-CH')} ${new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })}`;
     doc.text(String(dateStr), pageWidth - margin, 34, { align: 'right' });
 
     yPos = 60;
@@ -229,6 +232,9 @@ export async function generateBookingPdf(
   rightY = renderField('Zeit', String(data.eventTime || 'N/A'), rightX, rightY, colW);
   rightY = renderField('Anlass', String(data.occasion || 'Event'), rightX, rightY, colW);
   rightY = renderField('Ort', String(data.location || 'Restaurant Oliv'), rightX, rightY, colW);
+  if (data.room) {
+    rightY = renderField(mode === 'kitchen' ? 'Venue' : 'Veranstaltungsort', String(data.room), rightX, rightY, colW);
+  }
 
   yPos = Math.max(leftY, rightY) + 8;
 
@@ -710,7 +716,7 @@ export async function generateBookingPdf(
     doc.setFontSize(8);
     doc.setTextColor(...COLORS.muted);
     doc.text(
-      `Oliv Restaurant | Page ${i} of ${total} | Generated on ${new Date().toLocaleDateString()}`,
+      `Oliv Restaurant | Page ${i} of ${total} | Generated on ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
       pageWidth / 2,
       pageHeight - 10,
       { align: 'center' }

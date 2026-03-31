@@ -236,20 +236,7 @@ function CenteredVariant({
           {t('thankYou.description')}
         </motion.p>
 
-        {/* Inquiry Number */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="mb-8"
-          style={{
-            fontSize: 'var(--text-sm)',
-            color: 'var(--muted-foreground)',
-            fontFamily: 'var(--font-family-body)'
-          }}
-        >
-          {t('thankYou.inquiryNumber')} <span style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--foreground)' }}>{inquiryNumber}</span>
-        </motion.p>
+        {/* Inquiry Number removed per user request */}
 
         {/* Action Buttons */}
         <motion.div
@@ -418,21 +405,7 @@ function SplitVariant({
             {t('thankYou.description')}
           </p>
 
-          <div
-            className="inline-block px-4 py-2 rounded-lg mb-6"
-            style={{
-              backgroundColor: 'var(--background)',
-              color: 'var(--primary)'
-            }}
-          >
-            <p style={{
-              fontSize: 'var(--text-sm)',
-              fontFamily: 'var(--font-family-body)',
-              fontWeight: 'var(--font-weight-medium)'
-            }}>
-              {t('thankYou.inquiryNumber')}{inquiryNumber}
-            </p>
-          </div>
+          {/* Inquiry Number removed per user request */}
         </div>
       </motion.div>
 
@@ -721,30 +694,7 @@ function MinimalVariant({
           Congratulations on taking the first step!
         </motion.p>
 
-        {/* Inquiry Number Badge */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.5 }}
-          className="flex justify-center mb-6"
-        >
-          <div
-            className="px-6 py-3 rounded-full"
-            style={{
-              backgroundColor: 'var(--surface)',
-              border: '2px solid var(--primary)'
-            }}
-          >
-            <p style={{
-              fontSize: 'var(--text-base)',
-              fontFamily: 'var(--font-family-body)',
-              fontWeight: 'var(--font-weight-semibold)',
-              color: 'var(--primary)'
-            }}>
-              Reference: {inquiryNumber}
-            </p>
-          </div>
-        </motion.div>
+        {/* Inquiry Number removed per user request */}
 
         {hasBookingData && (
           <motion.div

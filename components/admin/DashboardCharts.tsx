@@ -230,20 +230,36 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
                 enabled: false,
               },
               tooltip: {
-                pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>',
+                headerFormat: '',
+                pointFormat: '<span style="color:{point.color}">●</span> <b>{point.name}</b>: <b>{point.y}</b> ' + t('bookings.items'),
+                backgroundColor: '#ffffff',
+                borderColor: '#e5e7eb',
+                borderRadius: 12,
+                style: {
+                  fontSize: '14px',
+                  fontFamily: 'var(--font-sans)',
+                }
               },
               plotOptions: {
                 pie: {
-                  innerSize: '60%',
+                  innerSize: '75%',
                   dataLabels: {
                     enabled: false,
                   },
                   showInLegend: false,
+                  states: {
+                    hover: {
+                      halo: {
+                        size: 8,
+                        opacity: 0.1
+                      }
+                    }
+                  }
                 },
               },
               series: [
                 {
-                  name: t('dashboard.charts.statusSummary'),
+                  name: t('bookings.title'),
                   colorByPoint: true,
                   data: statusData.map((item) => ({
                     name: getStatusLabel(item.name),
@@ -260,19 +276,28 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
               ],
             }}
           />
-          <div className="mt-4 space-y-2">
+          <div className="mt-6 grid grid-cols-3 gap-x-2 gap-y-5">
             {statusData.map((item) => (
-              <div key={item.name} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div key={item.name} className="flex flex-col gap-1 min-w-0 group cursor-default">
+                <div className="flex items-center gap-2 min-w-0">
                   <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: item.color }}
+                    className="w-2 h-2 rounded-full shrink-0 shadow-sm"
+                    style={{
+                      background: `linear-gradient(135deg, ${statusGradients[item.name]?.start || item.color}, ${statusGradients[item.name]?.end || item.color})`
+                    }}
                   />
-                  <span style={{ fontSize: 'var(--text-base)' }} className="text-foreground">{getStatusLabel(item.name)}</span>
+                  <span className="text-sm font-extrabold text-muted-foreground uppercase tracking-tighter truncate group-hover:text-foreground transition-colors">
+                    {getStatusLabel(item.name)}
+                  </span>
                 </div>
-                <span style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }} className="text-foreground">
-                  {item.value}
-                </span>
+                {/* <div className="pl-4">
+                  <span className="text-[14px] font-bold text-foreground tabular-nums leading-none">
+                    {item.value}
+                  </span>
+                  <span className="text-[9px] text-muted-foreground font-medium ml-1">
+                    {t('booking.items')}
+                  </span>
+                </div> */}
               </div>
             ))}
           </div>

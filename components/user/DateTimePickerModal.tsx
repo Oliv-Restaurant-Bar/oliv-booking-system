@@ -48,7 +48,18 @@ export function DateTimePickerModal({
 }: DateTimePickerModalProps) {
   const [selectedDate, setSelectedDate] = useState<string>(initialDate || '');
   const [selectedTime, setSelectedTime] = useState<string>(initialTime || '');
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const today = new Date();
+    // Check if tomorrow is a different month
+    const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+    const isLastDayOfMonth = tomorrow.getMonth() !== today.getMonth();
+    
+    if (isLastDayOfMonth) {
+      // If it's the last day, default to the next month
+      return new Date(today.getFullYear(), today.getMonth() + 1, 1);
+    }
+    return today;
+  });
   const modalRef = useRef<HTMLDivElement>(null);
   const firstFocusableRef = useRef<HTMLButtonElement>(null);
   const lastFocusableRef = useRef<HTMLButtonElement>(null);
@@ -175,6 +186,13 @@ export function DateTimePickerModal({
 
   const isDateSelected = (date: Date) => {
     return formatDateKey(date) === selectedDate;
+  };
+
+  const isDateToday = (date: Date) => {
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear();
   };
 
   const goToPrevMonth = () => {
@@ -320,6 +338,7 @@ export function DateTimePickerModal({
                     {calendarDays.map((dayObj, index) => {
                       const disabled = isDateDisabled(dayObj.date);
                       const selected = isDateSelected(dayObj.date);
+                      const isToday = isDateToday(dayObj.date);
                       const dateLabel = dayObj.date.toLocaleDateString('de-CH', {
                         day: 'numeric',
                         month: 'long',
@@ -350,6 +369,7 @@ export function DateTimePickerModal({
                                 ? 'hover:bg-muted text-foreground'
                                 : ''
                             }
+                            ${isToday && !selected ? 'border-2 border-primary' : ''}
                           `}
                           style={selected && !disabled ? { backgroundColor: 'var(--primary)' } : {}}
                         >

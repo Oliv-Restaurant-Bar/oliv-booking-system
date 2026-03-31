@@ -313,15 +313,22 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
         <div className="grid grid-cols-7 gap-1">
           {calendarDays.map(({ date, isCurrentMonth }, index) => {
             const dayBookings = getBookingsForDate(date);
-            const isToday = date.toDateString() === new Date().toDateString();
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            const dateNoTime = new Date(date);
+            dateNoTime.setHours(0, 0, 0, 0);
+
+            const isToday = dateNoTime.getTime() === now.getTime();
+            const isPast = dateNoTime.getTime() < now.getTime();
 
             return (
               <div
                 key={index}
                 className={cn(
-                  "min-h-24 p-1 border border-border rounded hover:bg-accent/50 transition-colors cursor-pointer",
-                  !isCurrentMonth && "bg-muted/30 opacity-60",
-                  isToday && "ring-2 ring-primary/20"
+                  "min-h-24 p-1.5 border border-border rounded-xl hover:bg-accent/50 transition-all cursor-pointer relative",
+                  !isCurrentMonth && "bg-muted/10 opacity-30",
+                  isPast && "bg-muted/20 grayscale-[0.8] opacity-75",
+                  isToday && "ring-2 ring-primary bg-primary/[0.02] z-10 shadow-sm"
                 )}
                 onClick={() => {
                   if (dayBookings.length > 1) {
@@ -333,8 +340,8 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
                 }}
               >
                 <div className={cn(
-                  "text-sm font-medium mb-1",
-                  isToday ? "text-primary" : "text-foreground"
+                  "flex items-center justify-center w-7 h-7 text-[13px] font-bold rounded-full mb-1 transition-colors",
+                  isToday ? "bg-primary text-white shadow-sm" : isPast ? "text-muted-foreground/60" : "text-foreground"
                 )}>
                   {date.getDate()}
                 </div>
@@ -349,9 +356,15 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
                         "cursor-pointer hover:opacity-80 transition-opacity"
                       )}
                       style={{
-                        backgroundColor: `${getStatusStyle(booking.status).color}20`,
-                        borderColor: getStatusStyle(booking.status).color,
-                        color: getStatusStyle(booking.status).color
+                        backgroundColor: isPast 
+                          ? 'rgba(156, 163, 175, 0.1)' 
+                          : `${getStatusStyle(booking.status).color}20`,
+                        borderColor: isPast 
+                          ? 'rgba(156, 163, 175, 0.3)' 
+                          : getStatusStyle(booking.status).color,
+                        color: isPast 
+                          ? '#94a3b8' 
+                          : getStatusStyle(booking.status).color
                       }}
                       onClick={(e) => {
                         e.stopPropagation();

@@ -410,36 +410,37 @@ export function ItemDetailsModal({
           )}
 
           {/* Nutritional Info */}
-          {item.nutritionalInfo && (
-            <div className="mb-6">
-              <h4 className="text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                {mt('labels.nutritionalInfo')}
-              </h4>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {Object.entries({
-                  calories: item.nutritionalInfo.calories,
-                  protein: item.nutritionalInfo.protein,
-                  carbs: item.nutritionalInfo.carbs,
-                  fat: item.nutritionalInfo.fat,
-                  fiber: item.nutritionalInfo.fiber,
-                  sugar: item.nutritionalInfo.sugar,
-                  sodium: item.nutritionalInfo.sodium
-                }).map(([key, value]) => value && (
-                  <div key={key} className="p-2 bg-muted/30 border border-border/40 rounded-lg">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">
-                      {mt(`nutrition.${key}`)}
-                    </p>
-                    <p className="text-sm font-bold text-foreground break-all">{value}</p>
-                  </div>
-                ))}
+          {item.nutritionalInfo && (() => {
+            const displayValues = {
+              calories: item.nutritionalInfo.calories,
+              protein: item.nutritionalInfo.protein,
+              carbs: item.nutritionalInfo.carbs,
+              fat: item.nutritionalInfo.fat,
+              fiber: item.nutritionalInfo.fiber,
+              sugar: item.nutritionalInfo.sugar,
+              sodium: item.nutritionalInfo.sodium
+            };
+            const hasDisplayInfo = Object.values(displayValues).some(val => !!val);
+            if (!hasDisplayInfo) return null;
+
+            return (
+              <div className="mb-6">
+                <h4 className="text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                  {mt('labels.nutritionalInfo')}
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {Object.entries(displayValues).map(([key, value]) => value && (
+                    <div key={key} className="p-2 bg-muted/30 border border-border/40 rounded-lg">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">
+                        {mt(`nutrition.${key}`)}
+                      </p>
+                      <p className="text-sm font-bold text-foreground break-all">{value}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-              {/* {item.nutritionalInfo.servingSize && (
-                <p className="text-[10px] text-muted-foreground mt-2 italic">
-                  * {mt('descriptions.nutritionServingSize', { size: item.nutritionalInfo.servingSize }) || `All values based on ${item.nutritionalInfo.servingSize} serving size.`}
-                </p>
-              )} */}
-            </div>
-          )}
+            );
+          })()}
 
           {/* Allergen & Additive Information */}
           {((item.allergens && item.allergens.length > 0) || (item.additives && item.additives.length > 0)) && (

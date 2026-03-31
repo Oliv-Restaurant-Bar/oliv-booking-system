@@ -991,7 +991,7 @@ export function CustomerSummary({
             </div>
           </div>
         </div>
-        {grandTotal > 5000 && (
+        {grandTotal > 5000 && !isEditMode && (
           <div className="bg-[#1e293b] text-white p-6 rounded-lg flex gap-4 items-start shadow-md" style={{ borderRadius: 'var(--radius)' }}>
             <AlertTriangle className="w-6 h-6 text-amber-400 flex-shrink-0 mt-1" />
             <div>
