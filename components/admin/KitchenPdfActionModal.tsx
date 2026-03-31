@@ -122,7 +122,7 @@ export function KitchenPdfActionModal({
         const qtyStr = String(item.rawQuantity || item.quantity || '1');
         const qty = parseInt(qtyStr.split(' ')[0]) || booking.guests || 1;
         const uPrice = Number(item.unitPrice) || 0;
-        
+
         return {
           id: `item-${idx}`,
           name: String(item.item || 'Item'),
@@ -211,7 +211,7 @@ export function KitchenPdfActionModal({
         // OFFICIAL way to get pure base64 from jsPDF for email attachments
         // output('datauristring') is highly supported and returns a standard data URI
         const dataUri = doc.output('datauristring');
-        
+
         // Robust split: find the first comma and take everything after it
         const parts = dataUri.split(',');
         if (parts.length > 1) {
@@ -219,7 +219,7 @@ export function KitchenPdfActionModal({
         } else {
           base64Content = parts[0];
         }
-        
+
         // Debug
         console.log(`   - Output type: datauristring → base64`);
         console.log(`   - Data URI length: ${dataUri.length}`);
@@ -325,7 +325,17 @@ export function KitchenPdfActionModal({
                   <MessageSquare className="w-5 h-5 text-primary" />
                   {tAdmin('kitchenNotes')}
                   <span className="text-muted-foreground font-normal ml-1">({tWizard('labels.optional')})</span>
-                  <div className="flex justify-end ml-auto">
+                </h4>
+                <div className="space-y-3">
+                  <ValidatedTextarea
+                    value={kitchenNotes}
+                    onChange={(e) => handleNotesChange(e.target.value)}
+                    rows={4}
+                    placeholder={tAdmin('kitchenNotesPlaceholder')}
+                    maxLength={1000}
+                    showCharacterCount
+                  />
+                  <div className="flex justify-end">
                     <button
                       onClick={handleSaveNotes}
                       disabled={isSavingNotes || !hasUnsavedNotes}
@@ -341,16 +351,6 @@ export function KitchenPdfActionModal({
                       <span>Save Changes</span>
                     </button>
                   </div>
-                </h4>
-                <div className="space-y-3">
-                  <ValidatedTextarea
-                    value={kitchenNotes}
-                    onChange={(e) => handleNotesChange(e.target.value)}
-                    rows={4}
-                    placeholder={tAdmin('kitchenNotesPlaceholder')}
-                    maxLength={1000}
-                    showCharacterCount
-                  />
                 </div>
               </div>
 
