@@ -871,7 +871,10 @@
           "highProtein": "High Protein",
           "organic": "Organic",
           "local": "Local",
-          "seasonal": "Seasonal"
+          "seasonal": "Seasonal",
+          "vegan": "Vegan",
+          "veg": "Vegetarian",
+          "nonVeg": "Non-Vegetarian"
         },
         "allergens": {
           "gluten": "Gluten",

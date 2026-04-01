@@ -415,7 +415,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
         setIsAddChoiceModalOpen(false);
         toast.success(t('messages.choicesUpdated'));
       }
-    } else if (choiceItemId && activeCategoryId) {
+    } else if (choiceItemId) {
       const result = await updateItemAddonGroups(choiceItemId, selectedAddonGroups);
       if (result.success) {
         setCategories(categories.map(cat => ({
@@ -843,6 +843,7 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
                 onAddChoice={(catId, itemId) => {
                   setChoiceCategoryId(itemId ? null : catId);
                   setChoiceItemId(itemId || null);
+                  if (itemId) setActiveCategoryId(catId);
                   const groups = itemId ?
                     categories.find(c => c.id === catId)?.items.find(i => i.id === itemId)?.assignedAddonGroups :
                     categories.find(c => c.id === catId)?.assignedAddonGroups;

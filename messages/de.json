@@ -869,7 +869,10 @@
           "highProtein": "Eiweissreich",
           "organic": "Bio",
           "local": "Lokal",
-          "seasonal": "Saisonal"
+          "seasonal": "Saisonal",
+          "vegan": "Vegan",
+          "veg": "Vegetarisch",
+          "nonVeg": "Nicht-vegetarisch"
         },
         "allergens": {
           "gluten": "Gluten",

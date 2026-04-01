@@ -114,7 +114,7 @@ export function MenuCategoriesTab({
           items={filteredCategories.map(cat => cat.id)}
           strategy={verticalListSortingStrategy}
         >
-          {filteredCategories.map((category) => (
+          {filteredCategories.map((category, catIndex) => (
             <SortableCategory key={category.id} id={category.id}>
               {({ attributes, listeners, isDragging }: any) => (
                 <>
@@ -214,7 +214,11 @@ export function MenuCategoriesTab({
                                   className="fixed inset-0 z-10"
                                   onClick={() => setOpenDropdownId(null)}
                                 />
-                                <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-20">
+                                <div className={`absolute right-0 w-48 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-20 ${
+                                    catIndex >= filteredCategories.length - 1 
+                                      ? 'bottom-full mb-2' 
+                                      : 'mt-2'
+                                  }`}>
                                   {/* Mobile: Edit Category */}
                                   {canEditCategory && (
                                     <button
@@ -451,7 +455,11 @@ export function MenuCategoriesTab({
                                                 className="fixed inset-0 z-10"
                                                 onClick={() => setOpenDropdownId(null)}
                                               />
-                                              <div className="absolute right-0 top-full mt-1 w-48 bg-card border border-border rounded-lg shadow-xl z-20 py-1 overflow-hidden">
+                                               <div className={`absolute right-0 w-48 bg-card border border-border rounded-lg shadow-xl z-20 py-1 overflow-hidden ${
+                                                  index >= (category.items?.length || 0) - 2 && (category.items?.length || 0) > 2
+                                                    ? 'bottom-full mb-1'
+                                                    : 'top-full mt-1'
+                                                }`}>
                                                 {/* Mobile-only actions */}
                                                 <div className="md:hidden border-b border-border">
                                                   <button

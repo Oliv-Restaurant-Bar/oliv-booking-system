@@ -90,7 +90,7 @@ export function ChoicesAddonsTab({
           items={addonGroups.map(g => g.id)}
           strategy={verticalListSortingStrategy}
         >
-          {addonGroups.map((group) => (
+          {addonGroups.map((group, groupIndex) => (
             <SortableGroup key={group.id} id={group.id}>
               {({ attributes, listeners, isDragging }: any) => (
                 <div style={{ opacity: isDragging ? 0.5 : 1 }}>
@@ -192,7 +192,9 @@ export function ChoicesAddonsTab({
                             />
 
                             {/* Dropdown */}
-                            <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-lg shadow-xl overflow-hidden z-50">
+                            <div className={`absolute right-0 w-48 bg-card border border-border rounded-lg shadow-xl overflow-hidden z-50 ${
+                               groupIndex >= addonGroups.length - 1 ? 'bottom-full mb-2' : 'top-full mt-2'
+                             }`}>
                               {/* Mobile: Edit Group */}
                               <button
                                 onClick={() => {
