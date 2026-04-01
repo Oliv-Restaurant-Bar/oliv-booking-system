@@ -556,6 +556,12 @@
         "notAssignedYet": "Dieser Buchung wurde noch kein Teammitglied zugewiesen",
         "notAssigned": "Kein Venue zugewiesen"
       },
+      "tabs": {
+        "eventDetails": "Event-Details",
+        "menuDetails": "Menü-Details",
+        "commentsActivities": "Kommentare & Aktivitäten",
+        "requests": "Anfragen"
+      },
       "calendar": {
         "days": {
           "sun": "So",

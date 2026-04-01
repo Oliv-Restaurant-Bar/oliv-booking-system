@@ -556,6 +556,12 @@
         "notAssignedYet": "No team member has been assigned to this booking yet",
         "notAssigned": "No venue assigned"
       },
+      "tabs": {
+        "eventDetails": "Event Details",
+        "menuDetails": "Menu Details",
+        "commentsActivities": "Comments & Activities",
+        "requests": "Requests"
+      },
       "calendar": {
         "days": {
           "sun": "Sun",

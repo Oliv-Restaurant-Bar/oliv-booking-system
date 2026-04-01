@@ -1488,11 +1488,11 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                     )}
 
                     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-                        <TabsList className="mb-6 w-full flex overflow-x-auto justify-start sm:justify-center p-1 h-auto gap-1 no-scrollbar">
-                            <TabsTrigger value="event-details" className="flex-shrink-0 px-3 py-2 text-xs sm:text-sm h-10 data-[state=active]:bg-background data-[state=active]:shadow-sm">Event Details</TabsTrigger>
-                            <TabsTrigger value="menu-details" className="flex-shrink-0 px-3 py-2 text-xs sm:text-sm h-10 data-[state=active]:bg-background data-[state=active]:shadow-sm">Menu Details</TabsTrigger>
-                            <TabsTrigger value="comments-activities" className="flex-shrink-0 px-3 py-2 text-xs sm:text-sm h-10 data-[state=active]:bg-background data-[state=active]:shadow-sm">Activities</TabsTrigger>
-                            <TabsTrigger value="requests" className="flex-shrink-0 px-3 py-2 text-xs sm:text-sm h-10 data-[state=active]:bg-background data-[state=active]:shadow-sm">Requests</TabsTrigger>
+                        <TabsList className="mb-6 w-full grid grid-cols-4 p-1 h-auto gap-1 no-scrollbar text-pt-2">
+                            <TabsTrigger value="event-details" className="px-3 py-2 text-xs sm:text-sm h-10 data-[state=active]:bg-background data-[state=active]:shadow-sm">{t('tabs.eventDetails')}</TabsTrigger>
+                            <TabsTrigger value="menu-details" className="px-3 py-2 text-xs sm:text-sm h-10 data-[state=active]:bg-background data-[state=active]:shadow-sm">{t('tabs.menuDetails')}</TabsTrigger>
+                            <TabsTrigger value="comments-activities" className="px-3 py-2 text-xs sm:text-sm h-10 data-[state=active]:bg-background data-[state=active]:shadow-sm">{t('tabs.commentsActivities')}</TabsTrigger>
+                            <TabsTrigger value="requests" className="px-3 py-2 text-xs sm:text-sm h-10 data-[state=active]:bg-background data-[state=active]:shadow-sm">{t('tabs.requests')}</TabsTrigger>
                         </TabsList>
 
                         {/* Event Details Tab */}
