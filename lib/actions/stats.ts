@@ -414,6 +414,7 @@ export async function getTrendingItems(limit: number = 10) {
         mi.id,
         mi.name,
         mi.name_de as name_de,
+        mi.price_per_person,
         mc.name as category,
         mc.name_de as category_de,
         mi.image_url,
