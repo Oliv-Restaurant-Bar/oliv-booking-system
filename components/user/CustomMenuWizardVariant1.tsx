@@ -1108,7 +1108,7 @@ export function CustomMenuWizard() {
 
         // Show success message and redirect
         toast.success('Booking updated successfully!');
-        router.push(`/admin/bookings?id=${bookingId}`);
+        router.push(`/admin/bookings?id=${bookingId}&tab=menu-details`);
         return;
       }
 
@@ -1516,7 +1516,7 @@ export function CustomMenuWizard() {
           currentStep > 1
             ? () => setCurrentStep(1)
             : (isEditMode && bookingId)
-              ? () => router.push(`/admin/bookings?id=${bookingId}`)
+              ? () => router.push(`/admin/bookings?id=${bookingId}&tab=menu-details`)
               : undefined
         }
       />

@@ -8,6 +8,7 @@ import { useAdminTranslation, useCommonTranslation, useBookingTranslation } from
 import { useTranslations } from 'next-intl';
 import { useSystemTimezone } from '@/lib/hooks/useSystemTimezone';
 import { useDateFormat } from '@/lib/contexts/SystemSettingsContext';
+import { Button } from '../user/Button';
 
 interface GridViewProps {
   bookings: Array<{
@@ -164,7 +165,7 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
                   <div className="flex items-center gap-1.5 text-primary font-medium" style={{ fontSize: 'var(--text-small)' }}>
                     <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
                     <span className="truncate max-w-[180px]" title={`${booking.event?.room || ''}${booking.event?.room && booking.event?.location ? ' • ' : ''}${booking.event?.location || ''}`}>
-                      {booking.event?.room || ''} 
+                      {booking.event?.room || ''}
                     </span>
                   </div>
                 )}
@@ -184,13 +185,14 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
           </div>
 
           {/* CTA Button */}
-          <button
+          <Button
             onClick={() => onOpenModal(booking)}
+            variant='primary'
             className="w-full px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-secondary hover:text-white transition-colors flex items-center justify-center gap-2 cursor-pointer"
             style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
           >
             {commonT('viewDetails')}
-          </button>
+          </Button>
         </div>
       ))}
     </div>

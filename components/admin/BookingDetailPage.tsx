@@ -569,6 +569,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             });
             toast.success(t('toast.statusUpdated'));
             onBookingUpdated?.();
+            fetchBookingData(false);
+            router.refresh();
         } catch (error) {
             console.error('Error updating status:', error);
             toast.error(t('toast.statusUpdateFailed'));
@@ -739,10 +741,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                 setInitialAssignedTo(assignedTo);
                 setHasUnsavedChanges(false);
                 onBookingUpdated?.();
-                // Refresh page after a short delay to show updated data
-                setTimeout(() => {
-                    window.location.reload();
-                }, 100);
+                fetchBookingData(false);
+                router.refresh();
             } else {
                 toast.error(t('toast.saveFailed'));
             }
@@ -1217,10 +1217,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                 toast.success(t('toast.saveSuccess'));
                 setIsEditingSpecialRequests(false);
                 onBookingUpdated?.();
-                // Refresh page after a short delay to show updated data
-                setTimeout(() => {
-                    window.location.reload();
-                }, 100);
+                fetchBookingData(false);
+                router.refresh();
             } else {
                 toast.error(t('toast.saveFailed'));
             }
@@ -1272,10 +1270,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                 setSelectedVenue(tempEvent.location);
                 setIsEditingEvent(false);
                 onBookingUpdated?.();
-                // Refresh page after a short delay to show updated data
-                setTimeout(() => {
-                    window.location.reload();
-                }, 100);
+                fetchBookingData(false);
+                router.refresh();
             } else {
                 toast.error(t('toast.saveFailed'));
             }
@@ -1333,10 +1329,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                 toast.success(t('toast.saveSuccess'));
                 setIsEditingMenu(false);
                 onBookingUpdated?.();
-                // Refresh page after a short delay to show updated data
-                setTimeout(() => {
-                    window.location.reload();
-                }, 100);
+                fetchBookingData(false);
+                router.refresh();
             } else {
                 toast.error(t('toast.saveFailed'));
             }
@@ -3038,10 +3032,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                 setInitialAssignedTo(userId);
                                 setHasUnsavedChanges(false);
                                 onBookingUpdated?.();
-                                // Refresh page after a short delay to show updated data
-                                setTimeout(() => {
-                                    window.location.reload();
-                                }, 100);
+                                fetchBookingData(false);
+                                router.refresh();
                             } else {
                                 toast.error(t('toast.assignmentFailed'));
                             }

@@ -18,6 +18,7 @@ import { MenuItem } from './menuItemsData';
 import { EventDetails } from '@/lib/types';
 import { DietaryIcon } from './DietaryIcon';
 import { Edit2 } from 'lucide-react';
+import { TermsAndConditionsModal } from './TermsAndConditionsModal';
 
 interface MenuCartProps {
   selectedItems: string[];
@@ -81,7 +82,7 @@ export function MenuCart({
   onEditDateTime,
   includeBeveragePrices,
   setIncludeBeveragePrices,
-  continueButtonText = 'Submit Request',
+  continueButtonText = 'Anfrage absenden',
   isDrawer = false,
   isSubmitting = false,
   setItemGuestCounts,
@@ -92,7 +93,7 @@ export function MenuCart({
 }: MenuCartProps) {
   const [viewMode, setViewMode] = React.useState<'per-person' | 'total'>('per-person');
   const [termsAccepted, setTermsAccepted] = React.useState(isEditMode);
-  
+
   // Also sync when isEditMode changes
   React.useEffect(() => {
     if (isEditMode) {
@@ -101,6 +102,7 @@ export function MenuCart({
   }, [isEditMode]);
 
   const [isDepositModalOpen, setIsDepositModalOpen] = React.useState(false);
+  const [isTermsModalOpen, setIsTermsModalOpen] = React.useState(false);
   const [expandedItems, setExpandedItems] = React.useState<Record<string, boolean>>({});
 
   const toggleExpand = (itemId: string, e: React.MouseEvent) => {
@@ -426,15 +428,15 @@ export function MenuCart({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <ShoppingCart className="w-4.5 h-4.5 text-[#2c2f34]" />
-              <h2 className="font-bold text-[17px] text-[#2c2f34]">Your Menu</h2>
+              <h2 className="font-bold text-[17px] text-[#2c2f34]">Ihr Menü</h2>
             </div>
             <div className="flex flex-col items-end">
               <div className="text-[#9dae91] font-bold text-[12px]">
-                {currentGuestCount} Guests
+                {currentGuestCount} Gäste
               </div>
               {isEditMode && originalGuestCount && parseInt(originalGuestCount) !== currentGuestCount && (
                 <div className="text-[9px] text-[#9ca3af] font-medium tracking-tight mt-[-2px]">
-                  Originally: {originalGuestCount}
+                  Ursprünglich: {originalGuestCount}
                 </div>
               )}
             </div>
@@ -471,8 +473,8 @@ export function MenuCart({
                   <Plus className="w-3.5 h-3.5 text-[#9dae91]" />
                 </div>
               </div>
-              <h3 className="font-bold text-[17px] text-[#2c2f34] mb-1.5 ">Build your menu</h3>
-              <p className="text-[13px] text-[#9ca3af] leading-relaxed max-w-[180px] ">Start adding items to your menu</p>
+              <h3 className="font-bold text-[17px] text-[#2c2f34] mb-1.5 ">Stellen Sie Ihr Menü zusammen</h3>
+              <p className="text-[13px] text-[#9ca3af] leading-relaxed max-w-[180px] ">Fügen Sie Artikel zu Ihrem Menü hinzu</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -480,7 +482,7 @@ export function MenuCart({
               {foodItems.length > 0 && (
                 <div>
                   <div className="pb-1 border-b border-[#f3f4f6] mb-1.5">
-                    <h3 className="text-[11px] font-extrabold text-[#2c2f34] uppercase tracking-[0.05em]">Food Items</h3>
+                    <h3 className="text-[11px] font-extrabold text-[#2c2f34] uppercase tracking-[0.05em]">Speisen</h3>
                   </div>
                   <div className="space-y-2">
                     {/* Use the provided categories list to maintain sequence */}
@@ -506,7 +508,7 @@ export function MenuCart({
               {beverages.length > 0 && (
                 <div className="mt-3">
                   <div className="pb-1 border-b border-[#f3f4f6] mb-1.5">
-                    <h3 className="text-[11px] font-extrabold text-[#2c2f34] uppercase tracking-[0.05em]">Beverages <span className='text-[10.5px] text-[#9dae91] font-normal'>(billed by consumption)</span></h3>
+                    <h3 className="text-[11px] font-extrabold text-[#2c2f34] uppercase tracking-[0.05em]">Getränke <span className='text-[10.5px] text-[#9dae91] font-normal'>(nach Konsumation)</span></h3>
                   </div>
                   <div className="space-y-2">
                     {categories.filter(cat => beverages.some(i => i.category === cat)).map(category => (
@@ -531,7 +533,7 @@ export function MenuCart({
               {addons.length > 0 && (
                 <div className="mt-3">
                   <div className="pb-1 border-b border-[#f3f4f6] mb-1.5">
-                    <h3 className="text-[11px] font-extrabold text-[#2c2f34] uppercase tracking-[0.05em]">Add-ons</h3>
+                    <h3 className="text-[11px] font-extrabold text-[#2c2f34] uppercase tracking-[0.05em]">Extras</h3>
                   </div>
                   <div className="space-y-2">
                     {categories.filter(cat => addons.some(i => i.category === cat)).map(category => (
@@ -560,7 +562,7 @@ export function MenuCart({
           <div className="p-4 border-t border-[#f3f4f6] bg-white shrink-0 space-y-4">
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-bold text-[14px] text-[#2c2f34]">Order overview</h3>
+                <h3 className="font-bold text-[14px] text-[#2c2f34]">Bestellübersicht</h3>
                 <div className="p-0.5 bg-[#f3f4f6] rounded-lg flex gap-0.5">
                   <button
                     onClick={() => setViewMode('per-person')}
@@ -644,7 +646,7 @@ export function MenuCart({
                         />
                         <Check className="absolute size-3 text-white opacity-0 peer-checked:opacity-100 left-0.5 pointer-events-none transition-opacity" />
                       </div>
-                      <span className="text-[11px] text-[#2c2f34] font-medium">Include Beverages costs in estimate</span>
+                      <span className="text-[11px] text-[#2c2f34] font-medium">Getränkekosten in Kostenvoranschlag einschliessen</span>
                     </label>)}
                   </>
                 )}
@@ -673,7 +675,16 @@ export function MenuCart({
                     <Check className="absolute size-2.5 text-white opacity-0 peer-checked:opacity-100 left-0.5 pointer-events-none transition-opacity" />
                   </div>
                   <span className="text-[11px] text-[#2c2f34] font-medium">
-                    I agree to the <span className="text-[#8da081] underline font-bold cursor-pointer">Terms & Conditions</span>
+                    Ich stimme den <span
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsTermsModalOpen(true);
+                      }}
+                      className="text-[#8da081] underline font-bold cursor-pointer hover:text-[#7a8d6f] transition-colors"
+                    >
+                      Allgemeinen Geschäftsbedingungen
+                    </span>
                   </span>
                 </label>
 
@@ -681,7 +692,7 @@ export function MenuCart({
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-amber-800 animate-in fade-in slide-in-from-top-1 duration-200">
                     <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
                     <p className="text-[11px] leading-relaxed font-medium">
-                      Minimum amount to spend <span className="font-bold">CHF 1,000.00</span> required for <span className="font-bold">UG1 Exclusive</span>. Please add more items.
+                      Mindestbestellwert von <span className="font-bold">CHF 1'000.00</span> für <span className="font-bold">UG1 Exklusiv</span> erforderlich. Bitte fügen Sie weitere Artikel hinzu.
                     </p>
                   </div>
                 )}
@@ -700,11 +711,11 @@ export function MenuCart({
                     : "bg-[#f3f4f6] text-[#9ca3af] cursor-not-allowed"
                     }`}
                 >
-                  {isSubmitting ? 'Submitting...' : continueButtonText}
+                  {isSubmitting ? 'Wird gesendet...' : continueButtonText}
                 </button>
 
                 <p className="text-[10px] text-[#9ca3af] text-center">
-                  Confirm guest count at least 4 days before event
+                  Gästezahl mindestens 4 Tage vor dem Event bestätigen
                 </p>
               </div>
             </div>
@@ -717,11 +728,11 @@ export function MenuCart({
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white rounded-[24px] w-full max-w-[480px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="flex justify-between items-center px-6 py-4 border-b border-[#f3f4f6]">
-              <h3 className="font-bold text-[18px] text-[#2c2f34]">Deposit Requirement</h3>
+              <h3 className="font-bold text-[18px] text-[#2c2f34]">Vorauszahlung erforderlich</h3>
               <button
                 onClick={() => setIsDepositModalOpen(false)}
                 className="size-8 rounded-full bg-[#f9fafb] flex items-center justify-center hover:bg-[#f3f4f6] transition-colors"
-                title="Close"
+                title="Schliessen"
               >
                 <X className="w-4 h-4 text-[#6b7280]" />
               </button>
@@ -734,12 +745,12 @@ export function MenuCart({
                 </div>
                 <div className="space-y-4">
                   <p className="text-[15px] text-[#6b7280] leading-relaxed">
-                    A deposit is required for orders above <span className="font-bold text-[#2c2f34]">CHF 5,000.00</span>. This deposit will be deducted from the final invoice.
+                    Bei Bestellungen über <span className="font-bold text-[#2c2f34]">CHF 5'000.00</span> ist eine Vorauszahlung erforderlich. Diese wird von der Schlussrechnung abgezogen.
                   </p>
                   <ul className="space-y-3">
                     <li className="flex items-start gap-3 text-[14px] text-[#6b7280]">
                       <div className="size-1.5 rounded-full bg-[#9dae91] mt-1.5 shrink-0" />
-                      Our team will connect you once order is locked and confirmed.
+                      Unser Team wird Sie kontaktieren, sobald die Bestellung fixiert und bestätigt ist.
                     </li>
                   </ul>
                 </div>
@@ -750,7 +761,7 @@ export function MenuCart({
                   onClick={() => setIsDepositModalOpen(false)}
                   className="flex-1 h-[48px] rounded-[12px] border border-[#e5e7eb] font-semibold text-[14px] text-[#6b7280] hover:bg-[#f9fafb] transition-all"
                 >
-                  Cancel
+                  Abbrechen
                 </button>
                 <button
                   onClick={() => {
@@ -759,13 +770,19 @@ export function MenuCart({
                   }}
                   className="flex-1 h-[48px] rounded-[12px] bg-[#9dae91] font-bold text-[14px] text-[#2c2f34] shadow-lg shadow-[#9dae91]/20 hover:opacity-95 transition-all"
                 >
-                  Confirm & Submit
+                  Bestätigen & Absenden
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Terms and Conditions Modal */}
+      <TermsAndConditionsModal
+        isOpen={isTermsModalOpen}
+        onClose={() => setIsTermsModalOpen(false)}
+      />
     </div>
   );
 }
