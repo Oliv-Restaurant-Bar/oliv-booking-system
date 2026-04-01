@@ -1488,11 +1488,11 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                     )}
 
                     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-                        <TabsList className="mb-6 w-full flex flex-wrap gap-2">
-                            <TabsTrigger value="event-details" className="flex-1 min-w-max px-3 py-2 text-sm sm:text-base">Event Details</TabsTrigger>
-                            <TabsTrigger value="menu-details" className="flex-1 min-w-max px-3 py-2 text-sm sm:text-base">Menu Details</TabsTrigger>
-                            <TabsTrigger value="comments-activities" className="flex-1 min-w-max px-3 py-2 text-sm sm:text-base">Comments & Activities</TabsTrigger>
-                            <TabsTrigger value="requests" className="flex-1 min-w-max px-3 py-2 text-sm sm:text-base">Requests</TabsTrigger>
+                        <TabsList className="mb-6 w-full flex overflow-x-auto justify-start sm:justify-center p-1 bg-muted/30 h-auto gap-1 no-scrollbar">
+                            <TabsTrigger value="event-details" className="flex-shrink-0 px-3 py-2 text-xs sm:text-sm h-10 data-[state=active]:bg-background data-[state=active]:shadow-sm">Event Details</TabsTrigger>
+                            <TabsTrigger value="menu-details" className="flex-shrink-0 px-3 py-2 text-xs sm:text-sm h-10 data-[state=active]:bg-background data-[state=active]:shadow-sm">Menu Details</TabsTrigger>
+                            <TabsTrigger value="comments-activities" className="flex-shrink-0 px-3 py-2 text-xs sm:text-sm h-10 data-[state=active]:bg-background data-[state=active]:shadow-sm">Activities</TabsTrigger>
+                            <TabsTrigger value="requests" className="flex-shrink-0 px-3 py-2 text-xs sm:text-sm h-10 data-[state=active]:bg-background data-[state=active]:shadow-sm">Requests</TabsTrigger>
                         </TabsList>
 
                         {/* Event Details Tab */}
@@ -1500,21 +1500,23 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                             {/* Customer Information */}
                             {/* Group 1: Kontaktinformationen */}
                             <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
-                                <div className="flex items-center justify-between mb-5">
-                                    <h3 className="text-foreground flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
+                                    <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
                                         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                            {/* icon will be different for each section, but the container structure is same */}
                                             <User className="w-4 h-4 text-primary" />
                                         </div>
-                                        {wizardT('sections.contactInformation')}
+                                        <span className="truncate">{wizardT('sections.contactInformation')}</span>
                                     </h3>
                                     {canEditBooking && !isLocked && !isEditingCustomer && (
                                         <button
                                             onClick={handleEditCustomer}
-                                            className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary cursor-pointer flex items-center gap-2"
+                                            className="px-2.5 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary cursor-pointer flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0"
                                             style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                         >
                                             <Pencil className="w-3.5 h-3.5" />
-                                            <span>{buttonT('edit')}</span>
+                                            <span className="hidden xs:inline">{buttonT('edit')}</span>
+                                            <span className="xs:hidden">Edit</span>
                                         </button>
                                     )}
                                     {isEditingCustomer && (
@@ -1637,21 +1639,22 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
                             {/* Group 2: Adresse */}
                             <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
-                                <div className="flex items-center justify-between mb-5">
-                                    <h3 className="text-foreground flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
+                                    <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
                                         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                                             <MapPin className="w-4 h-4 text-primary" />
                                         </div>
-                                        {wizardT('sections.address')}
+                                        <span className="truncate">{wizardT('sections.address')}</span>
                                     </h3>
                                     {canEditBooking && !isLocked && !isEditingAddress && (
                                         <button
                                             onClick={handleEditAddress}
-                                            className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary cursor-pointer flex items-center gap-2"
+                                            className="px-2.5 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary cursor-pointer flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0"
                                             style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                         >
                                             <Pencil className="w-3.5 h-3.5" />
-                                            <span>{buttonT('edit')}</span>
+                                            <span className="hidden xs:inline">{buttonT('edit')}</span>
+                                            <span className="xs:hidden">Edit</span>
                                         </button>
                                     )}
                                     {isEditingAddress && (
@@ -1771,12 +1774,12 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
                             {/* Event Details */}
                             <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
-                                <div className="flex items-center justify-between mb-5">
-                                    <h3 className="text-foreground flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
+                                    <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
                                         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                                             <CalendarDays className="w-4 h-4 text-primary" />
                                         </div>
-                                        {wizardT('sections.eventDetails')}
+                                        <span className="truncate">{wizardT('sections.eventDetails')}</span>
                                     </h3>
                                     <div className="flex items-center gap-2">
                                         {/* {kitchenPdfStatus && !isEditingEvent && (
@@ -1788,11 +1791,12 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         {canEditBooking && !isLocked && !isEditingEvent && (
                                             <button
                                                 onClick={handleEditEvent}
-                                                className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary cursor-pointer flex items-center gap-2"
+                                                className="px-2.5 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary cursor-pointer flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0"
                                                 style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                             >
                                                 <Pencil className="w-3.5 h-3.5" />
-                                                <span>{buttonT('edit')}</span>
+                                                <span className="hidden xs:inline">{buttonT('edit')}</span>
+                                                <span className="xs:hidden">Edit</span>
                                             </button>
                                         )}
                                         {isEditingEvent && (
@@ -1921,24 +1925,6 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                             <span>{booking.amount}</span>
                                         </p>
                                     </div>
-                                    {/* <div className="space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('venueLocation')}</label>
-                                        {isEditingEvent ? (
-                                            <select
-                                                value={tempEvent.location}
-                                                onChange={(e) => handleVenueChange(e.target.value)}
-                                                className="w-full px-4 py-2 bg-input-background border border-border rounded-lg text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                                style={{ fontSize: 'var(--text-base)' }}
-                                            >
-                                                <option value="">{t('notAssigned')}</option>
-                                                {venueLocations.map((loc: string) => (
-                                                    <option key={loc} value={loc}>{loc}</option>
-                                                ))}
-                                            </select>
-                                        ) : (
-                                            <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{selectedVenue || t('notAssigned')}</p>
-                                        )}
-                                    </div> */}
                                     <div className="space-y-1">
                                         <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.room')}</label>
                                         {isEditingEvent ? (
@@ -1966,48 +1952,26 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         )}
                                     </div>
                                 </div>
-
-                                {/* {canEditBooking && (
-                            <div className="flex justify-end mt-4 pt-4 border-t border-border/50">
-                                <button
-                                    onClick={handleSaveChanges}
-                                    disabled={isSaving || !hasUnsavedChanges}
-                                    className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm hover:shadow-md"
-                                    style={{ fontSize: 'var(--text-base)' }}
-                                >
-                                    {isSaving ? (
-                                        <>
-                                            <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-transparent rounded-full animate-spin" />
-                                            <span>Saving...</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <CheckCircle2 className="w-4 h-4" />
-                                            <span>Save Changes</span>
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        )} */}
                             </div>
 
                             {/* Group 4: Spezielle Wünsche */}
                             <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
-                                <div className="flex items-center justify-between mb-5">
-                                    <h3 className="text-foreground flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
+                                    <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
                                         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                                             <Info className="w-4 h-4 text-primary" />
                                         </div>
-                                        {wizardT('sections.specialRequests')}
+                                        <span className="truncate">{wizardT('sections.specialRequests')}</span>
                                     </h3>
                                     {canEditBooking && !isLocked && !isEditingSpecialRequests && (
                                         <button
                                             onClick={handleEditSpecialRequests}
-                                            className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary cursor-pointer flex items-center gap-2"
+                                            className="px-2.5 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary cursor-pointer flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0"
                                             style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                         >
                                             <Pencil className="w-3.5 h-3.5" />
-                                            <span>{buttonT('edit')}</span>
+                                            <span className="hidden xs:inline">{buttonT('edit')}</span>
+                                            <span className="xs:hidden">Edit</span>
                                         </button>
                                     )}
                                     {isEditingSpecialRequests && (
@@ -2102,21 +2066,22 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
                             {/* Group 5: Zahlungsmöglichkeiten */}
                             <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
-                                <div className="flex items-center justify-between mb-5">
-                                    <h3 className="text-foreground flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
+                                    <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
                                         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                                             <CreditCard className="w-4 h-4 text-primary" />
                                         </div>
-                                        {wizardT('sections.paymentOptions')}
+                                        <span className="truncate">{wizardT('sections.paymentOptions')}</span>
                                     </h3>
                                     {canEditBooking && !isLocked && !isEditingPayment && (
                                         <button
                                             onClick={handleEditPayment}
-                                            className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary cursor-pointer flex items-center gap-2"
+                                            className="px-2.5 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary cursor-pointer flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0"
                                             style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                         >
                                             <Pencil className="w-3.5 h-3.5" />
-                                            <span>{buttonT('edit')}</span>
+                                            <span className="hidden xs:inline">{buttonT('edit')}</span>
+                                            <span className="xs:hidden">Edit</span>
                                         </button>
                                     )}
                                     {isEditingPayment && (
@@ -2402,14 +2367,6 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                             </p>
                                                         </div>
                                                     </div>
-                                                    {/* <div className="space-y-2">
-                                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.customerReference')}</label>
-                                                        <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
-                                                            <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                                                {(booking as any).billingCustomerReference || '-'}
-                                                            </p>
-                                                        </div>
-                                                    </div> */}
                                                 </div>
                                             )}
                                         </div>
@@ -2422,11 +2379,12 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                         <TabsContent value="menu-details" className="space-y-6">
                             {/* Menu Items */}
                             <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
-                                <div className="flex items-center justify-between mb-5">
-                                    <h3 className="text-foreground flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                        <UtensilsCrossed className="w-5 h-5 text-primary" /> {t('menuItems')}
+                                <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
+                                    <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                        <UtensilsCrossed className="w-5 h-5 text-primary flex-shrink-0" /> 
+                                        <span className="truncate">{t('menuItems')}</span>
                                     </h3>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex flex-wrap items-center gap-2">
                                         {canEditBooking && !isLocked && !isEditingMenu && (
                                             <button
                                                 onClick={handleEditMenu}
@@ -2480,21 +2438,21 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         )}
                                     </div>
                                 </div>
-                                <div className="bg-background border border-border rounded-lg overflow-hidden overflow-x-auto">
-                                    <table className="w-full">
+                                <div className="bg-background border border-border rounded-lg overflow-x-auto -mx-2 sm:mx-0">
+                                    <table className="w-full min-w-[500px] sm:min-w-0">
                                         <thead className="bg-muted">
                                             <tr>
-                                                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{commonT('item')}</th>
-                                                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-foreground text-xs sm:text-sm hidden sm:table-cell" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{commonT('category')}</th>
-                                                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{t('quantity')}</th>
-                                                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{buttonT('price')}</th>
+                                                <th className="px-4 py-3 text-left text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{commonT('item')}</th>
+                                                <th className="px-4 py-3 text-left text-foreground text-xs sm:text-sm hidden sm:table-cell" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{commonT('category')}</th>
+                                                <th className="px-4 py-3 text-left text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{t('quantity')}</th>
+                                                <th className="px-4 py-3 text-right text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{buttonT('price')}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {(isEditingMenu ? tempMenuItems : booking.menuItems) && (isEditingMenu ? tempMenuItems : booking.menuItems)!.length > 0 ? (
                                                 (isEditingMenu ? tempMenuItems : booking.menuItems)!.map((item: any, index: number) => (
                                                     <tr key={item.id || item.itemId || `row-${index}`} className="border-t border-border">
-                                                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-foreground text-xs sm:text-sm">
+                                                        <td className="px-4 py-3 text-foreground text-xs sm:text-sm">
                                                             <div className="flex flex-col gap-1.5 py-1">
                                                                 <div className="flex flex-wrap items-center gap-x-2 font-medium text-foreground" title={item.item || item.name}>
                                                                     {item.dietaryType && item.dietaryType !== 'none' && (
@@ -2527,8 +2485,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                                 )}
                                                             </div>
                                                         </td>
-                                                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-muted-foreground text-xs sm:text-sm hidden sm:table-cell" title={item.category}>{item.category}</td>
-                                                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-foreground text-xs sm:text-sm">
+                                                        <td className="px-4 py-3 text-muted-foreground text-xs sm:text-sm hidden sm:table-cell" title={item.category}>{item.category}</td>
+                                                        <td className="px-4 py-3 text-foreground text-xs sm:text-sm">
                                                             {isEditingMenu ? (
                                                                 <div className="flex items-center gap-2" translate="no">
                                                                     <input
@@ -2552,20 +2510,24 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                                     </Tooltip>
                                                                 </div>
                                                             ) : (
-                                                                <div className="flex items-center gap-1 whitespace-nowrap" translate="no">
-                                                                    <span>{item.rawQuantity}</span>
-                                                                    <Tooltip title={`${item.item || item.name}: ${item.rawQuantity} ${item.pricingType === 'per_person' ? t('guests') : t('quantity')}`}>
-                                                                        {item.pricingType === 'per_person' ? (
-                                                                            <Users className="w-3.5 h-3.5 text-muted-foreground" />
-                                                                        ) : (
-                                                                            <Package className="w-3.5 h-3.5 text-muted-foreground" />
-                                                                        )}
-                                                                    </Tooltip>
-                                                                    <span>x {Math.round(item.unitPrice || 0)} CHF</span>
-                                                                </div>
+                                                                <div className="flex flex-col gap-0.5" translate="no">
+                                                                     <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                                                         <span className="font-medium text-foreground">{item.rawQuantity}</span>
+                                                                         <Tooltip title={`${item.item || item.name}: ${item.rawQuantity} ${item.pricingType === 'per_person' ? t('guests') : t('quantity')}`}>
+                                                                             {item.pricingType === 'per_person' ? (
+                                                                                 <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                                                                             ) : (
+                                                                                 <Package className="w-3.5 h-3.5 text-muted-foreground" />
+                                                                             )}
+                                                                         </Tooltip>
+                                                                     </div>
+                                                                     <div className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">
+                                                                        x {Math.round(item.unitPrice || 0)} CHF
+                                                                     </div>
+                                                                 </div>
                                                             )}
                                                         </td>
-                                                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }} translate="no">
+                                                        <td className="px-4 py-3 text-right text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }} translate="no">
                                                             {isEditingMenu ? (
                                                                 <span>CHF {((item.rawQuantity || 0) * (item.unitPrice || 0)).toFixed(2)}</span>
                                                             ) : (
@@ -2579,8 +2541,9 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                             )}
                                             {booking.menuItems && booking.menuItems.length > 0 && (
                                                 <tr className="border-t-2 border-border bg-muted">
-                                                    <td colSpan={3} className="px-2 sm:px-4 py-2 sm:py-3 text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{t('totalAmount')}</td>
-                                                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }} translate="no">
+                                                    <td colSpan={2} className="px-4 py-3 text-foreground text-xs sm:text-sm sm:hidden" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{t('totalAmount')}</td>
+                                                    <td colSpan={3} className="px-4 py-3 text-foreground text-xs sm:text-sm hidden sm:table-cell" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{t('totalAmount')}</td>
+                                                    <td className="px-4 py-3 text-right text-foreground text-xs sm:text-sm font-bold" translate="no">
                                                         {isEditingMenu ? (
                                                             <span>CHF {tempMenuItems.reduce((sum, item) => sum + ((item.rawQuantity || 0) * (item.unitPrice || 0)), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                                         ) : (
@@ -2637,35 +2600,16 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     </div>
                                 </div>
                             )}
-                            {/* Additional Information
-                            <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
-                                <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                    <MessageSquare className="w-5 h-5 text-primary" /> {t('additionalInfo')}
-                                </h3>
-                                <div className="space-y-1">
-                                    <label className="text-muted-foreground block font-medium" style={{ fontSize: 'var(--text-small)' }}>{t('allergyDetails')}</label>
-                                    <div className="p-4 bg-muted/20 border border-border/50 rounded-lg text-foreground min-h-[60px] whitespace-pre-wrap" style={{ fontSize: 'var(--text-base)' }} title={Array.isArray(allergies) ? allergies.join(', ') : (allergies || '')}>
-                                        {Array.isArray(allergies) ? allergies.join(', ') : allergies || <span className="text-muted-foreground italic">{t('noDataFound')}</span>}
-                                    </div>
-                                    <p className="text-muted-foreground text-xs mt-1">{t('clientFilledField')}</p>
-                                </div>
-                                <div className="space-y-1 text-pt-2">
-                                    <label className="text-muted-foreground block font-medium" style={{ fontSize: 'var(--text-small)' }}>{t('internalNotes')}</label>
-                                    <div className="p-4 bg-muted/20 border border-border/50 rounded-lg text-foreground min-h-[60px] whitespace-pre-wrap" style={{ fontSize: 'var(--text-base)' }} title={notes || ''}>
-                                        {notes || <span className="text-muted-foreground italic font-normal">{t('noDataFound')}</span>}
-                                    </div>
-                                    <p className="text-muted-foreground text-xs mt-1">{t('clientFilledField')}</p>
-                                </div>
-                            </div> */}
                         </TabsContent>
 
                         {/* Comments and Activities Tab */}
                         <TabsContent value="comments-activities" className="space-y-6">
                             {/* Manual Comments Section */}
                             <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
-                                <div className="flex items-center justify-between mb-5">
-                                    <h3 className="text-foreground flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                        <MessageSquare className="w-5 h-5 text-primary" /> {t('manualComments')}
+                                <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
+                                    <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                        <MessageSquare className="w-5 h-5 text-primary flex-shrink-0" /> 
+                                        <span className="truncate">{t('manualComments')}</span>
                                     </h3>
                                     <span className="px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-xs font-medium border border-border">
                                         {comments.filter(c => c.type !== 'system').length}
@@ -2729,9 +2673,10 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
                             {/* Activity Log Section */}
                             <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
-                                <div className="flex items-center justify-between mb-5">
-                                    <h3 className="text-foreground flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                        <History className="w-5 h-5 text-primary" /> {t('activityLog')}
+                                <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
+                                    <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                        <History className="w-5 h-5 text-primary flex-shrink-0" /> 
+                                        <span className="truncate">{t('activityLog')}</span>
                                     </h3>
                                     <span className="px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-xs font-medium border border-border">
                                         {comments.filter(c => c.type === 'system').length}
