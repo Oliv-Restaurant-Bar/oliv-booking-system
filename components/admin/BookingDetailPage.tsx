@@ -1488,7 +1488,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                     )}
 
                     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-                        <TabsList className="mb-6 w-full flex overflow-x-auto justify-start sm:justify-center p-1 bg-muted/30 h-auto gap-1 no-scrollbar">
+                        <TabsList className="mb-6 w-full flex overflow-x-auto justify-start sm:justify-center p-1 h-auto gap-1 no-scrollbar">
                             <TabsTrigger value="event-details" className="flex-shrink-0 px-3 py-2 text-xs sm:text-sm h-10 data-[state=active]:bg-background data-[state=active]:shadow-sm">Event Details</TabsTrigger>
                             <TabsTrigger value="menu-details" className="flex-shrink-0 px-3 py-2 text-xs sm:text-sm h-10 data-[state=active]:bg-background data-[state=active]:shadow-sm">Menu Details</TabsTrigger>
                             <TabsTrigger value="comments-activities" className="flex-shrink-0 px-3 py-2 text-xs sm:text-sm h-10 data-[state=active]:bg-background data-[state=active]:shadow-sm">Activities</TabsTrigger>
@@ -1516,7 +1516,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         >
                                             <Pencil className="w-3.5 h-3.5" />
                                             <span className="hidden xs:inline">{buttonT('edit')}</span>
-                                            <span className="xs:hidden">Edit</span>
+                                            <span className="xs:hidden">{commonT('edit')}</span>
                                         </button>
                                     )}
                                     {isEditingCustomer && (
@@ -1654,7 +1654,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         >
                                             <Pencil className="w-3.5 h-3.5" />
                                             <span className="hidden xs:inline">{buttonT('edit')}</span>
-                                            <span className="xs:hidden">Edit</span>
+                                            <span className="xs:hidden">{commonT('edit')}</span>
                                         </button>
                                     )}
                                     {isEditingAddress && (
@@ -1796,7 +1796,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                             >
                                                 <Pencil className="w-3.5 h-3.5" />
                                                 <span className="hidden xs:inline">{buttonT('edit')}</span>
-                                                <span className="xs:hidden">Edit</span>
+                                                <span className="xs:hidden">{commonT('edit')}</span>
                                             </button>
                                         )}
                                         {isEditingEvent && (
@@ -1971,7 +1971,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         >
                                             <Pencil className="w-3.5 h-3.5" />
                                             <span className="hidden xs:inline">{buttonT('edit')}</span>
-                                            <span className="xs:hidden">Edit</span>
+                                            <span className="xs:hidden">{commonT('edit')}</span>
                                         </button>
                                     )}
                                     {isEditingSpecialRequests && (
@@ -2081,7 +2081,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         >
                                             <Pencil className="w-3.5 h-3.5" />
                                             <span className="hidden xs:inline">{buttonT('edit')}</span>
-                                            <span className="xs:hidden">Edit</span>
+                                            <span className="xs:hidden">{commonT('edit')}</span>
                                         </button>
                                     )}
                                     {isEditingPayment && (
@@ -2381,7 +2381,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                             <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
                                 <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
                                     <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                        <UtensilsCrossed className="w-5 h-5 text-primary flex-shrink-0" /> 
+                                        <UtensilsCrossed className="w-5 h-5 text-primary flex-shrink-0" />
                                         <span className="truncate">{t('menuItems')}</span>
                                     </h3>
                                     <div className="flex flex-wrap items-center gap-2">
@@ -2402,7 +2402,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                 style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                             >
                                                 <UtensilsCrossed className="w-3.5 h-3.5" />
-                                                <span>Edit Items</span>
+                                                <span>{commonT('editItems')}</span>
                                             </button>
                                         )}
                                         {isEditingMenu && (
@@ -2511,20 +2511,20 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                                 </div>
                                                             ) : (
                                                                 <div className="flex flex-col gap-0.5" translate="no">
-                                                                     <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                                                         <span className="font-medium text-foreground">{item.rawQuantity}</span>
-                                                                         <Tooltip title={`${item.item || item.name}: ${item.rawQuantity} ${item.pricingType === 'per_person' ? t('guests') : t('quantity')}`}>
-                                                                             {item.pricingType === 'per_person' ? (
-                                                                                 <Users className="w-3.5 h-3.5 text-muted-foreground" />
-                                                                             ) : (
-                                                                                 <Package className="w-3.5 h-3.5 text-muted-foreground" />
-                                                                             )}
-                                                                         </Tooltip>
-                                                                     </div>
-                                                                     <div className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">
+                                                                    <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                                                        <span className="font-medium text-foreground">{item.rawQuantity}</span>
+                                                                        <Tooltip title={`${item.item || item.name}: ${item.rawQuantity} ${item.pricingType === 'per_person' ? t('guests') : t('quantity')}`}>
+                                                                            {item.pricingType === 'per_person' ? (
+                                                                                <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                                                                            ) : (
+                                                                                <Package className="w-3.5 h-3.5 text-muted-foreground" />
+                                                                            )}
+                                                                        </Tooltip>
+                                                                    </div>
+                                                                    <div className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">
                                                                         x {Math.round(item.unitPrice || 0)} CHF
-                                                                     </div>
-                                                                 </div>
+                                                                    </div>
+                                                                </div>
                                                             )}
                                                         </td>
                                                         <td className="px-4 py-3 text-right text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }} translate="no">
@@ -2608,7 +2608,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                             <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
                                 <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
                                     <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                        <MessageSquare className="w-5 h-5 text-primary flex-shrink-0" /> 
+                                        <MessageSquare className="w-5 h-5 text-primary flex-shrink-0" />
                                         <span className="truncate">{t('manualComments')}</span>
                                     </h3>
                                     <span className="px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-xs font-medium border border-border">
@@ -2675,7 +2675,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                             <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
                                 <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
                                     <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                        <History className="w-5 h-5 text-primary flex-shrink-0" /> 
+                                        <History className="w-5 h-5 text-primary flex-shrink-0" />
                                         <span className="truncate">{t('activityLog')}</span>
                                     </h3>
                                     <span className="px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-xs font-medium border border-border">
