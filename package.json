@@ -12,6 +12,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "dotenv -e .env -- tsx lib/db/seed.ts",
+    "db:seed:menu": "dotenv -e .env -- tsx scripts/seed-menu-json.ts",
     "db:reset-admin": "dotenv -e .env -- tsx lib/db/reset-admin.ts",
     "db:verify": "dotenv -e .env -- tsx lib/db/verify-admin.ts",
     "db:create-user": "dotenv -e .env -- tsx lib/db/create-user.ts",
