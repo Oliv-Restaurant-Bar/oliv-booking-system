@@ -34,10 +34,20 @@ export async function GET(
         b.allergy_details,
         b.special_requests,
         b.internal_notes,
-        b.billing_address,
         b.estimated_total,
         b.status,
         b.location,
+        b.street,
+        b.plz,
+        b.business,
+        b.occasion,
+        b.reference,
+        b.payment_method,
+        b.use_same_address_for_billing,
+        b.billing_street,
+        b.billing_plz,
+        b.billing_location,
+        b.billing_reference,
         b.created_at,
         b.is_locked,
         b.assigned_to,
@@ -156,65 +166,21 @@ export async function GET(
       : '';
 
     // Extract granular address fields from internal notes - using case-insensitive regex for robustness
-    const streetMatch = booking.internal_notes?.match(/Street:\s*([^\r\n]+)/i);
-    const plzMatch = booking.internal_notes?.match(/PLZ:\s*([^\r\n]+)/i);
-    const locationMatch = booking.internal_notes?.match(/Location:\s*([^\r\n]+)/i);
-    let street = streetMatch ? streetMatch[1].replace('N/A', '').trim() : '';
-    let plz = plzMatch ? plzMatch[1].replace('N/A', '').trim() : '';
-    let city = locationMatch ? locationMatch[1].replace('N/A', '').trim() : '';
+    const business = booking.business || '';
+    const occasion = booking.occasion || '';
+    const reference = booking.reference || '';
+    const paymentMethod = booking.payment_method || 'ec_card';
+    const street = booking.street || '';
+    const plz = booking.plz || '';
+    const city = booking.location || '';
+    const address = [street, plz, city].filter(Boolean).join(', ');
 
-    // Extract reference information
-    const referenceMatch = booking.internal_notes?.match(/Reference:\s*([^\r\n]+)/i);
-    const reference = referenceMatch ? referenceMatch[1].replace('N/A', '').trim() : '';
+    const billingStreet = booking.billing_street || '';
+    const billingPlz = booking.billing_plz || '';
+    const billingLocation = booking.billing_location || '';
+    const billingReference = booking.billing_reference || '';
 
-    const billingRefMatch = booking.internal_notes?.match(/Billing Reference:\s*([^\r\n]+)/i);
-    let billingReference = billingRefMatch ? billingRefMatch[1].replace('N/A', '').trim() : '';
-
-    // If billingReference is empty, fallback to the main reference for UI mapping consistency
-    if (!billingReference && reference) {
-        billingReference = reference;
-    }
-
-    // Extract billing address fields from internal notes
-    const billingStreetMatch = booking.internal_notes?.match(/Billing Street:\s*([^\r\n]+)/i);
-    const billingStreet = billingStreetMatch ? billingStreetMatch[1].replace('N/A', '').trim() : '';
-
-    const billingPlzMatch = booking.internal_notes?.match(/Billing PLZ:\s*([^\r\n]+)/i);
-    const billingPlz = billingPlzMatch ? billingPlzMatch[1].replace('N/A', '').trim() : '';
-
-    const billingLocationMatch = booking.internal_notes?.match(/Billing Location:\s*([^\r\n]+)/i);
-    const billingLocation = billingLocationMatch ? billingLocationMatch[1].replace('N/A', '').trim() : '';
-
-    const billingCustomerRefMatch = booking.internal_notes?.match(/Billing Customer Reference:\s*([^\r\n]+)/i);
-    const billingCustomerReference = billingCustomerRefMatch ? billingCustomerRefMatch[1].replace('N/A', '').trim() : '';
-
-    const paymentMatch = booking.internal_notes?.match(/(?:Payment Method|Payment Option):\s*([^\r\n]+)/i);
-    let paymentMethod = paymentMatch ? paymentMatch[1].replace('N/A', '').trim() : '';
-
-    // Standardize legacy 'cash_card' to 'ec_card' for internal consistency
-    if (paymentMethod === 'cash_card') {
-        paymentMethod = 'ec_card';
-    }
-
-    // Fallback for full address if granular fields are missing (backward compatibility)
-    const addressMatch = booking.internal_notes?.match(/Address:\s*([^\r\n]+)/i);
-    let address = addressMatch ? addressMatch[1].replace('N/A', '').trim() : '';
-    
-    // Reverse Reconstruction: If granular fields are missing but Address field exists, try to split it
-    if (address && !street && !plz && !city) {
-        // Address: Esse fuga ..., 1232, Ratione ...
-        const parts = address.split(',').map((p: string) => p.trim());
-        if (parts.length >= 1) street = parts[0];
-        if (parts.length >= 2) plz = parts[1];
-        if (parts.length >= 3) city = parts[2];
-    }
-    
-    // Forward Reconstruction: Reconstruct address if granular fields exist but full Address label is old/missing
-    if (!address && (street || plz || city)) {
-        address = [street, plz, city].filter(Boolean).join(', ');
-    }
-
-    // Extract menu selection from internal notes for display in notes
+    // Extract menu selection from internal notes for display in notes (legacy fallback)
     const menuMatch = booking.internal_notes?.match(/Menu Selection: ([^\n]+)/);
     const menuSelectionStr = menuMatch ? menuMatch[1] : '';
 
@@ -261,11 +227,7 @@ export async function GET(
       console.error('Error fetching check-ins:', e);
     }
 
-    const businessMatch = booking.internal_notes?.match(/Business:\s*([^\r\n]+)/i);
-    const business = businessMatch ? businessMatch[1].replace('N/A', '').trim() : '';
 
-    const occasionMatch = booking.internal_notes?.match(/Occasion:\s*([^\r\n]+)/i);
-    const occasion = (occasionMatch && !occasionMatch[1].includes('N/A')) ? occasionMatch[1].trim() : '';
 
     return NextResponse.json({
       id: booking.id,
@@ -289,12 +251,10 @@ export async function GET(
         business: business,
         reference: reference,
       },
-      billingAddress: booking.billing_address || '',
       billingStreet: billingStreet,
       billingPlz: billingPlz,
       billingLocation: billingLocation,
       billingReference: billingReference,
-      billingCustomerReference: billingCustomerReference,
       paymentMethod: paymentMethod,
       event: {
         date: booking.event_date ? (typeof booking.event_date === 'string' ? booking.event_date : new Date(booking.event_date).toISOString().split('T')[0]) : '',

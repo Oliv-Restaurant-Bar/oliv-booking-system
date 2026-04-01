@@ -86,11 +86,21 @@ lib/
 │   ├── email.ts        # Email sending utilities
 │   └── fetch-bookings.ts  # Booking data fetching
 ├── auth/               # Better Auth config & RBAC middleware
+│   ├── index.ts        # Auth client export
+│   ├── server.ts       # Server-side auth helpers
+│   ├── rbac.ts         # Permission definitions & role mappings
+│   └── rbac-middleware.ts  # Authorization wrappers for Server Actions
+├── config/             # Configuration validation
+│   └── env-validation.ts  # Environment variable validation
 ├── db/
 │   ├── schema.ts       # Drizzle schema (all tables)
-│   └── index.ts        # Database connection
+│   ├── index.ts        # Database connection
+│   ├── seed.ts         # Database seeding script
+│   └── migrations/     # Database migration files
 ├── email/              # Email templates & ZeptoMail integration
 ├── i18n/               # Internationalization utilities
+│   ├── locale-storage.ts  # Cookie-based locale persistence (default: de)
+│   └── server.ts       # Server-side i18n helpers
 └── validation/         # Zod schemas
 
 messages/
@@ -120,14 +130,18 @@ The project uses `neon-http` driver which doesn't support some Drizzle query bui
 await db.select().from(bookings).orderBy(desc(bookings.createdAt));
 
 // ✅ Use raw SQL instead
-await db.execute(sql`SELECT ... FROM bookings ORDER BY created_at DESC`);
-```
+await db.execute(sql`SELECT * FROM bookings ORDER BY created_at DESC`);
 
-Always handle response format:
-```typescript
-const result = await db.execute(sql`...`);
+// Always handle response format
+const result = await db.execute(sql`SELECT * FROM bookings WHERE id = ${id}`);
 const rows = 'rows' in result ? result.rows : result;
 ```
+
+Common operations requiring raw SQL:
+- `orderBy()` - Use `ORDER BY` in raw SQL
+- Complex `where()` conditions - Use `WHERE` with SQL interpolation
+- Joins with multiple conditions - Use explicit `JOIN` syntax
+- Aggregations with `groupBy()` - Use `GROUP BY` in raw SQL
 
 #### Authentication & Authorization
 - Better Auth handles sessions (7-day expiry)
@@ -140,6 +154,12 @@ const rows = 'rows' in result ? result.rows : result;
 
 #### Booking Status Values
 Valid statuses: `new`, `touchbase`, `pending`, `confirmed`, `completed`, `cancelled`, `no_show`, `declined`
+
+#### Payment Methods
+Valid payment methods: `on_bill`, `invoice`, `ec_card`, `cash`, `card`, `cash_card`, or empty string
+
+#### Room Selection
+Bookings require a room selection. The available rooms are configured in the system settings and should be validated against the allowed options.
 
 #### Client Booking Editing
 - Bookings have `edit_secret` for secure client access
@@ -202,7 +222,80 @@ After running `npm run db:seed`, the default admin account is:
 - `is_locked` field prevents concurrent edits
 - All changes tracked in `booking_audit_log` table
 
+## Environment Configuration
+
+### Required Environment Variables
+```env
+DATABASE_URL="postgresql://..."              # PostgreSQL connection string (NeonDB)
+NEXT_PUBLIC_APP_URL="http://localhost:3000"  # Application URL
+BETTER_AUTH_SECRET="your-secret-key"         # Must be at least 32 characters in production
+```
+
+### Optional Environment Variables
+```env
+# Email (ZeptoMail)
+ZEPTOMAIL_API_TOKEN="your-token"             # Required for email features
+ZEPTOMAIL_FROM_EMAIL="noreply@oliv-restaurant.ch"
+
+# Cron Security
+CRON_SECRET="your-cron-secret"               # Should be at least 16 characters
+```
+
+**Important**: The application validates environment variables at startup. Use `lib/config/env-validation.ts` to check requirements.
+
+## Internationalization (i18n)
+
+- **Default Locale**: German (`de`) - This is the primary language for the application
+- **Supported Locales**: English (`en`), German (`de`)
+- **Locale Storage**: Cookie-based (`NEXT_LOCALE`) with 1-year persistence
+- **Translation Files**: `messages/en.json`, `messages/de.json`
+- **Database i18n**: Menu items have `nameDe`, `descriptionDe` fields for German content
+
+When working with user-facing text:
+- Use `useTranslations()` hook in components
+- Add translations to both `en.json` and `de.json`
+- For database content, provide both English and German versions
+
+## Server Actions Authorization
+
+Wrap Server Actions with permission checks for automatic authorization:
+
+```typescript
+import { withPermission, withAnyPermission, withAllPermissions } from "@/lib/auth/rbac-middleware";
+import { Permission } from "@/lib/auth/rbac";
+
+// Single permission required
+export const createBookingAction = withPermission(
+  async (data: BookingData) => {
+    // Action logic here
+  },
+  Permission.CREATE_BOOKING
+);
+
+// Multiple permissions - require all
+export const deleteBookingAction = withAllPermissions(
+  async (id: string) => {
+    // Action logic here
+  },
+  [Permission.EDIT_BOOKING, Permission.DELETE_BOOKING]
+);
+
+// Multiple permissions - require any
+export const viewAdminAction = withAnyPermission(
+  async () => {
+    // Action logic here
+  },
+  [Permission.VIEW_USERS, Permission.VIEW_BOOKINGS]
+);
+```
+
+## Tolgee Integration
+
+The project includes Tolgee (`@tolgee/react`, `@tolgee/web`) for translation management, though next-intl is currently used as the primary i18n solution. Tolgee is available but not actively implemented in the current codebase.
+
 ## Pre-Completion Checklist
 
 Before marking a task complete:
 1. Run `npx tsc --noEmit` to check for TypeScript errors
+2. Verify environment variables are properly configured if needed
+3. Check that translations exist in both English and German for any new user-facing text

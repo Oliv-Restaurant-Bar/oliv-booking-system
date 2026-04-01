@@ -92,11 +92,10 @@ export interface Booking {
         phone: string;
         avatar: string;
         avatarColor: string;
-        address: string;
+        business?: string;
         street?: string;
         plz?: string;
         location?: string;
-        business?: string;
         reference?: string;
     };
     event: {
@@ -111,7 +110,6 @@ export interface Booking {
     guests: number;
     amount: string;
     rawAmount?: number;
-    billingAddress?: string;
     billingStreet?: string;
     billingPlz?: string;
     billingLocation?: string;
@@ -237,12 +235,10 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         business: '',
         email: '',
         phone: '',
-        address: '',
         street: '',
         plz: '',
         location: '',
         reference: '',
-        billingAddress: '',
         billingStreet: '',
         billingPlz: '',
         billingLocation: '',
@@ -650,7 +646,9 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                 occasion: booking.event.occasion,
                 location: selectedVenue || booking.event.location,
                 room: selectedRoom || booking.room,
-                billingAddress: booking.billingAddress,
+                billingStreet: booking.billingStreet,
+                billingPlz: booking.billingPlz,
+                billingLocation: booking.billingLocation,
                 items: (booking.menuItems || []).map((item: any, idx: number) => {
                     const qty = parseInt(item.quantity) || booking.guests;
                     const uPrice = Number(item.unitPrice) || 0;
@@ -959,12 +957,10 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             business: booking.customer.business || '',
             email: booking.customer.email,
             phone: booking.customer.phone,
-            address: booking.customer.address || '',
             street: booking.customer.street || '',
             plz: booking.customer.plz || '',
             location: booking.customer.location || '',
             reference: booking.customer.reference || '',
-            billingAddress: booking.billingAddress || '',
             billingStreet: '',
             billingPlz: '',
             billingLocation: '',
@@ -986,12 +982,10 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             business: booking.customer.business || '',
             email: booking.customer.email,
             phone: booking.customer.phone,
-            address: booking.customer.address || '',
             street: booking.customer.street || '',
             plz: booking.customer.plz || '',
             location: booking.customer.location || '',
             reference: booking.customer.reference || '',
-            billingAddress: booking.billingAddress || '',
             billingStreet: '',
             billingPlz: '',
             billingLocation: '',
@@ -1013,12 +1007,10 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             business: booking.customer.business || '',
             email: booking.customer.email,
             phone: booking.customer.phone,
-            address: booking.customer.address || '',
             street: booking.customer.street || '',
             plz: booking.customer.plz || '',
             location: booking.customer.location || '',
             reference: booking.customer.reference || '',
-            billingAddress: booking.billingAddress || '',
             billingStreet: '',
             billingPlz: '',
             billingLocation: '',
@@ -1061,13 +1053,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                 newInternalNotes = updateFieldInNotes(newInternalNotes, 'Billing Address', fullBillingAddress);
             }
 
-            // Also update the legacy Address field for compatibility
-            const fullAddress = [tempCustomer.street, tempCustomer.plz, tempCustomer.location].filter(Boolean).join(', ');
-            newInternalNotes = updateFieldInNotes(newInternalNotes, 'Address', fullAddress);
-
-            // Combine billing address for the API
-            const billingAddress = tempCustomer.billingAddress ||
-                ([tempCustomer.billingStreet, tempCustomer.billingPlz, tempCustomer.billingLocation].filter(Boolean).join(', '));
+            // The billing fields are handled separately in the PUT body now
 
             const response = await fetch(`/api/bookings/${booking.id}`, {
                 method: 'PUT',
@@ -1079,12 +1065,15 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                         phone: tempCustomer.phone
                     },
                     internalNotes: newInternalNotes,
-                    billingAddress: billingAddress,
+                    street: tempCustomer.street,
+                    plz: tempCustomer.plz,
+                    location: tempCustomer.location,
+                    business: tempCustomer.business,
+                    reference: tempCustomer.reference,
                     billingStreet: tempCustomer.billingStreet,
                     billingPlz: tempCustomer.billingPlz,
                     billingLocation: tempCustomer.billingLocation,
                     billingReference: tempCustomer.billingReference,
-                    billingCustomerReference: tempCustomer.billingCustomerReference,
                     paymentMethod: tempCustomer.paymentMethod
                 }),
             });

@@ -25,7 +25,9 @@ interface KitchenPdfActionModalProps {
       location?: string;
     };
     guests: number;
-    billingAddress?: string;
+    billingStreet?: string;
+    billingPlz?: string;
+    billingLocation?: string;
     menuItems?: {
       item: string;
       category: string;
@@ -117,7 +119,9 @@ export function KitchenPdfActionModal({
       guestCount: booking.guests,
       occasion: booking.event.occasion,
       location: booking.event.location,
-      billingAddress: booking.billingAddress,
+      billingStreet: booking.billingStreet,
+      billingPlz: booking.billingPlz,
+      billingLocation: booking.billingLocation,
       items: (booking.menuItems || []).map((item: any, idx: number) => {
         const qtyStr = String(item.rawQuantity || item.quantity || '1');
         const qty = parseInt(qtyStr.split(' ')[0]) || booking.guests || 1;

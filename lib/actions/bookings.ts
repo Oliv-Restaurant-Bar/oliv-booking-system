@@ -42,6 +42,19 @@ export interface CreateBookingInput {
   kitchenNotes?: string;
   billingAddress?: string;
   room?: string;
+
+  // New dedicated columns
+  street?: string;
+  plz?: string;
+  business?: string;
+  occasion?: string;
+  reference?: string;
+  paymentMethod?: string;
+  useSameAddressForBilling?: boolean;
+  billingStreet?: string;
+  billingPlz?: string;
+  billingLocation?: string;
+  billingReference?: string;
 }
 
 /**
@@ -467,6 +480,19 @@ export async function updateBooking(
       console.log('  → Updating room:', updates.room);
     }
 
+    // New dedicated columns
+    if (updates.street !== undefined) updateData.street = updates.street;
+    if (updates.plz !== undefined) updateData.plz = updates.plz;
+    if (updates.business !== undefined) updateData.business = updates.business;
+    if (updates.occasion !== undefined) updateData.occasion = updates.occasion;
+    if (updates.reference !== undefined) updateData.reference = updates.reference;
+    if (updates.paymentMethod !== undefined) updateData.paymentMethod = updates.paymentMethod;
+    if (updates.useSameAddressForBilling !== undefined) updateData.useSameAddressForBilling = updates.useSameAddressForBilling;
+    if (updates.billingStreet !== undefined) updateData.billingStreet = updates.billingStreet;
+    if (updates.billingPlz !== undefined) updateData.billingPlz = updates.billingPlz;
+    if (updates.billingLocation !== undefined) updateData.billingLocation = updates.billingLocation;
+    if (updates.billingReference !== undefined) updateData.billingReference = updates.billingReference;
+
 
     console.log('\n🔧 Executing UPDATE query...');
     console.log('   WHERE id =', id);
@@ -703,22 +729,22 @@ export async function getBookingWithDetails(id: string) {
     const items = await db.select().from(bookingItems).where(eq(bookingItems.bookingId, id));
 
     // Parse internalNotes to extract business, address, occasion and references
-    const { businessName, occasion, street, plz, location, reference, billingReference, useSameAddressForBilling, paymentMethod } = parseInternalNotes(booking.internalNotes);
+    const parsed = parseInternalNotes(booking.internalNotes);
 
     return {
       success: true,
       data: {
         ...booking,
-        business: businessName,
-        businessName, // keep for compatibility
-        occasion,
-        street,
-        plz,
-        location,
-        reference,
-        billingReference,
-        useSameAddressForBilling,
-        paymentMethod,
+        business: booking.business || parsed.businessName || '',
+        businessName: booking.business || parsed.businessName || '', // keep for compatibility
+        occasion: booking.occasion || parsed.occasion || '',
+        street: booking.street || parsed.street || '',
+        plz: booking.plz || parsed.plz || '',
+        location: booking.location || parsed.location || '',
+        reference: booking.reference || parsed.reference || '',
+        billingReference: booking.billingReference || parsed.billingReference || '',
+        useSameAddressForBilling: booking.useSameAddressForBilling ?? parsed.useSameAddressForBilling,
+        paymentMethod: booking.paymentMethod || parsed.paymentMethod || 'ec_card',
         lead: lead && lead[0] ? lead[0] : null,
         booking_items: items
       }
@@ -1116,27 +1142,8 @@ export async function getBookingForClientEdit(bookingId: string) {
 
     // Parse internalNotes to extract business, address, occasion and references
     console.log(`[DEBUG] Internal Notes for Booking ${bookingId}:`, booking.internalNotes);
-    const { businessName, occasion, street, plz, location, reference, billingReference, useSameAddressForBilling, paymentMethod } = parseInternalNotes(booking.internalNotes);
-    console.log(`[DEBUG] Parsed Data:`, { businessName, street, plz, location, reference, paymentMethod });
-
-    // Split billingAddress if it exists
-    let billingStreet = '';
-    let billingPlz = '';
-    let billingLocation = '';
-
-    if (booking.billingAddress) {
-      const parts = booking.billingAddress.split(',').map(s => s.trim());
-      if (parts.length >= 3) {
-        billingStreet = parts[0];
-        billingPlz = parts[1];
-        billingLocation = parts.slice(2).join(', ');
-      } else if (parts.length === 2) {
-        billingStreet = parts[0];
-        billingPlz = parts[1];
-      } else {
-        billingStreet = parts[0];
-      }
-    }
+    const parsed = parseInternalNotes(booking.internalNotes);
+    console.log(`[DEBUG] Parsed Data:`, parsed);
 
     const l = lead && lead[0] ? lead[0] : null;
 
@@ -1149,22 +1156,22 @@ export async function getBookingForClientEdit(bookingId: string) {
         guestCount: booking.guestCount,
         allergyDetails: booking.allergyDetails,
         specialRequests: booking.specialRequests,
-        business: businessName,
-        businessName, // keep for compatibility
+        business: booking.business || parsed.businessName || '',
+        businessName: booking.business || parsed.businessName || '', // keep for compatibility
         name: l?.contactName || '',
         email: l?.contactEmail || '',
         telephone: l?.contactPhone || '',
-        occasion,
-        street,
-        plz,
-        location,
-        reference,
-        billingReference,
-        useSameAddressForBilling,
-        paymentMethod,
-        billingStreet,
-        billingPlz,
-        billingLocation,
+        occasion: booking.occasion || parsed.occasion || '',
+        street: booking.street || parsed.street || '',
+        plz: booking.plz || parsed.plz || '',
+        location: booking.location || parsed.location || '',
+        reference: booking.reference || parsed.reference || '',
+        billingReference: booking.billingReference || parsed.billingReference || '',
+        useSameAddressForBilling: booking.useSameAddressForBilling ?? parsed.useSameAddressForBilling,
+        paymentMethod: booking.paymentMethod || parsed.paymentMethod || 'ec_card',
+        billingStreet: booking.billingStreet || '',
+        billingPlz: booking.billingPlz || '',
+        billingLocation: booking.billingLocation || '',
         room: booking.room,
         lead: l,
         booking_items: items,

@@ -23,6 +23,7 @@ interface GridViewProps {
       date: string;
       occasion: string;
       location?: string;
+      room?: string;
     };
     guests: number;
     amount: string;
@@ -135,8 +136,8 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
                 <User className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
                 <div className="flex items-baseline gap-1 min-w-0 flex-1 overflow-hidden h-5">
                   {booking.assignedTo ? (
-                    <span 
-                      className="text-muted-foreground truncate" 
+                    <span
+                      className="text-muted-foreground truncate"
                       style={{ fontSize: 'var(--text-small)' }}
                       title={booking.assignedTo.name}
                     >
@@ -159,11 +160,11 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
 
               {/* Venue + Amount - often grouped together at the end */}
               <div className="flex items-center gap-4 flex-shrink-0 ml-auto md:ml-0">
-                {booking.event?.location && (
+                {(booking.event?.room || booking.event?.location) && (
                   <div className="flex items-center gap-1.5 text-primary font-medium" style={{ fontSize: 'var(--text-small)' }}>
                     <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                    <span className="truncate max-w-[120px]" title={booking.event.location}>
-                      {booking.event.location}
+                    <span className="truncate max-w-[180px]" title={`${booking.event?.room || ''}${booking.event?.room && booking.event?.location ? ' • ' : ''}${booking.event?.location || ''}`}>
+                      {booking.event?.room || ''} 
                     </span>
                   </div>
                 )}

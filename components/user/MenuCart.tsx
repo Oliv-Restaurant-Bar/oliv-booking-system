@@ -9,7 +9,8 @@ import {
   AlertTriangle,
   Users,
   Wine,
-  ChevronRight
+  ChevronRight,
+  Package
 } from 'lucide-react';
 import { format, parseISO, isValid } from 'date-fns';
 import { enUS } from 'date-fns/locale';
@@ -260,7 +261,13 @@ export function MenuCart({
               <div className={`size-2 rounded-full shrink-0 ${sectionColor}`} />
             )}
             <div className="flex items-baseline gap-1.5 min-w-0">
-              {!useQtyLabel ? (<Users className="w-3 h-3" />) : (<Wine className="w-3.5 h-3.5 text-muted-foreground" />)}
+              {isPerPerson(item) ? (
+                <Users className="w-3 h-3" />
+              ) : isConsumption(item) || item.category === 'Beverages' ? (
+                <Wine className="w-3.5 h-3.5 text-muted-foreground" />
+              ) : (
+                <Package className="w-3.5 h-3.5 text-muted-foreground" />
+              )}
               <span className="text-xs font-bold text-secondary shrink-0">
                 {useQtyLabel ? `${quantity}X` : (isPP ? `${guestCount}X` : `${quantity}X`)}
               </span>

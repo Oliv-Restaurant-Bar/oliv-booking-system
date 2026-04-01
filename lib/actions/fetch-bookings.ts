@@ -66,6 +66,7 @@ export async function fetchBookings(options: {
         b.estimated_total,
         b.status,
         b.location,
+        b.room,
         b.created_at,
         b.is_locked,
         b.assigned_to,
@@ -212,7 +213,7 @@ export async function fetchBookings(options: {
         billingReference: billingReference,
         billingCustomerReference: billingCustomerReference,
         paymentMethod: paymentMethod,
-        room: booking.location || '',
+        room: booking.room || '',
         event: {
           date: booking.event_date
             ? new Date(booking.event_date).toLocaleDateString('en-US', {
@@ -226,6 +227,7 @@ export async function fetchBookings(options: {
           rawTime: booking.event_time ? booking.event_time.substring(0, 5) : '',
           occasion: occasion || 'Event',
           location: booking.location || '',
+          room: booking.room || '',
         },
         guests: booking.guest_count || 0,
         amount: booking.estimated_total

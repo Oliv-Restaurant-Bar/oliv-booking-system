@@ -40,7 +40,9 @@ export interface PdfBookingData {
   specialRequests?: string;
   allergies?: string;
   kitchenNotes?: string;
-  billingAddress?: string;
+  billingStreet?: string;
+  billingPlz?: string;
+  billingLocation?: string;
   room?: string;
 }
 
@@ -223,8 +225,9 @@ export async function generateBookingPdf(
     doc.setFont("helvetica", "normal");
   }
   leftY = renderField('Personen', String(data.guestCount || 0), leftX, leftY, colW);
-  if (data.billingAddress) {
-    leftY = renderField('Adresse', String(data.billingAddress), leftX, leftY, colW);
+  const billingParts = [data.billingStreet, data.billingPlz, data.billingLocation].filter(Boolean);
+  if (billingParts.length > 0) {
+    leftY = renderField('Adresse', billingParts.join(', '), leftX, leftY, colW);
   }
 
   // Event Side
