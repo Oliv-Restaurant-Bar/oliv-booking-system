@@ -119,7 +119,7 @@ export async function generateBookingPdf(
     doc.setTextColor(...COLORS.secondary);
     const safeId = String(data.id || 'Unknown');
     const shortId = safeId.length > 8 ? safeId.substring(safeId.length - 8).toUpperCase() : safeId.toUpperCase();
-    
+
     if (mode === 'kitchen') {
       doc.setFont("helvetica", "bold");
       doc.text(`INTERNAL USE ONLY | ID: ${shortId}`, pageWidth - margin, 20, { align: 'right' });
@@ -129,8 +129,8 @@ export async function generateBookingPdf(
 
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
-    const dateStr = mode === 'kitchen' 
-      ? `Generated: ${new Date().toLocaleDateString('de-CH')} ${new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })}` 
+    const dateStr = mode === 'kitchen'
+      ? `Generated: ${new Date().toLocaleDateString('de-CH')} ${new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })}`
       : `Datum: ${new Date().toLocaleDateString('de-CH')} ${new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })}`;
     doc.text(String(dateStr), pageWidth - margin, 34, { align: 'right' });
 
@@ -158,7 +158,7 @@ export async function generateBookingPdf(
 
     if (mode === 'kitchen') {
       doc.text("ITEM NAME", margin + 3, yPos);
-      doc.text("GUESTS", margin + 130, yPos, { align: 'center' });
+      doc.text("QUANTITY", margin + 130, yPos, { align: 'center' });
       doc.text("DONE", margin + 160, yPos, { align: 'center' });
     } else {
       doc.text("ARTIKEL", margin + 3, yPos);
@@ -270,13 +270,13 @@ export async function generateBookingPdf(
   // Helper to draw dietary icon (geometric representation of the UI icons)
   const drawDietaryIcon = (type: string, x: number, y: number) => {
     if (!type || type === 'none') return;
-    
+
     const prevFill = doc.getFillColor();
     const prevDraw = doc.getDrawColor();
-    
+
     // Switch to graphic mode
     doc.setLineWidth(0.3);
-    
+
     if (type === 'veg') {
       doc.setDrawColor(22, 163, 74); // green-600 border
       doc.rect(x, y - 2.5, 3.5, 3.5, 'S');
@@ -291,20 +291,20 @@ export async function generateBookingPdf(
       // Draw a vector leaf outline matching the Lucide 'Leaf' reference in the UI
       doc.setDrawColor(5, 150, 105); // emerald-600
       doc.setLineWidth(0.35);
-      
+
       // Draw bezier leaf
       doc.lines(
         [
-          [1.5, -1.2, 1.2, -2.7, 0, -3.4], 
+          [1.5, -1.2, 1.2, -2.7, 0, -3.4],
           [-1.2, 1.5, -1.5, 2.7, 0, 3.4]
-        ], 
+        ],
         x + 1.75, y + 0.6, [1, 1], 'S', true
       );
-      
+
       // Draw inner leaf vein
       doc.line(x + 1.75, y + 0.6, x + 1.75, y - 1.6);
     }
-    
+
     // Reset colors
     doc.setFillColor(prevFill);
     doc.setDrawColor(prevDraw);
@@ -313,16 +313,16 @@ export async function generateBookingPdf(
   const drawUsersIcon = (x: number, y: number) => {
     const prevFill = doc.getFillColor();
     const prevDraw = doc.getDrawColor();
-    
+
     doc.setFillColor(100, 116, 139); // slate-500
-    doc.setDrawColor(100, 116, 139); 
+    doc.setDrawColor(100, 116, 139);
     doc.setLineWidth(0.1);
-    
+
     // Head - Solid
     doc.circle(x + 1.75, y - 1.8, 0.8, 'F');
     // Body - Solid rounded
     doc.roundedRect(x + 0.5, y - 0.4, 2.5, 1.4, 0.5, 0.5, 'F');
-    
+
     doc.setFillColor(prevFill);
     doc.setDrawColor(prevDraw);
   };
@@ -330,10 +330,10 @@ export async function generateBookingPdf(
   const drawPackageIcon = (x: number, y: number) => {
     const prevFill = doc.getFillColor();
     const prevDraw = doc.getDrawColor();
-    
+
     doc.setDrawColor(100, 116, 139); // slate-500
     doc.setLineWidth(0.3);
-    
+
     // Box outline
     doc.rect(x, y - 2.5, 3.5, 3.5, 'S');
     // Internal lines for box flap
@@ -341,7 +341,35 @@ export async function generateBookingPdf(
     doc.line(x + 1.75, y - 2.5, x + 1.75, y - 1);
     doc.line(x + 0.5, y - 2.2, x + 1.75, y - 1.2);
     doc.line(x + 3, y - 2.2, x + 1.75, y - 1.2);
-    
+
+    doc.setFillColor(prevFill);
+    doc.setDrawColor(prevDraw);
+  };
+
+  const drawWineIcon = (x: number, y: number) => {
+    const prevFill = doc.getFillColor();
+    const prevDraw = doc.getDrawColor();
+
+    doc.setDrawColor(100, 116, 139); // slate-500
+    doc.setLineWidth(0.3);
+
+    // Bottom line (base)
+    doc.line(x + 0.5, y + 1.2, x + 3, y + 1.2);
+    // Stem (vertical)
+    doc.line(x + 1.75, y - 0.5, x + 1.75, y + 1.2);
+    // Bowl (U-shape)
+    doc.setLineWidth(0.35);
+    // Top of bowl
+    doc.line(x + 0.5, y - 3, x + 3, y - 3);
+    // Lower bowl curve (simplified)
+    doc.lines(
+      [
+        [0, 1.2, 0.5, 2.5, 1.25, 2.5],
+        [0.75, 0, 1.25, -1.3, 1.25, -2.5]
+      ],
+      x + 0.5, y - 3, [1, 1], 'S', false
+    );
+
     doc.setFillColor(prevFill);
     doc.setDrawColor(prevDraw);
   };
@@ -350,74 +378,74 @@ export async function generateBookingPdf(
   // Helper for multi-line item info (Add-ons/Notes)
   const renderItemInfo = (label: string, text?: string, color: [number, number, number] = [180, 83, 9]) => {
     if (!text || !text.trim()) return;
-    
+
     doc.setTextColor(...color);
     doc.setFont("helvetica", "italic");
     doc.setFontSize(8.5);
 
     const maxWidth = contentWidth - 20;
     const lineH = 4;
-    
+
     // Reorder dietary tags to be before the name they describe: "Name (Tag)" -> "(Tag) Name"
     const reorderedText = text.replace(/([^,:]+?)\s*(\(Veg\)|\(Vegan\)|\(Non-Veg\))/gi, (match, name, tag) => `${tag} ${name.trim()}`);
-    
+
     // Split text into main parts: tags and text blocks
     const parts = (`${label}: ` + reorderedText).split(/(\(Veg\)|\(Vegan\)|\(Non-Veg\))/gi);
-    
+
     let currentX = margin + 10;
     let currentY = yPos - 1;
-    
+
     checkPageBreak(lineH + 2);
 
     for (const part of parts) {
-        if (!part) continue;
-        
-        const lowerPart = part.toLowerCase();
-        const isTag = lowerPart === '(veg)' || lowerPart === '(vegan)' || lowerPart === '(non-veg)';
-        
-        if (isTag) {
-            const tagType = lowerPart === '(veg)' ? 'veg' : lowerPart === '(vegan)' ? 'vegan' : 'non-veg';
-            
-            // Check for wrapping before drawing tag
-            if (currentX + 5 > margin + 10 + maxWidth) {
-                currentX = margin + 10;
-                currentY += lineH;
-                checkPageBreak(lineH + 2);
-                doc.setTextColor(...color);
-                doc.setFont("helvetica", "italic");
-                doc.setFontSize(8.5);
-            }
-            
-            drawDietaryIcon(tagType, currentX + 0.5, currentY - 0.5);
-            currentX += 4.5;
-        } else {
-            // Further tokenize text by whitespaces and non-whitespaces for proper wrapping
-            const tokens = part.match(/\S+|\s+/g) || [];
-            
-            for (const token of tokens) {
-                const tokenWidth = doc.getTextWidth(token);
-                
-                if (token.trim() === '') {
-                    // Skip leading spaces on new lines
-                    if (currentX === margin + 10) continue;
-                } else if (currentX + tokenWidth > margin + 10 + maxWidth) {
-                    currentX = margin + 10;
-                    currentY += lineH;
-                    checkPageBreak(lineH + 2);
-                    doc.setTextColor(...color);
-                    doc.setFont("helvetica", "italic");
-                    doc.setFontSize(8.5);
-                }
-                
-                const printToken = (currentX === margin + 10) ? token.replace(/^\s+/, '') : token;
-                if (printToken) {
-                    doc.text(printToken, currentX, currentY);
-                    currentX += doc.getTextWidth(printToken);
-                }
-            }
+      if (!part) continue;
+
+      const lowerPart = part.toLowerCase();
+      const isTag = lowerPart === '(veg)' || lowerPart === '(vegan)' || lowerPart === '(non-veg)';
+
+      if (isTag) {
+        const tagType = lowerPart === '(veg)' ? 'veg' : lowerPart === '(vegan)' ? 'vegan' : 'non-veg';
+
+        // Check for wrapping before drawing tag
+        if (currentX + 5 > margin + 10 + maxWidth) {
+          currentX = margin + 10;
+          currentY += lineH;
+          checkPageBreak(lineH + 2);
+          doc.setTextColor(...color);
+          doc.setFont("helvetica", "italic");
+          doc.setFontSize(8.5);
         }
+
+        drawDietaryIcon(tagType, currentX + 0.5, currentY - 0.5);
+        currentX += 4.5;
+      } else {
+        // Further tokenize text by whitespaces and non-whitespaces for proper wrapping
+        const tokens = part.match(/\S+|\s+/g) || [];
+
+        for (const token of tokens) {
+          const tokenWidth = doc.getTextWidth(token);
+
+          if (token.trim() === '') {
+            // Skip leading spaces on new lines
+            if (currentX === margin + 10) continue;
+          } else if (currentX + tokenWidth > margin + 10 + maxWidth) {
+            currentX = margin + 10;
+            currentY += lineH;
+            checkPageBreak(lineH + 2);
+            doc.setTextColor(...color);
+            doc.setFont("helvetica", "italic");
+            doc.setFontSize(8.5);
+          }
+
+          const printToken = (currentX === margin + 10) ? token.replace(/^\s+/, '') : token;
+          if (printToken) {
+            doc.text(printToken, currentX, currentY);
+            currentX += doc.getTextWidth(printToken);
+          }
+        }
+      }
     }
-    
+
     yPos = currentY + lineH + 1;
     doc.setTextColor(...COLORS.title);
   };
@@ -515,12 +543,12 @@ export async function generateBookingPdf(
     let lastCategory = "";
     sortedItemsInGroup.forEach(item => {
       let displayName = item.name;
-      
+
       // Calculate layout before rendering
       const itemMaxWidth = mode === 'kitchen' ? 120 : 95;
       const textX = margin + 12;
-      const iconX = margin + 6.5; 
-      
+      const iconX = margin + 6.5;
+
       // we remove the hardcoded text since we will draw it instead
       // if (item.dietaryType === 'veg') displayName += ' (Veg)';
       // else if (item.dietaryType === 'vegan') displayName += ' (Vegan)';
@@ -554,7 +582,7 @@ export async function generateBookingPdf(
 
       if (mode === 'kitchen') {
         doc.text(nameLines, textX, yPos + 4);
-        
+
         // Quantity with icon
         const qtyStr = String(item.quantity);
         const qtyW = doc.getTextWidth(qtyStr);
@@ -563,9 +591,11 @@ export async function generateBookingPdf(
         const totalW = iconW + gap + qtyW;
         const centerOffset = margin + 130;
         const startX = centerOffset - (totalW / 2);
-        
+
         if (item.pricingType === 'per_person') {
           drawUsersIcon(startX, yPos + 4);
+        } else if (item.category === 'Beverages' || item.pricingType === 'consumption') {
+          drawWineIcon(startX, yPos + 4);
         } else {
           drawPackageIcon(startX, yPos + 4);
         }
@@ -576,22 +606,24 @@ export async function generateBookingPdf(
       } else {
         doc.text(nameLines, textX, yPos + 4);
         doc.setTextColor(...COLORS.text);
-        
+
         const qtyLabel = item.pricingType === 'per_person' ? 'guests' : '';
         const qtyVal = String(item.quantity);
         const unitPriceTxt = ` x ${Number(item.unitPrice).toFixed(0)} CHF`;
         const baseTxt = (qtyVal + " " + qtyLabel).trim();
-        
+
         const iconW = 3.5;
         const gap = 1.5;
         const currentX = margin + 105;
-        
+
         if (item.pricingType === 'per_person') {
           drawUsersIcon(currentX, yPos + 4);
+        } else if (item.category === 'Beverages' || item.pricingType === 'consumption') {
+          drawWineIcon(currentX, yPos + 4);
         } else {
           drawPackageIcon(currentX, yPos + 4);
         }
-        
+
         doc.text(baseTxt, currentX + iconW + gap, yPos + 4);
         const baseWidth = doc.getTextWidth(baseTxt);
         doc.text(unitPriceTxt, currentX + iconW + gap + baseWidth, yPos + 4);

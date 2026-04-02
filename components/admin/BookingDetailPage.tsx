@@ -1572,7 +1572,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         <div className="flex items-center gap-2">
                                             <button
                                                 onClick={handleCancelCustomer}
-                                                className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors  bg-red-400 text-white hover:text-red-500 cursor-pointer flex items-center gap-2"
+                                                className="px-3 py-1.5 border border-border hover:bg-red-600 hover:text-white rounded-lg transition-colors  bg-red-500 text-white hover:text-red-500 cursor-pointer flex items-center gap-2"
                                                 style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                             >
                                                 <X className="w-4 h-4" />
@@ -1710,7 +1710,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         <div className="flex items-center gap-2">
                                             <button
                                                 onClick={handleCancelAddress}
-                                                className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors bg-red-400 text-muted-foreground hover:text-red-500 cursor-pointer flex items-center gap-2"
+                                                className="px-3 py-1.5 border border-border hover:bg-red-600 hover:text-white rounded-lg transition-colors bg-red-500 text-white hover:text-red-500 cursor-pointer flex items-center gap-2"
                                                 style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                             >
                                                 <X className="w-4 h-4" />
@@ -1852,7 +1852,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                             <div className="flex items-center gap-2">
                                                 <button
                                                     onClick={handleCancelEvent}
-                                                    className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors bg-red-400 text-muted-foreground hover:text-red-500 cursor-pointer flex items-center gap-2"
+                                                    className="px-3 py-1.5 border border-border hover:bg-red-600 hover:text-white rounded-lg transition-colors bg-red-500 text-white hover:text-red-500 cursor-pointer flex items-center gap-2"
                                                     style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                                 >
                                                     <X className="w-4 h-4" />
@@ -2027,7 +2027,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         <div className="flex items-center gap-2">
                                             <button
                                                 onClick={handleCancelSpecialRequests}
-                                                className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors bg-red-400 text-muted-foreground hover:text-red-500 cursor-pointer flex items-center gap-2"
+                                                className="px-3 py-1.5 border border-border hover:bg-red-600 hover:text-white rounded-lg transition-colors bg-red-500 text-white hover:text-red-500 cursor-pointer flex items-center gap-2"
                                                 style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                             >
                                                 <X className="w-4 h-4" />
@@ -2137,7 +2137,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         <div className="flex items-center gap-2">
                                             <button
                                                 onClick={handleCancelPayment}
-                                                className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors bg-red-400 text-muted-foreground hover:text-red-500 cursor-pointer flex items-center gap-2"
+                                                className="px-3 py-1.5 border border-border hover:bg-red-600 hover:text-white rounded-lg transition-colors bg-red-500 text-white hover:text-red-500 cursor-pointer flex items-center gap-2"
                                                 style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                             >
                                                 <X className="w-4 h-4" />
@@ -2447,7 +2447,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         {canEditBooking && !isLocked && !isEditingMenu && (
                                             <button
                                                 onClick={handleEditItems}
-                                                className="px-3 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer flex items-center gap-2"
+                                                className="px-3 py-1.5 border border-border hover:bg-primary hover:text-secondary rounded-lg transition-colors bg-secondary text-white cursor-pointer flex items-center gap-2"
                                                 style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                             >
                                                 <UtensilsCrossed className="w-3.5 h-3.5" />
@@ -2459,7 +2459,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                 <button
                                                     onClick={handleCancelMenu}
                                                     disabled={isSaving}
-                                                    className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors bg-red-400 text-muted-foreground hover:text-red-500 cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    className="px-3 py-1.5 border border-border hover:bg-red-600 hover:text-white rounded-lg transition-colors bg-red-500 text-white hover:text-red-500 cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                                     style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                                 >
                                                     <X className="w-4 h-4" />
@@ -2508,7 +2508,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                                         <DietaryIcon type={item.dietaryType} size="sm" />
                                                                     )}
                                                                     <div>
-                                                                        <span>{item.item || item.name}</span>
+                                                                        <span className="truncate max-w-[200px] sm:max-w-[300px] inline-block" title={item.item || item.name}>{item.item || item.name}</span>
                                                                         {item.variant && (
                                                                             <span className="ml-1.5 text-muted-foreground font-normal">
                                                                                 ({item.variant})
@@ -2519,7 +2519,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                                 {item.notes && (
                                                                     <div className="flex items-start gap-1.5 text-primary/80">
                                                                         <UtensilsCrossed className="w-3 h-3 mt-1 flex-shrink-0" />
-                                                                        <span className="text-[12px] leading-tight font-medium inline-flex items-center flex-wrap gap-x-0.5" title={item.notes}>
+                                                                        <span className="text-[12px] leading-tight font-medium inline-flex items-center flex-wrap gap-x-0.5 line-clamp-2" title={item.notes}>
                                                                             {parseDietaryNotes(item.notes)}
                                                                         </span>
                                                                     </div>
@@ -2527,7 +2527,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                                 {item.customerComment && (
                                                                     <div className="flex items-start gap-1.5 text-amber-600 dark:text-amber-500">
                                                                         <MessageSquare className="w-3 h-3 mt-1 flex-shrink-0" />
-                                                                        <span className="text-[12px] italic leading-tight" title={item.customerComment}>
+                                                                        <span className="text-[12px] italic leading-tight line-clamp-2" title={item.customerComment}>
                                                                             Note: {item.customerComment}
                                                                         </span>
                                                                     </div>
@@ -2818,14 +2818,14 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                         {latestCheckin.menuChanges && (
                                                             <div className="space-y-1 bg-background/50 p-3 rounded-lg border border-border/50">
                                                                 <p className="text-[10px] uppercase text-primary font-bold">Menu Changes</p>
-                                                                <p className="text-sm italic truncate line-clamp-3" title={latestCheckin.menuChanges}>{latestCheckin.menuChanges}</p>
+                                                                <p className="text-sm italic line-clamp-3" title={latestCheckin.menuChanges}>{latestCheckin.menuChanges}</p>
                                                             </div>
                                                         )}
 
                                                         {latestCheckin.additionalDetails && (
                                                             <div className="space-y-1 bg-background/50 p-3 rounded-lg border border-border/50">
                                                                 <p className="text-[10px] uppercase text-primary font-bold">Additional Details</p>
-                                                                <p className="text-sm italic truncate line-clamp-3" title={latestCheckin.additionalDetails}>{latestCheckin.additionalDetails}</p>
+                                                                <p className="text-sm italic line-clamp-3" title={latestCheckin.additionalDetails}>{latestCheckin.additionalDetails}</p>
                                                             </div>
                                                         )}
                                                     </div>
@@ -2930,13 +2930,13 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         </span>
                                     </button>
 
-                                    {/* Check-in Status Indicator */}
+                                    {/* Check-in Status Indicator
                                     {checkinEmailSent && !shouldDisableCheckinButton && (
                                         <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 px-2">
                                             <Mail className="w-3 h-3 text-blue-600" />
                                             <span>Email sent</span>
                                         </div>
-                                    )}
+                                    )} */}
 
                                     <button
                                         onClick={handleSendUpdate}
@@ -3119,10 +3119,14 @@ function CommentItem({ contact, t, commonT }: { contact: any, t: any, commonT: a
                         {contact.date} {commonT('at')} {contact.time}
                     </span>
                 </div>
-                <p className={cn(
-                    "text-foreground leading-relaxed",
-                    isSystem ? "text-muted-foreground italic" : "text-foreground font-medium"
-                )} style={{ fontSize: 'var(--text-base)' }}>
+                <p
+                    className={cn(
+                        "text-foreground leading-relaxed line-clamp-3 break-words",
+                        isSystem ? "text-muted-foreground italic" : "text-foreground font-medium"
+                    )}
+                    style={{ fontSize: 'var(--text-base)' }}
+                    title={contact.action}
+                >
                     {contact.action}
                 </p>
             </div>
