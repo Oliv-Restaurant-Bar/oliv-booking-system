@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Mail, Download, Users, X, Loader2, CheckSquare, ChevronLeft, Send, MessageSquare, Save } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { ValidatedTextarea } from '@/components/ui/validated-textarea';
@@ -54,6 +55,7 @@ export function KitchenPdfActionModal({
 }: KitchenPdfActionModalProps) {
   const tAdmin = useTranslations('admin.bookings');
   const tWizard = useTranslations('wizard');
+  const router = useRouter();
   const [expandedSection, setExpandedSection] = useState<'email' | null>(null);
   const [externalEmails, setExternalEmails] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -88,7 +90,7 @@ export function KitchenPdfActionModal({
 
       setHasUnsavedNotes(false);
       toast.success(tAdmin('toast.saveSuccess'));
-      window.location.reload();
+      router.refresh();
     } catch (error) {
       console.error('Error saving kitchen notes:', error);
       toast.error(tAdmin('toast.saveFailed'));

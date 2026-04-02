@@ -280,6 +280,10 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             item.category !== 'Zusatzleistungen'
         );
 
+        const isVegActivated = foodItems.some(i => i.dietaryType === 'veg');
+        const isNonVegActivated = foodItems.some(i => i.dietaryType === 'non-veg');
+        const isVeganActivated = foodItems.some(i => i.dietaryType === 'vegan');
+
         let vegSubtotal = 0;
         let nonVegSubtotal = 0;
         let veganSubtotal = 0;
@@ -312,19 +316,24 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             if (totalGroupings === 1) {
                 const sharedPrice = Math.max(maxVeg, maxNonVeg, maxVegan, maxNone);
                 const sharedCount = (catItems as any[]).length;
-                vegSubtotal += sharedPrice;
-                nonVegSubtotal += sharedPrice;
-                veganSubtotal += sharedPrice;
-                vegCount += sharedCount;
-                nonVegCount += sharedCount;
-                veganCount += sharedCount;
+
+                if (hasNoneItem) {
+                    if (isVegActivated) { vegSubtotal += sharedPrice; vegCount += sharedCount; }
+                    if (isNonVegActivated) { nonVegSubtotal += sharedPrice; nonVegCount += sharedCount; }
+                    if (isVeganActivated) { veganSubtotal += sharedPrice; veganCount += sharedCount; }
+                } else {
+                    vegSubtotal += sharedPrice; vegCount += sharedCount;
+                    nonVegSubtotal += sharedPrice; nonVegCount += sharedCount;
+                    veganSubtotal += sharedPrice; veganCount += sharedCount;
+                }
             } else {
-                vegSubtotal += maxVeg + maxNone;
-                nonVegSubtotal += maxNonVeg + maxNone;
-                veganSubtotal += maxVegan + maxNone;
-                vegCount += vegItems.length + noneItems.length;
-                nonVegCount += nonVegItems.length + noneItems.length;
-                veganCount += veganItems.length + noneItems.length;
+                vegSubtotal += maxVeg + (isVegActivated ? maxNone : 0);
+                nonVegSubtotal += maxNonVeg + (isNonVegActivated ? maxNone : 0);
+                veganSubtotal += maxVegan + (isVeganActivated ? maxNone : 0);
+
+                vegCount += vegItems.length + (isVegActivated ? noneItems.length : 0);
+                nonVegCount += nonVegItems.length + (isNonVegActivated ? noneItems.length : 0);
+                veganCount += veganItems.length + (isVeganActivated ? noneItems.length : 0);
             }
         });
 

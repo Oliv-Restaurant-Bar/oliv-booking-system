@@ -153,6 +153,10 @@ export function MenuCart({
     nonVegCount: nonVegItemCount,
     veganCount: veganItemCount,
   } = React.useMemo(() => {
+    const isVegActivated = ppFoodItems.some(i => i.dietaryType === 'veg');
+    const isNonVegActivated = ppFoodItems.some(i => i.dietaryType === 'non-veg');
+    const isVeganActivated = ppFoodItems.some(i => i.dietaryType === 'vegan');
+
     let vegSubtotal = 0;
     let nonVegSubtotal = 0;
     let veganSubtotal = 0;
@@ -181,31 +185,31 @@ export function MenuCart({
       const groupsPresentCount = [maxVeg > 0, maxNonVeg > 0, maxVegan > 0].filter(Boolean).length;
       const hasNone = maxNone > 0;
 
-      // Price is Shared ONLY if exactly one dietary "grouping" is present in the category.
-      // dietary "grouping" means (Veg group, NV group, Vegan group, OR None group).
       const totalGroupings = groupsPresentCount + (hasNone ? 1 : 0);
 
       if (totalGroupings === 1) {
-        // Shared price logic (All three selection get the same single-group max price)
         const sharedPrice = Math.max(maxVeg, maxNonVeg, maxVegan, maxNone);
-        vegSubtotal += sharedPrice;
-        nonVegSubtotal += sharedPrice;
-        veganSubtotal += sharedPrice;
-
-        // Shared count logic (As price is shared, count is also shared in this case)
         const sharedCount = items.length;
-        vegCount += sharedCount;
-        nonVegCount += sharedCount;
-        veganCount += sharedCount;
-      } else {
-        // Separate logic: Each type price is added to its own category, 'none' adds to all
-        vegSubtotal += maxVeg + maxNone;
-        nonVegSubtotal += maxNonVeg + maxNone;
-        veganSubtotal += maxVegan + maxNone;
 
-        vegCount += vegItems.length + noneItems.length;
-        nonVegCount += nonVegItems.length + noneItems.length;
-        veganCount += veganItems.length + noneItems.length;
+        // "None" type items only populate activated categories
+        if (hasNone) {
+          if (isVegActivated) { vegSubtotal += sharedPrice; vegCount += sharedCount; }
+          if (isNonVegActivated) { nonVegSubtotal += sharedPrice; nonVegCount += sharedCount; }
+          if (isVeganActivated) { veganSubtotal += sharedPrice; veganCount += sharedCount; }
+        } else {
+          // Specific choice (Veg/NV/Vn) still populates all three per the Shared rule
+          vegSubtotal += sharedPrice; vegCount += sharedCount;
+          nonVegSubtotal += sharedPrice; nonVegCount += sharedCount;
+          veganSubtotal += sharedPrice; veganCount += sharedCount;
+        }
+      } else {
+        vegSubtotal += maxVeg + (isVegActivated ? maxNone : 0);
+        nonVegSubtotal += maxNonVeg + (isNonVegActivated ? maxNone : 0);
+        veganSubtotal += maxVegan + (isVeganActivated ? maxNone : 0);
+
+        vegCount += vegItems.length + (isVegActivated ? noneItems.length : 0);
+        nonVegCount += nonVegItems.length + (isNonVegActivated ? noneItems.length : 0);
+        veganCount += veganItems.length + (isVeganActivated ? noneItems.length : 0);
       }
     });
 

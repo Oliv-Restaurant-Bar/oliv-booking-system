@@ -158,7 +158,7 @@ export async function generateBookingPdf(
 
     if (mode === 'kitchen') {
       doc.text("ITEM NAME", margin + 3, yPos);
-      doc.text("QUANTITY", margin + 130, yPos, { align: 'center' });
+      doc.text("GUEST / QUANTITY", margin + 130, yPos, { align: 'center' });
       doc.text("DONE", margin + 160, yPos, { align: 'center' });
     } else {
       doc.text("ARTIKEL", margin + 3, yPos);
@@ -383,16 +383,21 @@ export async function generateBookingPdf(
     doc.setFont("helvetica", "italic");
     doc.setFontSize(8.5);
 
-    const maxWidth = contentWidth - 20;
-    const lineH = 4;
+    const maxWidth = 105; // Reduced to avoid quantity column
+    const lineH = 4.5;
+    const indentX = margin + 12;
 
-    // Reorder dietary tags to be before the name they describe: "Name (Tag)" -> "(Tag) Name"
-    const reorderedText = text.replace(/([^,:]+?)\s*(\(Veg\)|\(Vegan\)|\(Non-Veg\))/gi, (match, name, tag) => `${tag} ${name.trim()}`);
+    // 1. Initial cleanup: normalize common formatting
+    let processedText = text
+      // Reorder dietary tags like "(Veg)" if they appear after a name
+      .replace(/([^,:]+?)\s*(\(Veg\)|\(Vegan\)|\(Non-Veg\))/gi, (match, name, tag) => `${tag} ${name.trim()}`);
 
-    // Split text into main parts: tags and text blocks
-    const parts = (`${label}: ` + reorderedText).split(/(\(Veg\)|\(Vegan\)|\(Non-Veg\))/gi);
+    // 2. Explode the text into parts containing the name, status dots, or dietary tags
+    // We recognize emojis, (Veg/Vegan/NV) tags, and delimiters
+    const tagMatchRegex = /(\(Veg\)|\(Vegan\)|\(Non-Veg\)|[🟢🔴⚪⚫])/gi;
+    const parts = (`${label}: ` + processedText).split(tagMatchRegex);
 
-    let currentX = margin + 10;
+    let currentX = indentX;
     let currentY = yPos - 1;
 
     checkPageBreak(lineH + 2);
@@ -400,15 +405,18 @@ export async function generateBookingPdf(
     for (const part of parts) {
       if (!part) continue;
 
-      const lowerPart = part.toLowerCase();
-      const isTag = lowerPart === '(veg)' || lowerPart === '(vegan)' || lowerPart === '(non-veg)';
+      const lowerPart = part.trim().toLowerCase();
 
-      if (isTag) {
-        const tagType = lowerPart === '(veg)' ? 'veg' : lowerPart === '(vegan)' ? 'vegan' : 'non-veg';
+      // Determine if this part is a dietary indicator (tag or emoji)
+      let tagType: 'veg' | 'non-veg' | 'vegan' | null = null;
+      if (lowerPart === '(veg)' || lowerPart === '🟢') tagType = 'veg';
+      else if (lowerPart === '(vegan)' || lowerPart === '⚪') tagType = 'vegan'; // Using white/green mapping as appropriate
+      else if (lowerPart === '(non-veg)' || lowerPart === '🔴') tagType = 'non-veg';
 
-        // Check for wrapping before drawing tag
-        if (currentX + 5 > margin + 10 + maxWidth) {
-          currentX = margin + 10;
+      if (tagType) {
+        // Ensure we don't wrap the icon only
+        if (currentX + 6 > indentX + maxWidth) {
+          currentX = indentX;
           currentY += lineH;
           checkPageBreak(lineH + 2);
           doc.setTextColor(...color);
@@ -417,19 +425,20 @@ export async function generateBookingPdf(
         }
 
         drawDietaryIcon(tagType, currentX + 0.5, currentY - 0.5);
-        currentX += 4.5;
+        currentX += 5.5;
       } else {
-        // Further tokenize text by whitespaces and non-whitespaces for proper wrapping
+        // Handle regular text segments
+        // Tokenize by whitespace to handle proper wrapping within words
         const tokens = part.match(/\S+|\s+/g) || [];
 
         for (const token of tokens) {
           const tokenWidth = doc.getTextWidth(token);
 
           if (token.trim() === '') {
-            // Skip leading spaces on new lines
-            if (currentX === margin + 10) continue;
-          } else if (currentX + tokenWidth > margin + 10 + maxWidth) {
-            currentX = margin + 10;
+            // Avoid starting new lines with whitespace
+            if (currentX === indentX) continue;
+          } else if (currentX + tokenWidth > indentX + maxWidth) {
+            currentX = indentX;
             currentY += lineH;
             checkPageBreak(lineH + 2);
             doc.setTextColor(...color);
@@ -437,7 +446,8 @@ export async function generateBookingPdf(
             doc.setFontSize(8.5);
           }
 
-          const printToken = (currentX === margin + 10) ? token.replace(/^\s+/, '') : token;
+          // Print the token (strip leading spaces if it's the start of the line)
+          const printToken = (currentX === indentX) ? token.replace(/^\s+/, '') : token;
           if (printToken) {
             doc.text(printToken, currentX, currentY);
             currentX += doc.getTextWidth(printToken);
@@ -446,7 +456,7 @@ export async function generateBookingPdf(
       }
     }
 
-    yPos = currentY + lineH + 1;
+    yPos = currentY + lineH + 1.5;
     doc.setTextColor(...COLORS.title);
   };
 
@@ -454,6 +464,10 @@ export async function generateBookingPdf(
   const calculateDietaryBreakdown = () => {
     // Only include per-person food items
     const foodItems = finalFoodItems.filter(item => item.pricingType === 'per_person');
+
+    const isVegActivated = foodItems.some(i => i.dietaryType === 'veg');
+    const isNonVegActivated = foodItems.some(i => i.dietaryType === 'non-veg');
+    const isVeganActivated = foodItems.some(i => i.dietaryType === 'vegan');
 
     const breakdown: Record<string, { total: number; perPerson: number }> = {
       veg: { total: 0, perPerson: 0 },
@@ -484,29 +498,30 @@ export async function generateBookingPdf(
       const maxNone = noneItems.length > 0 ? Math.max(...noneItems.map(i => i.unitPrice || 0)) : 0;
 
       const groupsPresent = [maxVeg > 0, maxNV > 0, maxVegan > 0].filter(Boolean).length;
-      const totalGroups = groupsPresent + (maxNone > 0 ? 1 : 0);
+      const hasNoneItem = maxNone > 0;
+      const totalGroups = groupsPresent + (hasNoneItem ? 1 : 0);
 
       if (totalGroups === 1) {
         const shared = Math.max(maxVeg, maxNV, maxVegan, maxNone);
-        vegPP += shared;
-        nvPP += shared;
-        veganPP += shared;
+        if (hasNoneItem) {
+          if (isVegActivated) vegPP += shared;
+          if (isNonVegActivated) nvPP += shared;
+          if (isVeganActivated) veganPP += shared;
+        } else {
+          vegPP += shared;
+          nvPP += shared;
+          veganPP += shared;
+        }
       } else {
-        vegPP += maxVeg + maxNone;
-        nvPP += maxNV + maxNone;
-        veganPP += maxVegan + maxNone;
+        vegPP += maxVeg + (isVegActivated ? maxNone : 0);
+        nvPP += maxNV + (isNonVegActivated ? maxNone : 0);
+        veganPP += maxVegan + (isVeganActivated ? maxNone : 0);
       }
     });
 
     breakdown.veg.perPerson = vegPP;
     breakdown['non-veg'].perPerson = nvPP;
     breakdown.vegan.perPerson = veganPP;
-
-    // Optional: Calculate totals (though PDF currently focuses on perPerson)
-    // For completeness if needed later:
-    // breakdown.veg.total = vegPP * data.guestCount; // This is an estimation
-    // In our system, the total is usually calculated from the items directly.
-
     return breakdown;
   };
 
