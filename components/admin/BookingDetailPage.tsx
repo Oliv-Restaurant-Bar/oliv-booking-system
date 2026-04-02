@@ -3036,21 +3036,15 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                             )}
 
                             {canDeleteBooking && (
-                                <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
-                                    <button
-                                        onClick={() => setIsDeleteModalOpen(true)}
-                                        disabled={isReadOnlyStatus}
-                                        className={cn(
-                                            "w-full px-3 sm:px-4 py-3 bg-destructive/10 text-destructive hover:bg-destructive/20 rounded-lg transition-colors flex items-center justify-center gap-2 border border-destructive/30 text-sm sm:text-base sm:col-span-2 lg:col-span-1",
-                                            isReadOnlyStatus ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-                                        )}
-                                        style={{ fontWeight: 'var(--font-weight-medium)' }}
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                        <span className="hidden sm:inline">{('Delete Booking')}</span>
-                                        <span className="sm:hidden">{('Delete')}</span>
-                                    </button>
-                                </Tooltip>
+                                <button
+                                    onClick={() => setIsDeleteModalOpen(true)}
+                                    className="w-full px-3 sm:px-4 py-3 bg-destructive/10 text-destructive hover:bg-destructive/20 rounded-lg transition-colors flex items-center justify-center gap-2 border border-destructive/30 text-sm sm:text-base sm:col-span-2 lg:col-span-1 cursor-pointer"
+                                    style={{ fontWeight: 'var(--font-weight-medium)' }}
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                    <span className="hidden sm:inline">{('Delete Booking')}</span>
+                                    <span className="sm:hidden">{('Delete')}</span>
+                                </button>
                             )}
                         </div>
                     </div>
