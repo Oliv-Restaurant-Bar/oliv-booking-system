@@ -105,6 +105,7 @@ export function CustomerMenuSelection({
   const [isStuck, setIsStuck] = React.useState(false);
   const sentinelRef = React.useRef<HTMLDivElement>(null);
   const sectionRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const isManualScrolling = React.useRef(false);
   const t = useWizardTranslation();
 
@@ -133,7 +134,8 @@ export function CustomerMenuSelection({
         }
       },
       {
-        rootMargin: "-120px 0px -80% 0px", // Adjust based on sticky header height
+        root: scrollContainerRef.current,
+        rootMargin: "-121px 0px -80% 0px", // Match exactly below the sticky header (120px)
         threshold: 0
       }
     );
@@ -143,20 +145,23 @@ export function CustomerMenuSelection({
     });
 
     return () => observer.disconnect();
-  }, [categories, menuItems, searchQuery]);
+  }, [categories, menuItems, searchQuery, scrollContainerRef.current]);
 
   const handleTabClick = (category: string) => {
+    // Set flag first to block the IntersectionObserver
     isManualScrolling.current = true;
     setSelectedCategory(category);
 
-    const section = sectionRefs.current[category];
-    if (section) {
-      const yOffset = -110; // Sticky header offset
-      const y = section.getBoundingClientRect().top + window.pageYOffset + yOffset;
-      window.scrollTo({ top: y, behavior: 'smooth' });
-    }
+    // Wrap scroll in setTimeout(0) to ensure it executes AFTER the state update/re-render
+    setTimeout(() => {
+      const section = sectionRefs.current[category];
+      if (section) {
+        // scrollIntoView is modern and respects scroll-margin-top
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 0);
 
-    // Reset manual scroll flag after animation
+    // Keep the manual scroll flag for a long enough time to allow the smooth scroll animation
     setTimeout(() => {
       isManualScrolling.current = false;
     }, 1000);
@@ -165,7 +170,10 @@ export function CustomerMenuSelection({
   return (
     <div className={`bg-[#f7f7f8] h-screen flex overflow-hidden ${isSubmitting ? 'pointer-events-none select-none' : ''}`}>
       {/* Left Column: Menu Content */}
-      <div className={`flex-1 min-w-0 flex flex-col overflow-y-auto h-full scrollbar-hide transition-opacity duration-300 ${isSubmitting ? 'opacity-50' : ''}`}>
+      <div 
+        ref={scrollContainerRef}
+        className={`flex-1 min-w-0 flex flex-col overflow-y-auto h-full scrollbar-hide transition-opacity duration-300 ${isSubmitting ? 'opacity-50' : ''}`}
+      >
         <WizardHeader onBack={onBack} fullWidth />
         <div className="px-6 w-full pb-[100px]">
           {/* Title Section */}

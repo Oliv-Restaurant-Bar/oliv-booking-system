@@ -323,11 +323,15 @@ export function CustomMenuWizard() {
         console.log(`[Edit Mode] Notes: ${item.notes}`);
         console.log(`[Edit Mode] Unit price from booking: ${item.unitPrice}`);
 
+        // Helper to normalize names for comparison (strip emojis, extra spaces, etc.)
+        const normalizeName = (s: string) => s.replace(/[\u2700-\u27BF\uE000-\uF8FF|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDC00-\uDFFF]]/g, '').replace(/[🟢🔴⚪⚫]|^\s*[-•]\s*/g, '').trim().toLowerCase();
+
         // Restore Variants
         const variantMatch = item.notes.match(/Variant: ([^|]+)/);
         if (variantMatch && menuItem.variants) {
           const variantName = variantMatch[1].trim();
-          const variant = menuItem.variants.find(v => v.name === variantName);
+          const normalizedVariantName = normalizeName(variantName);
+          const variant = menuItem.variants.find(v => normalizeName(v.name) === normalizedVariantName);
           if (variant) {
             console.log(`[Edit Mode] ✓ Restored variant "${variantName}" (price: ${variant.price}) for item ${menuItem.name}`);
             restoredVariants[itemId] = variant.id;
@@ -340,16 +344,29 @@ export function CustomMenuWizard() {
         // Restore Add-ons
         const addonsMatch = item.notes.match(/(?:Add-ons|Choices): ([^|]+)/);
         if (addonsMatch) {
-          const addonNames = addonsMatch[1].split(',').map((s: string) => s.trim());
+          // Support both comma and pipe separators
+          const addonNames = addonsMatch[1].split(/[|,]/).map((s: string) => s.trim()).filter(Boolean);
           const addonIds: string[] = [];
 
           console.log(`[Edit Mode] Restoring addons: ${addonNames.join(', ')}`);
-
+          
           addonNames.forEach((name: string) => {
+            const normalizedSearchName = normalizeName(name);
+            if (!normalizedSearchName) return;
+
             // Check in addonGroups if they exist
             if (menuItem.addonGroups) {
               for (const group of menuItem.addonGroups) {
-                const addOn = group.items.find(i => i.name === name);
+                // Try exact normalized match first, then fuzzy match
+                const addOn = group.items.find(i => {
+                  const normalizedItemName = normalizeName(i.name);
+                  return (
+                    normalizedItemName === normalizedSearchName ||
+                    normalizedSearchName.includes(normalizedItemName) ||
+                    normalizedItemName.includes(normalizedSearchName)
+                  );
+                });
+
                 if (addOn) {
                   addonIds.push(addOn.id);
                   console.log(`[Edit Mode] ✓ Found addon "${name}" in group "${group.name}" (price: ${addOn.price})`);
@@ -358,7 +375,15 @@ export function CustomMenuWizard() {
               }
             } else if (menuItem.addOns) {
               // Check in legacy addOns
-              const addOn = menuItem.addOns.find(a => a.name === name);
+              const addOn = menuItem.addOns.find(a => {
+                const normalizedItemName = normalizeName(a.name);
+                return (
+                  normalizedItemName === normalizedSearchName ||
+                  normalizedSearchName.includes(normalizedItemName) ||
+                  normalizedItemName.includes(normalizedSearchName)
+                );
+              });
+
               if (addOn) {
                 addonIds.push(addOn.id);
                 console.log(`[Edit Mode] ✓ Found legacy addon "${name}" (price: ${addOn.price})`);
@@ -408,7 +433,7 @@ export function CustomMenuWizard() {
           });
 
           // Transform database data to MenuItem format - only include items from active categories with active items
-          const items: MenuItem[] = activeItems
+          const transformedItems: MenuItem[] = activeItems
             .filter((item: any) => {
               // Only include items whose category is active AND has active items
               const category = categoriesWithActiveItems.find((cat: any) => cat.id === item.categoryId);
@@ -424,9 +449,6 @@ export function CustomMenuWizard() {
                 price: Number(item.pricePerPerson) || 0,
                 pricingType: item.pricingType || 'per_person',
                 image: item.imageUrl || '',
-                // Mapping logic:
-                // 1. If it's a beverage category, default to 'none'
-                // 2. Otherwise: vegan > vegetarian > non-vegetarian
                 dietaryType: (category?.name === 'Beverages' || category?.name === 'Drinks') ? 'none' : (item.dietaryType || 'none'),
                 dietaryTags: item.dietaryTags || [],
                 allergens: item.allergens || [],
@@ -499,8 +521,31 @@ export function CustomMenuWizard() {
               };
             });
 
-          // Get unique category names from active categories with active items
-          const categoryNames = categoriesWithActiveItems.map((cat: any) => cat.name);
+          // Add standalone legacy addons to the items list
+          const addonItems: MenuItem[] = (data.addons || [])
+            .filter((addon: any) => addon.isActive)
+            .map((addon: any) => ({
+              id: addon.id,
+              name: addon.name,
+              description: addon.description || '',
+              category: 'Add-ons',
+              price: Number(addon.price) || 0,
+              pricingType: addon.pricingType || 'flat_fee',
+              image: '',
+              dietaryType: 'none',
+              variants: [],
+              addOns: [],
+              addonGroups: [],
+              sortOrder: 1000,
+            }));
+
+          const allItems = [...transformedItems, ...addonItems];
+
+          // Get unique category names
+          const categoryNames = [...new Set([
+            ...categoriesWithActiveItems.map((cat: any) => cat.name),
+            ...addonItems.map(item => item.category)
+          ])];
 
           // Store category data including guestCount flag
           const categoryDataMap: Record<string, { guestCount: boolean }> = {};
@@ -509,8 +554,13 @@ export function CustomMenuWizard() {
               guestCount: cat.guestCount || false,
             };
           });
+          
+          // Add default data for addon categories
+          if (addonItems.length > 0 && !categoryDataMap['Add-ons']) {
+            categoryDataMap['Add-ons'] = { guestCount: false };
+          }
 
-          setMenuItems(items);
+          setMenuItems(allItems);
           setCategories(categoryNames);
           setCategoryData(categoryDataMap);
           if (categoryNames.length > 0) {
@@ -522,6 +572,7 @@ export function CustomMenuWizard() {
             }, {} as Record<string, boolean>);
             setCollapsedCategories(initialCollapsedState);
           }
+
         } else {
           // Fallback to error state - show empty menu
           console.error('Failed to fetch menu data');
