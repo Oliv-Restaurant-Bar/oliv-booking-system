@@ -67,12 +67,14 @@ interface CalendarViewProps {
       avatar: string;
       avatarColor: string;
     };
-    event: {
-      date: string;
-      time: string;
-      occasion: string;
-      location?: string;
-    };
+      event: {
+        date: string;
+        time: string;
+        occasion: string;
+        location?: string;
+        room?: string;
+      };
+      room?: string;
     guests: number;
     amount: string;
     status: string;
@@ -375,7 +377,7 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
                           onOpenModal(booking);
                         }
                       }}
-                      title={`${booking.customer.name} - ${booking.event.occasion}${booking.event.location ? ` @ ${booking.event.location}` : ''}`}
+                      title={`${booking.customer.name} - ${booking.event.occasion}${booking.room || booking.event.location ? ` @ ${booking.room || booking.event.location}` : ''}`}
                     >
                       {booking.customer.name}
                     </div>

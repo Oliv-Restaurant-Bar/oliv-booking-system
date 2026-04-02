@@ -165,7 +165,7 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
                   <div className="flex items-center gap-1.5 text-primary font-medium" style={{ fontSize: 'var(--text-small)' }}>
                     <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
                     <span className="truncate max-w-[180px]" title={`${booking.event?.room || ''}${booking.event?.room && booking.event?.location ? ' • ' : ''}${booking.event?.location || ''}`}>
-                      {booking.event?.room || ''}
+                      {booking.event?.room || booking.event?.location || ''}
                     </span>
                   </div>
                 )}
