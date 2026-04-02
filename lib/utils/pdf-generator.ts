@@ -486,7 +486,15 @@ export async function generateBookingPdf(
     let nvPP = 0;
     let veganPP = 0;
 
+    const isDietarySharedCategory = (cat: string) => {
+      const c = cat.toLowerCase();
+      return c.includes('starter') || c.includes('dessert') || c.includes('vorspeise') || 
+             c.includes('nachspeise') || c.includes('apéro') || c.includes('apero') || c.includes('snacks');
+    };
+
     Object.entries(itemsByCategory).forEach(([category, catItems]) => {
+      const isRestricted = isDietarySharedCategory(category);
+      
       const vegItems = catItems.filter(i => i.dietaryType === 'veg');
       const nonVegItems = catItems.filter(i => i.dietaryType === 'non-veg');
       const veganItems = catItems.filter(i => i.dietaryType === 'vegan');
@@ -501,21 +509,39 @@ export async function generateBookingPdf(
       const hasNoneItem = maxNone > 0;
       const totalGroups = groupsPresent + (hasNoneItem ? 1 : 0);
 
+      const shared = Math.max(maxVeg, maxNV, maxVegan, maxNone);
+
       if (totalGroups === 1) {
-        const shared = Math.max(maxVeg, maxNV, maxVegan, maxNone);
         if (hasNoneItem) {
-          if (isVegActivated) vegPP += shared;
-          if (isNonVegActivated) nvPP += shared;
-          if (isVeganActivated) veganPP += shared;
+          if (isRestricted) {
+            if (isVegActivated) vegPP += shared;
+            if (isNonVegActivated) nvPP += shared;
+            if (isVeganActivated) veganPP += shared;
+          } else {
+            vegPP += shared;
+            nvPP += shared;
+            veganPP += shared;
+          }
         } else {
-          vegPP += shared;
-          nvPP += shared;
-          veganPP += shared;
+          // Pure dietary choice: Shared for Restricted, Separate for General
+          if (isRestricted) {
+            vegPP += shared;
+            nvPP += shared;
+            veganPP += shared;
+          } else {
+            if (maxVeg > 0) vegPP += maxVeg;
+            if (maxNV > 0) nvPP += maxNV;
+            if (maxVegan > 0) veganPP += maxVegan;
+          }
         }
       } else {
-        vegPP += maxVeg + (isVegActivated ? maxNone : 0);
-        nvPP += maxNV + (isNonVegActivated ? maxNone : 0);
-        veganPP += maxVegan + (isVeganActivated ? maxNone : 0);
+        const vegNoneAdd = isRestricted ? (isVegActivated ? maxNone : 0) : maxNone;
+        const nvNoneAdd = isRestricted ? (isNonVegActivated ? maxNone : 0) : maxNone;
+        const veganNoneAdd = isRestricted ? (isVeganActivated ? maxNone : 0) : maxNone;
+
+        vegPP += maxVeg + vegNoneAdd;
+        nvPP += maxNV + nvNoneAdd;
+        veganPP += maxVegan + veganNoneAdd;
       }
     });
 
