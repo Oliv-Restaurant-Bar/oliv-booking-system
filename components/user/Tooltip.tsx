@@ -4,7 +4,7 @@ import { ReactNode, useState, useRef, useEffect } from 'react';
 
 interface TooltipProps {
   children: ReactNode;
-  title: string;
+  title?: string;
   position?: 'top' | 'bottom' | 'left' | 'right';
   delay?: number;
 }
@@ -68,7 +68,7 @@ export function Tooltip({
     >
       {children}
       
-      {isVisible && (
+      {isVisible && title && (
         <div
           ref={tooltipRef}
           className={`absolute z-50 px-3 py-2 bg-secondary text-white rounded-lg shadow-lg whitespace-nowrap pointer-events-none transition-opacity duration-150 ${

@@ -269,6 +269,9 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
     const canEditBooking = hasPermission(userRole, Permission.EDIT_BOOKING);
     const canUpdateStatus = hasPermission(userRole, Permission.UPDATE_BOOKING_STATUS);
 
+    const isReadOnlyStatus = ['completed', 'declined', 'no_show'].includes(localStatus);
+    const readOnlyTooltip = t('quickActions') ? "Change the status to confirmed to update the details" : "Change the status to confirmed to update the details"; // Fallback to literal if translation is missing
+
     const dietarySummary = useMemo(() => {
         const items = isEditingMenu ? tempMenuItems : (booking?.menuItems || []);
 
@@ -1567,15 +1570,21 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         <span className="truncate">{wizardT('sections.contactInformation')}</span>
                                     </h3>
                                     {canEditBooking && !isLocked && !isEditingCustomer && (
-                                        <button
-                                            onClick={handleEditCustomer}
-                                            className="px-2.5 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0"
-                                            style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                        >
-                                            <Pencil className="w-3.5 h-3.5" />
-                                            <span className="hidden xs:inline">{buttonT('edit')}</span>
-                                            <span className="xs:hidden">{commonT('edit')}</span>
-                                        </button>
+                                        <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
+                                            <button
+                                                onClick={handleEditCustomer}
+                                                disabled={isReadOnlyStatus}
+                                                className={cn(
+                                                    "px-2.5 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0",
+                                                    isReadOnlyStatus ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                                )}
+                                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                            >
+                                                <Pencil className="w-3.5 h-3.5" />
+                                                <span className="hidden xs:inline">{buttonT('edit')}</span>
+                                                <span className="xs:hidden">{commonT('edit')}</span>
+                                            </button>
+                                        </Tooltip>
                                     )}
                                     {isEditingCustomer && (
                                         <div className="flex items-center gap-2">
@@ -1705,15 +1714,21 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         <span className="truncate">{wizardT('sections.address')}</span>
                                     </h3>
                                     {canEditBooking && !isLocked && !isEditingAddress && (
-                                        <button
-                                            onClick={handleEditAddress}
-                                            className="px-2.5 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0"
-                                            style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                        >
-                                            <Pencil className="w-3.5 h-3.5" />
-                                            <span className="hidden xs:inline">{buttonT('edit')}</span>
-                                            <span className="xs:hidden">{commonT('edit')}</span>
-                                        </button>
+                                        <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
+                                            <button
+                                                onClick={handleEditAddress}
+                                                disabled={isReadOnlyStatus}
+                                                className={cn(
+                                                    "px-2.5 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0",
+                                                    isReadOnlyStatus ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                                )}
+                                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                            >
+                                                <Pencil className="w-3.5 h-3.5" />
+                                                <span className="hidden xs:inline">{buttonT('edit')}</span>
+                                                <span className="xs:hidden">{commonT('edit')}</span>
+                                            </button>
+                                        </Tooltip>
                                     )}
                                     {isEditingAddress && (
                                         <div className="flex items-center gap-2">
@@ -1847,15 +1862,21 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                             />
                                         )} */}
                                         {canEditBooking && !isLocked && !isEditingEvent && (
-                                            <button
-                                                onClick={handleEditEvent}
-                                                className="px-2.5 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0"
-                                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                            >
-                                                <Pencil className="w-3.5 h-3.5" />
-                                                <span className="hidden xs:inline">{buttonT('edit')}</span>
-                                                <span className="xs:hidden">{commonT('edit')}</span>
-                                            </button>
+                                            <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
+                                                <button
+                                                    onClick={handleEditEvent}
+                                                    disabled={isReadOnlyStatus}
+                                                    className={cn(
+                                                        "px-2.5 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0",
+                                                        isReadOnlyStatus ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                                    )}
+                                                    style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                                >
+                                                    <Pencil className="w-3.5 h-3.5" />
+                                                    <span className="hidden xs:inline">{buttonT('edit')}</span>
+                                                    <span className="xs:hidden">{commonT('edit')}</span>
+                                                </button>
+                                            </Tooltip>
                                         )}
                                         {isEditingEvent && (
                                             <div className="flex items-center gap-2">
@@ -2022,15 +2043,21 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         <span className="truncate">{wizardT('sections.specialRequests')}</span>
                                     </h3>
                                     {canEditBooking && !isLocked && !isEditingSpecialRequests && (
-                                        <button
-                                            onClick={handleEditSpecialRequests}
-                                            className="px-2.5 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0"
-                                            style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                        >
-                                            <Pencil className="w-3.5 h-3.5" />
-                                            <span className="hidden xs:inline">{buttonT('edit')}</span>
-                                            <span className="xs:hidden">{commonT('edit')}</span>
-                                        </button>
+                                        <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
+                                            <button
+                                                onClick={handleEditSpecialRequests}
+                                                disabled={isReadOnlyStatus}
+                                                className={cn(
+                                                    "px-2.5 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0",
+                                                    isReadOnlyStatus ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                                )}
+                                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                            >
+                                                <Pencil className="w-3.5 h-3.5" />
+                                                <span className="hidden xs:inline">{buttonT('edit')}</span>
+                                                <span className="xs:hidden">{commonT('edit')}</span>
+                                            </button>
+                                        </Tooltip>
                                     )}
                                     {isEditingSpecialRequests && (
                                         <div className="flex items-center gap-2">
@@ -2132,15 +2159,21 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         <span className="truncate">{wizardT('sections.paymentOptions')}</span>
                                     </h3>
                                     {canEditBooking && !isLocked && !isEditingPayment && (
-                                        <button
-                                            onClick={handleEditPayment}
-                                            className="px-2.5 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0"
-                                            style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                        >
-                                            <Pencil className="w-3.5 h-3.5" />
-                                            <span className="hidden xs:inline">{buttonT('edit')}</span>
-                                            <span className="xs:hidden">{commonT('edit')}</span>
-                                        </button>
+                                        <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
+                                            <button
+                                                onClick={handleEditPayment}
+                                                disabled={isReadOnlyStatus}
+                                                className={cn(
+                                                    "px-2.5 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0",
+                                                    isReadOnlyStatus ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                                )}
+                                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                            >
+                                                <Pencil className="w-3.5 h-3.5" />
+                                                <span className="hidden xs:inline">{buttonT('edit')}</span>
+                                                <span className="xs:hidden">{commonT('edit')}</span>
+                                            </button>
+                                        </Tooltip>
                                     )}
                                     {isEditingPayment && (
                                         <div className="flex items-center gap-2">
@@ -2444,24 +2477,36 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     </h3>
                                     <div className="flex flex-wrap items-center gap-2">
                                         {canEditBooking && !isLocked && !isEditingMenu && (
-                                            <button
-                                                onClick={handleEditMenu}
-                                                className="px-3 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer flex items-center gap-2"
-                                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                            >
-                                                <Pencil className="w-3.5 h-3.5" />
-                                                <span>{buttonT('edit')}</span>
-                                            </button>
+                                            <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
+                                                <button
+                                                    onClick={handleEditMenu}
+                                                    disabled={isReadOnlyStatus}
+                                                    className={cn(
+                                                        "px-3 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary flex items-center gap-2",
+                                                        isReadOnlyStatus ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                                    )}
+                                                    style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                                >
+                                                    <Pencil className="w-3.5 h-3.5" />
+                                                    <span>{buttonT('edit')}</span>
+                                                </button>
+                                            </Tooltip>
                                         )}
                                         {canEditBooking && !isLocked && !isEditingMenu && (
-                                            <button
-                                                onClick={handleEditItems}
-                                                className="px-3 py-1.5 border border-border hover:bg-primary hover:text-secondary rounded-lg transition-colors bg-secondary text-white cursor-pointer flex items-center gap-2"
-                                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                            >
-                                                <UtensilsCrossed className="w-3.5 h-3.5" />
-                                                <span>{commonT('editItems')}</span>
-                                            </button>
+                                            <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
+                                                <button
+                                                    onClick={handleEditItems}
+                                                    disabled={isReadOnlyStatus}
+                                                    className={cn(
+                                                        "px-3 py-1.5 border border-border hover:bg-primary hover:text-secondary rounded-lg transition-colors bg-secondary text-white flex items-center gap-2",
+                                                        isReadOnlyStatus ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                                    )}
+                                                    style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                                >
+                                                    <UtensilsCrossed className="w-3.5 h-3.5" />
+                                                    <span>{commonT('editItems')}</span>
+                                                </button>
+                                            </Tooltip>
                                         )}
                                         {isEditingMenu && (
                                             <div className="flex items-center gap-2">
@@ -2721,19 +2766,24 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                 <span className="text-[10px] tabular-nums font-semibold uppercase tracking-wider text-muted-foreground/60">
                                                     {newComment.length} / 500
                                                 </span>
-                                                <button
-                                                    onClick={handleAddComment}
-                                                    disabled={!newComment.trim() || isAddingComment}
-                                                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-sm shadow-primary/10 hover:shadow-primary/20 active:scale-95"
-                                                    style={{ fontSize: 'var(--text-small)' }}
-                                                >
-                                                    {isAddingComment ? (
-                                                        <div className="w-3.5 h-3.5 border-2 border-primary-foreground/30 border-t-transparent rounded-full animate-spin" />
-                                                    ) : (
-                                                        <Send className="w-3.5 h-3.5" />
-                                                    )}
-                                                    <span>{t('addComment')}</span>
-                                                </button>
+                                                <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""} position="bottom">
+                                                    <button
+                                                        onClick={handleAddComment}
+                                                        disabled={!newComment.trim() || isAddingComment || isReadOnlyStatus}
+                                                        className={cn(
+                                                            "px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 font-semibold shadow-sm shadow-primary/10 hover:shadow-primary/20 active:scale-95",
+                                                            (isAddingComment || isReadOnlyStatus) ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                                        )}
+                                                        style={{ fontSize: 'var(--text-small)' }}
+                                                    >
+                                                        {isAddingComment ? (
+                                                            <div className="w-3.5 h-3.5 border-2 border-primary-foreground/30 border-t-transparent rounded-full animate-spin" />
+                                                        ) : (
+                                                            <Send className="w-3.5 h-3.5" />
+                                                        )}
+                                                        <span>{t('addComment')}</span>
+                                                    </button>
+                                                </Tooltip>
                                             </ValidatedTextarea>
                                         </div>
                                     )}
@@ -2872,72 +2922,92 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                         </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
                             {canEditBooking && (
-                                <button
-                                    onClick={() => {
-                                        setIsAdminUsersLoading(true);
-                                        setIsPdfActionModalOpen(true);
-                                    }}
-                                    className="w-full px-3 sm:px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 cursor-pointer text-sm sm:text-base"
-                                    style={{ fontWeight: 'var(--font-weight-medium)' }}
-                                >
-                                    <FileText className="w-4 h-4" />
-                                    <span className="hidden sm:inline">{t('kitchenSheet')}</span>
-                                    <span className="sm:hidden">{t('kitchenSheet')}</span>
-                                </button>
+                                <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
+                                    <button
+                                        onClick={() => {
+                                            setIsAdminUsersLoading(true);
+                                            setIsPdfActionModalOpen(true);
+                                        }}
+                                        disabled={isReadOnlyStatus}
+                                        className={cn(
+                                            "w-full px-3 sm:px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base",
+                                            isReadOnlyStatus ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                        )}
+                                        style={{ fontWeight: 'var(--font-weight-medium)' }}
+                                    >
+                                        <FileText className="w-4 h-4" />
+                                        <span className="hidden sm:inline">{t('kitchenSheet')}</span>
+                                        <span className="sm:hidden">{t('kitchenSheet')}</span>
+                                    </button>
+                                </Tooltip>
                             )}
 
                             {canManageUsers && (
-                                <button
-                                    onClick={() => setIsAssignModalOpen(true)}
-                                    className="w-full px-3 sm:px-4 py-3 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors flex items-center justify-center gap-2 cursor-pointer border border-border text-sm sm:text-base"
-                                    style={{ fontWeight: 'var(--font-weight-medium)' }}
-                                >
-                                    <UserPlus className="w-4 h-4" />
-                                    {assignedTo ? (
-                                        <span className="truncate">{adminUsers.find(u => u.id === assignedTo)?.name || t('assigned')}</span>
-                                    ) : (
-                                        <span>{t('assignUser')}</span>
-                                    )}
-                                </button>
+                                <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
+                                    <button
+                                        onClick={() => setIsAssignModalOpen(true)}
+                                        disabled={isReadOnlyStatus}
+                                        className={cn(
+                                            "w-full px-3 sm:px-4 py-3 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors flex items-center justify-center gap-2 border border-border text-sm sm:text-base",
+                                            isReadOnlyStatus ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                        )}
+                                        style={{ fontWeight: 'var(--font-weight-medium)' }}
+                                    >
+                                        <UserPlus className="w-4 h-4" />
+                                        {assignedTo ? (
+                                            <span className="truncate">{adminUsers.find(u => u.id === assignedTo)?.name || t('assigned')}</span>
+                                        ) : (
+                                            <span>{t('assignUser')}</span>
+                                        )}
+                                    </button>
+                                </Tooltip>
                             )}
 
                             {canEditBooking && (
                                 <>
-                                    <button
-                                        onClick={handleSendReminder}
-                                        disabled={isReminding}
-                                        className="w-full px-3 sm:px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 cursor-pointer border border-border disabled:opacity-50 text-sm sm:text-base"
-                                        style={{ fontWeight: 'var(--font-weight-medium)' }}
-                                    >
-                                        {isReminding ? <Loader2 className="w-4 h-4 animate-spin text-primary-foreground" /> : <Bell className="w-4 h-4 text-primary-foreground" />}
-                                        <span className="hidden sm:inline">{t('sendReminder')}</span>
-                                        <span className="sm:hidden">{t('sendReminder')}</span>
-                                    </button>
+                                    <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
+                                        <button
+                                            onClick={handleSendReminder}
+                                            disabled={isReminding || isReadOnlyStatus}
+                                            className={cn(
+                                                "w-full px-3 sm:px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 border border-border text-sm sm:text-base",
+                                                (isReminding || isReadOnlyStatus) ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                            )}
+                                            style={{ fontWeight: 'var(--font-weight-medium)' }}
+                                        >
+                                            {isReminding ? <Loader2 className="w-4 h-4 animate-spin text-primary-foreground" /> : <Bell className="w-4 h-4 text-primary-foreground" />}
+                                            <span className="hidden sm:inline">{t('sendReminder')}</span>
+                                            <span className="sm:hidden">{t('sendReminder')}</span>
+                                        </button>
+                                    </Tooltip>
 
-                                    <button
-                                        onClick={handleSendCheckin}
-                                        disabled={shouldDisableCheckinButton}
-                                        className={`w-full px-3 sm:px-4 py-3 rounded-lg flex items-center justify-center gap-2 border text-sm sm:text-base transition-colors ${shouldDisableCheckinButton
-                                            ? 'bg-muted text-muted-foreground cursor-not-allowed border-border opacity-60'
-                                            : 'bg-secondary text-secondary-foreground hover:bg-secondary/90 cursor-pointer border-border'
-                                            }`}
-                                        style={{ fontWeight: 'var(--font-weight-medium)' }}
-                                        title={shouldDisableCheckinButton ? 'Check-in already submitted by customer' : 'Send 4-day check-in email to customer'}
-                                    >
-                                        {isSendingCheckin ? (
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                        ) : shouldDisableCheckinButton ? (
-                                            <CheckCircle2 className="w-4 h-4 text-green-600" />
-                                        ) : (
-                                            <Mail className="w-4 h-4" />
-                                        )}
-                                        <span className="hidden sm:inline">
-                                            {shouldDisableCheckinButton ? 'Check-in Submitted' : t('sendCheckin')}
-                                        </span>
-                                        <span className="sm:hidden">
-                                            {shouldDisableCheckinButton ? 'Submitted' : t('sendCheckin')}
-                                        </span>
-                                    </button>
+                                    <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : (shouldDisableCheckinButton ? 'Check-in already submitted by customer' : '')}>
+                                        <button
+                                            onClick={handleSendCheckin}
+                                            disabled={shouldDisableCheckinButton || isReadOnlyStatus}
+                                            className={cn(
+                                                "w-full px-3 sm:px-4 py-3 rounded-lg flex items-center justify-center gap-2 border text-sm sm:text-base transition-colors",
+                                                (shouldDisableCheckinButton || isReadOnlyStatus)
+                                                    ? 'bg-muted text-muted-foreground cursor-not-allowed border-border opacity-60'
+                                                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/90 cursor-pointer border-border'
+                                            )}
+                                            style={{ fontWeight: 'var(--font-weight-medium)' }}
+                                        >
+                                            {isSendingCheckin ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (shouldDisableCheckinButton && !isReadOnlyStatus) ? (
+                                                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                                            ) : (
+                                                <Mail className="w-4 h-4" />
+                                            )}
+                                            <span className="hidden sm:inline">
+                                                {(shouldDisableCheckinButton && !isReadOnlyStatus) ? 'Check-in Submitted' : t('sendCheckin')}
+                                            </span>
+                                            <span className="sm:hidden">
+                                                {(shouldDisableCheckinButton && !isReadOnlyStatus) ? 'Submitted' : t('sendCheckin')}
+                                            </span>
+                                        </button>
+                                    </Tooltip>
 
                                     {/* Check-in Status Indicator
                                     {checkinEmailSent && !shouldDisableCheckinButton && (
@@ -2947,29 +3017,40 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         </div>
                                     )} */}
 
-                                    <button
-                                        onClick={handleSendUpdate}
-                                        disabled={isSendingUpdate}
-                                        className="w-full px-3 sm:px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 cursor-pointer border border-border disabled:opacity-50 text-sm sm:text-base"
-                                        style={{ fontWeight: 'var(--font-weight-medium)' }}
-                                    >
-                                        {isSendingUpdate ? <Loader2 className="w-4 h-4 animate-spin text-primary-foreground" /> : <Send className="w-4 h-4 text-primary-foreground" />}
-                                        <span className="hidden sm:inline">{t('sendUpdate')}</span>
-                                        <span className="sm:hidden">{t('sendUpdate')}</span>
-                                    </button>
+                                    <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
+                                        <button
+                                            onClick={handleSendUpdate}
+                                            disabled={isSendingUpdate || isReadOnlyStatus}
+                                            className={cn(
+                                                "w-full px-3 sm:px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 border border-border text-sm sm:text-base",
+                                                (isSendingUpdate || isReadOnlyStatus) ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                            )}
+                                            style={{ fontWeight: 'var(--font-weight-medium)' }}
+                                        >
+                                            {isSendingUpdate ? <Loader2 className="w-4 h-4 animate-spin text-primary-foreground" /> : <Send className="w-4 h-4 text-primary-foreground" />}
+                                            <span className="hidden sm:inline">{t('sendUpdate')}</span>
+                                            <span className="sm:hidden">{t('sendUpdate')}</span>
+                                        </button>
+                                    </Tooltip>
                                 </>
                             )}
 
                             {canDeleteBooking && (
-                                <button
-                                    onClick={() => setIsDeleteModalOpen(true)}
-                                    className="w-full px-3 sm:px-4 py-3 bg-destructive/10 text-destructive hover:bg-destructive/20 rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer border border-destructive/30 text-sm sm:text-base sm:col-span-2 lg:col-span-1"
-                                    style={{ fontWeight: 'var(--font-weight-medium)' }}
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                    <span className="hidden sm:inline">{('Delete Booking')}</span>
-                                    <span className="sm:hidden">{('Delete')}</span>
-                                </button>
+                                <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
+                                    <button
+                                        onClick={() => setIsDeleteModalOpen(true)}
+                                        disabled={isReadOnlyStatus}
+                                        className={cn(
+                                            "w-full px-3 sm:px-4 py-3 bg-destructive/10 text-destructive hover:bg-destructive/20 rounded-lg transition-colors flex items-center justify-center gap-2 border border-destructive/30 text-sm sm:text-base sm:col-span-2 lg:col-span-1",
+                                            isReadOnlyStatus ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                        )}
+                                        style={{ fontWeight: 'var(--font-weight-medium)' }}
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                        <span className="hidden sm:inline">{('Delete Booking')}</span>
+                                        <span className="sm:hidden">{('Delete')}</span>
+                                    </button>
+                                </Tooltip>
                             )}
                         </div>
                     </div>
