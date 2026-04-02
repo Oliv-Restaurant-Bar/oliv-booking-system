@@ -5,6 +5,7 @@ import { EventDetails } from '@/lib/types';
 import { DietaryIcon } from './DietaryIcon';
 import { Button } from '@/components/ui/Button';
 import { MenuCart } from './MenuCart';
+import { WizardHeader } from './WizardHeader';
 import { useWizardTranslation } from '@/lib/i18n/client';
 import { SkeletonMenuSelection } from '@/components/ui/skeleton-loaders';
 
@@ -51,6 +52,7 @@ interface CustomerMenuSelectionProps {
   setIncludeBeveragePrices: (value: boolean) => void;
   isEditMode?: boolean;
   originalGuestCount?: string;
+  onBack?: () => void;
 }
 
 export function CustomerMenuSelection({
@@ -96,6 +98,7 @@ export function CustomerMenuSelection({
   setIncludeBeveragePrices,
   isEditMode = false,
   originalGuestCount = '',
+  onBack,
 }: CustomerMenuSelectionProps) {
   const [searchQuery, setSearchQuery] = React.useState('');
   const tabsScrollRef = React.useRef<HTMLDivElement>(null);
@@ -160,10 +163,11 @@ export function CustomerMenuSelection({
   };
 
   return (
-    <div className={`bg-[#f7f7f8] min-h-screen flex ${isSubmitting ? 'pointer-events-none select-none' : ''}`}>
+    <div className={`bg-[#f7f7f8] h-screen flex overflow-hidden ${isSubmitting ? 'pointer-events-none select-none' : ''}`}>
       {/* Left Column: Menu Content */}
-      <div className={`flex-1 min-w-0 pb-[100px] transition-opacity duration-300 ${isSubmitting ? 'opacity-50' : ''}`}>
-        <div className="mx-auto px-6">
+      <div className={`flex-1 min-w-0 flex flex-col overflow-y-auto h-full scrollbar-hide transition-opacity duration-300 ${isSubmitting ? 'opacity-50' : ''}`}>
+        <WizardHeader onBack={onBack} fullWidth />
+        <div className="px-6 w-full pb-[100px]">
           {/* Title Section */}
           <div className="pt-6 pb-2">
             <div className="flex items-center gap-3 mb-2">
@@ -384,7 +388,7 @@ export function CustomerMenuSelection({
       </div>
 
       {/* Right Column: Sidebar Cart */}
-      <div className="hidden lg:flex w-[380px] shrink-0 border-l border-[#e5e7eb] bg-white sticky top-0 h-screen overflow-hidden flex-col z-[50]">
+      <div className="hidden lg:flex w-[380px] shrink-0 border-l border-[#e5e7eb] bg-white h-screen overflow-hidden flex-col z-[50]">
         <MenuCart
           selectedItems={selectedItems}
           menuItems={menuItems}

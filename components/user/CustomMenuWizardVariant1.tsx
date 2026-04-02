@@ -1511,16 +1511,18 @@ export function CustomMenuWizard() {
 
   return (
     <>
-      <WizardHeader
-        onBack={
-          currentStep > 1
-            ? () => setCurrentStep(1)
-            : (isEditMode && bookingId)
-              ? () => router.push(`/admin/bookings?id=${bookingId}&tab=menu-details`)
-              : undefined
-        }
-      />
-      <div className="min-h-screen bg-background flex flex-col">
+      {currentStep !== 2 && (
+        <WizardHeader
+          onBack={
+            currentStep > 1
+              ? () => setCurrentStep(1)
+              : (isEditMode && bookingId)
+                ? () => router.push(`/admin/bookings?id=${bookingId}&tab=menu-details`)
+                : undefined
+          }
+        />
+      )}
+      <div className={`${currentStep === 2 ? "h-screen overflow-hidden" : "min-h-screen"} bg-background flex flex-col`}>
         {/* Mobile Step Indicator - Only visible on mobile */}
         {/*<div className="lg:hidden sticky top-0 z-40 bg-primary text-primary-foreground px-4 py-3">
           <div className="max-w-4xl mx-auto">
@@ -1622,6 +1624,13 @@ export function CustomMenuWizard() {
                     setIncludeBeveragePrices={setIncludeBeveragePrices}
                     isEditMode={isEditMode}
                     originalGuestCount={originalGuestCount || eventDetails.guestCount}
+                    onBack={
+                      currentStep > 1
+                        ? () => setCurrentStep(1)
+                        : (isEditMode && bookingId)
+                          ? () => router.push(`/admin/bookings?id=${bookingId}&tab=menu-details`)
+                          : undefined
+                    }
                   />
                 )}
 

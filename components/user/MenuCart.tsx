@@ -178,24 +178,27 @@ export function MenuCart({
       const maxVegan = veganItems.length > 0 ? Math.max(...veganItems.map(getItemPerPersonPrice)) : 0;
       const maxNone = noneItems.length > 0 ? Math.max(...noneItems.map(getItemPerPersonPrice)) : 0;
 
+      const groupsPresentCount = [maxVeg > 0, maxNonVeg > 0, maxVegan > 0].filter(Boolean).length;
       const hasNone = maxNone > 0;
-      const isUnifiedCategory = /starter|appetizer|dessert|nachspeise|vorspeise/i.test(category);
 
-      // New Rule:
-      // 1. If NO 'none' items are present AND it's a Starter or Dessert, take the max price of ANY dietary type and add it to all 3. (Follows Logic Verification Table)
-      // 2. If 'none' items ARE present OR it's any other category (like Main Course), dietary types separate (+ veg only in veg price) and 'none' overlaps all.
-      if (!hasNone && isUnifiedCategory) {
-        const priceForAll = Math.max(maxVeg, maxNonVeg, maxVegan);
-        vegSubtotal += priceForAll;
-        nonVegSubtotal += priceForAll;
-        veganSubtotal += priceForAll;
+      // Price is Shared ONLY if exactly one dietary "grouping" is present in the category.
+      // dietary "grouping" means (Veg group, NV group, Vegan group, OR None group).
+      const totalGroupings = groupsPresentCount + (hasNone ? 1 : 0);
 
-        // Counts only apply to native types (no None items to overlap here)
-        vegCount += vegItems.length;
-        nonVegCount += nonVegItems.length;
-        veganCount += veganItems.length;
+      if (totalGroupings === 1) {
+        // Shared price logic (All three selection get the same single-group max price)
+        const sharedPrice = Math.max(maxVeg, maxNonVeg, maxVegan, maxNone);
+        vegSubtotal += sharedPrice;
+        nonVegSubtotal += sharedPrice;
+        veganSubtotal += sharedPrice;
+
+        // Shared count logic (As price is shared, count is also shared in this case)
+        const sharedCount = items.length;
+        vegCount += sharedCount;
+        nonVegCount += sharedCount;
+        veganCount += sharedCount;
       } else {
-        // Normal separate rule + None items overlap
+        // Separate logic: Each type price is added to its own category, 'none' adds to all
         vegSubtotal += maxVeg + maxNone;
         nonVegSubtotal += maxNonVeg + maxNone;
         veganSubtotal += maxVegan + maxNone;
@@ -496,7 +499,7 @@ export function MenuCart({
                           {foodItems
                             .filter(i => i.category === category)
                             .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
-                            .map(i => renderItemRow(i, "bg-[#22c55e]"))}
+                            .map(i => renderItemRow(i, "bg-gray-400"))}
                         </div>
                       </div>
                     ))}
@@ -559,7 +562,7 @@ export function MenuCart({
 
         {/* Footer - Only visible when items are selected */}
         {selectedItems.length > 0 && (
-          <div className="p-4 border-t border-[#f3f4f6] bg-white shrink-0 space-y-4">
+          <div className="p-4 border-t border-[#f3f4f6] bg-white shrink-0 space-y-4 sticky bottom-0 z-[20] shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-bold text-[14px] text-[#2c2f34]">Bestellübersicht</h3>
@@ -586,7 +589,7 @@ export function MenuCart({
                       <div className="flex justify-between items-center text-[13px]">
                         <div className="flex items-center gap-2">
                           <DietaryIcon type="veg" size="xs" />
-                          <span className="text-[#6b7280]">Veg Selection ({pureVegItemCount})</span>
+                          <span className="text-[#6b7280]">Veg Selection ({pureVegItemCount} {pureVegItemCount === 1 ? 'item' : 'items'})</span>
                         </div>
                         <span className="text-[#2c2f34] font-bold">CHF {pureVegPerPersonSubtotal.toFixed(2)}</span>
                       </div>
@@ -595,7 +598,7 @@ export function MenuCart({
                       <div className="flex justify-between items-center text-[13px]">
                         <div className="flex items-center gap-2">
                           <DietaryIcon type="non-veg" size="xs" />
-                          <span className="text-[#6b7280]">Non-Veg Selection ({nonVegItemCount})</span>
+                          <span className="text-[#6b7280]">Non-Veg Selection ({nonVegItemCount} {nonVegItemCount === 1 ? 'item' : 'items'})</span>
                         </div>
                         <span className="text-[#2c2f34] font-bold">CHF {nonVegPerPersonSubtotal.toFixed(2)}</span>
                       </div>
@@ -604,7 +607,7 @@ export function MenuCart({
                       <div className="flex justify-between items-center text-[13px]">
                         <div className="flex items-center gap-2">
                           <DietaryIcon type="vegan" size="xs" />
-                          <span className="text-[#6b7280]">Vegan Selection ({veganItemCount})</span>
+                          <span className="text-[#6b7280]">Vegan Selection ({veganItemCount} {veganItemCount === 1 ? 'item' : 'items'})</span>
                         </div>
                         <span className="text-[#2c2f34] font-bold">CHF {veganPerPersonSubtotal.toFixed(2)}</span>
                       </div>
