@@ -101,6 +101,7 @@ export default function AdminLoginPage() {
               src="/assets/oliv-logo.png"
               alt="OLIV Logo"
               className="h-16 w-auto"
+              style={{ width: 'auto', height: '4rem' }}
             />
           </div>
           <p className="text-muted-foreground">

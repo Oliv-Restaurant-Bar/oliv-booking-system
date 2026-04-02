@@ -488,13 +488,13 @@ export async function generateBookingPdf(
 
     const isDietarySharedCategory = (cat: string) => {
       const c = cat.toLowerCase();
-      return c.includes('starter') || c.includes('dessert') || c.includes('vorspeise') || 
-             c.includes('nachspeise') || c.includes('apéro') || c.includes('apero') || c.includes('snacks');
+      return c.includes('starter') || c.includes('dessert') || c.includes('vorspeise') ||
+        c.includes('nachspeise') || c.includes('apéro') || c.includes('apero') || c.includes('snacks');
     };
 
     Object.entries(itemsByCategory).forEach(([category, catItems]) => {
       const isRestricted = isDietarySharedCategory(category);
-      
+
       const vegItems = catItems.filter(i => i.dietaryType === 'veg');
       const nonVegItems = catItems.filter(i => i.dietaryType === 'non-veg');
       const veganItems = catItems.filter(i => i.dietaryType === 'vegan');
@@ -514,25 +514,22 @@ export async function generateBookingPdf(
       if (totalGroups === 1) {
         if (hasNoneItem) {
           if (isRestricted) {
+            // Case 4: No type (None) selected first -> don't show until a group is found
             if (isVegActivated) vegPP += shared;
             if (isNonVegActivated) nvPP += shared;
             if (isVeganActivated) veganPP += shared;
           } else {
+            // General categories (Mains): None item price goes to everyone
             vegPP += shared;
             nvPP += shared;
             veganPP += shared;
           }
         } else {
-          // Pure dietary choice: Shared for Restricted, Separate for General
-          if (isRestricted) {
-            vegPP += shared;
-            nvPP += shared;
-            veganPP += shared;
-          } else {
-            if (maxVeg > 0) vegPP += maxVeg;
-            if (maxNV > 0) nvPP += maxNV;
-            if (maxVegan > 0) veganPP += maxVegan;
-          }
+          // Case 1: Pure dietary choice (e.g. 1 Veg)
+          // For ALL categories (including Restricted), add to specific group only
+          if (maxVeg > 0) vegPP += maxVeg;
+          if (maxNV > 0) nvPP += maxNV;
+          if (maxVegan > 0) veganPP += maxVegan;
         }
       } else {
         const vegNoneAdd = isRestricted ? (isVegActivated ? maxNone : 0) : maxNone;
@@ -648,10 +645,11 @@ export async function generateBookingPdf(
         doc.text(nameLines, textX, yPos + 4);
         doc.setTextColor(...COLORS.text);
 
-        const qtyLabel = item.pricingType === 'per_person' ? 'guests' : '';
+        // const qtyLabel = item.pricingType === 'per_person' ? 'guests' : '';
         const qtyVal = String(item.quantity);
         const unitPriceTxt = ` x ${Number(item.unitPrice).toFixed(0)} CHF`;
-        const baseTxt = (qtyVal + " " + qtyLabel).trim();
+        // const baseTxt = (qtyVal + " " + qtyLabel).trim();
+        const baseTxt = (qtyVal + " ").trim();
 
         const iconW = 3.5;
         const gap = 1.5;

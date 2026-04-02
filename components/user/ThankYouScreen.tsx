@@ -161,6 +161,7 @@ function CenteredVariant({
               src="/assets/oliv-logo.png"
               alt="OLIV Logo"
               className="h-12 w-auto object-contain"
+              style={{ width: 'auto', height: '3rem' }}
             />
           </div>
 
@@ -632,6 +633,7 @@ function MinimalVariant({
               src="/assets/oliv-logo.png"
               alt="OLIV Logo"
               className="h-12 w-auto object-contain"
+              style={{ width: 'auto', height: '3rem' }}
             />
           </div>
 

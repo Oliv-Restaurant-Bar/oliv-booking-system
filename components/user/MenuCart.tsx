@@ -201,7 +201,7 @@ export function MenuCart({
       if (totalGroupings === 1) {
         if (hasNone) {
           if (isRestricted) {
-            // Apply activation check for Starters/Desserts
+            // Case 4: No type (None) selected first -> don't show until a group is found
             if (isVegActivated) { vegSubtotal += sharedPrice; vegCount += sharedCount; }
             if (isNonVegActivated) { nonVegSubtotal += sharedPrice; nonVegCount += sharedCount; }
             if (isVeganActivated) { veganSubtotal += sharedPrice; veganCount += sharedCount; }
@@ -212,22 +212,11 @@ export function MenuCart({
             veganSubtotal += sharedPrice; veganCount += sharedCount;
           }
         } else {
-          // Pure dietary choice (e.g. 1 Veg): 
-          // If Restricted (Starter/Dessert): Price SHARES to all, count only applies to Veg.
-          // If General (Main): Price only applies to the specific category.
-          if (isRestricted) {
-            vegSubtotal += sharedPrice;
-            nonVegSubtotal += sharedPrice;
-            veganSubtotal += sharedPrice;
-          } else {
-            if (maxVeg > 0) vegSubtotal += maxVeg;
-            if (maxNonVeg > 0) nonVegSubtotal += maxNonVeg;
-            if (maxVegan > 0) veganSubtotal += maxVegan;
-          }
-
-          if (maxVeg > 0) vegCount += sharedCount;
-          if (maxNonVeg > 0) nonVegCount += sharedCount;
-          if (maxVegan > 0) veganCount += sharedCount;
+          // Case 1: Pure dietary choice (e.g. 1 Veg)
+          // For ALL categories (including Restricted), add to specific group only
+          if (maxVeg > 0) { vegSubtotal += maxVeg; vegCount += sharedCount; }
+          if (maxNonVeg > 0) { nonVegSubtotal += maxNonVeg; nonVegCount += sharedCount; }
+          if (maxVegan > 0) { veganSubtotal += maxVegan; veganCount += sharedCount; }
         }
       } else {
         // Separate rule: Multiple dietary groups or Dietary + None

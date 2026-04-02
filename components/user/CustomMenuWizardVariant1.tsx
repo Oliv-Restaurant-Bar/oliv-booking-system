@@ -801,6 +801,24 @@ export function CustomMenuWizard() {
       newErrors.room = 'Room selection is required';
     }
 
+    // Validate billing address if 'On Invoice' is selected and not using same address
+    if (eventDetails.paymentMethod === 'on_bill' && !eventDetails.useSameAddressForBilling) {
+      const billingStreetResult = customerStreetSchema.safeParse(eventDetails.billingStreet);
+      if (!billingStreetResult.success) {
+        newErrors.billingStreet = billingStreetResult.error.errors[0].message;
+      }
+
+      const billingPlzResult = customerPlzSchema.safeParse(eventDetails.billingPlz);
+      if (!billingPlzResult.success) {
+        newErrors.billingPlz = billingPlzResult.error.errors[0].message;
+      }
+
+      const billingLocationResult = customerLocationSchema.safeParse(eventDetails.billingLocation);
+      if (!billingLocationResult.success) {
+        newErrors.billingLocation = billingLocationResult.error.errors[0].message;
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -824,9 +842,21 @@ export function CustomMenuWizard() {
     const isPlzValid = eventDetails.plz.trim().length >= 4 &&
       eventDetails.plz.trim().length <= 10 &&
       /^\d+$/.test(eventDetails.plz.trim());
-    const isLocationValid = eventDetails.location.trim().length >= 3;
-    return isStreetValid && isPlzValid && isLocationValid;
-  }, [eventDetails.street, eventDetails.plz, eventDetails.location]);
+    const isLocationValid = eventDetails.location.trim().length >= 4;
+
+    // Billing address validation if applicable
+    let isBillingValid = true;
+    if (eventDetails.paymentMethod === 'on_bill' && !eventDetails.useSameAddressForBilling) {
+      const isBStreetValid = eventDetails.billingStreet.trim().length >= 5;
+      const isBPlzValid = eventDetails.billingPlz.trim().length >= 4 &&
+        eventDetails.billingPlz.trim().length <= 10 &&
+        /^\d+$/.test(eventDetails.billingPlz.trim());
+      const isBLocationValid = eventDetails.billingLocation.trim().length >= 2;
+      isBillingValid = isBStreetValid && isBPlzValid && isBLocationValid;
+    }
+
+    return isStreetValid && isPlzValid && isLocationValid && isBillingValid;
+  }, [eventDetails.street, eventDetails.plz, eventDetails.location, eventDetails.paymentMethod, eventDetails.useSameAddressForBilling, eventDetails.billingStreet, eventDetails.billingPlz, eventDetails.billingLocation]);
 
   const isEventTabValid = useMemo(() => {
     const isDateValid = eventDetails.eventDate !== '' &&
@@ -851,27 +881,34 @@ export function CustomMenuWizard() {
       phoneDigitsOnly.length <= 20 &&
       /^[0-9+\s]+$/.test(phoneTrimmed);
 
-    const isStreetValid = eventDetails.street.trim().length >= 5;
-    const isPlzValid = eventDetails.plz.trim().length >= 4 &&
-      eventDetails.plz.trim().length <= 10 &&
-      /^\d+$/.test(eventDetails.plz.trim());
-    const isLocationValid = eventDetails.location.trim().length >= 3;
+    const isAddressValid = eventDetails.street.trim().length >= 5 &&
+      eventDetails.plz.trim().length >= 4 &&
+      /^\d+$/.test(eventDetails.plz.trim()) &&
+      eventDetails.location.trim().length >= 4;
+
+    // Billing address check for overall Step 1 validity
+    let isBillingValid = true;
+    if (eventDetails.paymentMethod === 'on_bill' && !eventDetails.useSameAddressForBilling) {
+      isBillingValid = eventDetails.billingStreet.trim().length >= 5 &&
+        eventDetails.billingPlz.trim().length >= 4 &&
+        /^\d+$/.test(eventDetails.billingPlz.trim()) &&
+        eventDetails.billingLocation.trim().length >= 2;
+    }
 
     return (
+      isDateValid &&
+      isPhoneValid &&
+      isAddressValid &&
+      isBillingValid &&
       eventDetails.name.trim() !== '' &&
       eventDetails.email.trim() !== '' &&
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(eventDetails.email) &&
-      isPhoneValid &&
-      isStreetValid &&
-      isPlzValid &&
-      isLocationValid &&
-      isDateValid &&
       eventDetails.guestCount !== '' &&
       parseInt(eventDetails.guestCount) >= 1 &&
       parseInt(eventDetails.guestCount) <= 10000 &&
       eventDetails.room !== ''
     );
-  }, [eventDetails.name, eventDetails.email, eventDetails.telephone, eventDetails.street, eventDetails.plz, eventDetails.location, eventDetails.eventDate, eventDetails.eventTime, eventDetails.guestCount, eventDetails.room]);
+  }, [eventDetails.eventDate, eventDetails.eventTime, eventDetails.telephone, eventDetails.street, eventDetails.plz, eventDetails.location, eventDetails.name, eventDetails.email, eventDetails.guestCount, eventDetails.room, eventDetails.paymentMethod, eventDetails.useSameAddressForBilling, eventDetails.billingStreet, eventDetails.billingPlz, eventDetails.billingLocation]);
 
   const isCurrentTabValid = useMemo(() => {
     switch (activeTab) {

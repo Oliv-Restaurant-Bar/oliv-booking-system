@@ -538,6 +538,7 @@ export function CustomerDetailsForm({
                                             value={eventDetails.billingStreet}
                                             onChange={(e) => {
                                                 setEventDetails({ ...eventDetails, billingStreet: e.target.value, billingStreetError: undefined });
+                                                if (errors.billingStreet) setErrors({ ...errors, billingStreet: undefined });
                                             }}
                                             onBlur={() => {
                                                 // Validate billing street on blur if filled
@@ -548,7 +549,8 @@ export function CustomerDetailsForm({
                                             placeholder={t('placeholders.street')}
                                             maxLength={100}
                                             showCharacterCount
-                                            error={eventDetails.billingStreetError}
+                                            error={displayErrors.billingStreet || eventDetails.billingStreetError}
+                                            required
                                         />
 
                                         <ValidatedInput
@@ -558,6 +560,7 @@ export function CustomerDetailsForm({
                                             onChange={(e) => {
                                                 const value = e.target.value.replace(/[^0-9]/g, '');
                                                 setEventDetails({ ...eventDetails, billingPlz: value, billingPlzError: undefined });
+                                                if (errors.billingPlz) setErrors({ ...errors, billingPlz: undefined });
                                             }}
                                             onBlur={() => {
                                                 // Validate billing PLZ on blur if filled
@@ -568,7 +571,8 @@ export function CustomerDetailsForm({
                                             placeholder={t('placeholders.plz')}
                                             maxLength={10}
                                             showCharacterCount
-                                            error={eventDetails.billingPlzError}
+                                            error={displayErrors.billingPlz || eventDetails.billingPlzError}
+                                            required
                                         />
 
                                         <ValidatedInput
@@ -577,6 +581,7 @@ export function CustomerDetailsForm({
                                             value={eventDetails.billingLocation}
                                             onChange={(e) => {
                                                 setEventDetails({ ...eventDetails, billingLocation: e.target.value, billingLocationError: undefined });
+                                                if (errors.billingLocation) setErrors({ ...errors, billingLocation: undefined });
                                             }}
                                             onBlur={() => {
                                                 // Validate billing location on blur if filled
@@ -587,7 +592,8 @@ export function CustomerDetailsForm({
                                             placeholder={t('placeholders.location')}
                                             maxLength={50}
                                             showCharacterCount
-                                            error={eventDetails.billingLocationError}
+                                            error={displayErrors.billingLocation || eventDetails.billingLocationError}
+                                            required
                                         />
 
                                         <ValidatedInput
