@@ -424,10 +424,8 @@ export async function generateBookingPdf(
 
   // Calculate dietary breakdown (only for food items, not beverages or addons)
   const calculateDietaryBreakdown = () => {
-    const foodItems = finalFoodItems.filter(item => {
-      // Only include items with dietary type and per-person pricing
-      return item.dietaryType && item.dietaryType !== 'none' && item.pricingType === 'per_person';
-    });
+    // Only include per-person food items
+    const foodItems = finalFoodItems.filter(item => item.pricingType === 'per_person');
 
     const breakdown: Record<string, { total: number; perPerson: number }> = {
       veg: { total: 0, perPerson: 0 },
@@ -435,16 +433,51 @@ export async function generateBookingPdf(
       vegan: { total: 0, perPerson: 0 }
     };
 
-    foodItems.forEach(item => {
-      if (item.dietaryType && item.dietaryType !== 'none') {
-        if (!breakdown[item.dietaryType]) {
-          breakdown[item.dietaryType] = { total: 0, perPerson: 0 };
-        }
-        const itemTotal = item.totalPrice || 0;
-        breakdown[item.dietaryType].total += itemTotal;
-        breakdown[item.dietaryType].perPerson += item.unitPrice || 0;
+    const itemsByCategory = foodItems.reduce((acc, item) => {
+      const cat = item.category || 'Uncategorized';
+      if (!acc[cat]) acc[cat] = [];
+      acc[cat].push(item);
+      return acc;
+    }, {} as Record<string, PdfBookingItem[]>);
+
+    let vegPP = 0;
+    let nvPP = 0;
+    let veganPP = 0;
+
+    Object.entries(itemsByCategory).forEach(([category, catItems]) => {
+      const vegItems = catItems.filter(i => i.dietaryType === 'veg');
+      const nonVegItems = catItems.filter(i => i.dietaryType === 'non-veg');
+      const veganItems = catItems.filter(i => i.dietaryType === 'vegan');
+      const noneItems = catItems.filter(i => !i.dietaryType || i.dietaryType === 'none');
+
+      const maxVeg = vegItems.length > 0 ? Math.max(...vegItems.map(i => i.unitPrice || 0)) : 0;
+      const maxNV = nonVegItems.length > 0 ? Math.max(...nonVegItems.map(i => i.unitPrice || 0)) : 0;
+      const maxVegan = veganItems.length > 0 ? Math.max(...veganItems.map(i => i.unitPrice || 0)) : 0;
+      const maxNone = noneItems.length > 0 ? Math.max(...noneItems.map(i => i.unitPrice || 0)) : 0;
+
+      const groupsPresent = [maxVeg > 0, maxNV > 0, maxVegan > 0].filter(Boolean).length;
+      const totalGroups = groupsPresent + (maxNone > 0 ? 1 : 0);
+
+      if (totalGroups === 1) {
+        const shared = Math.max(maxVeg, maxNV, maxVegan, maxNone);
+        vegPP += shared;
+        nvPP += shared;
+        veganPP += shared;
+      } else {
+        vegPP += maxVeg + maxNone;
+        nvPP += maxNV + maxNone;
+        veganPP += maxVegan + maxNone;
       }
     });
+
+    breakdown.veg.perPerson = vegPP;
+    breakdown['non-veg'].perPerson = nvPP;
+    breakdown.vegan.perPerson = veganPP;
+
+    // Optional: Calculate totals (though PDF currently focuses on perPerson)
+    // For completeness if needed later:
+    // breakdown.veg.total = vegPP * data.guestCount; // This is an estimation
+    // In our system, the total is usually calculated from the items directly.
 
     return breakdown;
   };
@@ -546,7 +579,7 @@ export async function generateBookingPdf(
         
         const qtyLabel = item.pricingType === 'per_person' ? 'guests' : '';
         const qtyVal = String(item.quantity);
-        const unitPriceTxt = ` x ${Number(item.unitPrice).toFixed(0)} CHF`.replace(/\s+/g, ' ').trim();
+        const unitPriceTxt = ` x ${Number(item.unitPrice).toFixed(0)} CHF`;
         const baseTxt = (qtyVal + " " + qtyLabel).trim();
         
         const iconW = 3.5;
@@ -647,9 +680,9 @@ export async function generateBookingPdf(
     yPos += 10;
 
     // Dietary Breakdown Section
-    const hasDietaryData = dietaryBreakdown.veg.total > 0 ||
-      dietaryBreakdown['non-veg'].total > 0 ||
-      dietaryBreakdown.vegan.total > 0;
+    const hasDietaryData = dietaryBreakdown.veg.perPerson > 0 ||
+      dietaryBreakdown['non-veg'].perPerson > 0 ||
+      dietaryBreakdown.vegan.perPerson > 0;
 
     if (hasDietaryData) {
       doc.setFont("helvetica", "bold");

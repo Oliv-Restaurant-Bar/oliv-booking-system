@@ -273,24 +273,65 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
         const items = isEditingMenu ? tempMenuItems : (booking?.menuItems || []);
 
         const foodItems = items.filter(item =>
+            item.pricingType === 'per_person' &&
             item.category !== 'Beverages' &&
             item.category !== 'Add-ons' &&
             item.category !== 'Getränke' &&
             item.category !== 'Zusatzleistungen'
         );
 
-        const pureVeg = foodItems.filter(i => i.dietaryType === 'veg');
-        const vegan = foodItems.filter(i => i.dietaryType === 'vegan');
-        const nonVeg = foodItems.filter(i => i.dietaryType === 'non-veg');
+        let vegSubtotal = 0;
+        let nonVegSubtotal = 0;
+        let veganSubtotal = 0;
+        let vegCount = 0;
+        let nonVegCount = 0;
+        let veganCount = 0;
 
-        const calculatePrice = (group: typeof items) => {
-            return group.length > 0 ? Math.max(...group.map(i => i.unitPrice || 0)) : 0;
-        };
+        const itemsByCategory = foodItems.reduce((acc, item) => {
+            const cat = item.category || 'Uncategorized';
+            if (!acc[cat]) acc[cat] = [];
+            acc[cat].push(item);
+            return acc;
+        }, {} as Record<string, any[]>);
+
+        Object.entries(itemsByCategory).forEach(([category, catItems]) => {
+            const vegItems = (catItems as any[]).filter(i => i.dietaryType === 'veg');
+            const nonVegItems = (catItems as any[]).filter(i => i.dietaryType === 'non-veg');
+            const veganItems = (catItems as any[]).filter(i => i.dietaryType === 'vegan');
+            const noneItems = (catItems as any[]).filter(i => !i.dietaryType || i.dietaryType === 'none');
+
+            const maxVeg = vegItems.length > 0 ? Math.max(...vegItems.map((i: any) => i.unitPrice || 0)) : 0;
+            const maxNonVeg = nonVegItems.length > 0 ? Math.max(...nonVegItems.map((i: any) => i.unitPrice || 0)) : 0;
+            const maxVegan = veganItems.length > 0 ? Math.max(...veganItems.map((i: any) => i.unitPrice || 0)) : 0;
+            const maxNone = noneItems.length > 0 ? Math.max(...noneItems.map((i: any) => i.unitPrice || 0)) : 0;
+
+            const groupsPresentCount = [maxVeg > 0, maxNonVeg > 0, maxVegan > 0].filter(Boolean).length;
+            const hasNoneItem = maxNone > 0;
+            const totalGroupings = groupsPresentCount + (hasNoneItem ? 1 : 0);
+
+            if (totalGroupings === 1) {
+                const sharedPrice = Math.max(maxVeg, maxNonVeg, maxVegan, maxNone);
+                const sharedCount = (catItems as any[]).length;
+                vegSubtotal += sharedPrice;
+                nonVegSubtotal += sharedPrice;
+                veganSubtotal += sharedPrice;
+                vegCount += sharedCount;
+                nonVegCount += sharedCount;
+                veganCount += sharedCount;
+            } else {
+                vegSubtotal += maxVeg + maxNone;
+                nonVegSubtotal += maxNonVeg + maxNone;
+                veganSubtotal += maxVegan + maxNone;
+                vegCount += vegItems.length + noneItems.length;
+                nonVegCount += nonVegItems.length + noneItems.length;
+                veganCount += veganItems.length + noneItems.length;
+            }
+        });
 
         return {
-            veg: { items: pureVeg, price: calculatePrice(pureVeg) },
-            vegan: { items: vegan, price: calculatePrice(vegan) },
-            nonVeg: { items: nonVeg, price: calculatePrice(nonVeg) }
+            veg: { count: vegCount, subtotal: vegSubtotal },
+            nonVeg: { count: nonVegCount, subtotal: nonVegSubtotal },
+            vegan: { count: veganCount, subtotal: veganSubtotal }
         };
     }, [isEditingMenu, tempMenuItems, booking?.menuItems]);
     const canViewAudit = hasPermission(userRole, Permission.VIEW_BOOKING_DETAILS);
@@ -1308,12 +1349,20 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
     const handleSaveMenu = async () => {
         if (!booking) return;
+
+        // Correctly validate that all quantities are at least 1
+        const invalidItems = tempMenuItems.filter(item => (item.rawQuantity || 0) < 1);
+        if (invalidItems.length > 0) {
+            toast.error('All menu items must have a quantity of at least 1');
+            return;
+        }
+
         setIsSaving(true);
         try {
             const selectedItems = tempMenuItems.map(item => item.itemId);
             const itemQuantities: Record<string, number> = {};
             tempMenuItems.forEach(item => {
-                itemQuantities[item.itemId!] = item.rawQuantity;
+                itemQuantities[item.itemId!] = item.rawQuantity || 1;
             });
 
             const response = await fetch(`/api/bookings/${booking.id}`, {
@@ -1511,7 +1560,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     {canEditBooking && !isLocked && !isEditingCustomer && (
                                         <button
                                             onClick={handleEditCustomer}
-                                            className="px-2.5 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary cursor-pointer flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0"
+                                            className="px-2.5 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0"
                                             style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                         >
                                             <Pencil className="w-3.5 h-3.5" />
@@ -1523,7 +1572,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         <div className="flex items-center gap-2">
                                             <button
                                                 onClick={handleCancelCustomer}
-                                                className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-red-500 cursor-pointer flex items-center gap-2"
+                                                className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors  bg-red-400 text-white hover:text-red-500 cursor-pointer flex items-center gap-2"
                                                 style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                             >
                                                 <X className="w-4 h-4" />
@@ -1532,7 +1581,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                             <button
                                                 onClick={handleSaveCustomer}
                                                 disabled={isSaving}
-                                                className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-green-600 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                                                className="px-3 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer disabled:opacity-50 flex items-center gap-2"
                                                 style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                             >
                                                 <Save className="w-4 h-4" />
@@ -1649,7 +1698,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     {canEditBooking && !isLocked && !isEditingAddress && (
                                         <button
                                             onClick={handleEditAddress}
-                                            className="px-2.5 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary cursor-pointer flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0"
+                                            className="px-2.5 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0"
                                             style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                         >
                                             <Pencil className="w-3.5 h-3.5" />
@@ -1661,7 +1710,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         <div className="flex items-center gap-2">
                                             <button
                                                 onClick={handleCancelAddress}
-                                                className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-red-500 cursor-pointer flex items-center gap-2"
+                                                className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors bg-red-400 text-muted-foreground hover:text-red-500 cursor-pointer flex items-center gap-2"
                                                 style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                             >
                                                 <X className="w-4 h-4" />
@@ -1791,7 +1840,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         {canEditBooking && !isLocked && !isEditingEvent && (
                                             <button
                                                 onClick={handleEditEvent}
-                                                className="px-2.5 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary cursor-pointer flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0"
+                                                className="px-2.5 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0"
                                                 style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                             >
                                                 <Pencil className="w-3.5 h-3.5" />
@@ -1803,7 +1852,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                             <div className="flex items-center gap-2">
                                                 <button
                                                     onClick={handleCancelEvent}
-                                                    className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-red-500 cursor-pointer flex items-center gap-2"
+                                                    className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors bg-red-400 text-muted-foreground hover:text-red-500 cursor-pointer flex items-center gap-2"
                                                     style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                                 >
                                                     <X className="w-4 h-4" />
@@ -1966,7 +2015,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     {canEditBooking && !isLocked && !isEditingSpecialRequests && (
                                         <button
                                             onClick={handleEditSpecialRequests}
-                                            className="px-2.5 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary cursor-pointer flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0"
+                                            className="px-2.5 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0"
                                             style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                         >
                                             <Pencil className="w-3.5 h-3.5" />
@@ -1978,7 +2027,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         <div className="flex items-center gap-2">
                                             <button
                                                 onClick={handleCancelSpecialRequests}
-                                                className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-red-500 cursor-pointer flex items-center gap-2"
+                                                className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors bg-red-400 text-muted-foreground hover:text-red-500 cursor-pointer flex items-center gap-2"
                                                 style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                             >
                                                 <X className="w-4 h-4" />
@@ -2076,7 +2125,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                     {canEditBooking && !isLocked && !isEditingPayment && (
                                         <button
                                             onClick={handleEditPayment}
-                                            className="px-2.5 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary cursor-pointer flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0"
+                                            className="px-2.5 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0"
                                             style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                         >
                                             <Pencil className="w-3.5 h-3.5" />
@@ -2088,7 +2137,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         <div className="flex items-center gap-2">
                                             <button
                                                 onClick={handleCancelPayment}
-                                                className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-red-500 cursor-pointer flex items-center gap-2"
+                                                className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors bg-red-400 text-muted-foreground hover:text-red-500 cursor-pointer flex items-center gap-2"
                                                 style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                             >
                                                 <X className="w-4 h-4" />
@@ -2388,7 +2437,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         {canEditBooking && !isLocked && !isEditingMenu && (
                                             <button
                                                 onClick={handleEditMenu}
-                                                className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary cursor-pointer flex items-center gap-2"
+                                                className="px-3 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer flex items-center gap-2"
                                                 style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                             >
                                                 <Pencil className="w-3.5 h-3.5" />
@@ -2398,7 +2447,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                         {canEditBooking && !isLocked && !isEditingMenu && (
                                             <button
                                                 onClick={handleEditItems}
-                                                className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary cursor-pointer flex items-center gap-2"
+                                                className="px-3 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer flex items-center gap-2"
                                                 style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                             >
                                                 <UtensilsCrossed className="w-3.5 h-3.5" />
@@ -2410,7 +2459,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                 <button
                                                     onClick={handleCancelMenu}
                                                     disabled={isSaving}
-                                                    className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-red-500 cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors bg-red-400 text-muted-foreground hover:text-red-500 cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                                     style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                                 >
                                                     <X className="w-4 h-4" />
@@ -2419,7 +2468,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                 <button
                                                     onClick={handleSaveMenu}
                                                     disabled={isSaving}
-                                                    className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-green-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                                    className="px-3 py-1.5 border border-border hover:bg-secondary rounded-lg transition-colors bg-primary text-secondary hover:text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                                     style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                                 >
                                                     {isSaving ? (
@@ -2492,10 +2541,21 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                                     <input
                                                                         type="number"
                                                                         value={item.rawQuantity}
+                                                                        min="1"
                                                                         onChange={(e) => {
+                                                                            const val = parseInt(e.target.value);
                                                                             const newItems = [...tempMenuItems];
-                                                                            newItems[index] = { ...item, rawQuantity: parseInt(e.target.value) || 0 };
+                                                                            // Snap to 1 if user tries to enter a value < 1 or if it's invalid
+                                                                            newItems[index] = { ...item, rawQuantity: isNaN(val) ? 0 : Math.max(0, val) };
                                                                             setTempMenuItems(newItems);
+                                                                        }}
+                                                                        onBlur={(e) => {
+                                                                            const val = parseInt(e.target.value);
+                                                                            if (isNaN(val) || val < 1) {
+                                                                                const newItems = [...tempMenuItems];
+                                                                                newItems[index] = { ...item, rawQuantity: 1 };
+                                                                                setTempMenuItems(newItems);
+                                                                            }
                                                                         }}
                                                                         className="w-20 px-2 py-1 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
                                                                     />
@@ -2558,43 +2618,43 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                             </div>
 
                             {/* Dietary Summary Section */}
-                            {(dietarySummary.veg.items.length > 0 || dietarySummary.vegan.items.length > 0 || dietarySummary.nonVeg.items.length > 0) && (
+                            {(dietarySummary.veg.count > 0 || dietarySummary.vegan.count > 0 || dietarySummary.nonVeg.count > 0) && (
                                 <div className="bg-card border border-border rounded-xl p-4 sm:p-6 mt-6 animate-in fade-in slide-in-from-top-4 duration-300">
                                     <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
                                         <UtensilsCrossed className="w-5 h-5 text-primary" /> {t('dietarySelection')}
                                     </h3>
                                     <div className="space-y-4">
-                                        {dietarySummary.veg.items.length > 0 && (
+                                        {dietarySummary.veg.count > 0 && (
                                             <div className="flex justify-between items-center text-sm">
                                                 <div className="flex items-center gap-3">
                                                     <DietaryIcon type="veg" size="sm" />
                                                     <span className="text-muted-foreground font-medium flex items-center gap-1.5">
-                                                        Veg Selection ({dietarySummary.veg.items.length} {dietarySummary.veg.items.length > 1 ? 'items' : 'item'})
+                                                        Veg Selection ({dietarySummary.veg.count} {dietarySummary.veg.count > 1 ? 'items' : 'item'})
                                                     </span>
                                                 </div>
-                                                <span className="text-foreground font-bold">CHF {dietarySummary.veg.price.toFixed(2)}</span>
+                                                <span className="text-foreground font-bold">CHF {dietarySummary.veg.subtotal.toFixed(2)}</span>
                                             </div>
                                         )}
-                                        {dietarySummary.vegan.items.length > 0 && (
+                                        {dietarySummary.vegan.count > 0 && (
                                             <div className="flex justify-between items-center text-sm">
                                                 <div className="flex items-center gap-3">
                                                     <DietaryIcon type="vegan" size="sm" />
                                                     <span className="text-muted-foreground font-medium flex items-center gap-1.5">
-                                                        Vegan Selection ({dietarySummary.vegan.items.length} {dietarySummary.vegan.items.length > 1 ? 'items' : 'item'})
+                                                        Vegan Selection ({dietarySummary.vegan.count} {dietarySummary.vegan.count > 1 ? 'items' : 'item'})
                                                     </span>
                                                 </div>
-                                                <span className="text-foreground font-bold">CHF {dietarySummary.vegan.price.toFixed(2)}</span>
+                                                <span className="text-foreground font-bold">CHF {dietarySummary.vegan.subtotal.toFixed(2)}</span>
                                             </div>
                                         )}
-                                        {dietarySummary.nonVeg.items.length > 0 && (
+                                        {dietarySummary.nonVeg.count > 0 && (
                                             <div className="flex justify-between items-center text-sm">
                                                 <div className="flex items-center gap-3">
                                                     <DietaryIcon type="non-veg" size="sm" />
                                                     <span className="text-muted-foreground font-medium flex items-center gap-1.5">
-                                                        Non-Veg Selection ({dietarySummary.nonVeg.items.length} {dietarySummary.nonVeg.items.length > 1 ? 'items' : 'item'})
+                                                        Non-Veg Selection ({dietarySummary.nonVeg.count} {dietarySummary.nonVeg.count > 1 ? 'items' : 'item'})
                                                     </span>
                                                 </div>
-                                                <span className="text-foreground font-bold">CHF {dietarySummary.nonVeg.price.toFixed(2)}</span>
+                                                <span className="text-foreground font-bold">CHF {dietarySummary.nonVeg.subtotal.toFixed(2)}</span>
                                             </div>
                                         )}
                                     </div>

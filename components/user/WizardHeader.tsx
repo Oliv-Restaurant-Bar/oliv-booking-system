@@ -6,12 +6,13 @@ import Image from 'next/image';
 
 interface WizardHeaderProps {
   onBack?: () => void;
+  fullWidth?: boolean;
 }
 
-export function WizardHeader({ onBack }: WizardHeaderProps) {
+export function WizardHeader({ onBack, fullWidth = false }: WizardHeaderProps) {
   return (
     <header className="bg-white border-b border-[#f3f4f6]">
-      <nav className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav className={`w-full px-4 sm:px-6 lg:px-8 ${fullWidth ? '' : 'max-w-7xl mx-auto'}`}>
         <div className="flex items-center justify-between h-16 relative">
           {/* Back Button */}
           {onBack ? (
