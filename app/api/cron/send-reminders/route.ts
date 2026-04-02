@@ -1,5 +1,6 @@
 import { sendRemindersForNext24Hours } from "@/lib/actions/reminders";
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 
 /**
  * API Endpoint to send reminder emails
@@ -19,7 +20,18 @@ export async function GET(request: Request) {
       );
     }
 
-    if (authHeader !== `Bearer ${cronSecret}`) {
+    if (!authHeader) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const expectedHeader = `Bearer ${cronSecret}`;
+    const expectedBuffer = Buffer.from(expectedHeader);
+    const providedBuffer = Buffer.from(authHeader);
+
+    if (
+      expectedBuffer.length !== providedBuffer.length ||
+      !crypto.timingSafeEqual(expectedBuffer, providedBuffer)
+    ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -48,7 +60,18 @@ export async function POST(request: Request) {
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
 
-    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+    if (!cronSecret || !authHeader) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const expectedHeader = `Bearer ${cronSecret}`;
+    const expectedBuffer = Buffer.from(expectedHeader);
+    const providedBuffer = Buffer.from(authHeader);
+
+    if (
+      expectedBuffer.length !== providedBuffer.length ||
+      !crypto.timingSafeEqual(expectedBuffer, providedBuffer)
+    ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

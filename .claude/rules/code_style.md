@@ -4,3 +4,5 @@
 - Maintain clear separation of concerns (components, hooks, utilities, services).
 - Do not duplicate the logic across files.
 - Prioritize readability and maintainability.
+- keep in mind that you are under the watch of a senior developer and you have to write clean, efficient, and maintainable code.
+- the changes you make will be reviewed by codex

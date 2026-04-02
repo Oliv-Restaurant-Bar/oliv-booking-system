@@ -7,7 +7,7 @@
  */
 
 import { db } from "@/lib/db";
-import { eq, and, gte, lt } from "drizzle-orm";
+import { eq, and, gte, lt, sql } from "drizzle-orm";
 
 // Rate limit tracking table schema (to be added to schema.ts if needed)
 // For now, we'll use a simple approach with the leads table itself
@@ -34,8 +34,8 @@ export async function checkLeadRateLimit(email: string): Promise<RateLimitResult
     // Check how many leads from this email were created in the time window
     const { leads } = await import("@/lib/db/schema");
 
-    // Use raw SQL with neon-http compatibility
-    const result = await db.execute(`
+    // Use raw SQL safely parametrized with neon-http compatibility
+    const result = await db.execute(sql`
       SELECT COUNT(*) as count
       FROM leads
       WHERE contact_email = ${email}
@@ -135,7 +135,7 @@ export async function checkRateLimit(params: {
 
   try {
     // Check if rate_limits table exists
-    const tableExists = await db.execute(`
+    const tableExists = await db.execute(sql`
       SELECT EXISTS (
         SELECT FROM information_schema.tables
         WHERE table_name = 'rate_limits'
@@ -151,7 +151,7 @@ export async function checkRateLimit(params: {
     // Check existing rate limit record
     const windowStart = new Date(Date.now() - windowMinutes * 60 * 1000);
 
-    const result = await db.execute(`
+    const result = await db.execute(sql`
       SELECT count, window_start
       FROM rate_limits
       WHERE identifier = ${identifier}
@@ -166,9 +166,9 @@ export async function checkRateLimit(params: {
 
     if (!record) {
       // First request in window, create record
-      await db.execute(`
+      await db.execute(sql`
         INSERT INTO rate_limits (id, identifier, action, count, window_start)
-        VALUES (${Date.now()}, ${identifier}, ${action}, 1, ${new Date().toISOString()})
+        VALUES (${Date.now().toString()}, ${identifier}, ${action}, 1, ${new Date().toISOString()})
       `);
 
       return {
@@ -188,7 +188,7 @@ export async function checkRateLimit(params: {
     }
 
     // Increment counter
-    await db.execute(`
+    await db.execute(sql`
       UPDATE rate_limits
       SET count = count + 1, updated_at = NOW()
       WHERE identifier = ${identifier} AND action = ${action}

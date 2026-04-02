@@ -1,21 +1,13 @@
+import DOMPurify from 'isomorphic-dompurify';
+
 /**
  * HTML Sanitization Utility
  *
  * Provides safe HTML sanitization to prevent XSS attacks
  * when rendering user-provided content in emails or HTML templates.
  *
- * Server-safe implementation - no DOMPurify dependency
+ * Server-safe implementation using isomorphic-dompurify
  */
-
-/**
- * Simple HTML tag stripper - works on both client and server
- * @param html - String containing HTML tags
- * @returns Plain text with all HTML tags removed
- */
-function stripHTMLTags(html: string): string {
-  if (!html) return '';
-  return html.replace(/<[^>]*>/g, '');
-}
 
 /**
  * Sanitize text to remove all HTML tags
@@ -26,7 +18,7 @@ function stripHTMLTags(html: string): string {
  */
 export function sanitizeText(text: string | undefined | null): string {
   if (!text) return '';
-  return stripHTMLTags(text);
+  return DOMPurify.sanitize(text, { ALLOWED_TAGS: [] });
 }
 
 /**
@@ -38,9 +30,7 @@ export function sanitizeText(text: string | undefined | null): string {
  */
 export function sanitizeWithFormatting(text: string | undefined | null): string {
   if (!text) return '';
-
-  // For now, just strip all HTML - can be enhanced later if needed
-  return stripHTMLTags(text);
+  return DOMPurify.sanitize(text, { ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'a'] });
 }
 
 /**
@@ -52,7 +42,7 @@ export function sanitizeWithFormatting(text: string | undefined | null): string 
  */
 export function sanitizeEmailContent(content: string | undefined | null): string {
   if (!content) return 'Keine';
-  return stripHTMLTags(content);
+  return sanitizeText(content);
 }
 
 /**
