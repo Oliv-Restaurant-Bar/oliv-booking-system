@@ -5,7 +5,6 @@ const withNextIntl = createNextIntlPlugin('./i18n.ts');
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  serverExternalPackages: ['isomorphic-dompurify', 'jsdom'],
   images: {
     unoptimized: true,
     remotePatterns: [

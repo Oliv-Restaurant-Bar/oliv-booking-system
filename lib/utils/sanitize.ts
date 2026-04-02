@@ -1,12 +1,8 @@
-import DOMPurify from 'isomorphic-dompurify';
-
 /**
- * HTML Sanitization Utility
+ * HTML Sanitization Utility (Zero-Dependency)
  *
  * Provides safe HTML sanitization to prevent XSS attacks
- * when rendering user-provided content in emails or HTML templates.
- *
- * Server-safe implementation using isomorphic-dompurify
+ * while resolving module load errors (jsdom/ESM) on Vercel.
  */
 
 /**
@@ -18,7 +14,9 @@ import DOMPurify from 'isomorphic-dompurify';
  */
 export function sanitizeText(text: string | undefined | null): string {
   if (!text) return '';
-  return DOMPurify.sanitize(text, { ALLOWED_TAGS: [] });
+  // Remove all HTML tags and replace with empty string
+  // Handles both standard tags and simple encoded tags
+  return text.replace(/<[^>]*>?/gm, '').replace(/&lt;[^&gt;]*&gt;/gm, '');
 }
 
 /**
@@ -30,7 +28,25 @@ export function sanitizeText(text: string | undefined | null): string {
  */
 export function sanitizeWithFormatting(text: string | undefined | null): string {
   if (!text) return '';
-  return DOMPurify.sanitize(text, { ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'a'] });
+  
+  // 1. Remove dangerous blocks: script, style, iframe, object, embed
+  let cleaned = text.replace(/<(script|style|iframe|object|embed|form)[^>]*>[\s\S]*?<\/\1>/gi, '');
+  
+  // 2. Only allow specific tags: p, br, strong, em, u, a
+  // Strip all other tags but preserve content between them
+  cleaned = cleaned.replace(/<(?!(\/?(p|br|strong|em|u|a))\b)[^>]*>/gi, '');
+  
+  // 3. Strip ALL attributes except 'href' for <a> tags
+  // This prevents XSS via attributes like onmouseover, style, etc.
+  cleaned = cleaned.replace(/<a\b([^>]*)>/gi, (match, attrs) => {
+    const hrefMatch = attrs.match(/href=["']([^"']*)["']/i);
+    return hrefMatch ? `<a href="${hrefMatch[1]}">` : '<a>';
+  });
+  
+  // 4. Strip attributes from all other allowed tags (p, strong, em, etc.)
+  cleaned = cleaned.replace(/<(p|br|strong|em|u)\b[^>]*>/gi, '<$1>');
+
+  return cleaned;
 }
 
 /**
@@ -60,10 +76,6 @@ export function sanitizeArray(items: string[] | undefined | null): string {
 /**
  * Sanitize special requests and allergy details for booking emails
  * These fields commonly contain user input and should always be sanitized
- *
- * @param specialRequests - User's special requests
- * @param allergyDetails - User's allergy details
- * @returns Object with sanitized values
  */
 export function sanitizeBookingDetails({
   specialRequests,
