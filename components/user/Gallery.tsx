@@ -9,6 +9,8 @@ import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import { SectionHeading } from './SectionHeading';
 import { Button } from './Button';
 import { useLandingTranslation } from '@/lib/i18n/client';
+import Image from 'next/image';
+import Link from 'next/link';
 
 export function Gallery() {
   const t = useLandingTranslation();
@@ -161,8 +163,8 @@ export function Gallery() {
                   <ImageWithFallback 
                     src={image.url}
                     alt={image.alt}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                    loading="lazy"
+                    fill
+                    className="object-cover transition-transform duration-300 group-hover:scale-110"
                   />
                   {/* Hover Overlay */}
                   <div className="absolute inset-0 bg-secondary/0 group-hover:bg-secondary/40 transition-all duration-300 flex items-center justify-center">
@@ -219,10 +221,11 @@ export function Gallery() {
               className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center"
               onClick={(e) => e.stopPropagation()}
             >
-              <img 
+              <Image 
                 src={images[selectedImage].url}
                 alt={images[selectedImage].alt}
-                className="max-w-full max-h-full w-auto h-auto object-contain"
+                fill
+                className="object-contain"
                 style={{ borderRadius: 'var(--radius-card)' }}
               />
               

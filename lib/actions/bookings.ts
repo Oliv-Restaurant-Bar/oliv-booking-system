@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { bookings, bookingItems, bookingContactHistory, emailLogs, leads, menuItems, adminUser, bookingAuditLog, bookingCheckins } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
 import {
@@ -404,7 +404,7 @@ export async function updateBooking(
     const [currentBooking] = await db
       .select()
       .from(bookings)
-      .where(eq(bookings.id, id))
+      .where(and(eq(bookings.id, id), isNull(bookings.deletedAt)))
       .limit(1);
 
     if (!currentBooking) {
@@ -680,7 +680,9 @@ export async function getBookings(filters?: { status?: string }) {
     let query: any = db.select().from(bookings);
 
     if (filters?.status) {
-      query = query.where(eq(bookings.status, filters.status as any));
+      query = query.where(and(eq(bookings.status, filters.status as any), isNull(bookings.deletedAt)));
+    } else {
+      query = query.where(isNull(bookings.deletedAt));
     }
 
     // @ts-ignore - neon-http driver type limitation
@@ -698,7 +700,7 @@ export async function getBookingById(id: string) {
     // Require VIEW_BOOKING_DETAILS permission
     await requirePermissionWrapper(Permission.VIEW_BOOKING_DETAILS);
 
-    const [booking] = await db.select().from(bookings).where(eq(bookings.id, id)).limit(1);
+    const [booking] = await db.select().from(bookings).where(and(eq(bookings.id, id), isNull(bookings.deletedAt))).limit(1);
 
     if (!booking) {
       return { success: false, error: "Booking not found", data: null };
@@ -716,7 +718,7 @@ export async function getBookingWithDetails(id: string) {
     // Require VIEW_BOOKING_DETAILS permission
     await requirePermissionWrapper(Permission.VIEW_BOOKING_DETAILS);
 
-    const [booking] = await db.select().from(bookings).where(eq(bookings.id, id)).limit(1);
+    const [booking] = await db.select().from(bookings).where(and(eq(bookings.id, id), isNull(bookings.deletedAt))).limit(1);
 
     if (!booking) {
       return { success: false, error: "Booking not found", data: null };
@@ -1128,7 +1130,7 @@ export async function getBookingWithAudit(bookingId: string) {
 export async function getBookingForClientEdit(bookingId: string) {
   try {
     // NO authentication required - secret is validated by the API route before calling this
-    const [booking] = await db.select().from(bookings).where(eq(bookings.id, bookingId)).limit(1);
+    const [booking] = await db.select().from(bookings).where(and(eq(bookings.id, bookingId), isNull(bookings.deletedAt))).limit(1);
 
     if (!booking) {
       return { success: false, error: "Booking not found", data: null };
@@ -1211,7 +1213,7 @@ export async function deleteBooking(
     const [booking] = await db
       .select()
       .from(bookings)
-      .where(eq(bookings.id, bookingId))
+      .where(and(eq(bookings.id, bookingId), isNull(bookings.deletedAt)))
       .limit(1);
 
     if (!booking) {
@@ -1222,47 +1224,40 @@ export async function deleteBooking(
 
     console.log('✅ Booking found:', booking.id);
 
-    // Delete related records in order (due to foreign key constraints)
+    // 5. Hard delete related records remains commented/removed because it's a soft delete
+    // We only update the deletedAt field on the booking itself
 
-    // 1. Delete booking items
-    console.log('🔄 Deleting booking items...');
+    console.log('🔄 Soft deleting booking...');
     await db
-      .delete(bookingItems)
-      .where(eq(bookingItems.bookingId, bookingId));
-    console.log('✅ Deleted booking items');
-
-    // 2. Delete contact history
-    console.log('🔄 Deleting contact history...');
-    await db
-      .delete(bookingContactHistory)
-      .where(eq(bookingContactHistory.bookingId, bookingId));
-    console.log('✅ Deleted contact history entries');
-
-    // 3. Delete audit logs
-    console.log('🔄 Deleting audit logs...');
-    await db
-      .delete(bookingAuditLog)
-      .where(eq(bookingAuditLog.bookingId, bookingId));
-    console.log('✅ Deleted audit log entries');
-
-    // 4. Delete check-ins
-    console.log('🔄 Deleting check-ins...');
-    await db
-      .delete(bookingCheckins)
-      .where(eq(bookingCheckins.bookingId, bookingId));
-    console.log('✅ Deleted check-ins');
-
-    // 5. Delete the booking itself
-    console.log('🔄 Deleting booking...');
-    await db
-      .delete(bookings)
+      .update(bookings)
+      .set({
+        deletedAt: new Date(),
+        updatedAt: new Date()
+      })
       .where(eq(bookings.id, bookingId));
-    console.log('✅ Booking deleted successfully');
+    console.log('✅ Booking soft-deleted successfully');
 
     // Revalidate paths
     console.log('🔄 Revalidating paths: /admin/bookings');
     revalidatePath("/admin/bookings");
     revalidatePath(`/admin/bookings?id=${bookingId}`);
+
+    // Log the deletion action in audit trail
+    const { logBookingChange } = await import("@/lib/booking-audit");
+    await logBookingChange({
+      bookingId,
+      adminUserId,
+      actorType: "admin",
+      actorLabel: adminUserName,
+      changes: [
+        {
+          field: "deleted_at",
+          from: null,
+          to: new Date().toISOString()
+        }
+      ]
+    });
+    console.log('✅ Deletion logged to audit trail');
 
     console.log('✅ DELETE BOOKING FUNCTION COMPLETE');
     console.log('========================================\n');

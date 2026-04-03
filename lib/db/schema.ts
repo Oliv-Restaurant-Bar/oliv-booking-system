@@ -211,6 +211,7 @@ export const bookings = pgTable(
     lockedAt: timestamp("locked_at"),
     assignedTo: text("assigned_to").references(() => adminUser.id),
     room: text("room"),
+    deletedAt: timestamp("deleted_at"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },

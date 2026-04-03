@@ -24,6 +24,7 @@ export function CTASectionVariant1() {
                 <ImageWithFallback
                   src={imgDiningWarm}
                   alt="Olive catering event"
+                  fill
                   className="w-full h-full object-cover opacity-25"
                 />
                 <div

@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { bookings, menuItems, menuCategories, leads, adminUser } from "@/lib/db/schema";
-import { sql, eq, desc, count, and, gte, notInArray } from "drizzle-orm";
+import { sql, eq, desc, count, and, gte, notInArray, isNull } from "drizzle-orm";
 import { requirePermissionWrapper } from "@/lib/auth/rbac-middleware";
 import { Permission } from "@/lib/auth/rbac";
 
@@ -16,12 +16,12 @@ export async function getDashboardStats() {
 
     const totalBookings = await db
       .select({ count: count() })
-      .from(bookings);
+      .from(bookings)
+      .where(isNull(bookings.deletedAt));
 
     const totalRevenueResult = await db
       .select({ total: sql<number>`COALESCE(SUM(CAST(${bookings.estimatedTotal} AS NUMERIC)), 0)` })
       .from(bookings)
-      .where(notInArray(bookings.status, EXCLUDED_REVENUE_STATUSES));
 
     const totalMenuItems = await db
       .select({ count: count() })
@@ -66,6 +66,7 @@ export async function getDailyBookingsData() {
         COUNT(*) as bookings
       FROM bookings
       WHERE event_date >= ${thirtyDaysAgo.toISOString()}
+        AND deleted_at IS NULL
       GROUP BY TO_CHAR(event_date, 'MM/DD'), event_date
       ORDER BY event_date ASC
     `);
@@ -116,6 +117,7 @@ export async function getDailyRevenueData() {
       FROM bookings
       WHERE event_date >= ${thirtyDaysAgo.toISOString()}
         AND status NOT IN ('declined', 'cancelled', 'no_show')
+        AND deleted_at IS NULL
       GROUP BY TO_CHAR(event_date, 'MM/DD'), event_date
       ORDER BY event_date ASC
     `);
@@ -166,7 +168,12 @@ export async function getMonthlyBookingsData() {
         revenue: sql<number>`COALESCE(SUM(CAST(${bookings.estimatedTotal} AS NUMERIC)) FILTER (WHERE ${bookings.status} NOT IN ('declined', 'cancelled', 'no_show')), 0)`,
       })
       .from(bookings)
-      .where(sql`EXTRACT(YEAR FROM ${bookings.eventDate}) = ${currentYear}`)
+      .where(
+        and(
+          sql`EXTRACT(YEAR FROM ${bookings.eventDate}) = ${currentYear}`,
+          isNull(bookings.deletedAt)
+        )
+      )
       .groupBy(sql`TO_CHAR(${bookings.eventDate}, 'Mon')`, sql`EXTRACT(MONTH FROM ${bookings.eventDate})`)
       .orderBy(sql`EXTRACT(MONTH FROM ${bookings.eventDate})`);
 
@@ -200,6 +207,7 @@ export async function getBookingStatusDistribution() {
         count: count(),
       })
       .from(bookings)
+      .where(isNull(bookings.deletedAt))
       .groupBy(bookings.status);
 
     const statusData = [
@@ -246,6 +254,7 @@ export async function getRecentBookings(limit: number = 10) {
         createdAt: bookings.createdAt,
       })
       .from(bookings)
+      .where(isNull(bookings.deletedAt))
       .orderBy(desc(bookings.createdAt))
       .limit(limit);
 
@@ -364,7 +373,10 @@ export async function getTopCustomersByRevenue(limit: number = 10) {
         COALESCE(SUM(b.guest_count) FILTER (WHERE b.status NOT IN ('declined', 'cancelled', 'no_show')), 0) as total_guests
       FROM bookings b
       LEFT JOIN leads l ON b.lead_id = l.id
-      WHERE b.lead_id IS NOT NULL AND l.contact_email IS NOT NULL AND l.contact_email != ''
+      WHERE b.lead_id IS NOT NULL 
+        AND l.contact_email IS NOT NULL 
+        AND l.contact_email != ''
+        AND b.deleted_at IS NULL
       GROUP BY l.contact_email
       ORDER BY total_revenue DESC
       LIMIT ${limit}
@@ -426,7 +438,7 @@ export async function getTrendingItems(limit: number = 10) {
       LEFT JOIN booking_items bi ON bi.item_id = mi.id AND bi.item_type = 'menu_item'
       LEFT JOIN bookings b ON bi.booking_id = b.id
       WHERE mi.is_active = true
-        AND (b.id IS NULL OR (b.event_date >= ${thirtyDaysAgo.toISOString()} AND b.status NOT IN ('declined', 'cancelled', 'no_show')))
+        AND (b.id IS NULL OR (b.event_date >= ${thirtyDaysAgo.toISOString()} AND b.status NOT IN ('declined', 'cancelled', 'no_show') AND b.deleted_at IS NULL))
       GROUP BY mi.id, mi.name, mi.name_de, mc.name, mc.name_de, mi.price_per_person, mi.image_url
       ORDER BY total_quantity DESC, total_revenue DESC
       LIMIT ${limit}
@@ -503,6 +515,7 @@ export async function getMonthlyReportData(year: number = new Date().getFullYear
         COALESCE(SUM(CAST(estimated_total AS NUMERIC)) FILTER (WHERE status = 'no_show'), 0) as noshow_revenue
       FROM bookings
       WHERE EXTRACT(YEAR FROM event_date) = ${year}
+        AND deleted_at IS NULL
       GROUP BY EXTRACT(MONTH FROM event_date), TO_CHAR(event_date, 'Month')
       ORDER BY EXTRACT(MONTH FROM event_date)
     `);

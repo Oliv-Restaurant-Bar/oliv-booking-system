@@ -50,6 +50,7 @@ export function WhyOliveVariant6() {
               <ImageWithFallback
                 src={feature.image}
                 alt={feature.alt}
+                fill
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
               />
 

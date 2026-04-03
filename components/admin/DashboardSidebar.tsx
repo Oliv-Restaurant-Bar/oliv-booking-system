@@ -47,6 +47,8 @@ export function DashboardSidebar({ user, activeItem = 'dashboard', onNavigate }:
           <ImageWithFallback
             src="https://img.enacton.com/ShareX/2026/02/chrome_PHT9Ca0HbK.png"
             alt="oliv logo"
+            width={161}
+            height={40}
             className="h-10 w-auto"
           />
         </div>

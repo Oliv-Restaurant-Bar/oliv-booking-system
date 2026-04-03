@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { X, Minus, Plus, ShoppingCart, AlertTriangle, Sparkles } from 'lucide-react';
 import { MenuItem } from './menuItemsData';
 import { EventDetails } from '@/lib/types';
@@ -278,11 +279,12 @@ export function ItemDetailsModal({
         {/* Modal Content */}
         <div className="p-6">
           {item.image && (
-            <div className="mb-6 rounded-lg overflow-hidden" style={{ borderRadius: 'var(--radius-card)' }}>
-              <img
+            <div className="mb-6 rounded-lg overflow-hidden relative h-64" style={{ borderRadius: 'var(--radius-card)' }}>
+              <Image
                 src={item.image}
                 alt={item.name}
-                className="w-full h-64 object-cover"
+                fill
+                className="object-cover"
               />
             </div>
           )}

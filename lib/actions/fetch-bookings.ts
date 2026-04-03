@@ -47,7 +47,7 @@ export async function fetchBookings(options: {
       SELECT COUNT(*) as count
       FROM bookings b
       LEFT JOIN leads l ON b.lead_id = l.id
-      WHERE ${whereClause}
+      WHERE ${whereClause} AND b.deleted_at IS NULL
     `);
     const countRows = 'rows' in countResult ? (countResult.rows as any[]) : (countResult as any[]);
     const totalCount = Number(countRows[0]?.count || 0);
@@ -79,7 +79,7 @@ export async function fetchBookings(options: {
       FROM bookings b
       LEFT JOIN leads l ON b.lead_id = l.id
       LEFT JOIN admin_user a ON b.assigned_to = a.id
-      WHERE ${whereClause}
+      WHERE ${whereClause} AND b.deleted_at IS NULL
       ORDER BY ${options.sort === 'event_date' ? sql`b.event_date DESC, b.event_time DESC` : sql`b.created_at DESC`}
       LIMIT ${limit} OFFSET ${offset}
     `);

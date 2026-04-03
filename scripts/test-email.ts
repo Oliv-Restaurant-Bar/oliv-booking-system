@@ -120,6 +120,7 @@ async function testBookingEmail() {
     lockedAt: null as Date | null,
     assignedTo: null as string | null,
     kitchenNotes: "",
+    deletedAt: null as Date | null,
     room: null,
     street: "Hauptstrasse 123",
     plz: "8001",

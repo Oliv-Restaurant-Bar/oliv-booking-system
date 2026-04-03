@@ -199,10 +199,11 @@ export function TrendingItems({ trendingData: propTrendingData }: TrendingItemsP
 
               {/* Item Image */}
               {item.image && (
-                <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
+                <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted relative">
                   <ImageWithFallback
                     src={item.image}
                     alt={item.name}
+                    fill
                     className="w-full h-full object-cover"
                   />
                 </div>

@@ -9,6 +9,8 @@ import { useWizardTranslation } from '@/lib/i18n/client';
 import { generateCustomerOfferPdf } from '@/lib/utils/pdf-generator';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import Image from 'next/image';
+import Link from 'next/link';
 
 interface ThankYouScreenProps {
   inquiryNumber: string;
@@ -157,9 +159,11 @@ function CenteredVariant({
         >
           {/* Logo */}
           <div className="bg-white p-3 rounded-lg shadow-md">
-            <img
+            <Image
               src="/assets/oliv-logo.png"
               alt="OLIV Logo"
+              width={100}
+              height={48}
               className="h-12 w-auto object-contain"
               style={{ width: 'auto', height: '3rem' }}
             />
@@ -301,7 +305,7 @@ function CenteredVariant({
             Contact
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <a
+            <Link
               href="tel:+41311234567"
               className="inline-flex items-center gap-2 transition-colors"
               style={{
@@ -313,8 +317,8 @@ function CenteredVariant({
             >
               <Phone className="w-4 h-4" style={{ color: 'var(--primary)' }} />
               +41 31 123 45 67
-            </a>
-            <a
+            </Link>
+            <Link
               href="mailto:events@aky-bern.ch"
               className="inline-flex items-center gap-2 transition-colors"
               style={{
@@ -326,7 +330,7 @@ function CenteredVariant({
             >
               <Mail className="w-4 h-4" style={{ color: 'var(--primary)' }} />
               events@aky-bern.ch
-            </a>
+            </Link>
           </div>
         </motion.div>
       </motion.div>
@@ -365,9 +369,11 @@ function SplitVariant({
           >
             {/* Logo */}
             <div className="bg-white p-3 rounded-lg shadow-md">
-              <img
+              <Image
                 src="/assets/oliv-logo.png"
                 alt="OLIV Logo"
+                width={100}
+                height={48}
                 className="h-12 w-auto object-contain"
               />
             </div>
@@ -567,7 +573,7 @@ function SplitVariant({
               {t('thankYou.questions')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <a
+              <Link
                 href="tel:+41311234567"
                 className="inline-flex items-center gap-2 transition-colors"
                 style={{
@@ -579,8 +585,8 @@ function SplitVariant({
               >
                 <Phone className="w-4 h-4" style={{ color: 'var(--primary)' }} />
                 +41 31 123 45 67
-              </a>
-              <a
+              </Link>
+              <Link
                 href="mailto:events@aky-bern.ch"
                 className="inline-flex items-center gap-2 transition-colors"
                 style={{
@@ -592,7 +598,7 @@ function SplitVariant({
               >
                 <Mail className="w-4 h-4" style={{ color: 'var(--primary)' }} />
                 events@aky-bern.ch
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -629,9 +635,11 @@ function MinimalVariant({
         >
           {/* Logo */}
           <div className="bg-white p-3 rounded-lg shadow-md">
-            <img
+            <Image
               src="/assets/oliv-logo.png"
               alt="OLIV Logo"
+              width={100}
+              height={48}
               className="h-12 w-auto object-contain"
               style={{ width: 'auto', height: '3rem' }}
             />

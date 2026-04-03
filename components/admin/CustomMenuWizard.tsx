@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { Calendar, Users, Mail, Phone, User, Check, ChevronLeft, ChevronRight, Send, Eye, Edit2, ClipboardList } from 'lucide-react';
 import { Button } from '../user/Button';
 
@@ -172,9 +173,11 @@ export function CustomMenuWizard() {
       <header className="bg-card border-b border-border py-6 px-4">
         <div className="max-w-screen-2xl mx-auto flex justify-center">
           <div className="text-center">
-            <img
+            <Image
               src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=200&h=80&fit=crop"
               alt="Restaurant Logo"
+              width={200}
+              height={80}
               className="h-16 w-auto mx-auto object-contain"
             />
             <h1 className="text-primary mt-2" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>

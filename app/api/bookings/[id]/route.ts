@@ -62,7 +62,7 @@ export async function GET(
       FROM bookings b
       LEFT JOIN leads l ON b.lead_id = l.id
       LEFT JOIN admin_user a ON b.assigned_to = a.id
-      WHERE b.id = ${validatedId}
+      WHERE b.id = ${validatedId} AND b.deleted_at IS NULL
       LIMIT 1
     `);
 

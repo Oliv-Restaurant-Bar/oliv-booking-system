@@ -1,5 +1,5 @@
 {
-  "id": "966b80e1-c8c4-4798-9fe6-f931659fac5c",
+  "id": "ac68f4c7-a12f-4ae1-9b1b-a8c3edc8248a",
   "prevId": "7d90b980-035d-460f-b28e-ec06b77435ba",
   "version": "7",
   "dialect": "postgresql",
@@ -1211,6 +1211,12 @@
         "room": {
           "name": "room",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         },

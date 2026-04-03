@@ -846,6 +846,8 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
             if (response.ok) {
                 toast.success(t('toast.deleteSuccess'));
+                // Call onBookingUpdated to refresh the bookings list in the parent
+                onBookingUpdated?.();
                 // Redirect to bookings list after successful deletion
                 router.push('/admin/bookings');
             } else {

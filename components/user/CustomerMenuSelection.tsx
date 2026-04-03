@@ -1,4 +1,6 @@
 import React from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 import { ShoppingCart, Users, Lock, Check, Plus, X, AlertTriangle, ChevronLeft, ChevronRight, Search, Edit2 } from 'lucide-react';
 import { MenuItem } from './menuItemsData';
 import { EventDetails } from '@/lib/types';
@@ -310,8 +312,13 @@ export function CustomerMenuSelection({
                               onClick={() => openDetailsModal(item)}
                             >
                               {item.image && (
-                                <div className="w-[140px] shrink-0 bg-[#f3f4f6] overflow-hidden">
-                                  <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                <div className="w-[140px] shrink-0 bg-[#f3f4f6] overflow-hidden relative">
+                                  <Image
+                                    src={item.image}
+                                    alt={item.name}
+                                    fill
+                                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                  />
                                 </div>
                               )}
                               <div className="flex-1 flex flex-col justify-between min-w-0 px-[16px] py-[16px]">

@@ -35,7 +35,7 @@ export function WizardHeader({ onBack, fullWidth = false }: WizardHeaderProps) {
 
           {/* Logo - Centered */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <a href="#" className="flex items-center">
+            <Link href="/" className="flex items-center pointer-events-auto">
               <Image
                 src="/assets/oliv-logo.png"
                 alt="Olive Restaurant & Bar"
@@ -44,7 +44,7 @@ export function WizardHeader({ onBack, fullWidth = false }: WizardHeaderProps) {
                 className="h-12 w-auto"
                 style={{ mixBlendMode: 'multiply' }}
               />
-            </a>
+            </Link>
           </div>
 
           {/* Spacer/Right alignment element if needed */}

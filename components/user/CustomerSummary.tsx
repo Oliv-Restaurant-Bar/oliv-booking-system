@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { Eye, Lock, Check, Clock, Edit2, User, MapPin, Calendar, ClipboardList, ShoppingCart, Users, ChevronDown, ChevronUp, AlertTriangle, LayoutList } from 'lucide-react';
 import { MenuItem } from './menuItemsData';
 import { EventDetails } from '@/lib/types';
@@ -455,11 +456,12 @@ export function CustomerSummary({
                               className="flex items-center gap-3 p-2 rounded-lg bg-muted/20"
                             >
                               {/* Thumbnail */}
-                              <div className="w-12 h-12 flex-shrink-0 rounded overflow-hidden bg-muted">
-                                <img
+                              <div className="w-12 h-12 flex-shrink-0 rounded overflow-hidden bg-muted relative">
+                                <Image
                                   src={item.image}
                                   alt={item.name}
-                                  className="w-full h-full object-cover"
+                                  fill
+                                  className="object-cover"
                                 />
                               </div>
 

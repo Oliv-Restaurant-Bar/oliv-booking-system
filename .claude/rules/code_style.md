@@ -6,3 +6,4 @@
 - Prioritize readability and maintainability.
 - keep in mind that you are under the watch of a senior developer and you have to write clean, efficient, and maintainable code.
 - the changes you make will be reviewed by codex
+- Use server as much as possible, render pages at server first, only client side pages on client.

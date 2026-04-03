@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { User, Menu, LogOut, UserCircle, ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -132,12 +133,13 @@ export function DashboardHeader({
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="flex items-center gap-2 md:gap-3 p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer"
           >
-            <div className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden relative">
               {userData?.image ? (
-                <img
+                <Image
                   src={userData.image}
                   alt={displayUserName}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
                 />
               ) : (
                 <div className="w-full h-full bg-primary flex items-center justify-center">

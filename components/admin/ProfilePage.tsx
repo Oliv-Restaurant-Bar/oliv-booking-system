@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
+import Image from 'next/image';
 import { User, Mail, Phone, Shield, Camera, Lock, Check, X, Eye, EyeOff } from 'lucide-react';
 import { Modal } from '../user/Modal';
 import { Button } from '../user/Button';
@@ -411,12 +412,13 @@ export function ProfilePage({ session }: ProfilePageProps) {
             <div className="bg-card border border-border rounded-xl p-4 md:p-6 flex flex-col items-center">
               {/* Avatar - Profile picture upload disabled */}
               <div className="relative mb-4">
-                <div className="w-32 h-32 rounded-full bg-primary flex items-center justify-center text-white overflow-hidden" style={{ fontSize: '48px', fontWeight: 'var(--font-weight-semibold)' }}>
+                <div className="w-32 h-32 rounded-full bg-primary flex items-center justify-center text-white overflow-hidden relative" style={{ fontSize: '48px', fontWeight: 'var(--font-weight-semibold)' }}>
                   {profileData.avatar ? (
-                    <img
+                    <Image
                       src={profileData.avatar}
                       alt={`${profileData.firstName} ${profileData.lastName}`}
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover"
                     />
                   ) : (
                     getInitials(profileData.firstName, profileData.lastName)

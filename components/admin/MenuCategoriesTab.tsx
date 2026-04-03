@@ -364,6 +364,7 @@ export function MenuCategoriesTab({
                                         <ImageWithFallback
                                           src={item.image}
                                           alt={item.name}
+                                          fill
                                           className="w-full h-full object-cover"
                                         />
                                         {!item.isActive && (

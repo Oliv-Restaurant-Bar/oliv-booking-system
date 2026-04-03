@@ -380,10 +380,11 @@ export function AddMenuItemModal({
           <div className="border-2 border-dashed border-border rounded-lg p-4 bg-muted/20">
             {(newMenuItem.imageUrl || newMenuItem.image) ? (
               <div className="space-y-3">
-                <div className="w-full h-48 rounded-lg overflow-hidden bg-muted">
+                <div className="w-full h-48 rounded-lg overflow-hidden bg-muted relative">
                   <ImageWithFallback
                     src={newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl}
                     alt={t('labels.imagePreview')}
+                    fill
                     className="w-full h-full object-cover"
                   />
                 </div>

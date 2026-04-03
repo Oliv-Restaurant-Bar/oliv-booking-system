@@ -67,6 +67,7 @@ export function HeroVariant6() {
           <ImageWithFallback
             src={img.src}
             alt={img.alt}
+            fill
             className="w-full h-full object-cover"
           />
         </div>
