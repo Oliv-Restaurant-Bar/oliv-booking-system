@@ -1,7 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingCart, Users, Lock, Check, Plus, X, AlertTriangle, ChevronLeft, ChevronRight, Search, Edit2 } from 'lucide-react';
+import { ShoppingCart, Users, Lock, Check, Plus, X, AlertTriangle, ChevronLeft, ChevronRight, Search, Edit2, Filter } from 'lucide-react';
 import { MenuItem } from './menuItemsData';
 import { EventDetails } from '@/lib/types';
 import { DietaryIcon } from './DietaryIcon';
@@ -103,6 +103,9 @@ export function CustomerMenuSelection({
   onBack,
 }: CustomerMenuSelectionProps) {
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [selectedDietary, setSelectedDietary] = React.useState<'veg' | 'non-veg' | 'vegan' | null>(null);
+  const [isFilterOpen, setIsFilterOpen] = React.useState(false);
+  const filterRef = React.useRef<HTMLDivElement>(null);
   const tabsScrollRef = React.useRef<HTMLDivElement>(null);
   const [isStuck, setIsStuck] = React.useState(false);
   const sentinelRef = React.useRef<HTMLDivElement>(null);
@@ -121,6 +124,17 @@ export function CustomerMenuSelection({
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
+  }, []);
+
+  // Handle click outside for filter dropdown
+  React.useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
+        setIsFilterOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Intersection Observer for scroll tracking
@@ -201,9 +215,9 @@ export function CustomerMenuSelection({
             : "bg-transparent"
             }`}>
             <div>
-              {/* Search Bar */}
-              <div className="py-2">
-                <div className="relative">
+              {/* Search Bar + Filter */}
+              <div className="py-2 flex items-center gap-2">
+                <div className="relative flex-1">
                   <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9ca3af]" />
                   <input
                     type="text"
@@ -212,6 +226,80 @@ export function CustomerMenuSelection({
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full h-[42px] bg-white border border-[#e5e7eb] rounded-full pl-10 pr-4 text-[14px] text-[#2c2f34] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#9dae91]/40 transition-all"
                   />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-gray-100 transition-colors"
+                    >
+                      <X className="w-3.5 h-3.5 text-[#9ca3af]" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Filter Button */}
+                <div className="relative" ref={filterRef}>
+                  <button
+                    onClick={() => setIsFilterOpen(!isFilterOpen)}
+                    className={`h-[42px] px-4 flex items-center gap-2 rounded-full border transition-all cursor-pointer ${
+                      selectedDietary 
+                        ? "bg-[#9dae91]/10 border-[#9dae91] text-[#2c2f34]" 
+                        : "bg-white border-[#e5e7eb] text-[#6b7280] hover:border-[#9ca3af]"
+                    }`}
+                  >
+                    <Filter className={`w-4 h-4 ${selectedDietary ? "text-[#9dae91]" : "text-[#9ca3af]"}`} />
+                    <span className="text-[14px] font-medium hidden sm:inline">
+                      {selectedDietary ? t(`dietary.${selectedDietary === 'non-veg' ? 'nonVeg' : selectedDietary}`) : t('labels.filter')}
+                    </span>
+                    {selectedDietary && (
+                      <div className="size-2 rounded-full bg-[#9dae91] animate-pulse" />
+                    )}
+                  </button>
+
+                  {/* Filter Dropdown */}
+                  {isFilterOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-[220px] bg-white border border-[#e5e7eb] rounded-2xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
+                      <div className="p-2 border-b border-[#f3f4f6]">
+                        <div className="px-3 py-1.5">
+                          <span className="text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wider">{t('labels.dietaryInfo')}</span>
+                        </div>
+                      </div>
+                      <div className="p-1.5">
+                        {(['veg', 'non-veg', 'vegan'] as const).map((type) => (
+                          <button
+                            key={type}
+                            onClick={() => {
+                              setSelectedDietary(type === selectedDietary ? null : type);
+                              setIsFilterOpen(false);
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-colors cursor-pointer ${
+                              selectedDietary === type ? "bg-[#9dae91]/10 text-[#2c2f34]" : "hover:bg-[#f9fafb] text-[#6b7280]"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <DietaryIcon type={type} size="sm" />
+                              <span className="text-[14px] font-medium">{t(`dietary.${type === 'non-veg' ? 'nonVeg' : type}`)}</span>
+                            </div>
+                            {selectedDietary === type && <Check className="w-4 h-4 text-[#9dae91]" />}
+                          </button>
+                        ))}
+                      </div>
+                      
+                      {selectedDietary && (
+                        <div className="p-1.5 border-top border-[#f3f4f6] bg-[#f9fafb]">
+                          <button
+                            onClick={() => {
+                              setSelectedDietary(null);
+                              setIsFilterOpen(false);
+                            }}
+                            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-[#ef4444] hover:bg-[#fef2f2] transition-colors cursor-pointer"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                            <span className="text-[13px] font-medium">{t('dietary.clear')}</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -281,7 +369,9 @@ export function CustomerMenuSelection({
                       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                       item.description.toLowerCase().includes(searchQuery.toLowerCase());
 
-                    return matchesSearch;
+                    const matchesDietary = !selectedDietary || item.dietaryType === selectedDietary;
+
+                    return matchesSearch && matchesDietary;
                   });
 
                   if (filteredItems.length === 0) return null;
