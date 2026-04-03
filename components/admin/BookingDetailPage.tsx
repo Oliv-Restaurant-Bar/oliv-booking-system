@@ -329,36 +329,36 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
             if (totalGroupings === 1) {
                 if (hasNoneItem) {
+                    // Rule: Activation-Only for "None" globally
+                    if (isVegActivated) { vegSubtotal += sharedPrice; vegCount += sharedCount; }
+                    if (isNonVegActivated) { nonVegSubtotal += sharedPrice; nonVegCount += sharedCount; }
+                    if (isVeganActivated) { veganSubtotal += sharedPrice; veganCount += sharedCount; }
+                } else {
+                    // Rule: Shared for Restricted, Separate for General (Mains)
                     if (isRestricted) {
-                        // Case 4: No type (None) selected first -> don't show until a group is found
-                        if (isVegActivated) { vegSubtotal += sharedPrice; vegCount += sharedCount; }
-                        if (isNonVegActivated) { nonVegSubtotal += sharedPrice; nonVegCount += sharedCount; }
-                        if (isVeganActivated) { veganSubtotal += sharedPrice; veganCount += sharedCount; }
-                    } else {
-                        // General categories (Mains): None item price goes to everyone
                         vegSubtotal += sharedPrice; vegCount += sharedCount;
                         nonVegSubtotal += sharedPrice; nonVegCount += sharedCount;
                         veganSubtotal += sharedPrice; veganCount += sharedCount;
+                    } else {
+                        if (maxVeg > 0) { vegSubtotal += maxVeg; vegCount += sharedCount; }
+                        if (maxNonVeg > 0) { nonVegSubtotal += maxNonVeg; nonVegCount += sharedCount; }
+                        if (maxVegan > 0) { veganSubtotal += maxVegan; veganCount += sharedCount; }
                     }
-                } else {
-                    // Case 1: Pure dietary choice (e.g. 1 Veg)
-                    // For ALL categories (including Restricted), add to specific group only
-                    if (maxVeg > 0) { vegSubtotal += maxVeg; vegCount += sharedCount; }
-                    if (maxNonVeg > 0) { nonVegSubtotal += maxNonVeg; nonVegCount += sharedCount; }
-                    if (maxVegan > 0) { veganSubtotal += maxVegan; veganCount += sharedCount; }
                 }
             } else {
-                const vegNoneAdd = isRestricted ? (isVegActivated ? maxNone : 0) : maxNone;
-                const nvNoneAdd = isRestricted ? (isNonVegActivated ? maxNone : 0) : maxNone;
-                const veganNoneAdd = isRestricted ? (isVeganActivated ? maxNone : 0) : maxNone;
+                // Separate rule: Multiple dietary groups or Dietary + None
+                // Rule: Activation-Only for "None" globally
+                const vegNoneAdd = isVegActivated ? maxNone : 0;
+                const nvNoneAdd = isNonVegActivated ? maxNone : 0;
+                const veganNoneAdd = isVeganActivated ? maxNone : 0;
 
                 vegSubtotal += maxVeg + vegNoneAdd;
                 nonVegSubtotal += maxNonVeg + nvNoneAdd;
                 veganSubtotal += maxVegan + veganNoneAdd;
 
-                vegCount += vegItems.length + (isRestricted ? (isVegActivated ? noneItems.length : 0) : noneItems.length);
-                nonVegCount += nonVegItems.length + (isRestricted ? (isNonVegActivated ? noneItems.length : 0) : noneItems.length);
-                veganCount += veganItems.length + (isRestricted ? (isVeganActivated ? noneItems.length : 0) : noneItems.length);
+                vegCount += vegItems.length + (isVegActivated ? noneItems.length : 0);
+                nonVegCount += nonVegItems.length + (isNonVegActivated ? noneItems.length : 0);
+                veganCount += veganItems.length + (isVeganActivated ? noneItems.length : 0);
             }
         });
 

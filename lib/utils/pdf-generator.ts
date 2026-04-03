@@ -513,28 +513,28 @@ export async function generateBookingPdf(
 
       if (totalGroups === 1) {
         if (hasNoneItem) {
+          // Rule: Activation-Only for "None" globally
+          if (isVegActivated) vegPP += shared;
+          if (isNonVegActivated) nvPP += shared;
+          if (isVeganActivated) veganPP += shared;
+        } else {
+          // Rule: Shared for Restricted, Separate for General (Mains)
           if (isRestricted) {
-            // Case 4: No type (None) selected first -> don't show until a group is found
-            if (isVegActivated) vegPP += shared;
-            if (isNonVegActivated) nvPP += shared;
-            if (isVeganActivated) veganPP += shared;
-          } else {
-            // General categories (Mains): None item price goes to everyone
             vegPP += shared;
             nvPP += shared;
             veganPP += shared;
+          } else {
+            if (maxVeg > 0) vegPP += maxVeg;
+            if (maxNV > 0) nvPP += maxNV;
+            if (maxVegan > 0) veganPP += maxVegan;
           }
-        } else {
-          // Case 1: Pure dietary choice (e.g. 1 Veg)
-          // For ALL categories (including Restricted), add to specific group only
-          if (maxVeg > 0) vegPP += maxVeg;
-          if (maxNV > 0) nvPP += maxNV;
-          if (maxVegan > 0) veganPP += maxVegan;
         }
       } else {
-        const vegNoneAdd = isRestricted ? (isVegActivated ? maxNone : 0) : maxNone;
-        const nvNoneAdd = isRestricted ? (isNonVegActivated ? maxNone : 0) : maxNone;
-        const veganNoneAdd = isRestricted ? (isVeganActivated ? maxNone : 0) : maxNone;
+        // Separate rule: Multiple dietary groups or Dietary + None
+        // Rule: Activation-Only for "None" globally
+        const vegNoneAdd = isVegActivated ? maxNone : 0;
+        const nvNoneAdd = isNonVegActivated ? maxNone : 0;
+        const veganNoneAdd = isVeganActivated ? maxNone : 0;
 
         vegPP += maxVeg + vegNoneAdd;
         nvPP += maxNV + nvNoneAdd;
