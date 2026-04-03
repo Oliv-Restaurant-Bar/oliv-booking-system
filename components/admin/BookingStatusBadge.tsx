@@ -3,6 +3,7 @@
 import { Badge } from '@/components/ui/badge';
 import { getBookingStatusConfig } from '@/lib/booking-status';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 
 interface BookingStatusBadgeProps {
     status: string;
@@ -11,6 +12,10 @@ interface BookingStatusBadgeProps {
 
 export function BookingStatusBadge({ status, className }: BookingStatusBadgeProps) {
     const config = getBookingStatusConfig(status);
+    const t = useTranslations('bookingStatus');
+
+    // Use translated label if available, fallback to config label
+    const label = t.has(status.toLowerCase()) ? t(status.toLowerCase()) : config.label;
 
     return (
         <Badge
@@ -21,13 +26,13 @@ export function BookingStatusBadge({ status, className }: BookingStatusBadgeProp
                 config.border,
                 className
             )}
-            title={config.label}
+            title={label}
         >
             <span
                 className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                 style={{ backgroundColor: config.dotColor }}
             />
-            {config.label}
+            {label}
         </Badge>
     );
 }

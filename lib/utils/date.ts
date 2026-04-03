@@ -104,14 +104,23 @@ export function toTime(date: Date | string | number, timezone?: string): string 
 }
 
 /**
- * Format relative time (e.g., "2 hours ago") with system timezone
+ * Format relative time (e.g., "2 hours ago") with system timezone and locale support
  */
-export function formatRelativeTime(date: Date | string | number, timezone?: string): string {
+export function formatRelativeTime(
+  date: Date | string | number,
+  timezone?: string,
+  locale: string = 'en'
+): string {
   const tz = timezone || getSystemTimezoneSync();
   const dateObj = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
   const zonedDate = toZonedTime(dateObj, tz);
   const nowInTimezone = toZonedTime(new Date(), tz);
-  return formatDistanceToNow(zonedDate, { addSuffix: true });
+  const dateFnsLocale = getDateFnsLocale(locale);
+  
+  return formatDistanceToNow(zonedDate, { 
+    addSuffix: true,
+    locale: dateFnsLocale
+  });
 }
 
 /**

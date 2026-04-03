@@ -303,13 +303,13 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
         const isDietarySharedCategory = (cat: string) => {
             const c = cat.toLowerCase();
-            return c.includes('starter') || c.includes('dessert') || c.includes('vorspeise') || 
-                   c.includes('nachspeise') || c.includes('apéro') || c.includes('apero') || c.includes('snacks');
+            return c.includes('starter') || c.includes('dessert') || c.includes('vorspeise') ||
+                c.includes('nachspeise') || c.includes('apéro') || c.includes('apero') || c.includes('snacks');
         };
 
         Object.entries(itemsByCategory).forEach(([category, catItems]) => {
             const isRestricted = isDietarySharedCategory(category);
-            
+
             const vegItems = (catItems as any[]).filter(i => i.dietaryType === 'veg');
             const nonVegItems = (catItems as any[]).filter(i => i.dietaryType === 'non-veg');
             const veganItems = (catItems as any[]).filter(i => i.dietaryType === 'vegan');
@@ -2544,7 +2544,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
                                                 <button
                                                     onClick={handleSaveMenu}
                                                     disabled={isSaving}
-                                                    className="px-3 py-1.5 border border-border hover:bg-secondary rounded-lg transition-colors bg-primary text-secondary hover:text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                                    className="px-3 py-1.5 border border-border hover:bg-primary hover:text-secondary rounded-lg transition-colors bg-secondary text-primary hover:text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                                     style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                                 >
                                                     {isSaving ? (

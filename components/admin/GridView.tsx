@@ -5,7 +5,7 @@ import { Tooltip } from '@/components/user/Tooltip';
 import type { KitchenPdfStatus } from '@/services/kitchen-pdf.service';
 import { formatRelativeTime } from '@/lib/utils/date';
 import { useAdminTranslation, useCommonTranslation, useBookingTranslation } from '@/lib/i18n/client';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { useSystemTimezone } from '@/lib/hooks/useSystemTimezone';
 import { useDateFormat } from '@/lib/contexts/SystemSettingsContext';
 import { Button } from '../user/Button';
@@ -49,6 +49,7 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
   const commonT = useCommonTranslation();
   const bookingT = useBookingTranslation();
   const calendarT = useTranslations('admin.bookings.calendar');
+  const locale = useLocale();
   const { timezone } = useSystemTimezone();
   const { formatDate } = useDateFormat();
 
@@ -153,7 +154,7 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
                   )}
                   {booking.createdAt && (
                     <span className="opacity-60 font-normal flex-shrink-0" style={{ fontSize: 'var(--text-small)' }}>
-                      • {formatRelativeTime(booking.createdAt, timezone)}
+                      • {formatRelativeTime(booking.createdAt, timezone, locale)}
                     </span>
                   )}
                 </div>

@@ -382,7 +382,7 @@
       "kpis": {
         "bookings": "Anzahl Buchungen",
         "revenue": "Gesamtumsatz",
-        "items": "Gesamtartikel",
+        "items": "Gesamtzahl der Artikel",
         "vsLastMonth": "vs letzten Monat"
       },
       "charts": {

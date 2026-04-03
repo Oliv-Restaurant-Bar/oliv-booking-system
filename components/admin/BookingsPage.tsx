@@ -11,6 +11,7 @@ import { GridView } from './GridView';
 import { CalendarView } from './CalendarView';
 import { BookingDetailPage, type Booking } from './BookingDetailPage';
 import * as XLSX from 'xlsx';
+import { useTranslations } from 'next-intl';
 
 interface BookingsPageProps {
   user?: any;
@@ -50,6 +51,7 @@ export function BookingsPage({ user, translations }: BookingsPageProps) {
   const [selectedStatus, setSelectedStatus] = useState('All Status');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const statusT = useTranslations('bookingStatus');
 
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
@@ -173,14 +175,14 @@ export function BookingsPage({ user, translations }: BookingsPageProps) {
 
   // Status options for dropdown
   const statusOptions = [
-    { label: t('statuses.all'), value: 'All Status', dotColor: '' },
-    { label: t('statuses.new'), value: 'new', dotColor: '#8b5cf6' },
-    { label: t('statuses.pending'), value: 'pending', dotColor: '#eab308' },
-    { label: t('statuses.confirmed'), value: 'confirmed', dotColor: '#10b981' },
-    { label: t('statuses.touchbase'), value: 'touchbase', dotColor: '#9DAE91' },
-    { label: t('statuses.declined'), value: 'declined', dotColor: '#ef4444' },
-    { label: t('statuses.completed'), value: 'completed', dotColor: '#3b82f6' },
-    { label: t('statuses.no_show'), value: 'no_show', dotColor: '#f97316' },
+    { label: statusT('all'), value: 'All Status', dotColor: '' },
+    { label: statusT('new'), value: 'new', dotColor: '#8b5cf6' },
+    { label: statusT('pending'), value: 'pending', dotColor: '#eab308' },
+    { label: statusT('confirmed'), value: 'confirmed', dotColor: '#10b981' },
+    { label: statusT('touchbase'), value: 'touchbase', dotColor: '#9DAE91' },
+    { label: statusT('declined'), value: 'declined', dotColor: '#ef4444' },
+    { label: statusT('completed'), value: 'completed', dotColor: '#3b82f6' },
+    { label: statusT('no_show'), value: 'no_show', dotColor: '#f97316' },
   ];
 
   const handleExport = () => {
