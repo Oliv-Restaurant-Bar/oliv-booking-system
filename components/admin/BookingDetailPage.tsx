@@ -330,17 +330,28 @@ export function BookingDetailPage({
             const maxVeg = vegItems.length > 0 ? Math.max(...vegItems.map((i: any) => i.unitPrice || 0)) : 0;
             const maxNonVeg = nonVegItems.length > 0 ? Math.max(...nonVegItems.map((i: any) => i.unitPrice || 0)) : 0;
             const maxVegan = veganItems.length > 0 ? Math.max(...veganItems.map((i: any) => i.unitPrice || 0)) : 0;
-            const maxNone = noneItems.length > 0 ? Math.max(...noneItems.map((i: any) => i.unitPrice || 0)) : 0;
+            
+            // For None items, we check if they have dietary markers in notes
+            const noneSplitVeg = noneItems.filter(i => i.notes?.includes('(Veg)')).map(i => i.unitPrice || 0);
+            const noneSplitNonVeg = noneItems.filter(i => i.notes?.includes('(Non-Veg)')).map(i => i.unitPrice || 0);
+            const noneSplitVegan = noneItems.filter(i => i.notes?.includes('(Vegan)')).map(i => i.unitPrice || 0);
+            const noneShared = noneItems.filter(i => !i.notes?.includes('(Veg)') && !i.notes?.includes('(Non-Veg)') && !i.notes?.includes('(Vegan)')).map(i => i.unitPrice || 0);
+
+            const maxNoneVeg = noneSplitVeg.length > 0 ? Math.max(...noneSplitVeg) : 0;
+            const maxNoneNonVeg = noneSplitNonVeg.length > 0 ? Math.max(...noneSplitNonVeg) : 0;
+            const maxNoneVegan = noneSplitVegan.length > 0 ? Math.max(...noneSplitVegan) : 0;
+            const maxNoneShared = noneShared.length > 0 ? Math.max(...noneShared) : 0;
 
             const groupsPresentCount = [maxVeg > 0, maxNonVeg > 0, maxVegan > 0].filter(Boolean).length;
-            const hasNoneItem = maxNone > 0;
-            const totalGroupings = groupsPresentCount + (hasNoneItem ? 1 : 0);
+            const hasNoneSplit = maxNoneVeg > 0 || maxNoneNonVeg > 0 || maxNoneVegan > 0;
+            const hasNoneShared = maxNoneShared > 0;
+            const totalGroupings = groupsPresentCount + (hasNoneSplit || hasNoneShared ? 1 : 0);
 
-            const sharedPrice = Math.max(maxVeg, maxNonVeg, maxVegan, maxNone);
+            const sharedPrice = Math.max(maxVeg, maxNonVeg, maxVegan, maxNoneVeg, maxNoneNonVeg, maxNoneVegan, maxNoneShared);
             const sharedCount = (catItems as any[]).length;
 
             if (totalGroupings === 1) {
-                if (hasNoneItem) {
+                if (hasNoneSplit || hasNoneShared) {
                     // Rule: Activation-Only for "None" globally
                     if (isVegActivated) { vegSubtotal += sharedPrice; vegCount += sharedCount; }
                     if (isNonVegActivated) { nonVegSubtotal += sharedPrice; nonVegCount += sharedCount; }
@@ -360,9 +371,9 @@ export function BookingDetailPage({
             } else {
                 // Separate rule: Multiple dietary groups or Dietary + None
                 // Rule: Activation-Only for "None" globally
-                const vegNoneAdd = isVegActivated ? maxNone : 0;
-                const nvNoneAdd = isNonVegActivated ? maxNone : 0;
-                const veganNoneAdd = isVeganActivated ? maxNone : 0;
+                const vegNoneAdd = isVegActivated ? Math.max(maxNoneVeg, maxNoneShared) : 0;
+                const nvNoneAdd = isNonVegActivated ? Math.max(maxNoneNonVeg, maxNoneShared) : 0;
+                const veganNoneAdd = isVeganActivated ? Math.max(maxNoneVegan, maxNoneShared) : 0;
 
                 vegSubtotal += maxVeg + vegNoneAdd;
                 nonVegSubtotal += maxNonVeg + nvNoneAdd;

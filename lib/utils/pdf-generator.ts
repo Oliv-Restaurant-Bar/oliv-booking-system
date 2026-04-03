@@ -503,16 +503,27 @@ export async function generateBookingPdf(
       const maxVeg = vegItems.length > 0 ? Math.max(...vegItems.map(i => i.unitPrice || 0)) : 0;
       const maxNV = nonVegItems.length > 0 ? Math.max(...nonVegItems.map(i => i.unitPrice || 0)) : 0;
       const maxVegan = veganItems.length > 0 ? Math.max(...veganItems.map(i => i.unitPrice || 0)) : 0;
-      const maxNone = noneItems.length > 0 ? Math.max(...noneItems.map(i => i.unitPrice || 0)) : 0;
+      
+      // For None items, check for dietary markers in notes
+      const noneSplitVeg = noneItems.filter(i => i.notes?.includes('(Veg)')).map(i => i.unitPrice || 0);
+      const noneSplitNV = noneItems.filter(i => i.notes?.includes('(Non-Veg)')).map(i => i.unitPrice || 0);
+      const noneSplitVegan = noneItems.filter(i => i.notes?.includes('(Vegan)')).map(i => i.unitPrice || 0);
+      const noneShared = noneItems.filter(i => !i.notes?.includes('(Veg)') && !i.notes?.includes('(Non-Veg)') && !i.notes?.includes('(Vegan)')).map(i => i.unitPrice || 0);
+
+      const maxNoneVeg = noneSplitVeg.length > 0 ? Math.max(...noneSplitVeg) : 0;
+      const maxNoneNV = noneSplitNV.length > 0 ? Math.max(...noneSplitNV) : 0;
+      const maxNoneVegan = noneSplitVegan.length > 0 ? Math.max(...noneSplitVegan) : 0;
+      const maxNoneShared = noneShared.length > 0 ? Math.max(...noneShared) : 0;
 
       const groupsPresent = [maxVeg > 0, maxNV > 0, maxVegan > 0].filter(Boolean).length;
-      const hasNoneItem = maxNone > 0;
-      const totalGroups = groupsPresent + (hasNoneItem ? 1 : 0);
+      const hasNoneSplit = maxNoneVeg > 0 || maxNoneNV > 0 || maxNoneVegan > 0;
+      const hasNoneShared = maxNoneShared > 0;
+      const totalGroups = groupsPresent + (hasNoneSplit || hasNoneShared ? 1 : 0);
 
-      const shared = Math.max(maxVeg, maxNV, maxVegan, maxNone);
+      const shared = Math.max(maxVeg, maxNV, maxVegan, maxNoneVeg, maxNoneNV, maxNoneVegan, maxNoneShared);
 
       if (totalGroups === 1) {
-        if (hasNoneItem) {
+        if (hasNoneSplit || hasNoneShared) {
           // Rule: Activation-Only for "None" globally
           if (isVegActivated) vegPP += shared;
           if (isNonVegActivated) nvPP += shared;
@@ -532,9 +543,9 @@ export async function generateBookingPdf(
       } else {
         // Separate rule: Multiple dietary groups or Dietary + None
         // Rule: Activation-Only for "None" globally
-        const vegNoneAdd = isVegActivated ? maxNone : 0;
-        const nvNoneAdd = isNonVegActivated ? maxNone : 0;
-        const veganNoneAdd = isVeganActivated ? maxNone : 0;
+        const vegNoneAdd = isVegActivated ? Math.max(maxNoneVeg, maxNoneShared) : 0;
+        const nvNoneAdd = isNonVegActivated ? Math.max(maxNoneNV, maxNoneShared) : 0;
+        const veganNoneAdd = isVeganActivated ? Math.max(maxNoneVegan, maxNoneShared) : 0;
 
         vegPP += maxVeg + vegNoneAdd;
         nvPP += maxNV + nvNoneAdd;

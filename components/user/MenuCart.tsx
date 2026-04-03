@@ -178,6 +178,54 @@ export function MenuCart({
              c.includes('nachspeise') || c.includes('apéro') || c.includes('apero') || c.includes('snacks');
     };
 
+    const getItemDietarySplit = (item: MenuItem) => {
+      const currentVariantId = itemVariants[item.id];
+      let basePrice = item.price;
+      if (currentVariantId && item.variants && item.variants.length > 0) {
+        const variant = item.variants.find(v => v.id === currentVariantId);
+        if (variant) basePrice = variant.price;
+      }
+
+      const currentAddOnIds = itemAddOns[item.id] || [];
+      let vegChoicesPrice = 0;
+      let nvChoicesPrice = 0;
+      let veganChoicesPrice = 0;
+      let noneChoicesPrice = 0;
+      let hasDietaryChoice = false;
+
+      currentAddOnIds.forEach(addOnId => {
+        let addOn: any = null;
+        if (item.addonGroups) {
+          for (const group of item.addonGroups) {
+            addOn = group.items.find(i => i.id === addOnId);
+            if (addOn) break;
+          }
+        }
+        if (!addOn && item.addOns) {
+          addOn = item.addOns.find(a => a.id === addOnId);
+        }
+
+        if (addOn) {
+          const price = addOn.price || 0;
+          const type = addOn.dietaryType || 'none';
+          if (type === 'veg') { vegChoicesPrice += price; hasDietaryChoice = true; }
+          else if (type === 'non-veg') { nvChoicesPrice += price; hasDietaryChoice = true; }
+          else if (type === 'vegan') { veganChoicesPrice += price; hasDietaryChoice = true; }
+          else { noneChoicesPrice += price; }
+        }
+      });
+
+      return {
+        basePrice,
+        vegChoicesPrice,
+        nvChoicesPrice,
+        veganChoicesPrice,
+        noneChoicesPrice,
+        hasDietaryChoice,
+        totalPrice: getItemPerPersonPrice(item)
+      };
+    };
+
     Object.entries(itemsByCategory).forEach(([category, items]) => {
       const isRestricted = isDietarySharedCategory(category);
       
@@ -189,17 +237,24 @@ export function MenuCart({
       const maxVeg = vegItems.length > 0 ? Math.max(...vegItems.map(getItemPerPersonPrice)) : 0;
       const maxNonVeg = nonVegItems.length > 0 ? Math.max(...nonVegItems.map(getItemPerPersonPrice)) : 0;
       const maxVegan = veganItems.length > 0 ? Math.max(...veganItems.map(getItemPerPersonPrice)) : 0;
-      const maxNone = noneItems.length > 0 ? Math.max(...noneItems.map(getItemPerPersonPrice)) : 0;
+
+      const noneSplits = noneItems.map(getItemDietarySplit);
+      
+      const maxNoneVeg = noneSplits.length > 0 ? Math.max(...noneSplits.map((s: any) => s.hasDietaryChoice ? (s.basePrice + s.vegChoicesPrice + s.noneChoicesPrice) : 0)) : 0;
+      const maxNoneNonVeg = noneSplits.length > 0 ? Math.max(...noneSplits.map((s: any) => s.hasDietaryChoice ? (s.basePrice + s.nvChoicesPrice + s.noneChoicesPrice) : 0)) : 0;
+      const maxNoneVegan = noneSplits.length > 0 ? Math.max(...noneSplits.map((s: any) => s.hasDietaryChoice ? (s.basePrice + s.veganChoicesPrice + s.noneChoicesPrice) : 0)) : 0;
+      const maxNoneShared = noneSplits.length > 0 ? Math.max(...noneSplits.map((s: any) => !s.hasDietaryChoice ? s.totalPrice : 0)) : 0;
 
       const groupsPresentCount = [maxVeg > 0, maxNonVeg > 0, maxVegan > 0].filter(Boolean).length;
-      const hasNone = maxNone > 0;
-      const totalGroupings = groupsPresentCount + (hasNone ? 1 : 0);
+      const hasNoneSplit = maxNoneVeg > 0 || maxNoneNonVeg > 0 || maxNoneVegan > 0;
+      const hasNoneShared = maxNoneShared > 0;
+      const totalGroupings = groupsPresentCount + (hasNoneSplit || hasNoneShared ? 1 : 0);
 
-      const sharedPrice = Math.max(maxVeg, maxNonVeg, maxVegan, maxNone);
+      const sharedPrice = Math.max(maxVeg, maxNonVeg, maxVegan, maxNoneVeg, maxNoneNonVeg, maxNoneVegan, maxNoneShared);
       const sharedCount = items.length;
 
       if (totalGroupings === 1) {
-        if (hasNone) {
+        if (hasNoneSplit || hasNoneShared) {
           // Rule: Activation-Only for "None" globally
           if (isVegActivated) { vegSubtotal += sharedPrice; vegCount += sharedCount; }
           if (isNonVegActivated) { nonVegSubtotal += sharedPrice; nonVegCount += sharedCount; }
@@ -219,9 +274,9 @@ export function MenuCart({
       } else {
         // Separate rule: Multiple dietary groups or Dietary + None
         // Rule: Activation-Only for "None" globally
-        const vegNoneAdd = isVegActivated ? maxNone : 0;
-        const nvNoneAdd = isNonVegActivated ? maxNone : 0;
-        const veganNoneAdd = isVeganActivated ? maxNone : 0;
+        const vegNoneAdd = isVegActivated ? Math.max(maxNoneVeg, maxNoneShared) : 0;
+        const nvNoneAdd = isNonVegActivated ? Math.max(maxNoneNonVeg, maxNoneShared) : 0;
+        const veganNoneAdd = isVeganActivated ? Math.max(maxNoneVegan, maxNoneShared) : 0;
 
         vegSubtotal += maxVeg + vegNoneAdd;
         nonVegSubtotal += maxNonVeg + nvNoneAdd;
