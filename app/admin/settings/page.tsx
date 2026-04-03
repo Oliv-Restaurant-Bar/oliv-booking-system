@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth/server";
 import { SettingsPage } from "@/components/admin/SettingsPage";
 import { AdminPageLayout } from "@/components/admin/AdminPageLayout";
 import { Permission, hasPermission } from "@/lib/auth/rbac";
+import { getSystemSettings, getFullVenuesAction } from "@/lib/actions/settings";
 
 export const dynamic = 'force-dynamic';
 
@@ -18,9 +19,19 @@ export default async function AdminSettingsPage() {
     redirect("/admin");
   }
 
+  // Pre-fetch settings and venues
+  const [initialSettings, initialVenues] = await Promise.all([
+    getSystemSettings(),
+    getFullVenuesAction(),
+  ]);
+
   return (
     <AdminPageLayout>
-      <SettingsPage user={session.user} />
+      <SettingsPage 
+        user={session.user} 
+        initialSettings={initialSettings}
+        initialVenues={initialVenues}
+      />
     </AdminPageLayout>
   );
 }

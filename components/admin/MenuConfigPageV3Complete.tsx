@@ -134,16 +134,45 @@ function SortableItem({
 
 interface MenuConfigPageProps {
   user: any;
+  initialData?: any;
 }
 
-export function MenuConfigPage({ user }: MenuConfigPageProps) {
+export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
   const t = useMenuConfigTranslation();
   const ct = useCommonTranslation();
 
   const [activeTab, setActiveTab] = useState<'items' | 'addons'>('items');
-  const [loading, setLoading] = useState(true);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [addonGroups, setAddonGroups] = useState<AddonGroup[]>([]);
+  const [loading, setLoading] = useState(!initialData);
+
+  // Helper to process raw menu data into the state format
+  const processMenuData = (data: any) => {
+    const itemsByCategory = data.itemsByCategory || {};
+    const addonItemsByGroup = data.addonItemsByGroup || {};
+
+    const assembledCategories = (data.categories || []).map((cat: any) => ({
+      ...cat,
+      items: itemsByCategory[cat.id] || [],
+      isExpanded: false,
+    }));
+
+    const assembledAddonGroups = (data.addonGroups || []).map((group: any) => ({
+      ...group,
+      items: addonItemsByGroup[group.id] || [],
+      isExpanded: false,
+    }));
+
+    return { assembledCategories, assembledAddonGroups };
+  };
+
+  const initialStates = useMemo(() => {
+    if (initialData) {
+      return processMenuData(initialData);
+    }
+    return { assembledCategories: [], assembledAddonGroups: [] };
+  }, [initialData]);
+
+  const [categories, setCategories] = useState<Category[]>(initialStates.assembledCategories);
+  const [addonGroups, setAddonGroups] = useState<AddonGroup[]>(initialStates.assembledAddonGroups);
   const [searchQuery, setSearchQuery] = useState('');
 
   const role = user?.role || 'read_only';
@@ -259,27 +288,15 @@ export function MenuConfigPage({ user }: MenuConfigPageProps) {
 
   // Data fetching
   useEffect(() => {
+    if (initialData) return;
+
     async function fetchData() {
       setLoading(true);
       try {
         const response = await fetch('/api/admin/menu');
         if (response.ok) {
           const data = await response.json();
-          const itemsByCategory = data.itemsByCategory || {};
-          const addonItemsByGroup = data.addonItemsByGroup || {};
-
-          const assembledCategories = (data.categories || []).map((cat: any) => ({
-            ...cat,
-            items: itemsByCategory[cat.id] || [],
-            isExpanded: false,
-          }));
-
-          const assembledAddonGroups = (data.addonGroups || []).map((group: any) => ({
-            ...group,
-            items: addonItemsByGroup[group.id] || [],
-            isExpanded: false,
-          }));
-
+          const { assembledCategories, assembledAddonGroups } = processMenuData(data);
           setCategories(assembledCategories);
           setAddonGroups(assembledAddonGroups);
         }

@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth/server";
 import { MenuConfigPage } from "@/components/admin/MenuConfigPageV3Complete";
 import { AdminPageLayout } from "@/components/admin/AdminPageLayout";
 import { Permission, hasPermission } from "@/lib/auth/rbac";
+import { getAllMenuData } from "@/lib/actions/menu";
 
 export const dynamic = 'force-dynamic';
 
@@ -18,9 +19,12 @@ export default async function AdminMenuConfigPage() {
     redirect("/admin");
   }
 
+  // Fetch initial menu data for SSR
+  const initialData = await getAllMenuData();
+
   return (
     <AdminPageLayout>
-      <MenuConfigPage user={session.user} />
+      <MenuConfigPage user={session.user} initialData={initialData} />
     </AdminPageLayout>
   );
 }

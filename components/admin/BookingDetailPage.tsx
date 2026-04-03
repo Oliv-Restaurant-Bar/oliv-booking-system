@@ -170,9 +170,21 @@ interface BookingDetailPageProps {
     onBack?: () => void;
     onBookingUpdated?: () => void;
     user?: any;
+    initialVenues?: string[];
+    initialAdminUsers?: any[];
+    initialPdfHistory?: any;
 }
 
-export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, onBookingUpdated, user }: BookingDetailPageProps) {
+export function BookingDetailPage({ 
+    bookingId, 
+    booking: initialBooking, 
+    onBack, 
+    onBookingUpdated, 
+    user,
+    initialVenues,
+    initialAdminUsers,
+    initialPdfHistory
+}: BookingDetailPageProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const activeTab = searchParams.get('tab') || 'event-details';
@@ -374,13 +386,13 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
     // Kitchen PDF state
     const [kitchenPdfStatus, setKitchenPdfStatus] = useState<KitchenPdfStatus | undefined>(
-        initialBooking?.kitchenPdf
+        initialPdfHistory || initialBooking?.kitchenPdf
     );
     const [isPdfActionModalOpen, setIsPdfActionModalOpen] = useState(false);
     const [isAdminUsersLoading, setIsAdminUsersLoading] = useState(false);
-    const [adminUsers, setAdminUsers] = useState<Array<{ id: string; name: string; email: string; role: string }>>([]);
+    const [adminUsers, setAdminUsers] = useState<Array<{ id: string; name: string; email: string; role: string }>>(initialAdminUsers || []);
 
-    const [venueLocations, setVenueLocations] = useState<string[]>([]);
+    const [venueLocations, setVenueLocations] = useState<string[]>(initialVenues || []);
     const [selectedVenue, setSelectedVenue] = useState<string>(initialBooking?.event?.location || '');
     const [selectedRoom, setSelectedRoom] = useState<string>(initialBooking?.room || '');
     const [assignedTo, setAssignedTo] = useState<string>((initialBooking as any)?.assignedTo?.id || '');
@@ -485,7 +497,9 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
     // Initial fetch on mount or when ID changes
     useEffect(() => {
-        fetchBookingData(true);
+        if (!initialBooking) {
+            fetchBookingData(true);
+        }
     }, [bookingId]);
 
 
@@ -493,16 +507,18 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
 
     // Fetch venue locations on mount
     useEffect(() => {
-        const fetchVenues = async () => {
-            const locations = await VenueService.getLocations();
-            setVenueLocations(locations);
-        };
-        fetchVenues();
+        if (!initialVenues || initialVenues.length === 0) {
+            const fetchVenues = async () => {
+                const locations = await VenueService.getLocations();
+                setVenueLocations(locations);
+            };
+            fetchVenues();
+        }
     }, []);
 
     // Fetch kitchen PDF status if not provided via prop
     useEffect(() => {
-        if (bookingId && !initialBooking?.kitchenPdf) {
+        if (bookingId && !initialBooking?.kitchenPdf && !initialPdfHistory) {
             const fetchKitchenPdfStatus = async () => {
                 try {
                     const status = await KitchenPdfService.getSendHistory(bookingId);
@@ -522,11 +538,11 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             };
             fetchKitchenPdfStatus();
         }
-    }, [bookingId, initialBooking]);
+    }, [bookingId, initialBooking, initialPdfHistory]);
 
     // Fetch admin users
     useEffect(() => {
-        if (canEditBooking && adminUsers.length === 0 && !isAdminUsersLoading) {
+        if (canEditBooking && adminUsers.length === 0 && !isAdminUsersLoading && !initialAdminUsers) {
             const fetchAdminUsers = async () => {
                 setIsAdminUsersLoading(true);
                 try {
@@ -550,7 +566,7 @@ export function BookingDetailPage({ bookingId, booking: initialBooking, onBack, 
             };
             fetchAdminUsers();
         }
-    }, [canEditBooking, adminUsers.length, isAdminUsersLoading]);
+    }, [canEditBooking, adminUsers.length, isAdminUsersLoading, initialAdminUsers]);
 
     // Fetch audit history when shown
     useEffect(() => {

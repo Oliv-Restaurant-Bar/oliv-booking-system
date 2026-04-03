@@ -118,11 +118,13 @@ export function formatDateString(date: Date | string, dateFormat: string): strin
 
 interface SystemSettingsProviderProps {
   children: React.ReactNode;
+  initialSettings?: SystemSettings | null;
 }
 
-export function SystemSettingsProvider({ children }: SystemSettingsProviderProps) {
-  const [settings, setSettings] = useState<SystemSettings | null>(globalSettingsCache);
-  const [loading, setLoading] = useState(!globalSettingsCache);
+export function SystemSettingsProvider({ children, initialSettings }: SystemSettingsProviderProps) {
+  // Initialize with initialSettings if provided, otherwise check global cache
+  const [settings, setSettings] = React.useState<SystemSettings | null>(initialSettings || globalSettingsCache);
+  const [loading, setLoading] = React.useState(!initialSettings && !globalSettingsCache);
 
   const refreshSettings = useCallback(async () => {
     setLoading(true);
@@ -133,13 +135,19 @@ export function SystemSettingsProvider({ children }: SystemSettingsProviderProps
   }, []);
 
   useEffect(() => {
-    if (!globalSettingsCache) {
+    // If we have initial settings and global cache is empty, populate global cache
+    if (initialSettings && !globalSettingsCache) {
+      globalSettingsCache = initialSettings;
+    }
+
+    // Only fetch if we don't have settings from anywhere
+    if (!settings && !globalSettingsCache) {
       fetchSettingsWithCache().then((fetchedSettings) => {
         setSettings(fetchedSettings);
         setLoading(false);
       });
     }
-  }, []);
+  }, [initialSettings, settings]);
 
   const formatDate = useCallback((date: Date | string) => {
     const format = settings?.dateFormat || DEFAULT_SETTINGS.dateFormat;

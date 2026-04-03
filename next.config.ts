@@ -6,8 +6,12 @@ const withNextIntl = createNextIntlPlugin('./i18n.ts');
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
-    unoptimized: true,
+    unoptimized: false,
     remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "cdn.picflow.com",
+      },
       {
         protocol: "https",
         hostname: "**",

@@ -5,10 +5,14 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getServerLocale, getServerMessages } from '@/lib/i18n/server';
 import { validateEnvOrThrow } from "@/lib/config/env-validation";
 import { SystemSettingsProvider } from "@/lib/contexts/SystemSettingsContext";
+import { getSystemSettings } from "@/lib/actions/settings";
 
 export const metadata: Metadata = {
   title: "OLIV Restaurant & Bar - Group Bookings",
   description: "Book your group event at OLIV Restaurant & Bar. Perfect for special occasions, corporate events, and celebrations.",
+  other: {
+    'preconnect': 'https://cdn.picflow.com',
+  }
 };
 
 export default async function RootLayout({
@@ -37,11 +41,12 @@ export default async function RootLayout({
 
   const locale = await getServerLocale();
   const messages = await getServerMessages(locale);
+  const settings = await getSystemSettings();
 
   return (
     <html lang={locale}>
       <body className="antialiased">
-        <SystemSettingsProvider>
+        <SystemSettingsProvider initialSettings={settings}>
           <NextIntlClientProvider messages={messages} locale={locale}>
             {children}
           </NextIntlClientProvider>

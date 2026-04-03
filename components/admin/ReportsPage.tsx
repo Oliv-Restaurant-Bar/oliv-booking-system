@@ -7,12 +7,17 @@ import { SkeletonList, SkeletonTrendingItems, SkeletonMonthlyReport } from '@/co
 import { useTranslations } from 'next-intl';
 import { SettingsService } from '@/services/settings.service';
 
-export function ReportsPage({ user }: { user?: any }) {
+interface ReportsPageProps {
+  user?: any;
+  initialData?: any;
+}
+
+export function ReportsPage({ user, initialData }: ReportsPageProps) {
   const t = useTranslations('admin.reports');
   const [selectedYear, setSelectedYear] = useState(String(new Date().getFullYear()));
-  const [bookingsByContacts, setBookingsByContacts] = useState<any[]>([]);
-  const [monthlyReport, setMonthlyReport] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [bookingsByContacts, setBookingsByContacts] = useState<any[]>(initialData?.topCustomers || []);
+  const [monthlyReport, setMonthlyReport] = useState<any[]>(initialData?.monthlyReport || []);
+  const [loading, setLoading] = useState(!initialData);
   const [currencySymbol, setCurrencySymbol] = useState('CHF');
 
   // Fetch reports data on component mount
@@ -45,7 +50,10 @@ export function ReportsPage({ user }: { user?: any }) {
       }
     });
 
-    fetchReportsData();
+    // Fetch reports data only if not provided by SSR or if year changed
+    if (!initialData || selectedYear !== String(new Date().getFullYear())) {
+      fetchReportsData();
+    }
   }, [selectedYear]);
 
   return (
@@ -125,7 +133,7 @@ export function ReportsPage({ user }: { user?: any }) {
               </div>
 
               {/* Trending Items */}
-              <TrendingItems />
+              <TrendingItems trendingData={initialData?.trendingItems} />
             </div>
 
             {/* Monthly Booking Report */}

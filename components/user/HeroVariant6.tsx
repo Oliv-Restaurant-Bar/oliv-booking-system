@@ -69,6 +69,9 @@ export function HeroVariant6() {
             alt={img.alt}
             fill
             className="w-full h-full object-cover"
+            priority={i === 0}
+            loading={i === 0 ? undefined : "lazy"}
+            sizes="100vw"
           />
         </div>
       ))}

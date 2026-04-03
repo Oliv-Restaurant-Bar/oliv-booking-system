@@ -20,7 +20,13 @@ import { ItemDetailsModal } from './ItemDetailsModal';
 import { MenuCart } from './MenuCart';
 import { toast } from 'sonner';
 
-export function CustomMenuWizard() {
+export function CustomMenuWizard({ 
+  initialMenuData,
+  initialLocale 
+}: { 
+  initialMenuData?: any;
+  initialLocale?: string;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useWizardTranslation();
@@ -102,7 +108,7 @@ export function CustomMenuWizard() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [categoryData, setCategoryData] = useState<Record<string, { guestCount: boolean }>>({});
-  const [loadingMenu, setLoadingMenu] = useState(true);
+  const [loadingMenu, setLoadingMenu] = useState(!initialMenuData);
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [editSecret, setEditSecret] = useState<string | null>(null);
   const [bookingPdfData, setBookingPdfData] = useState<any>(null); // New state for PDF
@@ -413,169 +419,183 @@ export function CustomMenuWizard() {
     }
   }, [menuItems, editBookingData, isEditRestored]);
 
+  // Initialize menu data if provided via props (SSR)
+  useEffect(() => {
+    if (initialMenuData) {
+      console.log('[SSR] Initializing menu data from props');
+      processMenuData(initialMenuData);
+    }
+  }, [initialMenuData]);
+
+  // Shared function to process menu data (from props or fetch)
+  const processMenuData = (data: any) => {
+    // Filter to only include ACTIVE categories that have at least ONE active item
+    const activeCategories = data.categories.filter((cat: any) => cat.isActive);
+
+    // Get all active items first
+    const activeItems = data.items.filter((item: any) => item.isActive);
+
+    // Filter categories to only include those that have at least one active item
+    const categoriesWithActiveItems = activeCategories.filter((cat: any) => {
+      return activeItems.some((item: any) => item.categoryId === cat.id);
+    });
+
+    // Transform database data to MenuItem format - only include items from active categories with active items
+    const transformedItems: MenuItem[] = activeItems
+      .filter((item: any) => {
+        // Only include items whose category is active AND has active items
+        const category = categoriesWithActiveItems.find((cat: any) => cat.id === item.categoryId);
+        return category !== undefined;
+      })
+      .map((item: any) => {
+        const category = categoriesWithActiveItems.find((cat: any) => cat.id === item.categoryId);
+        return {
+          id: item.id,
+          name: item.name,
+          description: item.description || '',
+          category: category?.name || 'Other',
+          price: Number(item.pricePerPerson) || 0,
+          pricingType: item.pricingType || 'per_person',
+          image: item.imageUrl || '',
+          dietaryType: (category?.name === 'Beverages' || category?.name === 'Drinks') ? 'none' : (item.dietaryType || 'none'),
+          dietaryTags: item.dietaryTags || [],
+          allergens: item.allergens || [],
+          additives: item.additives || [],
+          ingredients: item.ingredients || '',
+          nutritionalInfo: item.nutritionalInfo || null,
+          isGlutenFree: item.dietaryTags?.includes('Gluten Free') || item.dietaryTags?.includes('gluten-free') || false,
+          averageConsumption: item.averageConsumption || null,
+          variants: item.variants || [],
+          addOns: (() => {
+            const catAddonGroupIds = (data.categoryAddonGroups || [])
+              .filter((cg: any) => cg.categoryId === item.categoryId)
+              .map((cg: any) => cg.addonGroupId);
+            const itemAddonGroupIds = (data.itemAddonGroups || [])
+              .filter((ig: any) => ig.itemId === item.id)
+              .map((ig: any) => ig.addonGroupId);
+
+            const allAddonGroupIds = [...new Set([...catAddonGroupIds, ...itemAddonGroupIds])];
+            const mergedAddons: any[] = [];
+
+            allAddonGroupIds.forEach((groupId: string) => {
+              const groupItems = data.addonItemsByGroup?.[groupId] || [];
+              groupItems.forEach((gi: any) => {
+                if (gi.isActive) {
+                  mergedAddons.push({
+                    id: gi.id,
+                    name: gi.name,
+                    price: Number(gi.price) || 0,
+                    dietaryType: gi.dietaryType,
+                  });
+                }
+              });
+            });
+            return mergedAddons;
+          })(),
+          addonGroups: (() => {
+            const catAddonGroupIds = (data.categoryAddonGroups || [])
+              .filter((cg: any) => cg.categoryId === item.categoryId)
+              .map((cg: any) => cg.addonGroupId);
+            const itemAddonGroupIds = (data.itemAddonGroups || [])
+              .filter((ig: any) => ig.itemId === item.id)
+              .map((ig: any) => ig.addonGroupId);
+
+            const allAddonGroupIds = [...new Set([...catAddonGroupIds, ...itemAddonGroupIds])];
+
+            return allAddonGroupIds.map((groupId: string) => {
+              const groupInfo = data.addonGroups?.find((g: any) => g.id === groupId);
+              if (!groupInfo) return null;
+
+              const groupItems = data.addonItemsByGroup?.[groupId] || [];
+              const activeItems = groupItems.filter((gi: any) => gi.isActive).map((gi: any) => ({
+                id: gi.id,
+                name: gi.name,
+                price: Number(gi.price) || 0,
+                description: gi.description || gi.ingredients || '',
+                dietaryType: gi.dietaryType,
+              }));
+
+              return {
+                id: groupInfo.id,
+                name: groupInfo.name,
+                isRequired: groupInfo.isRequired || false,
+                minSelect: groupInfo.minSelect || 0,
+                maxSelect: groupInfo.maxSelect || 1,
+                items: activeItems,
+              };
+            }).filter(Boolean);
+          })(),
+          sortOrder: item.sortOrder || 0,
+        };
+      });
+
+    // Add standalone legacy addons to the items list
+    const addonItems: MenuItem[] = (data.addons || [])
+      .filter((addon: any) => addon.isActive)
+      .map((addon: any) => ({
+        id: addon.id,
+        name: addon.name,
+        description: addon.description || '',
+        category: 'Add-ons',
+        price: Number(addon.price) || 0,
+        pricingType: addon.pricingType || 'flat_fee',
+        image: '',
+        dietaryType: 'none',
+        variants: [],
+        addOns: [],
+        addonGroups: [],
+        sortOrder: 1000,
+      }));
+
+    const allItems = [...transformedItems, ...addonItems];
+
+    // Get unique category names
+    const categoryNames = [...new Set([
+      ...categoriesWithActiveItems.map((cat: any) => cat.name),
+      ...addonItems.map(item => item.category)
+    ])];
+
+    // Store category data including guestCount flag
+    const categoryDataMap: Record<string, { guestCount: boolean }> = {};
+    categoriesWithActiveItems.forEach((cat: any) => {
+      categoryDataMap[cat.name] = {
+        guestCount: cat.guestCount || false,
+      };
+    });
+    
+    // Add default data for addon categories
+    if (addonItems.length > 0 && !categoryDataMap['Add-ons']) {
+      categoryDataMap['Add-ons'] = { guestCount: false };
+    }
+
+    setMenuItems(allItems);
+    setCategories(categoryNames);
+    setCategoryData(categoryDataMap);
+    if (categoryNames.length > 0) {
+      setSelectedCategory(categoryNames[0]);
+      // Initialize all categories as collapsed (closed by default)
+      const initialCollapsedState = categoryNames.reduce((acc: Record<string, boolean>, cat: string) => {
+        acc[cat] = true;
+        return acc;
+      }, {} as Record<string, boolean>);
+      setCollapsedCategories(initialCollapsedState);
+    }
+    setLoadingMenu(false);
+  };
+
   // Fetch menu data from database
   useEffect(() => {
     const fetchMenuData = async () => {
+      if (initialMenuData) return; // Skip if already loaded from SSR
       try {
         const response = await fetch('/api/menu');
         if (response.ok) {
           const data = await response.json();
-
-          // Filter to only include ACTIVE categories that have at least ONE active item
-          const activeCategories = data.categories.filter((cat: any) => cat.isActive);
-
-          // Get all active items first
-          const activeItems = data.items.filter((item: any) => item.isActive);
-
-          // Filter categories to only include those that have at least one active item
-          const categoriesWithActiveItems = activeCategories.filter((cat: any) => {
-            return activeItems.some((item: any) => item.categoryId === cat.id);
-          });
-
-          // Transform database data to MenuItem format - only include items from active categories with active items
-          const transformedItems: MenuItem[] = activeItems
-            .filter((item: any) => {
-              // Only include items whose category is active AND has active items
-              const category = categoriesWithActiveItems.find((cat: any) => cat.id === item.categoryId);
-              return category !== undefined;
-            })
-            .map((item: any) => {
-              const category = categoriesWithActiveItems.find((cat: any) => cat.id === item.categoryId);
-              return {
-                id: item.id,
-                name: item.name,
-                description: item.description || '',
-                category: category?.name || 'Other',
-                price: Number(item.pricePerPerson) || 0,
-                pricingType: item.pricingType || 'per_person',
-                image: item.imageUrl || '',
-                dietaryType: (category?.name === 'Beverages' || category?.name === 'Drinks') ? 'none' : (item.dietaryType || 'none'),
-                dietaryTags: item.dietaryTags || [],
-                allergens: item.allergens || [],
-                additives: item.additives || [],
-                ingredients: item.ingredients || '',
-                nutritionalInfo: item.nutritionalInfo || null,
-                isGlutenFree: item.dietaryTags?.includes('Gluten Free') || item.dietaryTags?.includes('gluten-free') || false,
-                averageConsumption: item.averageConsumption || null,
-                variants: item.variants || [],
-                addOns: (() => {
-                  const catAddonGroupIds = (data.categoryAddonGroups || [])
-                    .filter((cg: any) => cg.categoryId === item.categoryId)
-                    .map((cg: any) => cg.addonGroupId);
-                  const itemAddonGroupIds = (data.itemAddonGroups || [])
-                    .filter((ig: any) => ig.itemId === item.id)
-                    .map((ig: any) => ig.addonGroupId);
-
-                  const allAddonGroupIds = [...new Set([...catAddonGroupIds, ...itemAddonGroupIds])];
-                  const mergedAddons: any[] = [];
-
-                  allAddonGroupIds.forEach((groupId: string) => {
-                    const groupItems = data.addonItemsByGroup?.[groupId] || [];
-                    groupItems.forEach((gi: any) => {
-                      if (gi.isActive) {
-                        mergedAddons.push({
-                          id: gi.id,
-                          name: gi.name,
-                          price: Number(gi.price) || 0,
-                          dietaryType: gi.dietaryType,
-                        });
-                      }
-                    });
-                  });
-                  return mergedAddons;
-                })(),
-                addonGroups: (() => {
-                  const catAddonGroupIds = (data.categoryAddonGroups || [])
-                    .filter((cg: any) => cg.categoryId === item.categoryId)
-                    .map((cg: any) => cg.addonGroupId);
-                  const itemAddonGroupIds = (data.itemAddonGroups || [])
-                    .filter((ig: any) => ig.itemId === item.id)
-                    .map((ig: any) => ig.addonGroupId);
-
-                  const allAddonGroupIds = [...new Set([...catAddonGroupIds, ...itemAddonGroupIds])];
-
-                  return allAddonGroupIds.map((groupId: string) => {
-                    const groupInfo = data.addonGroups?.find((g: any) => g.id === groupId);
-                    if (!groupInfo) return null;
-
-                    const groupItems = data.addonItemsByGroup?.[groupId] || [];
-                    const activeItems = groupItems.filter((gi: any) => gi.isActive).map((gi: any) => ({
-                      id: gi.id,
-                      name: gi.name,
-                      price: Number(gi.price) || 0,
-                      description: gi.description || gi.ingredients || '',
-                      dietaryType: gi.dietaryType,
-                    }));
-
-                    return {
-                      id: groupInfo.id,
-                      name: groupInfo.name,
-                      isRequired: groupInfo.isRequired || false,
-                      minSelect: groupInfo.minSelect || 0,
-                      maxSelect: groupInfo.maxSelect || 1,
-                      items: activeItems,
-                    };
-                  }).filter(Boolean);
-                })(),
-                sortOrder: item.sortOrder || 0,
-              };
-            });
-
-          // Add standalone legacy addons to the items list
-          const addonItems: MenuItem[] = (data.addons || [])
-            .filter((addon: any) => addon.isActive)
-            .map((addon: any) => ({
-              id: addon.id,
-              name: addon.name,
-              description: addon.description || '',
-              category: 'Add-ons',
-              price: Number(addon.price) || 0,
-              pricingType: addon.pricingType || 'flat_fee',
-              image: '',
-              dietaryType: 'none',
-              variants: [],
-              addOns: [],
-              addonGroups: [],
-              sortOrder: 1000,
-            }));
-
-          const allItems = [...transformedItems, ...addonItems];
-
-          // Get unique category names
-          const categoryNames = [...new Set([
-            ...categoriesWithActiveItems.map((cat: any) => cat.name),
-            ...addonItems.map(item => item.category)
-          ])];
-
-          // Store category data including guestCount flag
-          const categoryDataMap: Record<string, { guestCount: boolean }> = {};
-          categoriesWithActiveItems.forEach((cat: any) => {
-            categoryDataMap[cat.name] = {
-              guestCount: cat.guestCount || false,
-            };
-          });
-          
-          // Add default data for addon categories
-          if (addonItems.length > 0 && !categoryDataMap['Add-ons']) {
-            categoryDataMap['Add-ons'] = { guestCount: false };
-          }
-
-          setMenuItems(allItems);
-          setCategories(categoryNames);
-          setCategoryData(categoryDataMap);
-          if (categoryNames.length > 0) {
-            setSelectedCategory(categoryNames[0]);
-            // Initialize all categories as collapsed (closed by default)
-            const initialCollapsedState = categoryNames.reduce((acc: Record<string, boolean>, cat: string) => {
-              acc[cat] = true;
-              return acc;
-            }, {} as Record<string, boolean>);
-            setCollapsedCategories(initialCollapsedState);
-          }
-
+          processMenuData(data);
         } else {
           // Fallback to error state - show empty menu
           console.error('Failed to fetch menu data');
+          setLoadingMenu(false);
         }
       } catch (error) {
         console.error('Error fetching menu data:', error);

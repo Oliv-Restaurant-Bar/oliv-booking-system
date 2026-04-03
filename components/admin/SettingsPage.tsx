@@ -13,7 +13,13 @@ import { toast } from 'sonner';
 import { useSettingsTranslation, useCommonTranslation, useMessageTranslation } from '@/lib/i18n/client';
 import { useSystemSettings } from '@/lib/contexts/SystemSettingsContext';
 
-export function SettingsPage({ user }: { user?: any }) {
+interface SettingsPageProps {
+  user?: any;
+  initialSettings?: any;
+  initialVenues?: Venue[];
+}
+
+export function SettingsPage({ user, initialSettings, initialVenues }: SettingsPageProps) {
   const t = useSettingsTranslation();
   const commonT = useCommonTranslation();
   const messageT = useMessageTranslation();
@@ -21,26 +27,30 @@ export function SettingsPage({ user }: { user?: any }) {
   const canUpdateSettings = hasPermission(userRole, Permission.UPDATE_SETTINGS);
   const { refreshSettings } = useSystemSettings();
 
-  const [language, setLanguage] = useState('English');
-  const [timeZone, setTimeZone] = useState('UTC');
-  const [dateFormat, setDateFormat] = useState('MM/DD/YYYY');
-  const [currency, setCurrency] = useState('CHF');
-  const [showCurrencySymbol, setShowCurrencySymbol] = useState(true);
-  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  const [language, setLanguage] = useState(initialSettings?.language || 'English');
+  const [timeZone, setTimeZone] = useState(initialSettings?.timeZone || 'Europe/Zurich');
+  const [dateFormat, setDateFormat] = useState(initialSettings?.dateFormat || 'DD/MM/YYYY');
+  const [currency, setCurrency] = useState(initialSettings?.currency || 'CHF');
+  const [showCurrencySymbol, setShowCurrencySymbol] = useState(initialSettings?.showCurrencySymbol ?? true);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(!initialSettings);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
   // Venue Management State
-  const [venues, setVenues] = useState<Venue[]>([]);
+  const [venues, setVenues] = useState<Venue[]>(initialVenues || []);
   const [showVenueModal, setShowVenueModal] = useState(false);
   const [editingVenue, setEditingVenue] = useState<Venue | null>(null);
-  const [isLoadingVenues, setIsLoadingVenues] = useState(false);
+  const [isLoadingVenues, setIsLoadingVenues] = useState(!initialVenues);
   const [isSavingVenue, setIsSavingVenue] = useState(false);
 
-  // Load settings on mount
+  // Load settings on mount (only if not provided by SSR)
   useEffect(() => {
-    loadSettings();
-    loadVenues();
+    if (!initialSettings) {
+      loadSettings();
+    }
+    if (!initialVenues) {
+      loadVenues();
+    }
   }, []);
 
   const loadSettings = async () => {

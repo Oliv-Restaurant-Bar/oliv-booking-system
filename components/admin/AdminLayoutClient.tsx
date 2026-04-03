@@ -8,16 +8,18 @@ import { DashboardFooter } from '@/components/admin/DashboardFooter';
 
 export function AdminLayoutClient({
   children,
+  initialSession,
 }: {
   children: React.ReactNode;
+  initialSession?: any;
 }) {
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<any>(initialSession);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
   const mainRef = useRef<HTMLElement>(null);
 
-  // Fetch session on mount
+  // Fetch session on mount (only if not provided by SSR)
   useEffect(() => {
     async function fetchSession() {
       try {
@@ -32,10 +34,10 @@ export function AdminLayoutClient({
     }
 
     const isLoginPage = pathname === '/admin/login' || pathname?.startsWith('/admin/login');
-    if (!isLoginPage) {
+    if (!isLoginPage && !initialSession) {
       fetchSession();
     }
-  }, [pathname]);
+  }, [pathname, initialSession]);
 
   // Don't show sidebar/header on login page
   const isLoginPage = pathname === '/admin/login' || pathname?.startsWith('/admin/login');

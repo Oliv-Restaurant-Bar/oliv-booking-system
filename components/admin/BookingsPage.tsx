@@ -19,6 +19,13 @@ interface BookingsPageProps {
     bookings: Record<string, string>;
     common: Record<string, string>;
   };
+  initialBookings?: Booking[];
+  initialDeepLinkData?: {
+    booking: any;
+    venues: string[];
+    adminUsers: any[];
+    pdfHistory: any;
+  } | null;
 }
 
 // Helper function to handle translation interpolation
@@ -38,15 +45,18 @@ function createTranslationFunction(translations: Record<string, string>) {
   };
 }
 
-export function BookingsPage({ user, translations }: BookingsPageProps) {
+export function BookingsPage({ user, translations, initialBookings, initialDeepLinkData }: BookingsPageProps) {
+  useEffect(() => {
+    console.log('BookingsPage mounted. initialBookings count:', initialBookings?.length);
+  }, []);
   const searchParams = useSearchParams();
   const router = useRouter();
   const t = createTranslationFunction(translations.bookings);
   const commonT = createTranslationFunction(translations.common);
-  const [allBookingsData, setAllBookingsData] = useState<Booking[]>([]); // Store all fetched data
-  const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState<'list' | 'detail'>('list');
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [allBookingsData, setAllBookingsData] = useState<Booking[]>(initialBookings || []); // Store all fetched data
+  const [loading, setLoading] = useState(!initialBookings && !initialDeepLinkData);
+  const [currentPage, setCurrentPage] = useState<'list' | 'detail'>(initialDeepLinkData ? 'detail' : 'list');
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(initialDeepLinkData?.booking || null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('All Status');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -137,16 +147,40 @@ export function BookingsPage({ user, translations }: BookingsPageProps) {
     }
   };
 
-  // Initial fetch on mount (only once)
+  // Initial fetch on mount (only if not provided by SSR)
   useEffect(() => {
-    fetchBookings();
+    if (!initialBookings && !initialDeepLinkData) {
+      console.log('No initial bookings found, fetching from API...');
+      fetchBookings();
+    } else {
+      console.log('Using initial bookings from SSR.');
+    }
   }, []); // Empty dependency array = only run on mount
 
   // Handle deep linking from URL search params (?id=...)
   useEffect(() => {
     const bookingId = searchParams.get('id');
-    if (bookingId && (!selectedBooking || selectedBooking.id !== bookingId)) {
+
+    // Case 1: We have a booking ID in URL, but our UI state is out of sync
+    if (bookingId && (currentPage !== 'detail' || selectedBooking?.id !== bookingId)) {
+      // Opt-out: If this matches the SSR data we already have, use it instantly without a fetch
+      if (initialDeepLinkData?.booking?.id === bookingId && !selectedBooking) {
+        console.log('Syncing with initial SSR deep-link data.');
+        setSelectedBooking(initialDeepLinkData.booking);
+        setCurrentPage('detail');
+        return;
+      }
+
+      // Check if the booking is already in our loaded list
+      const existingInList = allBookingsData.find(b => b.id === bookingId);
+      if (existingInList && !selectedBooking) {
+         // We have basic info, but we still need full details (history, menu items etc.)
+         // So we proceed to fetch, but we could set what we have to show skeleton immediately
+         setSelectedBooking(existingInList);
+      }
+
       const fetchSingleBooking = async () => {
+        setLoading(true);
         try {
           const res = await fetch(`/api/bookings/${bookingId}`, { cache: 'no-store' });
           if (res.ok) {
@@ -154,24 +188,24 @@ export function BookingsPage({ user, translations }: BookingsPageProps) {
             setSelectedBooking(data);
             setCurrentPage('detail');
           } else {
-            // If booking not found, clear the ID from URL
+            console.error('Booking not found via API, returning to list');
             router.replace('/admin/bookings');
           }
         } catch (err) {
           console.error('Error fetching deep-linked booking:', err);
           router.replace('/admin/bookings');
+        } finally {
+          setLoading(false);
         }
       };
       fetchSingleBooking();
-    } else if (!bookingId && currentPage === 'list') {
-      // Refetch bookings when returning to list view to ensure data is fresh
-      fetchBookings();
-    } else if (!bookingId && currentPage === 'detail') {
-      // Sync state if URL is cleared manually
+    } 
+    // Case 2: No ID in URL, but we are still in detail view -> Go back to list
+    else if (!bookingId && currentPage === 'detail') {
       setCurrentPage('list');
       setSelectedBooking(null);
     }
-  }, [searchParams]);
+  }, [searchParams]); // Depend only on searchParams (URL changes)
 
   // Status options for dropdown
   const statusOptions = [
@@ -403,6 +437,9 @@ export function BookingsPage({ user, translations }: BookingsPageProps) {
           onBookingUpdated={() => {
             fetchBookings();
           }}
+          initialVenues={initialDeepLinkData?.venues}
+          initialAdminUsers={initialDeepLinkData?.adminUsers}
+          initialPdfHistory={initialDeepLinkData?.pdfHistory}
         />
       )}
     </div>

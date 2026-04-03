@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth/server";
 import { UserManagementPage } from "@/components/admin/UserManagementPage";
 import { AdminPageLayout } from "@/components/admin/AdminPageLayout";
 import { Permission, hasPermission } from "@/lib/auth/rbac";
+import { getUsersForAdmin } from "@/lib/actions/admin-users";
 
 export const dynamic = 'force-dynamic';
 
@@ -18,9 +19,12 @@ export default async function AdminUserManagementPage() {
     redirect("/admin");
   }
 
+  // Fetch initial users for SSR
+  const initialUsers = await getUsersForAdmin();
+
   return (
     <AdminPageLayout>
-      <UserManagementPage currentUser={session.user} />
+      <UserManagementPage currentUser={session.user} initialUsers={initialUsers} />
     </AdminPageLayout>
   );
 }

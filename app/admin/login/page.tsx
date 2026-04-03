@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { useTranslations } from 'next-intl';
 import { toast } from "sonner";
+import Image from "next/image";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -97,9 +98,11 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md bg-card rounded-2xl p-8 shadow-sm border border-border">
         <div className="mb-8 text-center">
           <div className="flex justify-center mb-2">
-            <img
+            <Image
               src="/assets/oliv-logo.png"
               alt="OLIV Logo"
+              width={160}
+              height={64}
               className="h-16 w-auto"
               style={{ width: 'auto', height: '4rem' }}
             />

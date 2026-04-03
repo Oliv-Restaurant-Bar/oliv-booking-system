@@ -27,7 +27,12 @@ interface User {
   createdAt: string;
 }
 
-export function UserManagementPage({ currentUser }: { currentUser: any }) {
+interface UserManagementPageProps {
+  currentUser: any;
+  initialUsers?: User[];
+}
+
+export function UserManagementPage({ currentUser, initialUsers }: UserManagementPageProps) {
   // Translation hooks
   const t = useGenericTranslation('user');
   const commonT = useCommonTranslation();
@@ -36,13 +41,13 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
   const locale = useLocale();
   const { timezone } = useSystemTimezone();
 
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<User[]>(initialUsers || []);
 
   // Robust check for super_admin role - handle both direct user object and session object
   const user = currentUser?.user || currentUser;
   const isSuperAdmin = user?.role === 'super_admin' || user?.metadata?.role === 'super_admin';
   const currentUserId = user?.id; // Get current user ID for comparison
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialUsers);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
@@ -126,7 +131,9 @@ export function UserManagementPage({ currentUser }: { currentUser: any }) {
 
   // Fetch users on component mount
   useEffect(() => {
-    fetchUsers();
+    if (!initialUsers) {
+      fetchUsers();
+    }
   }, []);
 
   // Filter users based on search
