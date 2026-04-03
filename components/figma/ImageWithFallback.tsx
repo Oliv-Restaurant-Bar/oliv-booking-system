@@ -7,6 +7,7 @@ const ERROR_IMG_SRC =
 
 interface ImageWithFallbackProps extends Omit<ImageProps, 'onError'> {
   fallbackSrc?: string;
+  fetchPriority?: 'high' | 'low' | 'auto';
 }
 
 export function ImageWithFallback({
@@ -15,6 +16,7 @@ export function ImageWithFallback({
   fallbackSrc = ERROR_IMG_SRC,
   className,
   style,
+  fetchPriority,
   ...rest
 }: ImageWithFallbackProps) {
   const [imgSrc, setImgSrc] = useState(src);

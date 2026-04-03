@@ -70,8 +70,9 @@ export function HeroVariant6() {
             fill
             className="w-full h-full object-cover"
             priority={i === 0}
+            fetchPriority={i === 0 ? "high" : "low"}
             loading={i === 0 ? undefined : "lazy"}
-            sizes="100vw"
+            sizes="(max-width: 768px) 100vw, 100vw"
           />
         </div>
       ))}

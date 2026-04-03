@@ -6,13 +6,18 @@ import { getServerLocale, getServerMessages } from '@/lib/i18n/server';
 import { validateEnvOrThrow } from "@/lib/config/env-validation";
 import { SystemSettingsProvider } from "@/lib/contexts/SystemSettingsContext";
 import { getSystemSettings } from "@/lib/actions/settings";
+import { Hanken_Grotesk } from 'next/font/google';
+
+const hankenGrotesk = Hanken_Grotesk({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-hanken-grotesk',
+});
 
 export const metadata: Metadata = {
   title: "OLIV Restaurant & Bar - Group Bookings",
   description: "Book your group event at OLIV Restaurant & Bar. Perfect for special occasions, corporate events, and celebrations.",
-  other: {
-    'preconnect': 'https://cdn.picflow.com',
-  }
 };
 
 export default async function RootLayout({
@@ -45,7 +50,16 @@ export default async function RootLayout({
 
   return (
     <html lang={locale}>
-      <body className="antialiased">
+      <head>
+        {/* Preload LCP Hero Image for faster discovery */}
+        <link 
+          rel="preload" 
+          href="https://cdn.picflow.com/assets/images/9ee40955-4bc5-4d2a-a8cc-2c3ca4bf3db5/base/9ee40955-4bc5-4d2a-a8cc-2c3ca4bf3db5.jpg" 
+          as="image" 
+          fetchPriority="high"
+        />
+      </head>
+      <body className={`${hankenGrotesk.className} antialiased`}>
         <SystemSettingsProvider initialSettings={settings}>
           <NextIntlClientProvider messages={messages} locale={locale}>
             {children}
