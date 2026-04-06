@@ -12,6 +12,7 @@ export interface MenuItem {
   name: string;
   description: string;
   category: string;
+  useSpecialCalculation?: boolean;
   price: number;
   /** Supports both UI values ('per-person', 'flat-rate') and DB values ('per_person', 'flat_fee', 'billed_by_consumption') */
   pricingType: 'per-person' | 'flat-rate' | 'per_person' | 'flat_fee' | 'billed_by_consumption';

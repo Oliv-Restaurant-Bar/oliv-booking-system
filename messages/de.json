@@ -778,7 +778,8 @@
         "choices": "Auswahlmöglichkeiten",
         "priceHint": "0 für kostenlos",
         "dietaryType": "Ernährungsweise",
-        "available": "Verfügbar"
+        "available": "Verfügbar",
+        "useSpecialCalculation": "Spezielle Berechnung"
       },
       "nutrition": {
         "servingSize": "Portionsgröße",
@@ -825,7 +826,8 @@
         "deleteItem": "Artikel löschen",
         "editGroup": "Gruppe bearbeiten",
         "deleteGroup": "Gruppe löschen",
-        "itemVisible": "Legen Sie fest, ob dieser Artikel derzeit für Kunden bestellbar ist."
+        "itemVisible": "Legen Sie fest, ob dieser Artikel derzeit für Kunden bestellbar ist.",
+        "useSpecialCalculation": "Gemeinsame Diät-Preisgestaltung (Vorspeisen-/Dessert-Logik) auf diese Kategorie anwenden."
       },
       "deleteGroup": "Gruppe löschen",
       "addChoice": "Auswahlmöglichkeit hinzufügen",

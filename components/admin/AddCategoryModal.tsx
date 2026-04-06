@@ -14,6 +14,7 @@ interface AddCategoryModalProps {
     description: string;
     image: File | null;
     imageUrl: string;
+    useSpecialCalculation?: boolean;
   };
   setNewCategory: (category: any) => void;
   uploadingImage: boolean;
@@ -118,6 +119,27 @@ export function AddCategoryModal({
           <div className="flex items-center justify-between mt-1">
             <p className="text-destructive text-xs">{displayCategoryErrors.description}</p>
             <p className="text-muted-foreground text-xs text-right">{newCategory.description.length}/500</p>
+          </div>
+        </div>
+        <div className="flex items-center space-x-2 pt-2">
+          <input
+            type="checkbox"
+            id="useSpecialCalculation"
+            checked={!!newCategory.useSpecialCalculation}
+            onChange={(e) => setNewCategory({ ...newCategory, useSpecialCalculation: e.target.checked })}
+            className="w-4 h-4 text-primary bg-input-background border-border rounded focus:ring-ring"
+          />
+          <div className="flex flex-col">
+            <label
+              htmlFor="useSpecialCalculation"
+              className="text-foreground font-medium"
+              style={{ fontSize: 'var(--text-base)' }}
+            >
+              {t('labels.useSpecialCalculation') || 'Special Calculation'}
+            </label>
+            <p className="text-muted-foreground text-xs">
+              {t('tooltips.useSpecialCalculation') || 'Apply shared dietary pricing (Starter/Dessert logic) to this category.'}
+            </p>
           </div>
         </div>
 

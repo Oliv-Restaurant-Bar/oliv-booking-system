@@ -154,8 +154,13 @@ export function MenuCategoriesTab({
                             {category.name.slice(0, 25)} {category.name.length > 25 ? '...' : ''}
                           </h4>
                           {category.items && category.items.length > 0 && (
-                            <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full" style={{ fontSize: 'var(--text-small)' }}>
+                            <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full whitespace-nowrap" style={{ fontSize: 'var(--text-small)' }}>
                               {category.items.length} {category.items.length === 1 ? ct('item') : ct('items')}
+                            </span>
+                          )}
+                          {category.useSpecialCalculation && (
+                            <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full whitespace-nowrap border border-amber-200" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
+                              Special Calc
                             </span>
                           )}
                         </div>

@@ -91,7 +91,8 @@ export async function GET(
           mi.pricing_type,
           mi.dietary_type,
           mc.name as category_name,
-          mc.guest_count as category_guest_count
+          mc.guest_count as category_guest_count,
+          mc.use_special_calculation
         FROM booking_items bi
         LEFT JOIN menu_items mi ON bi.item_id = mi.id
         LEFT JOIN menu_categories mc ON mi.category_id = mc.id
@@ -141,6 +142,7 @@ export async function GET(
           price: `CHF ${totalPrice.toFixed(2)}`,
           pricingType: item.pricing_type || 'fixed',
           dietaryType: item.dietary_type || 'none',
+          useSpecialCalculation: !!item.use_special_calculation,
           notes: choices || '',
           customerComment: customerComment || '',
         };

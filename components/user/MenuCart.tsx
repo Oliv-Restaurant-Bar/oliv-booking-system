@@ -171,12 +171,6 @@ export function MenuCart({
       return acc;
     }, {} as Record<string, MenuItem[]>);
 
-    const isDietarySharedCategory = (cat: string) => {
-      const c = cat.toLowerCase();
-      // Targeting Starters, Desserts, Apéro, Snacks, etc.
-      return c.includes('starter') || c.includes('dessert') || c.includes('vorspeise') || 
-             c.includes('nachspeise') || c.includes('apéro') || c.includes('apero') || c.includes('snacks');
-    };
 
     const getItemDietarySplit = (item: MenuItem) => {
       const currentVariantId = itemVariants[item.id];
@@ -227,7 +221,7 @@ export function MenuCart({
     };
 
     Object.entries(itemsByCategory).forEach(([category, items]) => {
-      const isRestricted = isDietarySharedCategory(category);
+      const isRestricted = items[0]?.useSpecialCalculation || false;
       
       const vegItems = items.filter(i => i.dietaryType === 'veg');
       const nonVegItems = items.filter(i => i.dietaryType === 'non-veg');

@@ -24,6 +24,7 @@ export interface PdfBookingItem {
   pricingType: string;
   customerComment?: string;
   dietaryType?: 'veg' | 'non-veg' | 'vegan' | 'none';
+  useSpecialCalculation?: boolean;
 }
 
 export interface PdfBookingData {
@@ -476,24 +477,19 @@ export async function generateBookingPdf(
     };
 
     const itemsByCategory = foodItems.reduce((acc, item) => {
-      const cat = item.category || 'Uncategorized';
-      if (!acc[cat]) acc[cat] = [];
-      acc[cat].push(item);
+      const catName = item.category || 'Uncategorized';
+      if (!acc[catName]) acc[catName] = { items: [], useSpecialCalculation: !!item.useSpecialCalculation };
+      acc[catName].items.push(item);
       return acc;
-    }, {} as Record<string, PdfBookingItem[]>);
+    }, {} as Record<string, { items: PdfBookingItem[], useSpecialCalculation: boolean }>);
 
     let vegPP = 0;
     let nvPP = 0;
     let veganPP = 0;
 
-    const isDietarySharedCategory = (cat: string) => {
-      const c = cat.toLowerCase();
-      return c.includes('starter') || c.includes('dessert') || c.includes('vorspeise') ||
-        c.includes('nachspeise') || c.includes('apéro') || c.includes('apero') || c.includes('snacks');
-    };
-
-    Object.entries(itemsByCategory).forEach(([category, catItems]) => {
-      const isRestricted = isDietarySharedCategory(category);
+    Object.entries(itemsByCategory).forEach(([category, catData]) => {
+      const { items: catItems, useSpecialCalculation } = catData;
+      const isRestricted = useSpecialCalculation;
 
       const vegItems = catItems.filter(i => i.dietaryType === 'veg');
       const nonVegItems = catItems.filter(i => i.dietaryType === 'non-veg');

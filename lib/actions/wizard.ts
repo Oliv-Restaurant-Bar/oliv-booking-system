@@ -119,6 +119,7 @@ export async function submitWizardForm(data: WizardFormData) {
       id: menuCategories.id,
       name: menuCategories.name,
       guestCount: menuCategories.guestCount,
+      useSpecialCalculation: menuCategories.useSpecialCalculation,
     }).from(menuCategories);
 
     const allAddonItems = await db.select({

@@ -15,6 +15,7 @@ export async function createMenuCategory(input: {
   description?: string;
   descriptionDe?: string;
   sortOrder?: number;
+  useSpecialCalculation?: boolean;
 }) {
   try {
     // Require CREATE_MENU_CATEGORY permission
@@ -26,6 +27,7 @@ export async function createMenuCategory(input: {
         id: randomUUID(),
         ...input,
         isActive: true,
+        useSpecialCalculation: input.useSpecialCalculation ?? false,
       })
       .returning();
 
@@ -44,13 +46,14 @@ export async function updateMenuCategory(id: string, updates: Partial<typeof men
     await requirePermissionWrapper(Permission.EDIT_MENU_CATEGORY);
 
     // ✅ SECURITY FIX: Whitelist allowed fields to prevent mass assignment
-    const allowedFields: Array<'name' | 'nameDe' | 'description' | 'descriptionDe' | 'sortOrder' | 'isActive'> = [
+    const allowedFields: Array<'name' | 'nameDe' | 'description' | 'descriptionDe' | 'sortOrder' | 'isActive' | 'useSpecialCalculation'> = [
       'name',
       'nameDe',
       'description',
       'descriptionDe',
       'sortOrder',
       'isActive',
+      'useSpecialCalculation',
     ];
 
     const sanitizedUpdates: any = {};

@@ -107,7 +107,7 @@ export function CustomMenuWizard({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
-  const [categoryData, setCategoryData] = useState<Record<string, { guestCount: boolean }>>({});
+  const [categoryData, setCategoryData] = useState<Record<string, { guestCount: boolean; useSpecialCalculation: boolean }>>({});
   const [loadingMenu, setLoadingMenu] = useState(!initialMenuData);
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [editSecret, setEditSecret] = useState<string | null>(null);
@@ -448,12 +448,13 @@ export function CustomMenuWizard({
         return category !== undefined;
       })
       .map((item: any) => {
-        const category = categoriesWithActiveItems.find((cat: any) => cat.id === item.categoryId);
+        const category = data.categories?.find((cat: any) => cat.id === item.categoryId);
         return {
           id: item.id,
           name: item.name,
-          description: item.description || '',
-          category: category?.name || 'Other',
+          description: item.description || item.ingredients || '',
+          category: category?.name || 'Uncategorized',
+          useSpecialCalculation: !!category?.useSpecialCalculation,
           price: Number(item.pricePerPerson) || 0,
           pricingType: item.pricingType || 'per_person',
           image: item.imageUrl || '',
@@ -556,16 +557,17 @@ export function CustomMenuWizard({
     ])];
 
     // Store category data including guestCount flag
-    const categoryDataMap: Record<string, { guestCount: boolean }> = {};
+    const categoryDataMap: Record<string, { guestCount: boolean; useSpecialCalculation: boolean }> = {};
     categoriesWithActiveItems.forEach((cat: any) => {
       categoryDataMap[cat.name] = {
         guestCount: cat.guestCount || false,
+        useSpecialCalculation: !!cat.useSpecialCalculation,
       };
     });
     
     // Add default data for addon categories
     if (addonItems.length > 0 && !categoryDataMap['Add-ons']) {
-      categoryDataMap['Add-ons'] = { guestCount: false };
+      categoryDataMap['Add-ons'] = { guestCount: false, useSpecialCalculation: false };
     }
 
     setMenuItems(allItems);

@@ -143,6 +143,11 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
 
   const [activeTab, setActiveTab] = useState<'items' | 'addons'>('items');
   const [loading, setLoading] = useState(!initialData);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Helper to process raw menu data into the state format
   const processMenuData = (data: any) => {
@@ -153,6 +158,7 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
       ...cat,
       items: itemsByCategory[cat.id] || [],
       isExpanded: false,
+      useSpecialCalculation: !!cat.useSpecialCalculation,
     }));
 
     const assembledAddonGroups = (data.addonGroups || []).map((group: any) => ({
@@ -196,7 +202,19 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
 
   // Form states and errors (omitted logic for brevity, keeping state names same)
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
-  const [newCategory, setNewCategory] = useState({ name: '', description: '', image: null as File | null, imageUrl: '' });
+  const [newCategory, setNewCategory] = useState<{
+    name: string;
+    description: string;
+    image: File | null;
+    imageUrl: string;
+    useSpecialCalculation: boolean;
+  }>({
+    name: '',
+    description: '',
+    image: null,
+    imageUrl: '',
+    useSpecialCalculation: false
+  });
   const [categoryErrors, setCategoryErrors] = useState<{ name?: string; description?: string }>({});
   const [categoryTouched, setCategoryTouched] = useState({ name: false, description: false });
 
@@ -320,6 +338,19 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
     description: menuItemTouched.description && !menuItemDescriptionSchema.safeParse(newMenuItem.description).success ? t('validation.descTooLong') : undefined,
   };
 
+  const onEditCategory = (category: Category) => {
+    setEditingCategoryId(category.id);
+    setNewCategory({
+      name: category.name,
+      description: category.description || '',
+      image: null,
+      imageUrl: category.image || '',
+      useSpecialCalculation: !!category.useSpecialCalculation,
+    });
+    setCategoryTouched({ name: false, description: false });
+    setIsAddCategoryModalOpen(true);
+  };
+
   // Simplified Handlers (linking to extracted components)
   const handleSaveCategory = async () => {
     if (editingCategoryId) {
@@ -328,11 +359,12 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
         nameDe: newCategory.name,
         description: newCategory.description,
         descriptionDe: newCategory.description,
+        useSpecialCalculation: !!newCategory.useSpecialCalculation,
       });
       if (result.success) {
         setCategories(categories.map(cat =>
           cat.id === editingCategoryId
-            ? { ...cat, name: newCategory.name, description: newCategory.description, image: newCategory.image ? URL.createObjectURL(newCategory.image) : newCategory.imageUrl }
+            ? { ...cat, name: newCategory.name, description: newCategory.description, image: newCategory.image ? URL.createObjectURL(newCategory.image) : newCategory.imageUrl, useSpecialCalculation: !!newCategory.useSpecialCalculation }
             : cat
         ));
         setIsAddCategoryModalOpen(false);
@@ -344,16 +376,18 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
         nameDe: newCategory.name,
         description: newCategory.description,
         descriptionDe: newCategory.description,
+        useSpecialCalculation: !!newCategory.useSpecialCalculation,
       });
       if (result.success && result.data) {
         setCategories([...categories, {
           id: result.data.id,
           name: newCategory.name,
           description: newCategory.description,
-          image: newCategory.image ? URL.createObjectURL(newCategory.image) : newCategory.imageUrl,
+          image: newCategory.image ? URL.createObjectURL(newCategory.image) : (result.data as any).image,
           isActive: true,
           isExpanded: false,
           guestCount: false,
+          useSpecialCalculation: !!newCategory.useSpecialCalculation,
           items: [],
         }]);
         setIsAddCategoryModalOpen(false);
@@ -772,7 +806,9 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
             </div>
 
             {/* Tab Content */}
-            {activeTab === 'items' ? (
+            {!isMounted ? (
+              <SkeletonMenuConfig />
+            ) : activeTab === 'items' ? (
               <MenuCategoriesTab
                 filteredCategories={filteredCategories}
                 searchQuery={searchQuery}
@@ -785,14 +821,10 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
                 canDeleteItem={canDeleteItem}
                 onAddCategory={() => {
                   setEditingCategoryId(null);
-                  setNewCategory({ name: '', description: '', image: null, imageUrl: '' });
+                  setNewCategory({ name: '', description: '', image: null, imageUrl: '', useSpecialCalculation: false });
                   setIsAddCategoryModalOpen(true);
                 }}
-                onEditCategory={(cat) => {
-                  setEditingCategoryId(cat.id);
-                  setNewCategory({ name: cat.name, description: cat.description, image: null, imageUrl: cat.image });
-                  setIsAddCategoryModalOpen(true);
-                }}
+                onEditCategory={onEditCategory}
                 onDeleteCategory={(id) => setDeleteCategoryId(id)}
                 onToggleCategoryExpanded={(id) => setCategories(categories.map(c => c.id === id ? { ...c, isExpanded: !c.isExpanded } : c))}
                 onToggleCategoryActive={async (id) => {

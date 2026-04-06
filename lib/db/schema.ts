@@ -235,6 +235,7 @@ export const menuCategories = pgTable(
     sortOrder: integer("sort_order").notNull().default(0),
     isActive: boolean("is_active").notNull().default(true),
     guestCount: boolean("guest_count").notNull().default(false),
+    useSpecialCalculation: boolean("use_special_calculation").notNull().default(false),
     deletedAt: timestamp("deleted_at"),  // Soft delete timestamp
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),

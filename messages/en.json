@@ -778,7 +778,8 @@
         "choices": "Options",
         "priceHint": "0 for free",
         "dietaryType": "Dietary Type",
-        "available": "Available"
+        "available": "Available",
+        "useSpecialCalculation": "Special Calculation"
       },
       "nutrition": {
         "servingSize": "Serving Size",
@@ -825,7 +826,8 @@
         "deleteItem": "Delete Item",
         "editGroup": "Edit Group",
         "deleteGroup": "Delete Group",
-        "itemVisible": "Determine if this item is currently available for customers to order."
+        "itemVisible": "Determine if this item is currently available for customers to order.",
+        "useSpecialCalculation": "Apply shared dietary pricing (Starter/Dessert logic) to this category."
       },
       "deleteCategory": "Delete Category",
       "deleteItem": "Delete Menu Item",

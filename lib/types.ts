@@ -41,6 +41,7 @@ export interface Category {
   isActive: boolean;
   isExpanded: boolean;
   guestCount: boolean;
+  useSpecialCalculation?: boolean;
   items: MenuItemData[];
   assignedAddonGroups?: string[]; // IDs of assigned addon groups
 }
