@@ -158,11 +158,11 @@ export function MenuCategoriesTab({
                               {category.items.length} {category.items.length === 1 ? ct('item') : ct('items')}
                             </span>
                           )}
-                          {category.useSpecialCalculation && (
+                          {/* {category.useSpecialCalculation && (
                             <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full whitespace-nowrap border border-amber-200" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
                               Special Calc
                             </span>
-                          )}
+                          )} */}
                         </div>
                         <p className="text-muted-foreground line-clamp-1" style={{ fontSize: 'var(--text-small)' }} title={category.description}>
                           {category.description.slice(0, 25)} {category.description.length > 25 ? '...' : ''}
@@ -219,10 +219,9 @@ export function MenuCategoriesTab({
                                   className="fixed inset-0 z-10"
                                   onClick={() => setOpenDropdownId(null)}
                                 />
-                                <div className={`absolute right-0 w-48 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-20 ${
-                                    catIndex >= filteredCategories.length - 1 
-                                      ? 'bottom-full mb-2' 
-                                      : 'mt-2'
+                                <div className={`absolute right-0 w-48 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-20 ${catIndex >= filteredCategories.length - 1
+                                    ? 'bottom-full mb-2'
+                                    : 'mt-2'
                                   }`}>
                                   {/* Mobile: Edit Category */}
                                   {canEditCategory && (
@@ -461,10 +460,9 @@ export function MenuCategoriesTab({
                                                 className="fixed inset-0 z-10"
                                                 onClick={() => setOpenDropdownId(null)}
                                               />
-                                               <div className={`absolute right-0 w-48 bg-card border border-border rounded-lg shadow-xl z-20 py-1 overflow-hidden ${
-                                                  index >= (category.items?.length || 0) - 2 && (category.items?.length || 0) > 2
-                                                    ? 'bottom-full mb-1'
-                                                    : 'top-full mt-1'
+                                              <div className={`absolute right-0 w-48 bg-card border border-border rounded-lg shadow-xl z-20 py-1 overflow-hidden ${index >= (category.items?.length || 0) - 2 && (category.items?.length || 0) > 2
+                                                  ? 'bottom-full mb-1'
+                                                  : 'top-full mt-1'
                                                 }`}>
                                                 {/* Mobile-only actions */}
                                                 <div className="md:hidden border-b border-border">
@@ -499,7 +497,7 @@ export function MenuCategoriesTab({
                                                     <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>{t('buttons.addChoice')}</span>
                                                   </button>
                                                 </div>
- 
+
                                                 {/* Duplicate (all screens) */}
                                                 {canCreateItem && (
                                                   <button

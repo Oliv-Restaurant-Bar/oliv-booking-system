@@ -520,10 +520,10 @@ export async function generateBookingPdf(
 
       if (totalGroups === 1) {
         if (hasNoneSplit || hasNoneShared) {
-          // Rule: Activation-Only for "None" globally
-          if (isVegActivated) vegPP += shared;
-          if (isNonVegActivated) nvPP += shared;
-          if (isVeganActivated) veganPP += shared;
+          // Rule: Use specific price for None splits, even if only 1 grouping
+          if (isVegActivated) vegPP += Math.max(maxVeg, maxNoneVeg, maxNoneShared);
+          if (isNonVegActivated) nvPP += Math.max(maxNV, maxNoneNV, maxNoneShared);
+          if (isVeganActivated) veganPP += Math.max(maxVegan, maxNoneVegan, maxNoneShared);
         } else {
           // Rule: Shared for Restricted, Separate for General (Mains)
           if (isRestricted) {

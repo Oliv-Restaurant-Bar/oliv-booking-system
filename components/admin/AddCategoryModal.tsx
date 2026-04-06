@@ -121,7 +121,7 @@ export function AddCategoryModal({
             <p className="text-muted-foreground text-xs text-right">{newCategory.description.length}/500</p>
           </div>
         </div>
-        <div className="flex items-center space-x-2 pt-2">
+        {/* <div className="flex items-center space-x-2 pt-2">
           <input
             type="checkbox"
             id="useSpecialCalculation"
@@ -141,7 +141,7 @@ export function AddCategoryModal({
               {t('tooltips.useSpecialCalculation') || 'Apply shared dietary pricing (Starter/Dessert logic) to this category.'}
             </p>
           </div>
-        </div>
+        </div> */}
 
       </div>
     </Modal>

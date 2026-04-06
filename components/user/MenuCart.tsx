@@ -153,9 +153,25 @@ export function MenuCart({
     nonVegCount: nonVegItemCount,
     veganCount: veganItemCount,
   } = React.useMemo(() => {
-    const isVegActivated = ppFoodItems.some(i => i.dietaryType === 'veg');
-    const isNonVegActivated = ppFoodItems.some(i => i.dietaryType === 'non-veg');
-    const isVeganActivated = ppFoodItems.some(i => i.dietaryType === 'vegan');
+    const hasDietaryType = (item: MenuItem, type: string) => {
+      if (item.dietaryType === type) return true;
+      const currentAddOnIds = itemAddOns[item.id] || [];
+      return currentAddOnIds.some(addOnId => {
+        let addOn: any = null;
+        if (item.addonGroups) {
+          for (const group of item.addonGroups) {
+            addOn = group.items.find(i => i.id === addOnId);
+            if (addOn) break;
+          }
+        }
+        if (!addOn && item.addOns) addOn = item.addOns.find(a => a.id === addOnId);
+        return addOn?.dietaryType === type;
+      });
+    };
+
+    const isVegActivated = ppFoodItems.some(i => hasDietaryType(i, 'veg'));
+    const isNonVegActivated = ppFoodItems.some(i => hasDietaryType(i, 'non-veg'));
+    const isVeganActivated = ppFoodItems.some(i => hasDietaryType(i, 'vegan'));
 
     let vegSubtotal = 0;
     let nonVegSubtotal = 0;
@@ -249,10 +265,10 @@ export function MenuCart({
 
       if (totalGroupings === 1) {
         if (hasNoneSplit || hasNoneShared) {
-          // Rule: Activation-Only for "None" globally
-          if (isVegActivated) { vegSubtotal += sharedPrice; vegCount += sharedCount; }
-          if (isNonVegActivated) { nonVegSubtotal += sharedPrice; nonVegCount += sharedCount; }
-          if (isVeganActivated) { veganSubtotal += sharedPrice; veganCount += sharedCount; }
+          // Rule: Use specific price for None splits, even if only 1 grouping
+          if (isVegActivated) { vegSubtotal += Math.max(maxVeg, maxNoneVeg, maxNoneShared); vegCount += sharedCount; }
+          if (isNonVegActivated) { nonVegSubtotal += Math.max(maxNonVeg, maxNoneNonVeg, maxNoneShared); nonVegCount += sharedCount; }
+          if (isVeganActivated) { veganSubtotal += Math.max(maxVegan, maxNoneVegan, maxNoneShared); veganCount += sharedCount; }
         } else {
           // Rule: Shared for Restricted, Separate for General (Mains)
           if (isRestricted) {

@@ -347,10 +347,10 @@ export function BookingDetailPage({
 
             if (totalGroupings === 1) {
                 if (hasNoneSplit || hasNoneShared) {
-                    // Rule: Activation-Only for "None" globally
-                    if (isVegActivated) { vegSubtotal += sharedPrice; vegCount += sharedCount; }
-                    if (isNonVegActivated) { nonVegSubtotal += sharedPrice; nonVegCount += sharedCount; }
-                    if (isVeganActivated) { veganSubtotal += sharedPrice; veganCount += sharedCount; }
+                    // Rule: Use specific price for None splits, even if only 1 grouping
+                    if (isVegActivated) { vegSubtotal += Math.max(maxVeg, maxNoneVeg, maxNoneShared); vegCount += sharedCount; }
+                    if (isNonVegActivated) { nonVegSubtotal += Math.max(maxNonVeg, maxNoneNonVeg, maxNoneShared); nonVegCount += sharedCount; }
+                    if (isVeganActivated) { veganSubtotal += Math.max(maxVegan, maxNoneVegan, maxNoneShared); veganCount += sharedCount; }
                 } else {
                     // Rule: Shared for Restricted, Separate for General (Mains)
                     if (isRestricted) {
