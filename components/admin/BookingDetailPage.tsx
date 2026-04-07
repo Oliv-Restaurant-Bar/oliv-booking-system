@@ -315,7 +315,14 @@ export function BookingDetailPage({
 
         Object.entries(itemsByCategory).forEach(([category, catData]) => {
             const { items: catItems, useSpecialCalculation } = catData;
-            const isRestricted = useSpecialCalculation;
+            
+            // Mirror MenuCart's restricted logic: use the database flag if present, 
+            // but fallback to known restricted categories since the snapshot might miss the flag.
+            const isRestricted = useSpecialCalculation || 
+                               (category.toLowerCase().includes('dessert') || 
+                                category.toLowerCase().includes('menu') || 
+                                category.toLowerCase().includes('hauptgänge') || 
+                                category.toLowerCase().includes('mains'));
 
             const vegItems = (catItems as any[]).filter(i => i.dietaryType === 'veg');
             const nonVegItems = (catItems as any[]).filter(i => i.dietaryType === 'non-veg');

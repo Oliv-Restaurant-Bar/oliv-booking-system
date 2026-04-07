@@ -492,18 +492,24 @@ export async function generateBookingPdf(
 
     Object.entries(itemsByCategory).forEach(([category, catData]) => {
       const { items: catItems, useSpecialCalculation } = catData;
-      const isRestricted = useSpecialCalculation;
+      
+      // Mirror MenuCart's restricted logic: use the database flag if present, 
+      // but fallback to known restricted categories since the snapshot might miss the flag.
+      const isRestricted = useSpecialCalculation || 
+                           (category.toLowerCase().includes('dessert') || 
+                            category.toLowerCase().includes('menu') || 
+                            category.toLowerCase().includes('hauptgänge') || 
+                            category.toLowerCase().includes('mains'));
 
-      const vegItems = catItems.filter(i => i.dietaryType === 'veg');
-      const nonVegItems = catItems.filter(i => i.dietaryType === 'non-veg');
-      const veganItems = catItems.filter(i => i.dietaryType === 'vegan');
-      const noneItems = catItems.filter(i => !i.dietaryType || i.dietaryType === 'none');
+      const vegItems = (catItems as any[]).filter(i => i.dietaryType === 'veg');
+      const nonVegItems = (catItems as any[]).filter(i => i.dietaryType === 'non-veg');
+      const veganItems = (catItems as any[]).filter(i => i.dietaryType === 'vegan');
+      const noneItems = (catItems as any[]).filter(i => !i.dietaryType || i.dietaryType === 'none');
 
       const maxVeg = vegItems.length > 0 ? Math.max(...vegItems.map(i => i.unitPrice || 0)) : 0;
       const maxNV = nonVegItems.length > 0 ? Math.max(...nonVegItems.map(i => i.unitPrice || 0)) : 0;
       const maxVegan = veganItems.length > 0 ? Math.max(...veganItems.map(i => i.unitPrice || 0)) : 0;
       
-      // For None items, check for dietary markers in notes
       // For None items, we check if they have any dietary markers in notes
       const noneSplits = noneItems.map(i => {
         const notes = i.notes || '';
