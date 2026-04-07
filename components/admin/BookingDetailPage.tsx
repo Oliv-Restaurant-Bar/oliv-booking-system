@@ -326,19 +326,22 @@ export function BookingDetailPage({
             const maxNonVeg = nonVegItems.length > 0 ? Math.max(...nonVegItems.map((i: any) => i.unitPrice || 0)) : 0;
             const maxVegan = veganItems.length > 0 ? Math.max(...veganItems.map((i: any) => i.unitPrice || 0)) : 0;
 
-            // For None items, we check if they have dietary markers in notes
-            const noneSplitVeg = noneItems.filter(i => i.notes?.includes('(Veg)')).map(i => i.unitPrice || 0);
-            const noneSplitNonVeg = noneItems.filter(i => i.notes?.includes('(Non-Veg)')).map(i => i.unitPrice || 0);
-            const noneSplitVegan = noneItems.filter(i => i.notes?.includes('(Vegan)')).map(i => i.unitPrice || 0);
-            const noneShared = noneItems.filter(i => !i.notes?.includes('(Veg)') && !i.notes?.includes('(Non-Veg)') && !i.notes?.includes('(Vegan)')).map(i => i.unitPrice || 0);
+            // For None items, we check if they have any dietary markers in notes
+            const noneSplits = noneItems.map(i => {
+                const notes = i.notes || '';
+                const hasAnyDietary = notes.includes('(Veg)') || notes.includes('(Non-Veg)') || notes.includes('(Vegan)');
+                return { unitPrice: i.unitPrice || 0, hasAnyDietary };
+            });
 
-            const maxNoneVeg = noneSplitVeg.length > 0 ? Math.max(...noneSplitVeg) : 0;
-            const maxNoneNonVeg = noneSplitNonVeg.length > 0 ? Math.max(...noneSplitNonVeg) : 0;
-            const maxNoneVegan = noneSplitVegan.length > 0 ? Math.max(...noneSplitVegan) : 0;
-            const maxNoneShared = noneShared.length > 0 ? Math.max(...noneShared) : 0;
+            const maxNoneSplitCombined = noneSplits.length > 0 ? Math.max(...noneSplits.map(s => s.hasAnyDietary ? s.unitPrice : 0)) : 0;
+            const maxNoneShared = noneSplits.length > 0 ? Math.max(...noneSplits.map(s => !s.hasAnyDietary ? s.unitPrice : 0)) : 0;
+
+            const maxNoneVeg = maxNoneSplitCombined;
+            const maxNoneNonVeg = maxNoneSplitCombined;
+            const maxNoneVegan = maxNoneSplitCombined;
 
             const groupsPresentCount = [maxVeg > 0, maxNonVeg > 0, maxVegan > 0].filter(Boolean).length;
-            const hasNoneSplit = maxNoneVeg > 0 || maxNoneNonVeg > 0 || maxNoneVegan > 0;
+            const hasNoneSplit = maxNoneSplitCombined > 0;
             const hasNoneShared = maxNoneShared > 0;
             const totalGroupings = groupsPresentCount + (hasNoneSplit || hasNoneShared ? 1 : 0);
 
