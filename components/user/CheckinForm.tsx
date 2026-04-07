@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Loader2, ChevronLeft, Calendar, Users, Utensils, MessageSquare, ClipboardCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { Button } from './Button';
 
 // --- TYPES ---
 interface BookingData {
@@ -19,53 +20,16 @@ interface BookingData {
 
 type Step = 'MAIN' | 'CONFIRM_SPLIT' | 'CHANGE_OPTIONS' | 'GUEST_COUNT' | 'MENU_CHANGES' | 'ADDITIONAL_DETAILS' | 'REVIEW' | 'SUCCESS';
 
-const Card = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
-  <div className={`bg-white rounded-[12px] shadow-sm p-6 sm:p-8 w-full max-w-md mx-auto ${className}`}>
-    {children}
-  </div>
-);
-
 const ProgressBar = ({ currentStep, totalSteps }: { currentStep: number, totalSteps: number }) => (
-  <div className="w-full h-1 bg-gray-200 rounded-full mb-8 overflow-hidden">
+  <div className="w-full h-1.5 bg-muted rounded-full mb-8 overflow-hidden">
     <motion.div
-      className="h-full bg-[#3d4a2e]"
+      className="h-full bg-primary"
       initial={{ width: 0 }}
       animate={{ width: `${(currentStep / totalSteps) * 100}%` }}
       transition={{ duration: 0.5 }}
     />
   </div>
 );
-
-const Button = ({
-  children,
-  onClick,
-  disabled,
-  variant = 'primary',
-  className = ""
-}: {
-  children: React.ReactNode,
-  onClick?: () => void,
-  disabled?: boolean,
-  variant?: 'primary' | 'secondary' | 'outline',
-  className?: string
-}) => {
-  const baseStyles = "px-6 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2";
-  const variants = {
-    primary: "bg-[#3d4a2e] text-white hover:bg-[#2d3a1e] disabled:opacity-50 disabled:cursor-not-allowed",
-    secondary: "bg-gray-100 text-gray-800 hover:bg-gray-200",
-    outline: "border border-[#3d4a2e] text-[#3d4a2e] hover:bg-[#3d4a2e]/5"
-  };
-
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={`${baseStyles} ${variants[variant]} ${className}`}
-    >
-      {children}
-    </button>
-  );
-};
 
 export function CheckinForm({ bookingId, initialBooking }: { bookingId: string, initialBooking: BookingData }) {
   const [submitting, setSubmitting] = useState(false);
@@ -160,17 +124,26 @@ export function CheckinForm({ bookingId, initialBooking }: { bookingId: string, 
         >
           {/* STEP 1: MAIN */}
           {currentStep === 'MAIN' && (
-            <Card>
-              <div className="mb-6 pb-6 border-b border-gray-100">
-                <p className="text-xs uppercase tracking-wider text-gray-500 font-bold mb-2">Booking Summary</p>
-                <p className="text-[#3d4a2e] font-semibold">{initialBooking.customer.name}</p>
-                <div className="flex justify-between text-sm text-gray-600 mt-1">
-                  <span>{initialBooking.event.date}</span>
-                  <span>{initialBooking.guests} Guests</span>
+            <div className="bg-card rounded-[var(--radius-card)] shadow-sm border border-border/50 p-6 sm:p-8 w-full max-w-md mx-auto">
+              <div className="mb-6 pb-6 border-b border-border/50">
+                <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground font-bold mb-3">
+                  <ClipboardCheck className="w-4 h-4 text-primary" />
+                  Booking Summary
+                </div>
+                <p className="text-foreground font-semibold text-lg">{initialBooking.customer.name}</p>
+                <div className="flex justify-between text-sm text-muted-foreground mt-2 bg-muted/30 p-3 rounded-lg">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="w-4 h-4" />
+                    <span>{initialBooking.event.date}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Users className="w-4 h-4" />
+                    <span>{initialBooking.guests} Guests</span>
+                  </div>
                 </div>
               </div>
 
-              <h2 className="text-xl font-semibold text-gray-900 mb-8">Do you have any changes to your event?</h2>
+              <h2 className="text-xl font-semibold text-foreground mb-8 leading-tight">Do you have any changes to your event?</h2>
 
               <div className="space-y-4">
                 <Button
@@ -179,7 +152,8 @@ export function CheckinForm({ bookingId, initialBooking }: { bookingId: string, 
                     goToStep('GUEST_COUNT');
                   }}
                   variant="outline"
-                  className="w-full py-4"
+                  fullWidth
+                  size="md"
                 >
                   Yes, I have changes
                 </Button>
@@ -188,264 +162,272 @@ export function CheckinForm({ bookingId, initialBooking }: { bookingId: string, 
                     setFormData({ ...formData, has_changes: false });
                     goToStep('CONFIRM_SPLIT');
                   }}
-                  className="w-full py-4"
+                  variant="primary"
+                  fullWidth
+                  size="md"
                 >
                   No, everything is confirmed
                 </Button>
               </div>
-            </Card>
+            </div>
           )}
 
           {/* STEP 2A: CONFIRM SPLIT */}
           {currentStep === 'CONFIRM_SPLIT' && (
-            <Card>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Great!</h2>
-              <p className="text-gray-600 mb-8">Please confirm your guest split:</p>
+            <div className="bg-card rounded-[var(--radius-card)] shadow-sm border border-border/50 p-6 sm:p-8 w-full max-w-md mx-auto">
+              <h2 className="text-xl font-semibold text-foreground mb-2">Great!</h2>
+              <p className="text-muted-foreground mb-8">Please confirm your guest split:</p>
 
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Vegetarian guests</label>
-                  <input
-                    type="number"
-                    value={formData.vegetarian_count}
-                    onChange={(e) => setFormData({ ...formData, vegetarian_count: parseInt(e.target.value) || 0 })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#3d4a2e]/20 outline-none"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Vegan guests</label>
-                  <input
-                    type="number"
-                    value={formData.vegan_count}
-                    onChange={(e) => setFormData({ ...formData, vegan_count: parseInt(e.target.value) || 0 })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#3d4a2e]/20 outline-none"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Non-vegetarian guests</label>
-                  <input
-                    type="number"
-                    value={formData.non_vegetarian_count}
-                    onChange={(e) => setFormData({ ...formData, non_vegetarian_count: parseInt(e.target.value) || 0 })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#3d4a2e]/20 outline-none"
-                  />
-                </div>
+              <div className="space-y-5">
+                {[
+                  { label: 'Vegetarian guests', key: 'vegetarian_count' as const },
+                  { label: 'Vegan guests', key: 'vegan_count' as const },
+                  { label: 'Non-vegetarian guests', key: 'non_vegetarian_count' as const }
+                ].map((input) => (
+                  <div key={input.key} className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">{input.label}</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={formData[input.key]}
+                      onChange={(e) => setFormData({ ...formData, [input.key]: parseInt(e.target.value) || 0 })}
+                      className="w-full px-4 py-3 rounded-[var(--radius-button)] border border-border bg-background focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    />
+                  </div>
+                ))}
 
-                <div className={`p-4 rounded-lg flex items-center justify-between ${isSplitValid ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}>
-                  <span className="text-sm">Total guests: {initialBooking.guests}</span>
+                <div className={`p-4 rounded-lg flex items-center justify-between border ${isSplitValid ? 'bg-primary/5 border-primary/20 text-primary-foreground' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
+                  <span className="text-sm font-medium">Total guests: {initialBooking.guests}</span>
                   <span className="text-sm font-bold">Sum: {formData.vegetarian_count + formData.vegan_count + formData.non_vegetarian_count}</span>
                 </div>
 
                 {!isSplitValid && (
-                  <p className="text-red-500 text-xs text-center flex items-center justify-center gap-1">
+                  <p className="text-destructive text-xs text-center flex items-center justify-center gap-1 animate-pulse">
                     <AlertCircle className="w-3 h-3" /> Sum must equal {initialBooking.guests}
                   </p>
                 )}
 
-                <div className="flex gap-4 pt-4">
-                  <Button onClick={goBack} variant="secondary" className="flex-1">Back</Button>
+                <div className="flex gap-3 pt-4">
+                  <Button onClick={goBack} variant="outline" fullWidth size="md">Back</Button>
                   <Button
                     onClick={() => goToStep('REVIEW')}
                     disabled={!isSplitValid}
-                    className="flex-1"
+                    variant="primary"
+                    fullWidth
+                    size="md"
                   >
                     Continue
                   </Button>
                 </div>
               </div>
-            </Card>
+            </div>
           )}
 
           {/* STEP 3B-1: GUEST COUNT */}
           {currentStep === 'GUEST_COUNT' && (
-            <Card>
-              <h2 className="text-xl font-semibold text-gray-900 mb-8">What is your updated guest count?</h2>
+            <div className="bg-card rounded-[var(--radius-card)] shadow-sm border border-border/50 p-6 sm:p-8 w-full max-w-md mx-auto">
+              <h2 className="text-xl font-semibold text-foreground mb-8">What is your updated guest count?</h2>
 
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">New total guest count</label>
+                  <label className="text-sm font-medium text-muted-foreground">New total guest count</label>
                   <input
                     type="number"
+                    min={1}
                     value={formData.new_guest_count}
                     onChange={(e) => setFormData({ ...formData, new_guest_count: parseInt(e.target.value) || 0 })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#3d4a2e]/20 outline-none"
+                    className="w-full px-4 py-3 rounded-[var(--radius-button)] border border-border bg-background focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                   />
                 </div>
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Veg</label>
-                    <input
-                      type="number"
-                      value={formData.vegetarian_count}
-                      onChange={(e) => setFormData({ ...formData, vegetarian_count: parseInt(e.target.value) || 0 })}
-                      className="w-full px-3 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#3d4a2e]/20 outline-none"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Vegan</label>
-                    <input
-                      type="number"
-                      value={formData.vegan_count}
-                      onChange={(e) => setFormData({ ...formData, vegan_count: parseInt(e.target.value) || 0 })}
-                      className="w-full px-3 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#3d4a2e]/20 outline-none"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Non-Veg</label>
-                    <input
-                      type="number"
-                      value={formData.non_vegetarian_count}
-                      onChange={(e) => setFormData({ ...formData, non_vegetarian_count: parseInt(e.target.value) || 0 })}
-                      className="w-full px-3 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#3d4a2e]/20 outline-none"
-                    />
-                  </div>
+                  {[
+                    { label: 'Veg', key: 'vegetarian_count' as const },
+                    { label: 'Vegan', key: 'vegan_count' as const },
+                    { label: 'Non-Veg', key: 'non_vegetarian_count' as const }
+                  ].map((input) => (
+                    <div key={input.key} className="space-y-2">
+                      <label className="text-xs font-medium text-muted-foreground uppercase">{input.label}</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={formData[input.key]}
+                        onChange={(e) => setFormData({ ...formData, [input.key]: parseInt(e.target.value) || 0 })}
+                        className="w-full px-3 py-3 rounded-[var(--radius-button)] border border-border bg-background focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                      />
+                    </div>
+                  ))}
                 </div>
 
-                <div className={`p-4 rounded-lg flex items-center justify-between ${isSplitValid ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}>
-                  <span className="text-sm">New Total: {formData.new_guest_count}</span>
+                <div className={`p-4 rounded-lg flex items-center justify-between border ${isSplitValid ? 'bg-primary/5 border-primary/20 text-primary-foreground' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
+                  <span className="text-sm font-medium">New Total: {formData.new_guest_count}</span>
                   <span className="text-sm font-bold">Sum: {formData.vegetarian_count + formData.vegan_count + formData.non_vegetarian_count}</span>
                 </div>
 
-                <div className="flex gap-4">
-                  <Button onClick={goBack} variant="secondary" className="flex-1">Back</Button>
+                <div className="flex gap-3 pt-2">
+                  <Button onClick={goBack} variant="outline" fullWidth size="md">Back</Button>
                   <Button
                     onClick={() => goToStep(getNextChangeStep('GUEST_COUNT'))}
                     disabled={!isSplitValid || formData.new_guest_count <= 0}
-                    className="flex-1"
+                    variant="primary"
+                    fullWidth
+                    size="md"
                   >
                     Continue
                   </Button>
                 </div>
               </div>
-            </Card>
+            </div>
           )}
 
           {/* STEP 3B-2: MENU CHANGES */}
           {currentStep === 'MENU_CHANGES' && (
-            <Card>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Please describe your menu changes:</h2>
+            <div className="bg-card rounded-[var(--radius-card)] shadow-sm border border-border/50 p-6 sm:p-8 w-full max-w-md mx-auto">
+              <div className="flex items-center gap-2 mb-4">
+                <Utensils className="w-5 h-5 text-primary" />
+                <h2 className="text-xl font-semibold text-foreground">Menu changes</h2>
+              </div>
 
               <div className="space-y-4">
                 <textarea
                   value={formData.menu_changes}
                   onChange={(e) => setFormData({ ...formData, menu_changes: e.target.value.substring(0, 1000) })}
                   placeholder="e.g. Remove the Raclette Combo, add 10x Chocolate Fondue, replace wine with soft drinks..."
-                  className="w-full h-40 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#3d4a2e]/20 outline-none resize-none"
+                  className="w-full h-40 px-4 py-3 rounded-[var(--radius-button)] border border-border bg-background focus:ring-2 focus:ring-primary/20 outline-none resize-none transition-all placeholder:text-muted-foreground/50"
                 />
                 <div className="flex justify-end">
-                  <span className="text-xs text-gray-400">{formData.menu_changes.length}/1000</span>
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">{formData.menu_changes.length}/1000</span>
                 </div>
 
-                <div className="flex gap-4 pt-4">
-                  <Button onClick={goBack} variant="secondary" className="flex-1">Back</Button>
+                <div className="flex gap-3 pt-2">
+                  <Button onClick={goBack} variant="outline" fullWidth size="md">Back</Button>
                   <Button
                     onClick={() => goToStep(getNextChangeStep('MENU_CHANGES'))}
-                    className="flex-1"
+                    variant="primary"
+                    fullWidth
+                    size="md"
                   >
                     Continue
                   </Button>
                 </div>
               </div>
-            </Card>
+            </div>
           )}
 
           {/* STEP 3B-3: ADDITIONAL DETAILS */}
           {currentStep === 'ADDITIONAL_DETAILS' && (
-            <Card>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Any additional details or special requests?</h2>
+            <div className="bg-card rounded-[var(--radius-card)] shadow-sm border border-border/50 p-6 sm:p-8 w-full max-w-md mx-auto">
+              <div className="flex items-center gap-2 mb-4">
+                <MessageSquare className="w-5 h-5 text-primary" />
+                <h2 className="text-xl font-semibold text-foreground">Special requests</h2>
+              </div>
 
               <div className="space-y-4">
                 <textarea
                   value={formData.additional_details}
                   onChange={(e) => setFormData({ ...formData, additional_details: e.target.value.substring(0, 1000) })}
                   placeholder="e.g. Allergy updates, seating preferences, decoration requests, timing changes..."
-                  className="w-full h-40 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#3d4a2e]/20 outline-none resize-none"
+                  className="w-full h-40 px-4 py-3 rounded-[var(--radius-button)] border border-border bg-background focus:ring-2 focus:ring-primary/20 outline-none resize-none transition-all placeholder:text-muted-foreground/50"
                 />
                 <div className="flex justify-end">
-                  <span className="text-xs text-gray-400">{formData.additional_details.length}/1000</span>
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">{formData.additional_details.length}/1000</span>
                 </div>
 
-                <div className="flex gap-4 pt-4">
-                  <Button onClick={goBack} variant="secondary" className="flex-1">Back</Button>
+                <div className="flex gap-3 pt-2">
+                  <Button onClick={goBack} variant="outline" fullWidth size="md">Back</Button>
                   <Button
                     onClick={() => goToStep(getNextChangeStep('ADDITIONAL_DETAILS'))}
-                    className="flex-1"
+                    variant="primary"
+                    fullWidth
+                    size="md"
                   >
                     Continue
                   </Button>
                 </div>
               </div>
-            </Card>
+            </div>
           )}
 
           {/* FINAL STEP: REVIEW */}
           {currentStep === 'REVIEW' && (
-            <Card>
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">Review & Submit</h2>
+            <div className="bg-card rounded-[var(--radius-card)] shadow-sm border border-border/50 p-6 sm:p-8 w-full max-w-md mx-auto">
+              <h2 className="text-xl font-semibold text-foreground mb-6">Review & Submit</h2>
 
               <div className="space-y-4 mb-8">
-                <div className="p-4 bg-gray-50 rounded-lg space-y-3">
-                  <div className="flex justify-between items-center text-sm border-b border-gray-100 pb-2">
-                    <span className="text-gray-500">Status</span>
-                    <span className={`font-bold ${formData.has_changes ? 'text-amber-600' : 'text-green-600'}`}>
-                      {formData.has_changes ? 'Has Changes' : 'Everything Confirmed'}
+                <div className="p-5 bg-muted/30 border border-border/50 rounded-xl space-y-4">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground font-medium">Status</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider ${formData.has_changes ? 'bg-amber-100 text-amber-700' : 'bg-primary/10 text-primary-foreground'}`}>
+                      {formData.has_changes ? 'Has Changes' : 'Confirmed'}
                     </span>
                   </div>
 
-                  <div className="flex justify-between items-center text-sm border-b border-gray-100 pb-2">
-                    <span className="text-gray-500">Guest Count</span>
-                    <span className="font-bold">
-                      {formData.has_changes ? formData.new_guest_count : initialBooking.guests} ({formData.vegetarian_count} Veg / {formData.vegan_count} Vegan / {formData.non_vegetarian_count} Non-Veg)
-                    </span>
+                  <div className="flex flex-col gap-1 border-t border-border/50 pt-3">
+                    <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Guest Split</span>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {[
+                        { label: 'Veg', val: formData.vegetarian_count, color: 'bg-green-100 text-green-700' },
+                        { label: 'Vegan', val: formData.vegan_count, color: 'bg-emerald-100 text-emerald-700' },
+                        { label: 'Non-Veg', val: formData.non_vegetarian_count, color: 'bg-blue-100 text-blue-700' }
+                      ].filter(x => x.val > 0 || !formData.has_changes).map(item => (
+                        <span key={item.label} className={`px-2.5 py-1 rounded-md text-xs font-semibold ${item.color}`}>
+                          {item.val} {item.label}
+                        </span>
+                      ))}
+                    </div>
                   </div>
 
                   {formData.menu_changes.trim() && (
-                    <div className="space-y-1 border-b border-gray-100 pb-2">
-                      <span className="text-xs text-gray-500 font-bold uppercase">Menu Changes</span>
-                      <p className="text-sm text-gray-700 italic">"{formData.menu_changes}"</p>
+                    <div className="space-y-1.5 border-t border-border/50 pt-3">
+                      <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Menu Changes</span>
+                      <p className="text-sm text-foreground italic leading-relaxed">"{formData.menu_changes}"</p>
                     </div>
                   )}
 
                   {formData.additional_details.trim() && (
-                    <div className="space-y-1 pb-2">
-                      <span className="text-xs text-gray-500 font-bold uppercase">Additional Details</span>
-                      <p className="text-sm text-gray-700 italic">"{formData.additional_details}"</p>
+                    <div className="space-y-1.5 border-t border-border/50 pt-3">
+                      <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Additional Details</span>
+                      <p className="text-sm text-foreground italic leading-relaxed">"{formData.additional_details}"</p>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="flex gap-4">
-                <Button onClick={goBack} variant="secondary" className="flex-1">Edit</Button>
+              <div className="flex gap-3">
+                <Button onClick={goBack} variant="outline" fullWidth size="md">Edit</Button>
                 <Button
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="flex-1"
+                  variant="primary"
+                  fullWidth
+                  size="md"
+                  isLoading={submitting}
                 >
-                  {submitting ? 'Submitting...' : 'Submit Confirmation'}
+                  Submit Confirmation
                 </Button>
               </div>
-            </Card>
+            </div>
           )}
 
           {/* SUCCESS SCREEN */}
           {currentStep === 'SUCCESS' && (
-            <Card>
+            <div className="bg-card rounded-[var(--radius-card)] shadow-sm border border-border/50 p-6 sm:p-8 w-full max-w-md mx-auto">
               <div className="text-center space-y-6 py-8">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                  <CheckCircle2 className="w-10 h-10 text-green-600" />
+                <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-2 rotate-3 hover:rotate-0 transition-transform duration-300 shadow-sm border border-primary/20">
+                  <CheckCircle2 className="w-12 h-12 text-primary" />
                 </div>
-                <h1 className="text-2xl font-bold text-gray-900">Thank you, {initialBooking.customer.name}!</h1>
-                <p className="text-gray-600">
-                  Your updates have been received. Our team will review and confirm within 24 hours.
-                </p>
-                <div className="pt-4">
-                  <Button onClick={() => window.location.href = "/"} variant="outline" className="w-full">
-                    Done
+                <div className="space-y-2">
+                  <h1 className="text-2xl font-bold text-foreground">Thank you, {initialBooking.customer.name}!</h1>
+                  <p className="text-sm text-muted-foreground leading-relaxed px-4">
+                    Your event confirmation has been received. Our team will review your updates and get back to you within 24 hours.
+                  </p>
+                </div>
+                <div className="pt-6">
+                  <Button onClick={() => window.location.href = "/"} variant="primary" fullWidth size="md">
+                    Return Home
                   </Button>
                 </div>
               </div>
-            </Card>
+            </div>
           )}
         </motion.div>
       </AnimatePresence>
