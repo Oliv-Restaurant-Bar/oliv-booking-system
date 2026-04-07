@@ -412,7 +412,7 @@ export function CheckinForm({ bookingId, initialBooking }: { bookingId: string, 
           {currentStep === 'SUCCESS' && (
             <div className="bg-card rounded-[var(--radius-card)] shadow-sm border border-border/50 p-6 sm:p-8 w-full max-w-md mx-auto">
               <div className="text-center space-y-6 py-8">
-                <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-2 rotate-3 hover:rotate-0 transition-transform duration-300 shadow-sm border border-primary/20">
+                <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-2 transition-transform duration-300 shadow-sm border border-primary/20">
                   <CheckCircle2 className="w-12 h-12 text-primary" />
                 </div>
                 <div className="space-y-2">
