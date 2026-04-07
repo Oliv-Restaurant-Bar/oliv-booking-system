@@ -7,6 +7,7 @@ import { validateEnvOrThrow } from "@/lib/config/env-validation";
 import { SystemSettingsProvider } from "@/lib/contexts/SystemSettingsContext";
 import { getSystemSettings } from "@/lib/actions/settings";
 import { Hanken_Grotesk } from 'next/font/google';
+import UserbackLoader from "@/components/common/UserbackLoader";
 
 const hankenGrotesk = Hanken_Grotesk({
   subsets: ['latin'],
@@ -65,6 +66,7 @@ export default async function RootLayout({
             {children}
           </NextIntlClientProvider>
           <Toaster position="top-right" richColors />
+          <UserbackLoader />
         </SystemSettingsProvider>
       </body>
     </html>

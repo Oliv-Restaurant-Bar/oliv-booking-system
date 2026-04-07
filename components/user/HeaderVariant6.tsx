@@ -45,7 +45,7 @@ export function HeaderVariant6() {
                 width={120}
                 height={48}
                 className="h-12 w-auto"
-                style={{ mixBlendMode: 'multiply' }}
+                style={{ mixBlendMode: 'multiply', height: 'auto' }}
               />
             </a>
           </div>
