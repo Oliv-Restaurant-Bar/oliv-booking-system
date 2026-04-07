@@ -35,7 +35,16 @@ export function CheckinForm({ bookingId, initialBooking }: { bookingId: string, 
   const [submitting, setSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState<Step>('MAIN');
   const [history, setHistory] = useState<Step[]>([]);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    has_changes: boolean;
+    guest_count_changed: boolean;
+    new_guest_count: number | '';
+    vegetarian_count: number | '';
+    vegan_count: number | '';
+    non_vegetarian_count: number | '';
+    menu_changes: string;
+    additional_details: string;
+  }>({
     has_changes: false,
     guest_count_changed: false,
     new_guest_count: initialBooking.guests,
@@ -67,7 +76,10 @@ export function CheckinForm({ bookingId, initialBooking }: { bookingId: string, 
   };
 
   // Validation
-  const isSplitValid = formData.vegetarian_count + formData.vegan_count + formData.non_vegetarian_count === (formData.has_changes ? formData.new_guest_count : initialBooking.guests);
+  // Validation helper to treat empty string as zero
+  const getNum = (val: number | '') => (val === '' ? 0 : val);
+
+  const isSplitValid = getNum(formData.vegetarian_count) + getNum(formData.vegan_count) + getNum(formData.non_vegetarian_count) === (formData.has_changes ? getNum(formData.new_guest_count) : initialBooking.guests);
 
   // Branching Logic for "Has Changes"
   const getNextChangeStep = (current: Step) => {
@@ -86,10 +98,10 @@ export function CheckinForm({ bookingId, initialBooking }: { bookingId: string, 
         submitted_at: new Date().toISOString(),
         has_changes: formData.has_changes,
         guest_count_changed: formData.has_changes,
-        new_guest_count: formData.has_changes ? formData.new_guest_count : initialBooking.guests,
-        vegetarian_count: formData.vegetarian_count,
-        vegan_count: formData.vegan_count,
-        non_vegetarian_count: formData.non_vegetarian_count,
+        new_guest_count: formData.has_changes ? getNum(formData.new_guest_count) : initialBooking.guests,
+        vegetarian_count: getNum(formData.vegetarian_count),
+        vegan_count: getNum(formData.vegan_count),
+        non_vegetarian_count: getNum(formData.non_vegetarian_count),
         menu_changes: formData.menu_changes.trim() || null,
         additional_details: formData.additional_details.trim() || null,
       };
@@ -190,7 +202,10 @@ export function CheckinForm({ bookingId, initialBooking }: { bookingId: string, 
                       type="number"
                       min={0}
                       value={formData[input.key]}
-                      onChange={(e) => setFormData({ ...formData, [input.key]: parseInt(e.target.value) || 0 })}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFormData({ ...formData, [input.key]: val === '' ? '' : parseInt(val) || 0 });
+                      }}
                       className="w-full px-4 py-3 rounded-[var(--radius-button)] border border-border bg-background focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                     />
                   </div>
@@ -198,7 +213,7 @@ export function CheckinForm({ bookingId, initialBooking }: { bookingId: string, 
 
                 <div className={`p-4 rounded-lg flex items-center justify-between border ${isSplitValid ? 'bg-primary/5 border-primary/20 text-primary-foreground' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
                   <span className="text-sm font-medium">Total guests: {initialBooking.guests}</span>
-                  <span className="text-sm font-bold">Sum: {formData.vegetarian_count + formData.vegan_count + formData.non_vegetarian_count}</span>
+                  <span className="text-sm font-bold">Sum: {getNum(formData.vegetarian_count) + getNum(formData.vegan_count) + getNum(formData.non_vegetarian_count)}</span>
                 </div>
 
                 {!isSplitValid && (
@@ -235,7 +250,10 @@ export function CheckinForm({ bookingId, initialBooking }: { bookingId: string, 
                     type="number"
                     min={1}
                     value={formData.new_guest_count}
-                    onChange={(e) => setFormData({ ...formData, new_guest_count: parseInt(e.target.value) || 0 })}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData({ ...formData, new_guest_count: val === '' ? '' : parseInt(val) || 0 });
+                    }}
                     className="w-full px-4 py-3 rounded-[var(--radius-button)] border border-border bg-background focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                   />
                 </div>
@@ -251,7 +269,10 @@ export function CheckinForm({ bookingId, initialBooking }: { bookingId: string, 
                         type="number"
                         min={0}
                         value={formData[input.key]}
-                        onChange={(e) => setFormData({ ...formData, [input.key]: parseInt(e.target.value) || 0 })}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setFormData({ ...formData, [input.key]: val === '' ? '' : parseInt(val) || 0 });
+                        }}
                         className="w-full px-3 py-3 rounded-[var(--radius-button)] border border-border bg-background focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                       />
                     </div>
@@ -260,14 +281,14 @@ export function CheckinForm({ bookingId, initialBooking }: { bookingId: string, 
 
                 <div className={`p-4 rounded-lg flex items-center justify-between border ${isSplitValid ? 'bg-primary/5 border-primary/20 text-primary-foreground' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
                   <span className="text-sm font-medium">New Total: {formData.new_guest_count}</span>
-                  <span className="text-sm font-bold">Sum: {formData.vegetarian_count + formData.vegan_count + formData.non_vegetarian_count}</span>
+                  <span className="text-sm font-bold">Sum: {getNum(formData.vegetarian_count) + getNum(formData.vegan_count) + getNum(formData.non_vegetarian_count)}</span>
                 </div>
 
                 <div className="flex gap-3 pt-2">
                   <Button onClick={goBack} variant="outline" fullWidth size="md">Back</Button>
                   <Button
                     onClick={() => goToStep(getNextChangeStep('GUEST_COUNT'))}
-                    disabled={!isSplitValid || formData.new_guest_count <= 0}
+                    disabled={!isSplitValid || getNum(formData.new_guest_count) <= 0}
                     variant="primary"
                     fullWidth
                     size="md"
@@ -365,9 +386,9 @@ export function CheckinForm({ bookingId, initialBooking }: { bookingId: string, 
                     <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Guest Split</span>
                     <div className="flex flex-wrap gap-2 mt-1">
                       {[
-                        { label: 'Veg', val: formData.vegetarian_count, color: 'bg-green-100 text-green-700' },
-                        { label: 'Vegan', val: formData.vegan_count, color: 'bg-emerald-100 text-emerald-700' },
-                        { label: 'Non-Veg', val: formData.non_vegetarian_count, color: 'bg-blue-100 text-blue-700' }
+                        { label: 'Veg', val: getNum(formData.vegetarian_count), color: 'bg-green-100 text-green-700' },
+                        { label: 'Vegan', val: getNum(formData.vegan_count), color: 'bg-emerald-100 text-emerald-700' },
+                        { label: 'Non-Veg', val: getNum(formData.non_vegetarian_count), color: 'bg-blue-100 text-blue-700' }
                       ].filter(x => x.val > 0 || !formData.has_changes).map(item => (
                         <span key={item.label} className={`px-2.5 py-1 rounded-md text-xs font-semibold ${item.color}`}>
                           {item.val} {item.label}
@@ -393,17 +414,22 @@ export function CheckinForm({ bookingId, initialBooking }: { bookingId: string, 
               </div>
 
               <div className="flex gap-3">
-                <Button onClick={goBack} variant="outline" fullWidth size="md">Edit</Button>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  variant="primary"
-                  fullWidth
-                  size="md"
-                  isLoading={submitting}
-                >
-                  Submit Confirmation
-                </Button>
+                <div className="flex-1">
+                  <Button onClick={goBack} variant="outline" fullWidth size="md">Edit</Button>
+                </div>
+                <div className="flex-[1.8]">
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={submitting}
+                    variant="primary"
+                    fullWidth
+                    size="md"
+                    isLoading={submitting}
+                    className="whitespace-nowrap px-4"
+                  >
+                    Submit Confirmation
+                  </Button>
+                </div>
               </div>
             </div>
           )}
@@ -417,7 +443,7 @@ export function CheckinForm({ bookingId, initialBooking }: { bookingId: string, 
                 </div>
                 <div className="space-y-2">
                   <h1 className="text-2xl font-bold text-foreground">Thank you, {initialBooking.customer.name}!</h1>
-                  <p className="text-sm text-muted-foreground leading-relaxed px-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
                     Your event confirmation has been received. Our team will review your updates and get back to you within 24 hours.
                   </p>
                 </div>

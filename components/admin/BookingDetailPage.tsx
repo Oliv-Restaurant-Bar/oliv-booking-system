@@ -175,11 +175,11 @@ interface BookingDetailPageProps {
     initialPdfHistory?: any;
 }
 
-export function BookingDetailPage({ 
-    bookingId, 
-    booking: initialBooking, 
-    onBack, 
-    onBookingUpdated, 
+export function BookingDetailPage({
+    bookingId,
+    booking: initialBooking,
+    onBack,
+    onBookingUpdated,
     user,
     initialVenues,
     initialAdminUsers,
@@ -325,7 +325,7 @@ export function BookingDetailPage({
             const maxVeg = vegItems.length > 0 ? Math.max(...vegItems.map((i: any) => i.unitPrice || 0)) : 0;
             const maxNonVeg = nonVegItems.length > 0 ? Math.max(...nonVegItems.map((i: any) => i.unitPrice || 0)) : 0;
             const maxVegan = veganItems.length > 0 ? Math.max(...veganItems.map((i: any) => i.unitPrice || 0)) : 0;
-            
+
             // For None items, we check if they have dietary markers in notes
             const noneSplitVeg = noneItems.filter(i => i.notes?.includes('(Veg)')).map(i => i.unitPrice || 0);
             const noneSplitNonVeg = noneItems.filter(i => i.notes?.includes('(Non-Veg)')).map(i => i.unitPrice || 0);
@@ -1789,7 +1789,7 @@ export function BookingDetailPage({
                                             <button
                                                 onClick={handleSaveAddress}
                                                 disabled={isSaving}
-                                                className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-green-600 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                                                className="px-3 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer disabled:opacity-50 flex items-center gap-2"
                                                 style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                             >
                                                 <Save className="w-4 h-4" />
@@ -1937,7 +1937,7 @@ export function BookingDetailPage({
                                                 <button
                                                     onClick={handleSaveEvent}
                                                     disabled={isSaving}
-                                                    className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-green-600 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                                                    className="px-3 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer disabled:opacity-50 flex items-center gap-2"
                                                     style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                                 >
                                                     <Save className="w-4 h-4" />
@@ -2118,7 +2118,7 @@ export function BookingDetailPage({
                                             <button
                                                 onClick={handleSaveSpecialRequests}
                                                 disabled={isSaving}
-                                                className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-green-600 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                                                className="px-3 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer disabled:opacity-50 flex items-center gap-2"
                                                 style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                             >
                                                 <Save className="w-4 h-4" />
@@ -2234,7 +2234,7 @@ export function BookingDetailPage({
                                             <button
                                                 onClick={handleSavePayment}
                                                 disabled={isSaving}
-                                                className="px-3 py-1.5 border border-border hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-green-600 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                                                className="px-3 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer disabled:opacity-50 flex items-center gap-2"
                                                 style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                             >
                                                 <Save className="w-4 h-4" />
@@ -2568,7 +2568,7 @@ export function BookingDetailPage({
                                                 <button
                                                     onClick={handleSaveMenu}
                                                     disabled={isSaving}
-                                                    className="px-3 py-1.5 border border-border hover:bg-primary hover:text-secondary rounded-lg transition-colors bg-secondary text-primary hover:text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                                    className="px-3 py-1.5 border border-border hover:bg-secondary rounded-lg transition-colors bg-primary text-secondary hover:text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                                     style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                                 >
                                                     {isSaving ? (

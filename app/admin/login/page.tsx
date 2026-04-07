@@ -167,8 +167,10 @@ export default function AdminLoginPage() {
           </button>
         </form>
 
-        <div className="mt-6 text-center text-sm text-muted-foreground">
-          <p>{t('protectedAccess')}</p>
+        <div className="mt-6 text-center text-muted-foreground">
+          <p className="text-[11px] whitespace-nowrap">
+            {t('protectedAccess')}
+          </p>
         </div>
       </div>
     </div>
