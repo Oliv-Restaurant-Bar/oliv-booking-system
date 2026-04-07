@@ -295,9 +295,9 @@ export function BookingDetailPage({
             item.category !== 'Zusatzleistungen'
         );
 
-        const isVegActivated = foodItems.some(i => i.dietaryType === 'veg');
-        const isNonVegActivated = foodItems.some(i => i.dietaryType === 'non-veg');
-        const isVeganActivated = foodItems.some(i => i.dietaryType === 'vegan');
+        const isVegActivated = foodItems.some(i => i.dietaryType === 'veg' || i.notes?.includes('(Veg)'));
+        const isNonVegActivated = foodItems.some(i => i.dietaryType === 'non-veg' || i.notes?.includes('(Non-Veg)'));
+        const isVeganActivated = foodItems.some(i => i.dietaryType === 'vegan' || i.notes?.includes('(Vegan)'));
 
         let vegSubtotal = 0;
         let nonVegSubtotal = 0;

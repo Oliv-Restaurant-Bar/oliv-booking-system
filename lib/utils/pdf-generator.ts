@@ -403,20 +403,23 @@ export async function generateBookingPdf(
 
     checkPageBreak(lineH + 2);
 
-    for (const part of parts) {
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
       if (!part) continue;
 
       const lowerPart = part.trim().toLowerCase();
-
-      // Determine if this part is a dietary indicator (tag or emoji)
       let tagType: 'veg' | 'non-veg' | 'vegan' | null = null;
       if (lowerPart === '(veg)' || lowerPart === '🟢') tagType = 'veg';
-      else if (lowerPart === '(vegan)' || lowerPart === '⚪') tagType = 'vegan'; // Using white/green mapping as appropriate
+      else if (lowerPart === '(vegan)' || lowerPart === '⚪') tagType = 'vegan';
       else if (lowerPart === '(non-veg)' || lowerPart === '🔴') tagType = 'non-veg';
 
       if (tagType) {
-        // Ensure we don't wrap the icon only
-        if (currentX + 6 > indentX + maxWidth) {
+        // Look ahead to next text segment to see if we should wrap together
+        const nextText = parts[i + 1] || "";
+        const nextWord = (nextText.match(/\S+/) || [""])[0];
+        const nextWordWidth = doc.getTextWidth(nextWord);
+        
+        if (currentX + 6 + nextWordWidth > indentX + maxWidth) {
           currentX = indentX;
           currentY += lineH;
           checkPageBreak(lineH + 2);
@@ -466,9 +469,9 @@ export async function generateBookingPdf(
     // Only include per-person food items
     const foodItems = finalFoodItems.filter(item => item.pricingType === 'per_person');
 
-    const isVegActivated = foodItems.some(i => i.dietaryType === 'veg');
-    const isNonVegActivated = foodItems.some(i => i.dietaryType === 'non-veg');
-    const isVeganActivated = foodItems.some(i => i.dietaryType === 'vegan');
+    const isVegActivated = foodItems.some(i => i.dietaryType === 'veg' || i.notes?.includes('(Veg)'));
+    const isNonVegActivated = foodItems.some(i => i.dietaryType === 'non-veg' || i.notes?.includes('(Non-Veg)'));
+    const isVeganActivated = foodItems.some(i => i.dietaryType === 'vegan' || i.notes?.includes('(Vegan)'));
 
     const breakdown: Record<string, { total: number; perPerson: number }> = {
       veg: { total: 0, perPerson: 0 },
@@ -750,7 +753,8 @@ export async function generateBookingPdf(
 
   // Footer / Totals (Final piece for Customer)
   if (mode === 'offer') {
-    checkPageBreak(30);
+    // Check for 80mm available to prevent footer / total overlap with bottom of page
+    checkPageBreak(80);
     yPos += 10;
     doc.setDrawColor(...COLORS.primary);
     doc.setLineWidth(1);
