@@ -60,6 +60,8 @@ export function BookingsPage({ user, translations, initialBookings, initialDeepL
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('All Status');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [navigatingId, setNavigatingId] = useState<string | number | null>(null);
+  const [isNavigating, setIsNavigating] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const statusT = useTranslations('bookingStatus');
 
@@ -163,6 +165,7 @@ export function BookingsPage({ user, translations, initialBookings, initialDeepL
 
     // Case 1: We have a booking ID in URL, but our UI state is out of sync
     if (bookingId && (currentPage !== 'detail' || selectedBooking?.id !== bookingId)) {
+      setNavigatingId(bookingId);
       // Opt-out: If this matches the SSR data we already have, use it instantly without a fetch
       if (initialDeepLinkData?.booking?.id === bookingId && !selectedBooking) {
         console.log('Syncing with initial SSR deep-link data.');
@@ -204,8 +207,18 @@ export function BookingsPage({ user, translations, initialBookings, initialDeepL
     else if (!bookingId && currentPage === 'detail') {
       setCurrentPage('list');
       setSelectedBooking(null);
+      setNavigatingId(null);
+      setIsNavigating(false);
+    } else if (!bookingId) {
+      setNavigatingId(null);
+      setIsNavigating(false);
     }
   }, [searchParams]); // Depend only on searchParams (URL changes)
+
+  const handleOpenBooking = (booking: Booking) => {
+    setNavigatingId(booking.id);
+    router.push(`/admin/bookings?id=${booking.id}`);
+  };
 
   // Status options for dropdown
   const statusOptions = [
@@ -256,7 +269,14 @@ export function BookingsPage({ user, translations, initialBookings, initialDeepL
   };
 
   return (
-    <div className="min-h-full bg-background flex flex-col">
+    <div className="min-h-full bg-background flex flex-col relative">
+      {/* Top Loading Progress Bar */}
+      {(loading || navigatingId || isNavigating) && (
+        <div className="fixed top-0 left-0 right-0 z-[100] h-1 bg-primary/20 overflow-hidden">
+          <div className="h-full bg-primary animate-progress-bar origin-left w-full" />
+        </div>
+      )}
+
       {/* List View */}
       {currentPage === 'list' && (
         <div className="w-full flex-1">
@@ -380,19 +400,17 @@ export function BookingsPage({ user, translations, initialBookings, initialDeepL
             <div className="flex-1 flex flex-col">
               {viewMode === 'grid' && (
                 <GridView
-                  onOpenModal={(booking: Booking) => {
-                    router.push(`/admin/bookings?id=${booking.id}`);
-                  }}
+                  onOpenModal={handleOpenBooking}
                   bookings={paginatedBookings}
+                  navigatingId={navigatingId}
                 />
               )}
 
               {viewMode === 'calendar' && (
                 <CalendarView
-                  onOpenModal={(booking: Booking) => {
-                    router.push(`/admin/bookings?id=${booking.id}`);
-                  }}
+                  onOpenModal={handleOpenBooking}
                   bookings={filteredBookings}
+                  navigatingId={navigatingId}
                 />
               )}
 
@@ -440,6 +458,7 @@ export function BookingsPage({ user, translations, initialBookings, initialDeepL
           initialVenues={initialDeepLinkData?.venues}
           initialAdminUsers={initialDeepLinkData?.adminUsers}
           initialPdfHistory={initialDeepLinkData?.pdfHistory}
+          setIsNavigating={setIsNavigating}
         />
       )}
     </div>

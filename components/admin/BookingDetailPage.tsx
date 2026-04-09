@@ -173,6 +173,7 @@ interface BookingDetailPageProps {
     initialVenues?: string[];
     initialAdminUsers?: any[];
     initialPdfHistory?: any;
+    setIsNavigating?: (val: boolean) => void;
 }
 
 export function BookingDetailPage({
@@ -183,17 +184,31 @@ export function BookingDetailPage({
     user,
     initialVenues,
     initialAdminUsers,
-    initialPdfHistory
+    initialPdfHistory,
+    setIsNavigating
 }: BookingDetailPageProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const activeTab = searchParams.get('tab') || 'event-details';
 
     const handleTabChange = (value: string) => {
+        if (value === activeTab) return;
+        setIsNavigating?.(true);
+        setIsTransitioning(true);
         const params = new URLSearchParams(searchParams.toString());
         params.set('tab', value);
         router.replace(`${window.location.pathname}?${params.toString()}`, { scroll: false });
     };
+
+    // Clear navigation state when tab actually changes
+    useEffect(() => {
+        // Minimum delay to ensure the loader is visible enough to give feedback
+        const timer = setTimeout(() => {
+            setIsNavigating?.(false);
+            setIsTransitioning(false);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [activeTab, setIsNavigating]);
     const t = useBookingTranslation();
     const commonT = useCommonTranslation();
     const buttonT = useButtonTranslation();
@@ -236,6 +251,7 @@ export function BookingDetailPage({
     const [auditLoading, setAuditLoading] = useState(false);
     const [editLink, setEditLink] = useState<string | null>(null);
     const [isAddingComment, setIsAddingComment] = useState(false);
+    const [isTransitioning, setIsTransitioning] = useState(false);
 
     // Editing states
     const [isEditingCustomer, setIsEditingCustomer] = useState(false);
@@ -315,14 +331,14 @@ export function BookingDetailPage({
 
         Object.entries(itemsByCategory).forEach(([category, catData]) => {
             const { items: catItems, useSpecialCalculation } = catData;
-            
+
             // Mirror MenuCart's restricted logic: use the database flag if present, 
             // but fallback to known restricted categories since the snapshot might miss the flag.
-            const isRestricted = useSpecialCalculation || 
-                               (category.toLowerCase().includes('dessert') || 
-                                category.toLowerCase().includes('menu') || 
-                                category.toLowerCase().includes('hauptgänge') || 
-                                category.toLowerCase().includes('mains'));
+            const isRestricted = useSpecialCalculation ||
+                (category.toLowerCase().includes('dessert') ||
+                    category.toLowerCase().includes('menu') ||
+                    category.toLowerCase().includes('hauptgänge') ||
+                    category.toLowerCase().includes('mains'));
 
             const vegItems = (catItems as any[]).filter(i => i.dietaryType === 'veg');
             const nonVegItems = (catItems as any[]).filter(i => i.dietaryType === 'non-veg');
@@ -1612,1345 +1628,1363 @@ export function BookingDetailPage({
                             <TabsTrigger value="requests" className="px-3 py-2 text-xs sm:text-sm h-10 data-[state=active]:bg-background data-[state=active]:shadow-sm">{t('tabs.requests')}</TabsTrigger>
                         </TabsList>
 
-                        {/* Event Details Tab */}
-                        <TabsContent value="event-details" className="space-y-4 sm:space-y-6">
-                            {/* Customer Information */}
-                            {/* Group 1: Kontaktinformationen */}
-                            <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
-                                <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
-                                    <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                            {/* icon will be different for each section, but the container structure is same */}
-                                            <User className="w-4 h-4 text-primary" />
-                                        </div>
-                                        <span className="truncate">{wizardT('sections.contactInformation')}</span>
-                                    </h3>
-                                    {canEditBooking && !isLocked && !isEditingCustomer && (
-                                        <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
-                                            <button
-                                                onClick={handleEditCustomer}
-                                                disabled={isReadOnlyStatus}
-                                                className={cn(
-                                                    "px-2.5 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0",
-                                                    isReadOnlyStatus ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-                                                )}
-                                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                            >
-                                                <Pencil className="w-3.5 h-3.5" />
-                                                <span className="hidden xs:inline">{buttonT('edit')}</span>
-                                                <span className="xs:hidden">{commonT('edit')}</span>
-                                            </button>
-                                        </Tooltip>
-                                    )}
-                                    {isEditingCustomer && (
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                onClick={handleCancelCustomer}
-                                                className="px-3 py-1.5 border border-border hover:bg-red-600 hover:text-white rounded-lg transition-colors  bg-red-500 text-white hover:text-red-500 cursor-pointer flex items-center gap-2"
-                                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                            >
-                                                <X className="w-4 h-4" />
-                                                <span>{buttonT('cancel')}</span>
-                                            </button>
-                                            <button
-                                                onClick={handleSaveCustomer}
-                                                disabled={isSaving}
-                                                className="px-3 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer disabled:opacity-50 flex items-center gap-2"
-                                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                            >
-                                                <Save className="w-4 h-4" />
-                                                <span>{buttonT('save')}</span>
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
-                                            {wizardT('labels.name')} <span className="text-red-500">*</span>
-                                        </label>
-                                        {isEditingCustomer ? (
-                                            <>
-                                                <input
-                                                    type="text"
-                                                    value={tempCustomer.name}
-                                                    onChange={(e) => {
-                                                        setTempCustomer({ ...tempCustomer, name: e.target.value });
-                                                        if (errors.customerName) validateCustomerField('name', e.target.value);
-                                                    }}
-                                                    onBlur={() => validateCustomerField('name', tempCustomer.name)}
-                                                    className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.customerName ? 'border-red-500' : 'border-border'}`}
-                                                    style={{ fontSize: 'var(--text-base)' }}
-                                                />
-                                                {errors.customerName && (
-                                                    <p className="text-red-500 text-xs mt-1">{errors.customerName}</p>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <p className="text-foreground font-medium truncate" style={{ fontSize: 'var(--text-base)' }} title={booking.customer.name}>{booking.customer.name}</p>
-                                        )}
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.business')}</label>
-                                        {isEditingCustomer ? (
-                                            <input
-                                                type="text"
-                                                value={tempCustomer.business}
-                                                onChange={(e) => {
-                                                    setTempCustomer({ ...tempCustomer, business: e.target.value });
-                                                    // Business is optional, no validation
-                                                }}
-                                                className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
-                                                style={{ fontSize: 'var(--text-base)' }}
-                                            />
-                                        ) : (
-                                            <p className="text-foreground font-medium truncate" style={{ fontSize: 'var(--text-base)' }} title={booking.customer.business || ''}>{booking.customer.business || '-'}</p>
-                                        )}
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
-                                            {wizardT('labels.email')} <span className="text-red-500">*</span>
-                                        </label>
-                                        {isEditingCustomer ? (
-                                            <>
-                                                <input
-                                                    type="email"
-                                                    value={tempCustomer.email}
-                                                    onChange={(e) => {
-                                                        setTempCustomer({ ...tempCustomer, email: e.target.value });
-                                                        if (errors.customerEmail) validateCustomerField('email', e.target.value);
-                                                    }}
-                                                    onBlur={() => validateCustomerField('email', tempCustomer.email)}
-                                                    className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.customerEmail ? 'border-red-500' : 'border-border'}`}
-                                                    style={{ fontSize: 'var(--text-base)' }}
-                                                />
-                                                {errors.customerEmail && (
-                                                    <p className="text-red-500 text-xs mt-1">{errors.customerEmail}</p>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <p className="text-foreground font-medium truncate" style={{ fontSize: 'var(--text-base)' }} title={booking.customer.email}>{booking.customer.email}</p>
-                                        )}
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
-                                            {wizardT('labels.telephone')} <span className="text-red-500">*</span>
-                                        </label>
-                                        {isEditingCustomer ? (
-                                            <>
-                                                <input
-                                                    type="text"
-                                                    value={tempCustomer.phone}
-                                                    onChange={(e) => {
-                                                        setTempCustomer({ ...tempCustomer, phone: e.target.value });
-                                                        if (errors.customerPhone) validateCustomerField('phone', e.target.value);
-                                                    }}
-                                                    onBlur={() => validateCustomerField('phone', tempCustomer.phone)}
-                                                    className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.customerPhone ? 'border-red-500' : 'border-border'}`}
-                                                    style={{ fontSize: 'var(--text-base)' }}
-                                                />
-                                                {errors.customerPhone && (
-                                                    <p className="text-red-500 text-xs mt-1">{errors.customerPhone}</p>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <p className="text-foreground font-medium truncate" style={{ fontSize: 'var(--text-base)' }} title={booking.customer.phone}>{booking.customer.phone}</p>
-                                        )}
+                        <div className="relative min-h-[400px]">
+                            {isTransitioning && (
+                                <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/50 backdrop-blur-[1px] animate-in fade-in duration-200">
+                                    <div className="flex flex-col items-center gap-3">
+                                        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                                        <p className="text-sm font-medium text-muted-foreground animate-pulse">
+                                            {commonT('loading')}...
+                                        </p>
                                     </div>
                                 </div>
-                            </div>
+                            )}
 
-                            {/* Group 2: Adresse */}
-                            <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
-                                <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
-                                    <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                            <MapPin className="w-4 h-4 text-primary" />
+                            <div className={cn(
+                                "transition-all duration-300",
+                                isTransitioning ? "opacity-30 blur-[2px] scale-[0.995]" : "opacity-100 blur-0 scale-100"
+                            )}>
+                                {/* Event Details Tab */}
+                                <TabsContent value="event-details" className="space-y-4 sm:space-y-6 m-0">
+                                    {/* Customer Information */}
+                                    {/* Group 1: Kontaktinformationen */}
+                                    <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
+                                        <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
+                                            <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                                    {/* icon will be different for each section, but the container structure is same */}
+                                                    <User className="w-4 h-4 text-primary" />
+                                                </div>
+                                                <span className="truncate">{wizardT('sections.contactInformation')}</span>
+                                            </h3>
+                                            {canEditBooking && !isLocked && !isEditingCustomer && (
+                                                <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
+                                                    <button
+                                                        onClick={handleEditCustomer}
+                                                        disabled={isReadOnlyStatus}
+                                                        className={cn(
+                                                            "px-2.5 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0",
+                                                            isReadOnlyStatus ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                                        )}
+                                                        style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                                    >
+                                                        <Pencil className="w-3.5 h-3.5" />
+                                                        <span className="hidden xs:inline">{buttonT('edit')}</span>
+                                                        <span className="xs:hidden">{commonT('edit')}</span>
+                                                    </button>
+                                                </Tooltip>
+                                            )}
+                                            {isEditingCustomer && (
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={handleCancelCustomer}
+                                                        className="px-3 py-1.5 border border-border hover:bg-red-600 hover:text-white rounded-lg transition-colors  bg-red-500 text-white hover:text-red-500 cursor-pointer flex items-center gap-2"
+                                                        style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                        <span>{buttonT('cancel')}</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={handleSaveCustomer}
+                                                        disabled={isSaving}
+                                                        className="px-3 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                                                        style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                                    >
+                                                        <Save className="w-4 h-4" />
+                                                        <span>{buttonT('save')}</span>
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
-                                        <span className="truncate">{wizardT('sections.address')}</span>
-                                    </h3>
-                                    {canEditBooking && !isLocked && !isEditingAddress && (
-                                        <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
-                                            <button
-                                                onClick={handleEditAddress}
-                                                disabled={isReadOnlyStatus}
-                                                className={cn(
-                                                    "px-2.5 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0",
-                                                    isReadOnlyStatus ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                                    {wizardT('labels.name')} <span className="text-red-500">*</span>
+                                                </label>
+                                                {isEditingCustomer ? (
+                                                    <>
+                                                        <input
+                                                            type="text"
+                                                            value={tempCustomer.name}
+                                                            onChange={(e) => {
+                                                                setTempCustomer({ ...tempCustomer, name: e.target.value });
+                                                                if (errors.customerName) validateCustomerField('name', e.target.value);
+                                                            }}
+                                                            onBlur={() => validateCustomerField('name', tempCustomer.name)}
+                                                            className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.customerName ? 'border-red-500' : 'border-border'}`}
+                                                            style={{ fontSize: 'var(--text-base)' }}
+                                                        />
+                                                        {errors.customerName && (
+                                                            <p className="text-red-500 text-xs mt-1">{errors.customerName}</p>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <p className="text-foreground font-medium truncate" style={{ fontSize: 'var(--text-base)' }} title={booking.customer.name}>{booking.customer.name}</p>
                                                 )}
-                                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                            >
-                                                <Pencil className="w-3.5 h-3.5" />
-                                                <span className="hidden xs:inline">{buttonT('edit')}</span>
-                                                <span className="xs:hidden">{commonT('edit')}</span>
-                                            </button>
-                                        </Tooltip>
-                                    )}
-                                    {isEditingAddress && (
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                onClick={handleCancelAddress}
-                                                className="px-3 py-1.5 border border-border hover:bg-red-600 hover:text-white rounded-lg transition-colors bg-red-500 text-white hover:text-red-500 cursor-pointer flex items-center gap-2"
-                                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                            >
-                                                <X className="w-4 h-4" />
-                                                <span>{buttonT('cancel')}</span>
-                                            </button>
-                                            <button
-                                                onClick={handleSaveAddress}
-                                                disabled={isSaving}
-                                                className="px-3 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer disabled:opacity-50 flex items-center gap-2"
-                                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                            >
-                                                <Save className="w-4 h-4" />
-                                                <span>{buttonT('save')}</span>
-                                            </button>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.business')}</label>
+                                                {isEditingCustomer ? (
+                                                    <input
+                                                        type="text"
+                                                        value={tempCustomer.business}
+                                                        onChange={(e) => {
+                                                            setTempCustomer({ ...tempCustomer, business: e.target.value });
+                                                            // Business is optional, no validation
+                                                        }}
+                                                        className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
+                                                        style={{ fontSize: 'var(--text-base)' }}
+                                                    />
+                                                ) : (
+                                                    <p className="text-foreground font-medium truncate" style={{ fontSize: 'var(--text-base)' }} title={booking.customer.business || ''}>{booking.customer.business || '-'}</p>
+                                                )}
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                                    {wizardT('labels.email')} <span className="text-red-500">*</span>
+                                                </label>
+                                                {isEditingCustomer ? (
+                                                    <>
+                                                        <input
+                                                            type="email"
+                                                            value={tempCustomer.email}
+                                                            onChange={(e) => {
+                                                                setTempCustomer({ ...tempCustomer, email: e.target.value });
+                                                                if (errors.customerEmail) validateCustomerField('email', e.target.value);
+                                                            }}
+                                                            onBlur={() => validateCustomerField('email', tempCustomer.email)}
+                                                            className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.customerEmail ? 'border-red-500' : 'border-border'}`}
+                                                            style={{ fontSize: 'var(--text-base)' }}
+                                                        />
+                                                        {errors.customerEmail && (
+                                                            <p className="text-red-500 text-xs mt-1">{errors.customerEmail}</p>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <p className="text-foreground font-medium truncate" style={{ fontSize: 'var(--text-base)' }} title={booking.customer.email}>{booking.customer.email}</p>
+                                                )}
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                                    {wizardT('labels.telephone')} <span className="text-red-500">*</span>
+                                                </label>
+                                                {isEditingCustomer ? (
+                                                    <>
+                                                        <input
+                                                            type="text"
+                                                            value={tempCustomer.phone}
+                                                            onChange={(e) => {
+                                                                setTempCustomer({ ...tempCustomer, phone: e.target.value });
+                                                                if (errors.customerPhone) validateCustomerField('phone', e.target.value);
+                                                            }}
+                                                            onBlur={() => validateCustomerField('phone', tempCustomer.phone)}
+                                                            className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.customerPhone ? 'border-red-500' : 'border-border'}`}
+                                                            style={{ fontSize: 'var(--text-base)' }}
+                                                        />
+                                                        {errors.customerPhone && (
+                                                            <p className="text-red-500 text-xs mt-1">{errors.customerPhone}</p>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <p className="text-foreground font-medium truncate" style={{ fontSize: 'var(--text-base)' }} title={booking.customer.phone}>{booking.customer.phone}</p>
+                                                )}
+                                            </div>
                                         </div>
-                                    )}
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="sm:col-span-2 space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
-                                            {wizardT('labels.street')} <span className="text-red-500">*</span>
-                                        </label>
-                                        {isEditingAddress ? (
-                                            <>
-                                                <input
-                                                    type="text"
-                                                    value={tempCustomer.street}
-                                                    onChange={(e) => {
-                                                        setTempCustomer({ ...tempCustomer, street: e.target.value });
-                                                        if (errors.street) validateCustomerField('street', e.target.value);
-                                                    }}
-                                                    onBlur={() => validateCustomerField('street', tempCustomer.street)}
-                                                    className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.street ? 'border-red-500' : 'border-border'}`}
-                                                    style={{ fontSize: 'var(--text-base)' }}
-                                                />
-                                                {errors.street && (
-                                                    <p className="text-red-500 text-xs mt-1">{errors.street}</p>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.street || '-'}</p>
-                                        )}
                                     </div>
-                                    <div className="space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
-                                            {wizardT('labels.plz')} <span className="text-red-500">*</span>
-                                        </label>
-                                        {isEditingAddress ? (
-                                            <>
-                                                <input
-                                                    type="text"
-                                                    value={tempCustomer.plz}
-                                                    onChange={(e) => {
-                                                        setTempCustomer({ ...tempCustomer, plz: e.target.value });
-                                                        if (errors.plz) validateCustomerField('plz', e.target.value);
-                                                    }}
-                                                    onBlur={() => validateCustomerField('plz', tempCustomer.plz)}
-                                                    className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.plz ? 'border-red-500' : 'border-border'}`}
-                                                    style={{ fontSize: 'var(--text-base)' }}
-                                                />
-                                                {errors.plz && (
-                                                    <p className="text-red-500 text-xs mt-1">{errors.plz}</p>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.plz || '-'}</p>
-                                        )}
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
-                                            {wizardT('labels.location')} <span className="text-red-500">*</span>
-                                        </label>
-                                        {isEditingAddress ? (
-                                            <>
-                                                <input
-                                                    type="text"
-                                                    value={tempCustomer.location}
-                                                    onChange={(e) => {
-                                                        setTempCustomer({ ...tempCustomer, location: e.target.value });
-                                                        if (errors.location) validateCustomerField('location', e.target.value);
-                                                    }}
-                                                    onBlur={() => validateCustomerField('location', tempCustomer.location)}
-                                                    className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.location ? 'border-red-500' : 'border-border'}`}
-                                                    style={{ fontSize: 'var(--text-base)' }}
-                                                />
-                                                {errors.location && (
-                                                    <p className="text-red-500 text-xs mt-1">{errors.location}</p>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.location || '-'}</p>
-                                        )}
-                                    </div>
-                                    <div className="sm:col-span-2 space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.reference')}</label>
-                                        {isEditingAddress ? (
-                                            <input
-                                                type="text"
-                                                value={tempCustomer.reference}
-                                                onChange={(e) => setTempCustomer({ ...tempCustomer, reference: e.target.value })}
-                                                className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
-                                                style={{ fontSize: 'var(--text-base)' }}
-                                            />
-                                        ) : (
-                                            <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.reference || '-'}</p>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
 
-                            {/* Event Details */}
-                            <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
-                                <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
-                                    <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                            <CalendarDays className="w-4 h-4 text-primary" />
+                                    {/* Group 2: Adresse */}
+                                    <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
+                                        <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
+                                            <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                                    <MapPin className="w-4 h-4 text-primary" />
+                                                </div>
+                                                <span className="truncate">{wizardT('sections.address')}</span>
+                                            </h3>
+                                            {canEditBooking && !isLocked && !isEditingAddress && (
+                                                <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
+                                                    <button
+                                                        onClick={handleEditAddress}
+                                                        disabled={isReadOnlyStatus}
+                                                        className={cn(
+                                                            "px-2.5 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0",
+                                                            isReadOnlyStatus ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                                        )}
+                                                        style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                                    >
+                                                        <Pencil className="w-3.5 h-3.5" />
+                                                        <span className="hidden xs:inline">{buttonT('edit')}</span>
+                                                        <span className="xs:hidden">{commonT('edit')}</span>
+                                                    </button>
+                                                </Tooltip>
+                                            )}
+                                            {isEditingAddress && (
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={handleCancelAddress}
+                                                        className="px-3 py-1.5 border border-border hover:bg-red-600 hover:text-white rounded-lg transition-colors bg-red-500 text-white hover:text-red-500 cursor-pointer flex items-center gap-2"
+                                                        style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                        <span>{buttonT('cancel')}</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={handleSaveAddress}
+                                                        disabled={isSaving}
+                                                        className="px-3 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                                                        style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                                    >
+                                                        <Save className="w-4 h-4" />
+                                                        <span>{buttonT('save')}</span>
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
-                                        <span className="truncate">{wizardT('sections.eventDetails')}</span>
-                                    </h3>
-                                    <div className="flex items-center gap-2">
-                                        {/* {kitchenPdfStatus && !isEditingEvent && (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div className="sm:col-span-2 space-y-1">
+                                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                                    {wizardT('labels.street')} <span className="text-red-500">*</span>
+                                                </label>
+                                                {isEditingAddress ? (
+                                                    <>
+                                                        <input
+                                                            type="text"
+                                                            value={tempCustomer.street}
+                                                            onChange={(e) => {
+                                                                setTempCustomer({ ...tempCustomer, street: e.target.value });
+                                                                if (errors.street) validateCustomerField('street', e.target.value);
+                                                            }}
+                                                            onBlur={() => validateCustomerField('street', tempCustomer.street)}
+                                                            className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.street ? 'border-red-500' : 'border-border'}`}
+                                                            style={{ fontSize: 'var(--text-base)' }}
+                                                        />
+                                                        {errors.street && (
+                                                            <p className="text-red-500 text-xs mt-1">{errors.street}</p>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.street || '-'}</p>
+                                                )}
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                                    {wizardT('labels.plz')} <span className="text-red-500">*</span>
+                                                </label>
+                                                {isEditingAddress ? (
+                                                    <>
+                                                        <input
+                                                            type="text"
+                                                            value={tempCustomer.plz}
+                                                            onChange={(e) => {
+                                                                setTempCustomer({ ...tempCustomer, plz: e.target.value });
+                                                                if (errors.plz) validateCustomerField('plz', e.target.value);
+                                                            }}
+                                                            onBlur={() => validateCustomerField('plz', tempCustomer.plz)}
+                                                            className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.plz ? 'border-red-500' : 'border-border'}`}
+                                                            style={{ fontSize: 'var(--text-base)' }}
+                                                        />
+                                                        {errors.plz && (
+                                                            <p className="text-red-500 text-xs mt-1">{errors.plz}</p>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.plz || '-'}</p>
+                                                )}
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                                    {wizardT('labels.location')} <span className="text-red-500">*</span>
+                                                </label>
+                                                {isEditingAddress ? (
+                                                    <>
+                                                        <input
+                                                            type="text"
+                                                            value={tempCustomer.location}
+                                                            onChange={(e) => {
+                                                                setTempCustomer({ ...tempCustomer, location: e.target.value });
+                                                                if (errors.location) validateCustomerField('location', e.target.value);
+                                                            }}
+                                                            onBlur={() => validateCustomerField('location', tempCustomer.location)}
+                                                            className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.location ? 'border-red-500' : 'border-border'}`}
+                                                            style={{ fontSize: 'var(--text-base)' }}
+                                                        />
+                                                        {errors.location && (
+                                                            <p className="text-red-500 text-xs mt-1">{errors.location}</p>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.location || '-'}</p>
+                                                )}
+                                            </div>
+                                            <div className="sm:col-span-2 space-y-1">
+                                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.reference')}</label>
+                                                {isEditingAddress ? (
+                                                    <input
+                                                        type="text"
+                                                        value={tempCustomer.reference}
+                                                        onChange={(e) => setTempCustomer({ ...tempCustomer, reference: e.target.value })}
+                                                        className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
+                                                        style={{ fontSize: 'var(--text-base)' }}
+                                                    />
+                                                ) : (
+                                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>{booking.customer.reference || '-'}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Event Details */}
+                                    <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
+                                        <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
+                                            <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                                    <CalendarDays className="w-4 h-4 text-primary" />
+                                                </div>
+                                                <span className="truncate">{wizardT('sections.eventDetails')}</span>
+                                            </h3>
+                                            <div className="flex items-center gap-2">
+                                                {/* {kitchenPdfStatus && !isEditingEvent && (
                                             <KitchenPdfStatusBadge
                                                 status={kitchenPdfStatus.sentStatus}
                                                 lastSentAt={kitchenPdfStatus.lastSentAt}
                                             />
                                         )} */}
-                                        {canEditBooking && !isLocked && !isEditingEvent && (
-                                            <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
-                                                <button
-                                                    onClick={handleEditEvent}
-                                                    disabled={isReadOnlyStatus}
-                                                    className={cn(
-                                                        "px-2.5 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0",
-                                                        isReadOnlyStatus ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-                                                    )}
-                                                    style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                                >
-                                                    <Pencil className="w-3.5 h-3.5" />
-                                                    <span className="hidden xs:inline">{buttonT('edit')}</span>
-                                                    <span className="xs:hidden">{commonT('edit')}</span>
-                                                </button>
-                                            </Tooltip>
-                                        )}
-                                        {isEditingEvent && (
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    onClick={handleCancelEvent}
-                                                    className="px-3 py-1.5 border border-border hover:bg-red-600 hover:text-white rounded-lg transition-colors bg-red-500 text-white hover:text-red-500 cursor-pointer flex items-center gap-2"
-                                                    style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                    <span>{buttonT('cancel')}</span>
-                                                </button>
-                                                <button
-                                                    onClick={handleSaveEvent}
-                                                    disabled={isSaving}
-                                                    className="px-3 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer disabled:opacity-50 flex items-center gap-2"
-                                                    style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                                >
-                                                    <Save className="w-4 h-4" />
-                                                    <span>{buttonT('save')}</span>
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
-                                            {wizardT('labels.eventDate')} <span className="text-red-500">*</span>
-                                        </label>
-                                        {isEditingEvent ? (
-                                            <>
-                                                <input
-                                                    type="date"
-                                                    value={tempEvent.date}
-                                                    onChange={(e) => {
-                                                        setTempEvent({ ...tempEvent, date: e.target.value });
-                                                        if (errors.eventDate) validateEventField('date', e.target.value);
-                                                    }}
-                                                    onBlur={() => validateEventField('date', tempEvent.date)}
-                                                    className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.eventDate ? 'border-red-500' : 'border-border'}`}
-                                                    style={{ fontSize: 'var(--text-base)' }}
-                                                />
-                                                {errors.eventDate && (
-                                                    <p className="text-red-500 text-xs mt-1">{errors.eventDate}</p>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={formatDate(booking.event.date)}>{formatDate(booking.event.date)}</p>
-                                        )}
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
-                                            {wizardT('labels.eventTime')} <span className="text-red-500">*</span>
-                                        </label>
-                                        {isEditingEvent ? (
-                                            <>
-                                                <input
-                                                    type="time"
-                                                    value={tempEvent.time}
-                                                    onChange={(e) => {
-                                                        setTempEvent({ ...tempEvent, time: e.target.value });
-                                                        if (errors.eventTime) validateEventField('time', e.target.value);
-                                                    }}
-                                                    onBlur={() => validateEventField('time', tempEvent.time)}
-                                                    className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.eventTime ? 'border-red-500' : 'border-border'}`}
-                                                    style={{ fontSize: 'var(--text-base)' }}
-                                                />
-                                                {errors.eventTime && (
-                                                    <p className="text-red-500 text-xs mt-1">{errors.eventTime}</p>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={booking.event.time}>{booking.event.time}</p>
-                                        )}
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
-                                            {wizardT('labels.guestCount')} <span className="text-red-500">*</span>
-                                        </label>
-                                        {isEditingEvent ? (
-                                            <>
-                                                <input
-                                                    type="number"
-                                                    value={tempEvent.guests}
-                                                    onChange={(e) => {
-                                                        const val = parseInt(e.target.value) || 0;
-                                                        setTempEvent({ ...tempEvent, guests: val });
-                                                        if (errors.guestCount) validateEventField('guests', val);
-                                                    }}
-                                                    onBlur={() => validateEventField('guests', tempEvent.guests)}
-                                                    className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.guestCount ? 'border-red-500' : 'border-border'}`}
-                                                    style={{ fontSize: 'var(--text-base)' }}
-                                                />
-                                                {errors.guestCount && (
-                                                    <p className="text-red-500 text-xs mt-1">{errors.guestCount}</p>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={booking.guests.toString()} translate="no">
-                                                <span>{booking.guests}</span>
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.occasion')}</label>
-                                        {isEditingEvent ? (
-                                            <input
-                                                type="text"
-                                                value={tempEvent.occasion}
-                                                onChange={(e) => {
-                                                    setTempEvent({ ...tempEvent, occasion: e.target.value });
-                                                    if (errors.occasion) validateEventField('occasion', e.target.value);
-                                                }}
-                                                onBlur={() => validateEventField('occasion', tempEvent.occasion)}
-                                                className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.occasion ? 'border-red-500' : 'border-border'}`}
-                                                style={{ fontSize: 'var(--text-base)' }}
-                                            />
-                                        ) : (
-                                            <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={booking.event.occasion}>{booking.event.occasion}</p>
-                                        )}
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('amount')} (CHF)</label>
-                                        <p className="text-foreground font-medium py-1" style={{ fontSize: 'var(--text-base)' }} title={booking.amount} translate="no">
-                                            <span>{booking.amount}</span>
-                                        </p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.room')}</label>
-                                        {isEditingEvent ? (
-                                            <select
-                                                value={selectedRoom.toLowerCase()}
-                                                onChange={(e) => setSelectedRoom(e.target.value)}
-                                                className="w-full px-4 py-2 bg-input-background border border-border rounded-lg text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                                style={{ fontSize: 'var(--text-base)' }}
-                                            >
-                                                <option value="">{t('notAssigned')}</option>
-                                                {currentGuests < 50 && (
-                                                    <option value="eg">EG</option>
-                                                )}
-                                                {currentGuests >= 30 && (
-                                                    <>
-                                                        <option value="ug1">UG1</option>
-                                                        <option value="ug1_exklusiv">UG1 Exclusive</option>
-                                                    </>
-                                                )}
-                                            </select>
-                                        ) : (
-                                            <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>
-                                                {selectedRoom ? selectedRoom.toUpperCase() : t('notAssigned')}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Group 4: Spezielle Wünsche */}
-                            <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
-                                <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
-                                    <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                            <Info className="w-4 h-4 text-primary" />
-                                        </div>
-                                        <span className="truncate">{wizardT('sections.specialRequests')}</span>
-                                    </h3>
-                                    {canEditBooking && !isLocked && !isEditingSpecialRequests && (
-                                        <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
-                                            <button
-                                                onClick={handleEditSpecialRequests}
-                                                disabled={isReadOnlyStatus}
-                                                className={cn(
-                                                    "px-2.5 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0",
-                                                    isReadOnlyStatus ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-                                                )}
-                                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                            >
-                                                <Pencil className="w-3.5 h-3.5" />
-                                                <span className="hidden xs:inline">{buttonT('edit')}</span>
-                                                <span className="xs:hidden">{commonT('edit')}</span>
-                                            </button>
-                                        </Tooltip>
-                                    )}
-                                    {isEditingSpecialRequests && (
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                onClick={handleCancelSpecialRequests}
-                                                className="px-3 py-1.5 border border-border hover:bg-red-600 hover:text-white rounded-lg transition-colors bg-red-500 text-white hover:text-red-500 cursor-pointer flex items-center gap-2"
-                                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                            >
-                                                <X className="w-4 h-4" />
-                                                <span>{buttonT('cancel')}</span>
-                                            </button>
-                                            <button
-                                                onClick={handleSaveSpecialRequests}
-                                                disabled={isSaving}
-                                                className="px-3 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer disabled:opacity-50 flex items-center gap-2"
-                                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                            >
-                                                <Save className="w-4 h-4" />
-                                                <span>{buttonT('save')}</span>
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="space-y-4">
-                                    <div className="space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('allergies')}</label>
-                                        {isEditingSpecialRequests ? (
-                                            <>
-                                                <input
-                                                    type="text"
-                                                    value={allergies}
-                                                    onChange={(e) => {
-                                                        setAllergies(e.target.value);
-                                                        // Clear error on change
-                                                        if (errors.allergies) setErrors({ ...errors, allergies: undefined });
-                                                    }}
-                                                    onBlur={() => {
-                                                        // Validate on blur if not empty
-                                                        if (allergies.trim()) {
-                                                            const allergiesResult = bookingAllergiesSchema.safeParse(allergies);
-                                                            if (!allergiesResult.success) {
-                                                                setErrors({ ...errors, allergies: allergiesResult.error.errors[0].message });
-                                                            }
-                                                        }
-                                                    }}
-                                                    className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.allergies ? 'border-red-500' : 'border-border'}`}
-                                                    style={{ fontSize: 'var(--text-base)' }}
-                                                />
-                                                {errors.allergies && (
-                                                    <p className="text-red-500 text-xs mt-1">{errors.allergies}</p>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <p className="text-foreground font-medium line-clamp-2" style={{ fontSize: 'var(--text-base)' }} title={Array.isArray(booking.allergies) ? booking.allergies.join(', ') : (booking.allergies || '')}>{Array.isArray(booking.allergies) ? booking.allergies.join(', ') : (booking.allergies || '-')}</p>
-                                        )}
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('internalInstructions')}</label>
-                                        {isEditingSpecialRequests ? (
-                                            <>
-                                                <ValidatedTextarea
-                                                    value={notes}
-                                                    onChange={(e) => {
-                                                        setNotes(e.target.value);
-                                                        // Clear error on change
-                                                        if (errors.specialRequests) setErrors({ ...errors, specialRequests: undefined });
-                                                    }}
-                                                    onBlur={() => {
-                                                        // Validate on blur if not empty
-                                                        if (notes.trim()) {
-                                                            const notesResult = bookingSpecialRequestsSchema.safeParse(notes);
-                                                            if (!notesResult.success) {
-                                                                setErrors({ ...errors, specialRequests: notesResult.error.errors[0].message });
-                                                            }
-                                                        }
-                                                    }}
-                                                    className={`w-full bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.specialRequests ? 'border-red-500' : 'border-border'}`}
-                                                    style={{ fontSize: 'var(--text-base)' }}
-                                                    rows={3}
-                                                />
-                                                {errors.specialRequests && (
-                                                    <p className="text-red-500 text-xs mt-1">{errors.specialRequests}</p>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <p className="text-foreground font-medium line-clamp-3" style={{ fontSize: 'var(--text-base)' }} title={booking.notes || ''}>{booking.notes || '-'}</p>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Group 5: Zahlungsmöglichkeiten */}
-                            <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
-                                <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
-                                    <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                            <CreditCard className="w-4 h-4 text-primary" />
-                                        </div>
-                                        <span className="truncate">{wizardT('sections.paymentOptions')}</span>
-                                    </h3>
-                                    {canEditBooking && !isLocked && !isEditingPayment && (
-                                        <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
-                                            <button
-                                                onClick={handleEditPayment}
-                                                disabled={isReadOnlyStatus}
-                                                className={cn(
-                                                    "px-2.5 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0",
-                                                    isReadOnlyStatus ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-                                                )}
-                                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                            >
-                                                <Pencil className="w-3.5 h-3.5" />
-                                                <span className="hidden xs:inline">{buttonT('edit')}</span>
-                                                <span className="xs:hidden">{commonT('edit')}</span>
-                                            </button>
-                                        </Tooltip>
-                                    )}
-                                    {isEditingPayment && (
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                onClick={handleCancelPayment}
-                                                className="px-3 py-1.5 border border-border hover:bg-red-600 hover:text-white rounded-lg transition-colors bg-red-500 text-white hover:text-red-500 cursor-pointer flex items-center gap-2"
-                                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                            >
-                                                <X className="w-4 h-4" />
-                                                <span>{buttonT('cancel')}</span>
-                                            </button>
-                                            <button
-                                                onClick={handleSavePayment}
-                                                disabled={isSaving}
-                                                className="px-3 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer disabled:opacity-50 flex items-center gap-2"
-                                                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                            >
-                                                <Save className="w-4 h-4" />
-                                                <span>{buttonT('save')}</span>
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="space-y-6">
-                                    {isEditingPayment ? (
-                                        <div className="space-y-4">
-                                            <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                                {wizardT('labels.choosePayment')}
-                                            </p>
-                                            <div className="grid grid-cols-1 gap-4">
-                                                <label
-                                                    className={`flex items-center gap-3 cursor-pointer p-4 rounded-lg border-2 transition-all ${tempCustomer.paymentMethod === 'ec_card' ? 'border-primary bg-primary/5' : 'border-border hover:border-border/80'}`}
-                                                    style={{ borderRadius: 'var(--radius)' }}
-                                                >
-                                                    <NativeRadio
-                                                        name="paymentMethodAdmin"
-                                                        checked={tempCustomer.paymentMethod === 'ec_card'}
-                                                        onChange={() => {
-                                                            setTempCustomer({ ...tempCustomer, paymentMethod: 'ec_card' });
-                                                            if (errors.paymentMethod) validatePaymentField('paymentMethod', 'ec_card');
-                                                        }}
-                                                    />
-                                                    <div className="flex-1">
-                                                        <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                                                            {wizardT('labels.ecCard') || 'EC-Karte / Karte vor Ort'}
-                                                        </span>
-                                                    </div>
-                                                </label>
-
-                                                <label
-                                                    className={`flex items-center gap-3 cursor-pointer p-4 rounded-lg border-2 transition-all ${tempCustomer.paymentMethod === 'on_bill' ? 'border-primary bg-primary/5' : 'border-border hover:border-border/80'}`}
-                                                    style={{ borderRadius: 'var(--radius)' }}
-                                                >
-                                                    <NativeRadio
-                                                        name="paymentMethodAdmin"
-                                                        checked={tempCustomer.paymentMethod === 'on_bill'}
-                                                        onChange={() => {
-                                                            setTempCustomer({ ...tempCustomer, paymentMethod: 'on_bill' });
-                                                            if (errors.paymentMethod) validatePaymentField('paymentMethod', 'on_bill');
-                                                        }}
-                                                    />
-                                                    <div className="flex-1">
-                                                        <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                                                            {wizardT('labels.onInvoice') || 'Auf Rechnung'}
-                                                        </span>
-                                                    </div>
-                                                </label>
-                                            </div>
-                                            {errors.paymentMethod && (
-                                                <p className="text-red-500 text-xs">{errors.paymentMethod}</p>
-                                            )}
-
-                                            {tempCustomer.paymentMethod === 'on_bill' && (
-                                                <div className="space-y-4 mt-6 pt-6 border-t border-border">
-                                                    <div className="flex items-center gap-2">
-                                                        <input
-                                                            type="checkbox"
-                                                            id="sameAddressBilling"
-                                                            checked={useSameAddressForBilling}
-                                                            onChange={(e) => {
-                                                                const checked = e.target.checked;
-                                                                setUseSameAddressForBilling(checked);
-                                                                if (checked) {
-                                                                    setTempCustomer({
-                                                                        ...tempCustomer,
-                                                                        billingStreet: tempCustomer.street,
-                                                                        billingPlz: tempCustomer.plz,
-                                                                        billingLocation: tempCustomer.location
-                                                                    });
-                                                                    // Clear validation errors for billing fields
-                                                                    setErrors(prev => ({
-                                                                        ...prev,
-                                                                        billingStreet: undefined,
-                                                                        billingPlz: undefined,
-                                                                        billingLocation: undefined
-                                                                    }));
-                                                                } else {
-                                                                    setTempCustomer({
-                                                                        ...tempCustomer,
-                                                                        billingStreet: '',
-                                                                        billingPlz: '',
-                                                                        billingLocation: ''
-                                                                    });
-                                                                }
-                                                            }}
-                                                            className="w-4 h-4 rounded border-border text-primary focus:ring-2 focus:ring-primary/20 cursor-pointer"
-                                                        />
-                                                        <label
-                                                            htmlFor="sameAddressBilling"
-                                                            className="text-sm text-foreground cursor-pointer select-none"
-                                                            style={{ fontSize: 'var(--text-small)' }}
+                                                {canEditBooking && !isLocked && !isEditingEvent && (
+                                                    <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
+                                                        <button
+                                                            onClick={handleEditEvent}
+                                                            disabled={isReadOnlyStatus}
+                                                            className={cn(
+                                                                "px-2.5 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0",
+                                                                isReadOnlyStatus ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                                            )}
+                                                            style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                                                         >
-                                                            {wizardT('labels.useSameAddress') || 'Same as customer address'}
-                                                        </label>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                        <div className="sm:col-span-2 space-y-1">
-                                                            <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
-                                                                {wizardT('labels.street')} <span className="text-red-500">*</span>
-                                                            </label>
-                                                            <input
-                                                                type="text"
-                                                                value={tempCustomer.billingStreet}
-                                                                onChange={(e) => {
-                                                                    setTempCustomer({ ...tempCustomer, billingStreet: e.target.value });
-                                                                    if (useSameAddressForBilling) {
-                                                                        setTempCustomer(prev => ({ ...prev, street: e.target.value }));
-                                                                        if (errors.street) validateCustomerField('street', e.target.value);
-                                                                    }
-                                                                }}
-                                                                onBlur={() => {
-                                                                    if (!useSameAddressForBilling) {
-                                                                        validatePaymentField('billingStreet', tempCustomer.billingStreet);
-                                                                    }
-                                                                }}
-                                                                disabled={useSameAddressForBilling}
-                                                                className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.billingStreet ? 'border-red-500' : 'border-border'} ${useSameAddressForBilling ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                                style={{ fontSize: 'var(--text-base)' }}
-                                                                placeholder={wizardT('placeholders.street') || 'Strasse eingeben'}
-                                                            />
-                                                            {errors.billingStreet && (
-                                                                <p className="text-red-500 text-xs mt-1">{errors.billingStreet}</p>
-                                                            )}
-                                                        </div>
-                                                        <div className="space-y-1">
-                                                            <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
-                                                                {wizardT('labels.plz')} <span className="text-red-500">*</span>
-                                                            </label>
-                                                            <input
-                                                                type="text"
-                                                                value={tempCustomer.billingPlz}
-                                                                onChange={(e) => {
-                                                                    setTempCustomer({ ...tempCustomer, billingPlz: e.target.value });
-                                                                    if (useSameAddressForBilling) {
-                                                                        setTempCustomer(prev => ({ ...prev, plz: e.target.value }));
-                                                                        if (errors.plz) validateCustomerField('plz', e.target.value);
-                                                                    }
-                                                                }}
-                                                                onBlur={() => {
-                                                                    if (!useSameAddressForBilling) {
-                                                                        validatePaymentField('billingPlz', tempCustomer.billingPlz);
-                                                                    }
-                                                                }}
-                                                                disabled={useSameAddressForBilling}
-                                                                className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.billingPlz ? 'border-red-500' : 'border-border'} ${useSameAddressForBilling ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                                style={{ fontSize: 'var(--text-base)' }}
-                                                                placeholder={wizardT('placeholders.plz') || 'PLZ'}
-                                                            />
-                                                            {errors.billingPlz && (
-                                                                <p className="text-red-500 text-xs mt-1">{errors.billingPlz}</p>
-                                                            )}
-                                                        </div>
-                                                        <div className="space-y-1">
-                                                            <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
-                                                                {wizardT('labels.location')} <span className="text-red-500">*</span>
-                                                            </label>
-                                                            <input
-                                                                type="text"
-                                                                value={tempCustomer.billingLocation}
-                                                                onChange={(e) => {
-                                                                    setTempCustomer({ ...tempCustomer, billingLocation: e.target.value });
-                                                                    if (useSameAddressForBilling) {
-                                                                        setTempCustomer(prev => ({ ...prev, location: e.target.value }));
-                                                                        if (errors.location) validateCustomerField('location', e.target.value);
-                                                                    }
-                                                                }}
-                                                                onBlur={() => {
-                                                                    if (!useSameAddressForBilling) {
-                                                                        validatePaymentField('billingLocation', tempCustomer.billingLocation);
-                                                                    }
-                                                                }}
-                                                                disabled={useSameAddressForBilling}
-                                                                className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.billingLocation ? 'border-red-500' : 'border-border'} ${useSameAddressForBilling ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                                style={{ fontSize: 'var(--text-base)' }}
-                                                                placeholder={wizardT('placeholders.location') || 'Ort'}
-                                                            />
-                                                            {errors.billingLocation && (
-                                                                <p className="text-red-500 text-xs mt-1">{errors.billingLocation}</p>
-                                                            )}
-                                                        </div>
-                                                        <div className="space-y-1">
-                                                            <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.reference')}</label>
-                                                            <input
-                                                                type="text"
-                                                                value={tempCustomer.billingReference}
-                                                                onChange={(e) => {
-                                                                    setTempCustomer({ ...tempCustomer, billingReference: e.target.value });
-                                                                    if (errors.billingReference) validatePaymentField('billingReference', e.target.value);
-                                                                }}
-                                                                onBlur={() => validatePaymentField('billingReference', tempCustomer.billingReference)}
-                                                                className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.billingReference ? 'border-red-500' : 'border-border'}`}
-                                                                style={{ fontSize: 'var(--text-base)' }}
-                                                                placeholder={wizardT('placeholders.billingReference') || 'Referenznummer hinzufügen'}
-                                                            />
-                                                            {errors.billingReference && (
-                                                                <p className="text-red-500 text-xs mt-1">{errors.billingReference}</p>
-                                                            )}
-                                                        </div>
-                                                        <div className="space-y-1">
-                                                            <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.customerReference') || 'Customer Reference'}</label>
-                                                            <input
-                                                                type="text"
-                                                                value={tempCustomer.billingCustomerReference}
-                                                                onChange={(e) => {
-                                                                    setTempCustomer({ ...tempCustomer, billingCustomerReference: e.target.value });
-                                                                }}
-                                                                className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
-                                                                style={{ fontSize: 'var(--text-base)' }}
-                                                                placeholder={wizardT('placeholders.customerReference') || 'Kundenreferenz hinzufügen'}
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <div className="grid grid-cols-1 gap-6">
-                                            <div className="space-y-1">
-                                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.paymentOption')}</label>
-                                                <div className="flex items-center gap-3 p-3 bg-muted/20 border border-border rounded-lg">
-                                                    <div className={`w-3 h-3 rounded-full bg-primary`} />
-                                                    <span className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>
-                                                        {booking.paymentMethod === 'on_bill' ? (wizardT('labels.onInvoice')) :
-                                                            (wizardT('labels.ecCard') || 'EC-Karte / Karte vor Ort')}
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            {booking.paymentMethod === 'on_bill' && (
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                    <div className="sm:col-span-2 space-y-2">
-                                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.street')}</label>
-                                                        <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
-                                                            <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                                                {(booking as any).billingStreet || '-'}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.plz')}</label>
-                                                        <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
-                                                            <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                                                {(booking as any).billingPlz || '-'}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.location')}</label>
-                                                        <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
-                                                            <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                                                {(booking as any).billingLocation || '-'}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="space-y-2 sm:col-span-2">
-                                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.reference')}</label>
-                                                        <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
-                                                            <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                                                {booking.billingReference || '-'}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </TabsContent>
-
-                        {/* Menu Details Tab */}
-                        <TabsContent value="menu-details" className="space-y-6">
-                            {/* Menu Items */}
-                            <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
-                                <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
-                                    <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                        <UtensilsCrossed className="w-5 h-5 text-primary flex-shrink-0" />
-                                        <span className="truncate">{t('menuItems')}</span>
-                                    </h3>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        {canEditBooking && !isLocked && !isEditingMenu && (
-                                            <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
-                                                <button
-                                                    onClick={handleEditMenu}
-                                                    disabled={isReadOnlyStatus}
-                                                    className={cn(
-                                                        "px-3 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary flex items-center gap-2",
-                                                        isReadOnlyStatus ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-                                                    )}
-                                                    style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                                >
-                                                    <Pencil className="w-3.5 h-3.5" />
-                                                    <span>{buttonT('edit')}</span>
-                                                </button>
-                                            </Tooltip>
-                                        )}
-                                        {canEditBooking && !isLocked && !isEditingMenu && (
-                                            <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
-                                                <button
-                                                    onClick={handleEditItems}
-                                                    disabled={isReadOnlyStatus}
-                                                    className={cn(
-                                                        "px-3 py-1.5 border border-border hover:bg-primary hover:text-secondary rounded-lg transition-colors bg-secondary text-white flex items-center gap-2",
-                                                        isReadOnlyStatus ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-                                                    )}
-                                                    style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                                >
-                                                    <UtensilsCrossed className="w-3.5 h-3.5" />
-                                                    <span>{commonT('editItems')}</span>
-                                                </button>
-                                            </Tooltip>
-                                        )}
-                                        {isEditingMenu && (
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    onClick={handleCancelMenu}
-                                                    disabled={isSaving}
-                                                    className="px-3 py-1.5 border border-border hover:bg-red-600 hover:text-white rounded-lg transition-colors bg-red-500 text-white hover:text-red-500 cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                    style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                    <span>{buttonT('cancel')}</span>
-                                                </button>
-                                                <button
-                                                    onClick={handleSaveMenu}
-                                                    disabled={isSaving}
-                                                    className="px-3 py-1.5 border border-border hover:bg-secondary rounded-lg transition-colors bg-primary text-secondary hover:text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                                    style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                                >
-                                                    {isSaving ? (
-                                                        <>
-                                                            <div className="w-4 h-4 border-2 border-green-600/30 border-t-transparent rounded-full animate-spin" />
-                                                            <span>Saving...</span>
-                                                        </>
-                                                    ) : (
-                                                        <>
+                                                            <Pencil className="w-3.5 h-3.5" />
+                                                            <span className="hidden xs:inline">{buttonT('edit')}</span>
+                                                            <span className="xs:hidden">{commonT('edit')}</span>
+                                                        </button>
+                                                    </Tooltip>
+                                                )}
+                                                {isEditingEvent && (
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={handleCancelEvent}
+                                                            className="px-3 py-1.5 border border-border hover:bg-red-600 hover:text-white rounded-lg transition-colors bg-red-500 text-white hover:text-red-500 cursor-pointer flex items-center gap-2"
+                                                            style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                            <span>{buttonT('cancel')}</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={handleSaveEvent}
+                                                            disabled={isSaving}
+                                                            className="px-3 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                                                            style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                                        >
                                                             <Save className="w-4 h-4" />
                                                             <span>{buttonT('save')}</span>
-                                                        </>
-                                                    )}
-                                                </button>
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="bg-background border border-border rounded-lg overflow-x-auto -mx-2 sm:mx-0">
-                                    <table className="w-full min-w-[500px] sm:min-w-0">
-                                        <thead className="bg-muted">
-                                            <tr>
-                                                <th className="px-4 py-3 text-left text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{commonT('item')}</th>
-                                                <th className="px-4 py-3 text-left text-foreground text-xs sm:text-sm hidden sm:table-cell" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{commonT('category')}</th>
-                                                <th className="px-4 py-3 text-left text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{t('quantity')}</th>
-                                                <th className="px-4 py-3 text-right text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{buttonT('price')}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {(isEditingMenu ? tempMenuItems : booking.menuItems) && (isEditingMenu ? tempMenuItems : booking.menuItems)!.length > 0 ? (
-                                                (isEditingMenu ? tempMenuItems : booking.menuItems)!.map((item: any, index: number) => (
-                                                    <tr key={item.id || item.itemId || `row-${index}`} className="border-t border-border">
-                                                        <td className="px-4 py-3 text-foreground text-xs sm:text-sm">
-                                                            <div className="flex flex-col gap-1.5 py-1">
-                                                                <div className="flex flex-wrap items-center gap-x-2 font-medium text-foreground" title={item.item || item.name}>
-                                                                    {item.dietaryType && item.dietaryType !== 'none' && (
-                                                                        <DietaryIcon type={item.dietaryType} size="sm" />
-                                                                    )}
-                                                                    <div>
-                                                                        <span className="truncate max-w-[200px] sm:max-w-[300px] inline-block" title={item.item || item.name}>{item.item || item.name}</span>
-                                                                        {item.variant && (
-                                                                            <span className="ml-1.5 text-muted-foreground font-normal">
-                                                                                ({item.variant})
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                                {item.notes && (
-                                                                    <div className="flex items-start gap-1.5 text-primary/80">
-                                                                        <UtensilsCrossed className="w-3 h-3 mt-1 flex-shrink-0" />
-                                                                        <span className="text-[12px] leading-tight font-medium inline-flex items-center flex-wrap gap-x-0.5 line-clamp-2" title={item.notes}>
-                                                                            {parseDietaryNotes(item.notes)}
-                                                                        </span>
-                                                                    </div>
-                                                                )}
-                                                                {item.customerComment && (
-                                                                    <div className="flex items-start gap-1.5 text-amber-600 dark:text-amber-500">
-                                                                        <MessageSquare className="w-3 h-3 mt-1 flex-shrink-0" />
-                                                                        <span className="text-[12px] italic leading-tight line-clamp-2" title={item.customerComment}>
-                                                                            Note: {item.customerComment}
-                                                                        </span>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-3 text-muted-foreground text-xs sm:text-sm hidden sm:table-cell" title={item.category}>{item.category}</td>
-                                                        <td className="px-4 py-3 text-foreground text-xs sm:text-sm">
-                                                            {isEditingMenu ? (
-                                                                <div className="flex items-center gap-2" translate="no">
-                                                                    <input
-                                                                        type="number"
-                                                                        value={item.rawQuantity}
-                                                                        min="1"
-                                                                        onChange={(e) => {
-                                                                            const val = parseInt(e.target.value);
-                                                                            const newItems = [...tempMenuItems];
-                                                                            // Snap to 1 if user tries to enter a value < 1 or if it's invalid
-                                                                            newItems[index] = { ...item, rawQuantity: isNaN(val) ? 0 : Math.max(0, val) };
-                                                                            setTempMenuItems(newItems);
-                                                                        }}
-                                                                        onBlur={(e) => {
-                                                                            const val = parseInt(e.target.value);
-                                                                            if (isNaN(val) || val < 1) {
-                                                                                const newItems = [...tempMenuItems];
-                                                                                newItems[index] = { ...item, rawQuantity: 1 };
-                                                                                setTempMenuItems(newItems);
-                                                                            }
-                                                                        }}
-                                                                        className="w-20 px-2 py-1 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
-                                                                    />
-                                                                    <Tooltip title={`${item.item || item.name}: ${item.rawQuantity} ${item.pricingType === 'per_person' ? t('guests') : t('quantity')}`}>
-                                                                        <span className="text-muted-foreground">
-                                                                            {item.pricingType === 'per_person' ? (
-                                                                                <Users className="w-3.5 h-3.5" />
-                                                                            ) : (
-                                                                                <Package className="w-3.5 h-3.5" />
-                                                                            )}
-                                                                        </span>
-                                                                    </Tooltip>
-                                                                </div>
-                                                            ) : (
-                                                                <div className="flex flex-col gap-0.5" translate="no">
-                                                                    <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                                                        <span className="font-medium text-foreground">{item.rawQuantity}</span>
-                                                                        <Tooltip title={`${item.item || item.name}: ${item.rawQuantity} ${item.pricingType === 'per_person' ? t('guests') : t('quantity')}`}>
-                                                                            {item.pricingType === 'per_person' ? (
-                                                                                <Users className="w-3.5 h-3.5 text-muted-foreground" />
-                                                                            ) : (
-                                                                                <Package className="w-3.5 h-3.5 text-muted-foreground" />
-                                                                            )}
-                                                                        </Tooltip>
-                                                                    </div>
-                                                                    <div className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">
-                                                                        x {Math.round(item.unitPrice || 0)} CHF
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </td>
-                                                        <td className="px-4 py-3 text-right text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }} translate="no">
-                                                            {isEditingMenu ? (
-                                                                <span>CHF {((item.rawQuantity || 0) * (item.unitPrice || 0)).toFixed(2)}</span>
-                                                            ) : (
-                                                                <span>{item.price}</span>
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                ))
-                                            ) : (
-                                                <tr><td colSpan={4} className="px-4 py-6 sm:py-8 text-center text-muted-foreground text-xs sm:text-sm">{t('noItemsSelected')}</td></tr>
-                                            )}
-                                            {booking.menuItems && booking.menuItems.length > 0 && (
-                                                <tr className="border-t-2 border-border bg-muted">
-                                                    <td colSpan={2} className="px-4 py-3 text-foreground text-xs sm:text-sm sm:hidden" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{t('totalAmount')}</td>
-                                                    <td colSpan={3} className="px-4 py-3 text-foreground text-xs sm:text-sm hidden sm:table-cell" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{t('totalAmount')}</td>
-                                                    <td className="px-4 py-3 text-right text-foreground text-xs sm:text-sm font-bold" translate="no">
-                                                        {isEditingMenu ? (
-                                                            <span>CHF {tempMenuItems.reduce((sum, item) => sum + ((item.rawQuantity || 0) * (item.unitPrice || 0)), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                                        ) : (
-                                                            <span>{booking.amount}</span>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                                    {wizardT('labels.eventDate')} <span className="text-red-500">*</span>
+                                                </label>
+                                                {isEditingEvent ? (
+                                                    <>
+                                                        <input
+                                                            type="date"
+                                                            value={tempEvent.date}
+                                                            onChange={(e) => {
+                                                                setTempEvent({ ...tempEvent, date: e.target.value });
+                                                                if (errors.eventDate) validateEventField('date', e.target.value);
+                                                            }}
+                                                            onBlur={() => validateEventField('date', tempEvent.date)}
+                                                            className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.eventDate ? 'border-red-500' : 'border-border'}`}
+                                                            style={{ fontSize: 'var(--text-base)' }}
+                                                        />
+                                                        {errors.eventDate && (
+                                                            <p className="text-red-500 text-xs mt-1">{errors.eventDate}</p>
                                                         )}
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            {/* Dietary Summary Section */}
-                            {(dietarySummary.veg.count > 0 || dietarySummary.vegan.count > 0 || dietarySummary.nonVeg.count > 0) && (
-                                <div className="bg-card border border-border rounded-xl p-4 sm:p-6 mt-6 animate-in fade-in slide-in-from-top-4 duration-300">
-                                    <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                        <UtensilsCrossed className="w-5 h-5 text-primary" /> {t('dietarySelection')}
-                                    </h3>
-                                    <div className="space-y-4">
-                                        {dietarySummary.veg.count > 0 && (
-                                            <div className="flex justify-between items-center text-sm">
-                                                <div className="flex items-center gap-3">
-                                                    <DietaryIcon type="veg" size="sm" />
-                                                    <span className="text-muted-foreground font-medium flex items-center gap-1.5">
-                                                        Veg Selection ({dietarySummary.veg.count} {dietarySummary.veg.count > 1 ? 'items' : 'item'})
-                                                    </span>
-                                                </div>
-                                                <span className="text-foreground font-bold">CHF {dietarySummary.veg.subtotal.toFixed(2)}</span>
+                                                    </>
+                                                ) : (
+                                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={formatDate(booking.event.date)}>{formatDate(booking.event.date)}</p>
+                                                )}
                                             </div>
-                                        )}
-                                        {dietarySummary.vegan.count > 0 && (
-                                            <div className="flex justify-between items-center text-sm">
-                                                <div className="flex items-center gap-3">
-                                                    <DietaryIcon type="vegan" size="sm" />
-                                                    <span className="text-muted-foreground font-medium flex items-center gap-1.5">
-                                                        Vegan Selection ({dietarySummary.vegan.count} {dietarySummary.vegan.count > 1 ? 'items' : 'item'})
-                                                    </span>
-                                                </div>
-                                                <span className="text-foreground font-bold">CHF {dietarySummary.vegan.subtotal.toFixed(2)}</span>
-                                            </div>
-                                        )}
-                                        {dietarySummary.nonVeg.count > 0 && (
-                                            <div className="flex justify-between items-center text-sm">
-                                                <div className="flex items-center gap-3">
-                                                    <DietaryIcon type="non-veg" size="sm" />
-                                                    <span className="text-muted-foreground font-medium flex items-center gap-1.5">
-                                                        Non-Veg Selection ({dietarySummary.nonVeg.count} {dietarySummary.nonVeg.count > 1 ? 'items' : 'item'})
-                                                    </span>
-                                                </div>
-                                                <span className="text-foreground font-bold">CHF {dietarySummary.nonVeg.subtotal.toFixed(2)}</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                        </TabsContent>
-
-                        {/* Comments and Activities Tab */}
-                        <TabsContent value="comments-activities" className="space-y-6">
-                            {/* Manual Comments Section */}
-                            <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
-                                <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
-                                    <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                        <MessageSquare className="w-5 h-5 text-primary flex-shrink-0" />
-                                        <span className="truncate">{t('manualComments')}</span>
-                                    </h3>
-                                    <span className="px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-xs font-medium border border-border">
-                                        {comments.filter(c => c.type !== 'system').length}
-                                    </span>
-                                </div>
-                                <div className="space-y-4">
-                                    <div className="max-h-[400px] overflow-y-auto pr-2 space-y-4 -mr-2 scrollbar-thin">
-                                        {comments.filter(c => c.type !== 'system').length === 0 ? (
-                                            <div className="text-center py-8 bg-muted/20 rounded-lg border border-dashed border-border">
-                                                <MessageSquare className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-                                                <p className="text-muted-foreground text-sm">{t('noComments')}</p>
-                                            </div>
-                                        ) : (
-                                            comments
-                                                .filter(c => c.type !== 'system')
-                                                .slice()
-                                                .reverse()
-                                                .map((contact, index) => (
-                                                    <CommentItem key={index} contact={contact} t={t} commonT={commonT} />
-                                                ))
-                                        )}
-                                    </div>
-
-                                    {canEditBooking && (
-                                        <div className="pt-4 border-t border-border/50">
-                                            <ValidatedTextarea
-                                                value={newComment}
-                                                onChange={(e) => {
-                                                    setNewComment(e.target.value);
-                                                    if (errors.comment) setErrors({ ...errors, comment: undefined });
-                                                }}
-                                                placeholder={t('commentPlaceholder')}
-                                                rows={3}
-                                                maxLength={500}
-                                                showCharacterCount={false}
-                                                error={errors.comment}
-                                                className="focus:ring-1 focus:ring-primary/20 border-border/60"
-                                                actionContainerClassName="flex items-center gap-3"
-                                            >
-                                                <span className="text-[10px] tabular-nums font-semibold uppercase tracking-wider text-muted-foreground/60">
-                                                    {newComment.length} / 500
-                                                </span>
-                                                <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""} position="bottom">
-                                                    <button
-                                                        onClick={handleAddComment}
-                                                        disabled={!newComment.trim() || isAddingComment || isReadOnlyStatus}
-                                                        className={cn(
-                                                            "px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 font-semibold shadow-sm shadow-primary/10 hover:shadow-primary/20 active:scale-95",
-                                                            (isAddingComment || isReadOnlyStatus) ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                            <div className="space-y-1">
+                                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                                    {wizardT('labels.eventTime')} <span className="text-red-500">*</span>
+                                                </label>
+                                                {isEditingEvent ? (
+                                                    <>
+                                                        <input
+                                                            type="time"
+                                                            value={tempEvent.time}
+                                                            onChange={(e) => {
+                                                                setTempEvent({ ...tempEvent, time: e.target.value });
+                                                                if (errors.eventTime) validateEventField('time', e.target.value);
+                                                            }}
+                                                            onBlur={() => validateEventField('time', tempEvent.time)}
+                                                            className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.eventTime ? 'border-red-500' : 'border-border'}`}
+                                                            style={{ fontSize: 'var(--text-base)' }}
+                                                        />
+                                                        {errors.eventTime && (
+                                                            <p className="text-red-500 text-xs mt-1">{errors.eventTime}</p>
                                                         )}
-                                                        style={{ fontSize: 'var(--text-small)' }}
+                                                    </>
+                                                ) : (
+                                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={booking.event.time}>{booking.event.time}</p>
+                                                )}
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                                    {wizardT('labels.guestCount')} <span className="text-red-500">*</span>
+                                                </label>
+                                                {isEditingEvent ? (
+                                                    <>
+                                                        <input
+                                                            type="number"
+                                                            value={tempEvent.guests}
+                                                            onChange={(e) => {
+                                                                const val = parseInt(e.target.value) || 0;
+                                                                setTempEvent({ ...tempEvent, guests: val });
+                                                                if (errors.guestCount) validateEventField('guests', val);
+                                                            }}
+                                                            onBlur={() => validateEventField('guests', tempEvent.guests)}
+                                                            className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.guestCount ? 'border-red-500' : 'border-border'}`}
+                                                            style={{ fontSize: 'var(--text-base)' }}
+                                                        />
+                                                        {errors.guestCount && (
+                                                            <p className="text-red-500 text-xs mt-1">{errors.guestCount}</p>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={booking.guests.toString()} translate="no">
+                                                        <span>{booking.guests}</span>
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.occasion')}</label>
+                                                {isEditingEvent ? (
+                                                    <input
+                                                        type="text"
+                                                        value={tempEvent.occasion}
+                                                        onChange={(e) => {
+                                                            setTempEvent({ ...tempEvent, occasion: e.target.value });
+                                                            if (errors.occasion) validateEventField('occasion', e.target.value);
+                                                        }}
+                                                        onBlur={() => validateEventField('occasion', tempEvent.occasion)}
+                                                        className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.occasion ? 'border-red-500' : 'border-border'}`}
+                                                        style={{ fontSize: 'var(--text-base)' }}
+                                                    />
+                                                ) : (
+                                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }} title={booking.event.occasion}>{booking.event.occasion}</p>
+                                                )}
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('amount')} (CHF)</label>
+                                                <p className="text-foreground font-medium py-1" style={{ fontSize: 'var(--text-base)' }} title={booking.amount} translate="no">
+                                                    <span>{booking.amount}</span>
+                                                </p>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.room')}</label>
+                                                {isEditingEvent ? (
+                                                    <select
+                                                        value={selectedRoom.toLowerCase()}
+                                                        onChange={(e) => setSelectedRoom(e.target.value)}
+                                                        className="w-full px-4 py-2 bg-input-background border border-border rounded-lg text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                                        style={{ fontSize: 'var(--text-base)' }}
                                                     >
-                                                        {isAddingComment ? (
-                                                            <div className="w-3.5 h-3.5 border-2 border-primary-foreground/30 border-t-transparent rounded-full animate-spin" />
-                                                        ) : (
-                                                            <Send className="w-3.5 h-3.5" />
+                                                        <option value="">{t('notAssigned')}</option>
+                                                        {currentGuests < 50 && (
+                                                            <option value="eg">EG</option>
                                                         )}
-                                                        <span>{t('addComment')}</span>
+                                                        {currentGuests >= 30 && (
+                                                            <>
+                                                                <option value="ug1">UG1</option>
+                                                                <option value="ug1_exklusiv">UG1 Exclusive</option>
+                                                            </>
+                                                        )}
+                                                    </select>
+                                                ) : (
+                                                    <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>
+                                                        {selectedRoom ? selectedRoom.toUpperCase() : t('notAssigned')}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Group 4: Spezielle Wünsche */}
+                                    <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
+                                        <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
+                                            <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                                    <Info className="w-4 h-4 text-primary" />
+                                                </div>
+                                                <span className="truncate">{wizardT('sections.specialRequests')}</span>
+                                            </h3>
+                                            {canEditBooking && !isLocked && !isEditingSpecialRequests && (
+                                                <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
+                                                    <button
+                                                        onClick={handleEditSpecialRequests}
+                                                        disabled={isReadOnlyStatus}
+                                                        className={cn(
+                                                            "px-2.5 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0",
+                                                            isReadOnlyStatus ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                                        )}
+                                                        style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                                    >
+                                                        <Pencil className="w-3.5 h-3.5" />
+                                                        <span className="hidden xs:inline">{buttonT('edit')}</span>
+                                                        <span className="xs:hidden">{commonT('edit')}</span>
                                                     </button>
                                                 </Tooltip>
-                                            </ValidatedTextarea>
+                                            )}
+                                            {isEditingSpecialRequests && (
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={handleCancelSpecialRequests}
+                                                        className="px-3 py-1.5 border border-border hover:bg-red-600 hover:text-white rounded-lg transition-colors bg-red-500 text-white hover:text-red-500 cursor-pointer flex items-center gap-2"
+                                                        style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                        <span>{buttonT('cancel')}</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={handleSaveSpecialRequests}
+                                                        disabled={isSaving}
+                                                        className="px-3 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                                                        style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                                    >
+                                                        <Save className="w-4 h-4" />
+                                                        <span>{buttonT('save')}</span>
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Activity Log Section */}
-                            <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
-                                <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
-                                    <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                        <History className="w-5 h-5 text-primary flex-shrink-0" />
-                                        <span className="truncate">{t('activityLog')}</span>
-                                    </h3>
-                                    <span className="px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-xs font-medium border border-border">
-                                        {comments.filter(c => c.type === 'system').length}
-                                    </span>
-                                </div>
-                                <div className="space-y-4">
-                                    <div className="max-h-[400px] overflow-y-auto pr-2 space-y-4 -mr-2 scrollbar-thin">
-                                        {comments.filter(c => c.type === 'system').length === 0 ? (
-                                            <div className="text-center py-8 bg-muted/20 rounded-lg border border-dashed border-border">
-                                                <History className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-                                                <p className="text-muted-foreground text-sm">{t('noActivity')}</p>
+                                        <div className="space-y-4">
+                                            <div className="space-y-1">
+                                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('allergies')}</label>
+                                                {isEditingSpecialRequests ? (
+                                                    <>
+                                                        <input
+                                                            type="text"
+                                                            value={allergies}
+                                                            onChange={(e) => {
+                                                                setAllergies(e.target.value);
+                                                                // Clear error on change
+                                                                if (errors.allergies) setErrors({ ...errors, allergies: undefined });
+                                                            }}
+                                                            onBlur={() => {
+                                                                // Validate on blur if not empty
+                                                                if (allergies.trim()) {
+                                                                    const allergiesResult = bookingAllergiesSchema.safeParse(allergies);
+                                                                    if (!allergiesResult.success) {
+                                                                        setErrors({ ...errors, allergies: allergiesResult.error.errors[0].message });
+                                                                    }
+                                                                }
+                                                            }}
+                                                            className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.allergies ? 'border-red-500' : 'border-border'}`}
+                                                            style={{ fontSize: 'var(--text-base)' }}
+                                                        />
+                                                        {errors.allergies && (
+                                                            <p className="text-red-500 text-xs mt-1">{errors.allergies}</p>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <p className="text-foreground font-medium line-clamp-2" style={{ fontSize: 'var(--text-base)' }} title={Array.isArray(booking.allergies) ? booking.allergies.join(', ') : (booking.allergies || '')}>{Array.isArray(booking.allergies) ? booking.allergies.join(', ') : (booking.allergies || '-')}</p>
+                                                )}
                                             </div>
-                                        ) : (
-                                            comments
-                                                .filter(c => c.type === 'system')
-                                                .slice()
-                                                .reverse()
-                                                .map((contact, index) => (
-                                                    <CommentItem key={index} contact={contact} t={t} commonT={commonT} />
-                                                ))
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </TabsContent>
-
-                        {/* Requests Tab */}
-                        <TabsContent value="requests" className="space-y-6">
-                            {/* Customer Check-ins */}
-                            <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
-                                <div className="flex items-center justify-between mb-5">
-                                    <h3 className="text-foreground flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                        <CheckCircle2 className="w-5 h-5 text-primary" /> {t('checkins')}
-                                    </h3>
-                                    <span className="px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-xs font-medium border border-border">
-                                        {(checkins && checkins.length > 0) ? '1' : '0'} {t('items')}
-                                    </span>
-                                </div>
-                                <div className="space-y-4">
-                                    {!checkins || checkins.length === 0 ? (
-                                        <div className="text-center py-8 bg-muted/20 rounded-lg border border-dashed border-border">
-                                            <CheckCircle2 className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-                                            <p className="text-muted-foreground text-sm">{t('noCheckins')}</p>
+                                            <div className="space-y-1">
+                                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{t('internalInstructions')}</label>
+                                                {isEditingSpecialRequests ? (
+                                                    <>
+                                                        <ValidatedTextarea
+                                                            value={notes}
+                                                            onChange={(e) => {
+                                                                setNotes(e.target.value);
+                                                                // Clear error on change
+                                                                if (errors.specialRequests) setErrors({ ...errors, specialRequests: undefined });
+                                                            }}
+                                                            onBlur={() => {
+                                                                // Validate on blur if not empty
+                                                                if (notes.trim()) {
+                                                                    const notesResult = bookingSpecialRequestsSchema.safeParse(notes);
+                                                                    if (!notesResult.success) {
+                                                                        setErrors({ ...errors, specialRequests: notesResult.error.errors[0].message });
+                                                                    }
+                                                                }
+                                                            }}
+                                                            className={`w-full bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.specialRequests ? 'border-red-500' : 'border-border'}`}
+                                                            style={{ fontSize: 'var(--text-base)' }}
+                                                            rows={3}
+                                                        />
+                                                        {errors.specialRequests && (
+                                                            <p className="text-red-500 text-xs mt-1">{errors.specialRequests}</p>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <p className="text-foreground font-medium line-clamp-3" style={{ fontSize: 'var(--text-base)' }} title={booking.notes || ''}>{booking.notes || '-'}</p>
+                                                )}
+                                            </div>
                                         </div>
-                                    ) : (
+                                    </div>
+
+                                    {/* Group 5: Zahlungsmöglichkeiten */}
+                                    <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
+                                        <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
+                                            <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                                    <CreditCard className="w-4 h-4 text-primary" />
+                                                </div>
+                                                <span className="truncate">{wizardT('sections.paymentOptions')}</span>
+                                            </h3>
+                                            {canEditBooking && !isLocked && !isEditingPayment && (
+                                                <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
+                                                    <button
+                                                        onClick={handleEditPayment}
+                                                        disabled={isReadOnlyStatus}
+                                                        className={cn(
+                                                            "px-2.5 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary flex items-center gap-1.5 flex-shrink-0 ml-auto sm:ml-0",
+                                                            isReadOnlyStatus ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                                        )}
+                                                        style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                                    >
+                                                        <Pencil className="w-3.5 h-3.5" />
+                                                        <span className="hidden xs:inline">{buttonT('edit')}</span>
+                                                        <span className="xs:hidden">{commonT('edit')}</span>
+                                                    </button>
+                                                </Tooltip>
+                                            )}
+                                            {isEditingPayment && (
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={handleCancelPayment}
+                                                        className="px-3 py-1.5 border border-border hover:bg-red-600 hover:text-white rounded-lg transition-colors bg-red-500 text-white hover:text-red-500 cursor-pointer flex items-center gap-2"
+                                                        style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                        <span>{buttonT('cancel')}</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={handleSavePayment}
+                                                        disabled={isSaving}
+                                                        className="px-3 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                                                        style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                                    >
+                                                        <Save className="w-4 h-4" />
+                                                        <span>{buttonT('save')}</span>
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+
                                         <div className="space-y-6">
-                                            {(() => {
-                                                // Get only the latest check-in (assuming they're sorted by date, newest first)
-                                                const latestCheckin = checkins[0];
-                                                return (
-                                                    <div key={latestCheckin.id} className="p-4 bg-muted/10 border border-border rounded-xl space-y-4">
-                                                        <div className="flex justify-between items-start">
-                                                            <div>
-                                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${latestCheckin.hasChanges ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
-                                                                    {latestCheckin.hasChanges ? 'Changes Requested' : 'Confirmed'}
+                                            {isEditingPayment ? (
+                                                <div className="space-y-4">
+                                                    <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                                        {wizardT('labels.choosePayment')}
+                                                    </p>
+                                                    <div className="grid grid-cols-1 gap-4">
+                                                        <label
+                                                            className={`flex items-center gap-3 cursor-pointer p-4 rounded-lg border-2 transition-all ${tempCustomer.paymentMethod === 'ec_card' ? 'border-primary bg-primary/5' : 'border-border hover:border-border/80'}`}
+                                                            style={{ borderRadius: 'var(--radius)' }}
+                                                        >
+                                                            <NativeRadio
+                                                                name="paymentMethodAdmin"
+                                                                checked={tempCustomer.paymentMethod === 'ec_card'}
+                                                                onChange={() => {
+                                                                    setTempCustomer({ ...tempCustomer, paymentMethod: 'ec_card' });
+                                                                    if (errors.paymentMethod) validatePaymentField('paymentMethod', 'ec_card');
+                                                                }}
+                                                            />
+                                                            <div className="flex-1">
+                                                                <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                                                                    {wizardT('labels.ecCard') || 'EC-Karte / Karte vor Ort'}
                                                                 </span>
-                                                                <p className="text-xs text-muted-foreground mt-1">
-                                                                    {new Date(latestCheckin.submittedAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                                                </p>
                                                             </div>
-                                                        </div>
+                                                        </label>
 
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                            <div className="space-y-1">
-                                                                <p className="text-[10px] uppercase text-muted-foreground font-bold">Guest Split</p>
-                                                                <p className="text-sm">
-                                                                    Total: <span className="font-semibold">{latestCheckin.newGuestCount}</span>
-                                                                    <span className="text-muted-foreground ml-2">({latestCheckin.vegetarianCount} Veg / {latestCheckin.veganCount} Vegan / {latestCheckin.nonVegetarianCount} Non-Veg)</span>
-                                                                </p>
+                                                        <label
+                                                            className={`flex items-center gap-3 cursor-pointer p-4 rounded-lg border-2 transition-all ${tempCustomer.paymentMethod === 'on_bill' ? 'border-primary bg-primary/5' : 'border-border hover:border-border/80'}`}
+                                                            style={{ borderRadius: 'var(--radius)' }}
+                                                        >
+                                                            <NativeRadio
+                                                                name="paymentMethodAdmin"
+                                                                checked={tempCustomer.paymentMethod === 'on_bill'}
+                                                                onChange={() => {
+                                                                    setTempCustomer({ ...tempCustomer, paymentMethod: 'on_bill' });
+                                                                    if (errors.paymentMethod) validatePaymentField('paymentMethod', 'on_bill');
+                                                                }}
+                                                            />
+                                                            <div className="flex-1">
+                                                                <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                                                                    {wizardT('labels.onInvoice') || 'Auf Rechnung'}
+                                                                </span>
                                                             </div>
-                                                            {latestCheckin.guestCountChanged && (
-                                                                <div className="space-y-1">
-                                                                    <p className="text-[10px] uppercase text-amber-600 font-bold">Guest Count Changed</p>
-                                                                    <p className="text-xs italic">Client reported a change in total guests.</p>
-                                                                </div>
-                                                            )}
-                                                        </div>
-
-                                                        {latestCheckin.menuChanges && (
-                                                            <div className="space-y-1 bg-background/50 p-3 rounded-lg border border-border/50">
-                                                                <p className="text-[10px] uppercase text-primary font-bold">Menu Changes</p>
-                                                                <p className="text-sm italic line-clamp-3" title={latestCheckin.menuChanges}>{latestCheckin.menuChanges}</p>
-                                                            </div>
-                                                        )}
-
-                                                        {latestCheckin.additionalDetails && (
-                                                            <div className="space-y-1 bg-background/50 p-3 rounded-lg border border-border/50">
-                                                                <p className="text-[10px] uppercase text-primary font-bold">Additional Details</p>
-                                                                <p className="text-sm italic line-clamp-3" title={latestCheckin.additionalDetails}>{latestCheckin.additionalDetails}</p>
-                                                            </div>
-                                                        )}
+                                                        </label>
                                                     </div>
-                                                );
-                                            })()}
+                                                    {errors.paymentMethod && (
+                                                        <p className="text-red-500 text-xs">{errors.paymentMethod}</p>
+                                                    )}
+
+                                                    {tempCustomer.paymentMethod === 'on_bill' && (
+                                                        <div className="space-y-4 mt-6 pt-6 border-t border-border">
+                                                            <div className="flex items-center gap-2">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    id="sameAddressBilling"
+                                                                    checked={useSameAddressForBilling}
+                                                                    onChange={(e) => {
+                                                                        const checked = e.target.checked;
+                                                                        setUseSameAddressForBilling(checked);
+                                                                        if (checked) {
+                                                                            setTempCustomer({
+                                                                                ...tempCustomer,
+                                                                                billingStreet: tempCustomer.street,
+                                                                                billingPlz: tempCustomer.plz,
+                                                                                billingLocation: tempCustomer.location
+                                                                            });
+                                                                            // Clear validation errors for billing fields
+                                                                            setErrors(prev => ({
+                                                                                ...prev,
+                                                                                billingStreet: undefined,
+                                                                                billingPlz: undefined,
+                                                                                billingLocation: undefined
+                                                                            }));
+                                                                        } else {
+                                                                            setTempCustomer({
+                                                                                ...tempCustomer,
+                                                                                billingStreet: '',
+                                                                                billingPlz: '',
+                                                                                billingLocation: ''
+                                                                            });
+                                                                        }
+                                                                    }}
+                                                                    className="w-4 h-4 rounded border-border text-primary focus:ring-2 focus:ring-primary/20 cursor-pointer"
+                                                                />
+                                                                <label
+                                                                    htmlFor="sameAddressBilling"
+                                                                    className="text-sm text-foreground cursor-pointer select-none"
+                                                                    style={{ fontSize: 'var(--text-small)' }}
+                                                                >
+                                                                    {wizardT('labels.useSameAddress') || 'Same as customer address'}
+                                                                </label>
+                                                            </div>
+
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                                <div className="sm:col-span-2 space-y-1">
+                                                                    <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                                                        {wizardT('labels.street')} <span className="text-red-500">*</span>
+                                                                    </label>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={tempCustomer.billingStreet}
+                                                                        onChange={(e) => {
+                                                                            setTempCustomer({ ...tempCustomer, billingStreet: e.target.value });
+                                                                            if (useSameAddressForBilling) {
+                                                                                setTempCustomer(prev => ({ ...prev, street: e.target.value }));
+                                                                                if (errors.street) validateCustomerField('street', e.target.value);
+                                                                            }
+                                                                        }}
+                                                                        onBlur={() => {
+                                                                            if (!useSameAddressForBilling) {
+                                                                                validatePaymentField('billingStreet', tempCustomer.billingStreet);
+                                                                            }
+                                                                        }}
+                                                                        disabled={useSameAddressForBilling}
+                                                                        className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.billingStreet ? 'border-red-500' : 'border-border'} ${useSameAddressForBilling ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                        style={{ fontSize: 'var(--text-base)' }}
+                                                                        placeholder={wizardT('placeholders.street') || 'Strasse eingeben'}
+                                                                    />
+                                                                    {errors.billingStreet && (
+                                                                        <p className="text-red-500 text-xs mt-1">{errors.billingStreet}</p>
+                                                                    )}
+                                                                </div>
+                                                                <div className="space-y-1">
+                                                                    <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                                                        {wizardT('labels.plz')} <span className="text-red-500">*</span>
+                                                                    </label>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={tempCustomer.billingPlz}
+                                                                        onChange={(e) => {
+                                                                            setTempCustomer({ ...tempCustomer, billingPlz: e.target.value });
+                                                                            if (useSameAddressForBilling) {
+                                                                                setTempCustomer(prev => ({ ...prev, plz: e.target.value }));
+                                                                                if (errors.plz) validateCustomerField('plz', e.target.value);
+                                                                            }
+                                                                        }}
+                                                                        onBlur={() => {
+                                                                            if (!useSameAddressForBilling) {
+                                                                                validatePaymentField('billingPlz', tempCustomer.billingPlz);
+                                                                            }
+                                                                        }}
+                                                                        disabled={useSameAddressForBilling}
+                                                                        className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.billingPlz ? 'border-red-500' : 'border-border'} ${useSameAddressForBilling ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                        style={{ fontSize: 'var(--text-base)' }}
+                                                                        placeholder={wizardT('placeholders.plz') || 'PLZ'}
+                                                                    />
+                                                                    {errors.billingPlz && (
+                                                                        <p className="text-red-500 text-xs mt-1">{errors.billingPlz}</p>
+                                                                    )}
+                                                                </div>
+                                                                <div className="space-y-1">
+                                                                    <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                                                        {wizardT('labels.location')} <span className="text-red-500">*</span>
+                                                                    </label>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={tempCustomer.billingLocation}
+                                                                        onChange={(e) => {
+                                                                            setTempCustomer({ ...tempCustomer, billingLocation: e.target.value });
+                                                                            if (useSameAddressForBilling) {
+                                                                                setTempCustomer(prev => ({ ...prev, location: e.target.value }));
+                                                                                if (errors.location) validateCustomerField('location', e.target.value);
+                                                                            }
+                                                                        }}
+                                                                        onBlur={() => {
+                                                                            if (!useSameAddressForBilling) {
+                                                                                validatePaymentField('billingLocation', tempCustomer.billingLocation);
+                                                                            }
+                                                                        }}
+                                                                        disabled={useSameAddressForBilling}
+                                                                        className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.billingLocation ? 'border-red-500' : 'border-border'} ${useSameAddressForBilling ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                        style={{ fontSize: 'var(--text-base)' }}
+                                                                        placeholder={wizardT('placeholders.location') || 'Ort'}
+                                                                    />
+                                                                    {errors.billingLocation && (
+                                                                        <p className="text-red-500 text-xs mt-1">{errors.billingLocation}</p>
+                                                                    )}
+                                                                </div>
+                                                                <div className="space-y-1">
+                                                                    <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.reference')}</label>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={tempCustomer.billingReference}
+                                                                        onChange={(e) => {
+                                                                            setTempCustomer({ ...tempCustomer, billingReference: e.target.value });
+                                                                            if (errors.billingReference) validatePaymentField('billingReference', e.target.value);
+                                                                        }}
+                                                                        onBlur={() => validatePaymentField('billingReference', tempCustomer.billingReference)}
+                                                                        className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.billingReference ? 'border-red-500' : 'border-border'}`}
+                                                                        style={{ fontSize: 'var(--text-base)' }}
+                                                                        placeholder={wizardT('placeholders.billingReference') || 'Referenznummer hinzufügen'}
+                                                                    />
+                                                                    {errors.billingReference && (
+                                                                        <p className="text-red-500 text-xs mt-1">{errors.billingReference}</p>
+                                                                    )}
+                                                                </div>
+                                                                <div className="space-y-1">
+                                                                    <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.customerReference') || 'Customer Reference'}</label>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={tempCustomer.billingCustomerReference}
+                                                                        onChange={(e) => {
+                                                                            setTempCustomer({ ...tempCustomer, billingCustomerReference: e.target.value });
+                                                                        }}
+                                                                        className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
+                                                                        style={{ fontSize: 'var(--text-base)' }}
+                                                                        placeholder={wizardT('placeholders.customerReference') || 'Kundenreferenz hinzufügen'}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="grid grid-cols-1 gap-6">
+                                                    <div className="space-y-1">
+                                                        <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.paymentOption')}</label>
+                                                        <div className="flex items-center gap-3 p-3 bg-muted/20 border border-border rounded-lg">
+                                                            <div className={`w-3 h-3 rounded-full bg-primary`} />
+                                                            <span className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>
+                                                                {booking.paymentMethod === 'on_bill' ? (wizardT('labels.onInvoice')) :
+                                                                    (wizardT('labels.ecCard') || 'EC-Karte / Karte vor Ort')}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    {booking.paymentMethod === 'on_bill' && (
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                            <div className="sm:col-span-2 space-y-2">
+                                                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.street')}</label>
+                                                                <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
+                                                                    <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                                                        {(booking as any).billingStreet || '-'}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.plz')}</label>
+                                                                <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
+                                                                    <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                                                        {(booking as any).billingPlz || '-'}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.location')}</label>
+                                                                <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
+                                                                    <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                                                        {(booking as any).billingLocation || '-'}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="space-y-2 sm:col-span-2">
+                                                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.reference')}</label>
+                                                                <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
+                                                                    <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                                                        {booking.billingReference || '-'}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </TabsContent>
+
+                                {/* Menu Details Tab */}
+                                <TabsContent value="menu-details" className="space-y-6">
+                                    {/* Menu Items */}
+                                    <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
+                                        <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
+                                            <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                                <UtensilsCrossed className="w-5 h-5 text-primary flex-shrink-0" />
+                                                <span className="truncate">{t('menuItems')}</span>
+                                            </h3>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                {canEditBooking && !isLocked && !isEditingMenu && (
+                                                    <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
+                                                        <button
+                                                            onClick={handleEditMenu}
+                                                            disabled={isReadOnlyStatus}
+                                                            className={cn(
+                                                                "px-3 py-1.5 border border-border hover:bg-secondary hover:text-white rounded-lg transition-colors bg-primary text-secondary flex items-center gap-2",
+                                                                isReadOnlyStatus ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                                            )}
+                                                            style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                                        >
+                                                            <Pencil className="w-3.5 h-3.5" />
+                                                            <span>{buttonT('edit')}</span>
+                                                        </button>
+                                                    </Tooltip>
+                                                )}
+                                                {canEditBooking && !isLocked && !isEditingMenu && (
+                                                    <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""}>
+                                                        <button
+                                                            onClick={handleEditItems}
+                                                            disabled={isReadOnlyStatus}
+                                                            className={cn(
+                                                                "px-3 py-1.5 border border-border hover:bg-primary hover:text-secondary rounded-lg transition-colors bg-secondary text-white flex items-center gap-2",
+                                                                isReadOnlyStatus ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                                            )}
+                                                            style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                                        >
+                                                            <UtensilsCrossed className="w-3.5 h-3.5" />
+                                                            <span>{commonT('editItems')}</span>
+                                                        </button>
+                                                    </Tooltip>
+                                                )}
+                                                {isEditingMenu && (
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={handleCancelMenu}
+                                                            disabled={isSaving}
+                                                            className="px-3 py-1.5 border border-border hover:bg-red-600 hover:text-white rounded-lg transition-colors bg-red-500 text-white hover:text-red-500 cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                            <span>{buttonT('cancel')}</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={handleSaveMenu}
+                                                            disabled={isSaving}
+                                                            className="px-3 py-1.5 border border-border hover:bg-secondary rounded-lg transition-colors bg-primary text-secondary hover:text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                                            style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                                        >
+                                                            {isSaving ? (
+                                                                <>
+                                                                    <div className="w-4 h-4 border-2 border-green-600/30 border-t-transparent rounded-full animate-spin" />
+                                                                    <span>Saving...</span>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <Save className="w-4 h-4" />
+                                                                    <span>{buttonT('save')}</span>
+                                                                </>
+                                                            )}
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="bg-background border border-border rounded-lg overflow-x-auto -mx-2 sm:mx-0">
+                                            <table className="w-full min-w-[500px] sm:min-w-0">
+                                                <thead className="bg-muted">
+                                                    <tr>
+                                                        <th className="px-4 py-3 text-left text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{commonT('item')}</th>
+                                                        <th className="px-4 py-3 text-left text-foreground text-xs sm:text-sm hidden sm:table-cell" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{commonT('category')}</th>
+                                                        <th className="px-4 py-3 text-left text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{t('quantity')}</th>
+                                                        <th className="px-4 py-3 text-right text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{buttonT('price')}</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {(isEditingMenu ? tempMenuItems : booking.menuItems) && (isEditingMenu ? tempMenuItems : booking.menuItems)!.length > 0 ? (
+                                                        (isEditingMenu ? tempMenuItems : booking.menuItems)!.map((item: any, index: number) => (
+                                                            <tr key={item.id || item.itemId || `row-${index}`} className="border-t border-border">
+                                                                <td className="px-4 py-3 text-foreground text-xs sm:text-sm">
+                                                                    <div className="flex flex-col gap-1.5 py-1">
+                                                                        <div className="flex flex-wrap items-center gap-x-2 font-medium text-foreground" title={item.item || item.name}>
+                                                                            {item.dietaryType && item.dietaryType !== 'none' && (
+                                                                                <DietaryIcon type={item.dietaryType} size="sm" />
+                                                                            )}
+                                                                            <div>
+                                                                                <span className="truncate max-w-[200px] sm:max-w-[300px] inline-block" title={item.item || item.name}>{item.item || item.name}</span>
+                                                                                {item.variant && (
+                                                                                    <span className="ml-1.5 text-muted-foreground font-normal">
+                                                                                        ({item.variant})
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                        {item.notes && (
+                                                                            <div className="flex items-start gap-1.5 text-primary/80">
+                                                                                <UtensilsCrossed className="w-3 h-3 mt-1 flex-shrink-0" />
+                                                                                <span className="text-[12px] leading-tight font-medium inline-flex items-center flex-wrap gap-x-0.5 line-clamp-2" title={item.notes}>
+                                                                                    {parseDietaryNotes(item.notes)}
+                                                                                </span>
+                                                                            </div>
+                                                                        )}
+                                                                        {item.customerComment && (
+                                                                            <div className="flex items-start gap-1.5 text-amber-600 dark:text-amber-500">
+                                                                                <MessageSquare className="w-3 h-3 mt-1 flex-shrink-0" />
+                                                                                <span className="text-[12px] italic leading-tight line-clamp-2" title={item.customerComment}>
+                                                                                    Note: {item.customerComment}
+                                                                                </span>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-4 py-3 text-muted-foreground text-xs sm:text-sm hidden sm:table-cell" title={item.category}>{item.category}</td>
+                                                                <td className="px-4 py-3 text-foreground text-xs sm:text-sm">
+                                                                    {isEditingMenu ? (
+                                                                        <div className="flex items-center gap-2" translate="no">
+                                                                            <input
+                                                                                type="number"
+                                                                                value={item.rawQuantity}
+                                                                                min="1"
+                                                                                onChange={(e) => {
+                                                                                    const val = parseInt(e.target.value);
+                                                                                    const newItems = [...tempMenuItems];
+                                                                                    // Snap to 1 if user tries to enter a value < 1 or if it's invalid
+                                                                                    newItems[index] = { ...item, rawQuantity: isNaN(val) ? 0 : Math.max(0, val) };
+                                                                                    setTempMenuItems(newItems);
+                                                                                }}
+                                                                                onBlur={(e) => {
+                                                                                    const val = parseInt(e.target.value);
+                                                                                    if (isNaN(val) || val < 1) {
+                                                                                        const newItems = [...tempMenuItems];
+                                                                                        newItems[index] = { ...item, rawQuantity: 1 };
+                                                                                        setTempMenuItems(newItems);
+                                                                                    }
+                                                                                }}
+                                                                                className="w-20 px-2 py-1 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
+                                                                            />
+                                                                            <Tooltip title={`${item.item || item.name}: ${item.rawQuantity} ${item.pricingType === 'per_person' ? t('guests') : t('quantity')}`}>
+                                                                                <span className="text-muted-foreground">
+                                                                                    {item.pricingType === 'per_person' ? (
+                                                                                        <Users className="w-3.5 h-3.5" />
+                                                                                    ) : (
+                                                                                        <Package className="w-3.5 h-3.5" />
+                                                                                    )}
+                                                                                </span>
+                                                                            </Tooltip>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="flex flex-col gap-0.5" translate="no">
+                                                                            <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                                                                <span className="font-medium text-foreground">{item.rawQuantity}</span>
+                                                                                <Tooltip title={`${item.item || item.name}: ${item.rawQuantity} ${item.pricingType === 'per_person' ? t('guests') : t('quantity')}`}>
+                                                                                    {item.pricingType === 'per_person' ? (
+                                                                                        <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                                                                                    ) : (
+                                                                                        <Package className="w-3.5 h-3.5 text-muted-foreground" />
+                                                                                    )}
+                                                                                </Tooltip>
+                                                                            </div>
+                                                                            <div className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">
+                                                                                x {Math.round(item.unitPrice || 0)} CHF
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </td>
+                                                                <td className="px-4 py-3 text-right text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }} translate="no">
+                                                                    {isEditingMenu ? (
+                                                                        <span>CHF {((item.rawQuantity || 0) * (item.unitPrice || 0)).toFixed(2)}</span>
+                                                                    ) : (
+                                                                        <span>{item.price}</span>
+                                                                    )}
+                                                                </td>
+                                                            </tr>
+                                                        ))
+                                                    ) : (
+                                                        <tr><td colSpan={4} className="px-4 py-6 sm:py-8 text-center text-muted-foreground text-xs sm:text-sm">{t('noItemsSelected')}</td></tr>
+                                                    )}
+                                                    {booking.menuItems && booking.menuItems.length > 0 && (
+                                                        <tr className="border-t-2 border-border bg-muted">
+                                                            <td colSpan={2} className="px-4 py-3 text-foreground text-xs sm:text-sm sm:hidden" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{t('totalAmount')}</td>
+                                                            <td colSpan={3} className="px-4 py-3 text-foreground text-xs sm:text-sm hidden sm:table-cell" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{t('totalAmount')}</td>
+                                                            <td className="px-4 py-3 text-right text-foreground text-xs sm:text-sm font-bold" translate="no">
+                                                                {isEditingMenu ? (
+                                                                    <span>CHF {tempMenuItems.reduce((sum, item) => sum + ((item.rawQuantity || 0) * (item.unitPrice || 0)), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                                                ) : (
+                                                                    <span>{booking.amount}</span>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    {/* Dietary Summary Section */}
+                                    {(dietarySummary.veg.count > 0 || dietarySummary.vegan.count > 0 || dietarySummary.nonVeg.count > 0) && (
+                                        <div className="bg-card border border-border rounded-xl p-4 sm:p-6 mt-6 animate-in fade-in slide-in-from-top-4 duration-300">
+                                            <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                                <UtensilsCrossed className="w-5 h-5 text-primary" /> {t('dietarySelection')}
+                                            </h3>
+                                            <div className="space-y-4">
+                                                {dietarySummary.veg.count > 0 && (
+                                                    <div className="flex justify-between items-center text-sm">
+                                                        <div className="flex items-center gap-3">
+                                                            <DietaryIcon type="veg" size="sm" />
+                                                            <span className="text-muted-foreground font-medium flex items-center gap-1.5">
+                                                                Veg Selection ({dietarySummary.veg.count} {dietarySummary.veg.count > 1 ? 'items' : 'item'})
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-foreground font-bold">CHF {dietarySummary.veg.subtotal.toFixed(2)}</span>
+                                                    </div>
+                                                )}
+                                                {dietarySummary.vegan.count > 0 && (
+                                                    <div className="flex justify-between items-center text-sm">
+                                                        <div className="flex items-center gap-3">
+                                                            <DietaryIcon type="vegan" size="sm" />
+                                                            <span className="text-muted-foreground font-medium flex items-center gap-1.5">
+                                                                Vegan Selection ({dietarySummary.vegan.count} {dietarySummary.vegan.count > 1 ? 'items' : 'item'})
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-foreground font-bold">CHF {dietarySummary.vegan.subtotal.toFixed(2)}</span>
+                                                    </div>
+                                                )}
+                                                {dietarySummary.nonVeg.count > 0 && (
+                                                    <div className="flex justify-between items-center text-sm">
+                                                        <div className="flex items-center gap-3">
+                                                            <DietaryIcon type="non-veg" size="sm" />
+                                                            <span className="text-muted-foreground font-medium flex items-center gap-1.5">
+                                                                Non-Veg Selection ({dietarySummary.nonVeg.count} {dietarySummary.nonVeg.count > 1 ? 'items' : 'item'})
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-foreground font-bold">CHF {dietarySummary.nonVeg.subtotal.toFixed(2)}</span>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     )}
-                                </div>
+                                </TabsContent>
+
+                                {/* Comments and Activities Tab */}
+                                <TabsContent value="comments-activities" className="space-y-6">
+                                    {/* Manual Comments Section */}
+                                    <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
+                                        <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
+                                            <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                                <MessageSquare className="w-5 h-5 text-primary flex-shrink-0" />
+                                                <span className="truncate">{t('manualComments')}</span>
+                                            </h3>
+                                            <span className="px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-xs font-medium border border-border">
+                                                {comments.filter(c => c.type !== 'system').length}
+                                            </span>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div className="max-h-[400px] overflow-y-auto pr-2 space-y-4 -mr-2 scrollbar-thin">
+                                                {comments.filter(c => c.type !== 'system').length === 0 ? (
+                                                    <div className="text-center py-8 bg-muted/20 rounded-lg border border-dashed border-border">
+                                                        <MessageSquare className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                                                        <p className="text-muted-foreground text-sm">{t('noComments')}</p>
+                                                    </div>
+                                                ) : (
+                                                    comments
+                                                        .filter(c => c.type !== 'system')
+                                                        .slice()
+                                                        .reverse()
+                                                        .map((contact, index) => (
+                                                            <CommentItem key={index} contact={contact} t={t} commonT={commonT} />
+                                                        ))
+                                                )}
+                                            </div>
+
+                                            {canEditBooking && (
+                                                <div className="pt-4 border-t border-border/50">
+                                                    <ValidatedTextarea
+                                                        value={newComment}
+                                                        onChange={(e) => {
+                                                            setNewComment(e.target.value);
+                                                            if (errors.comment) setErrors({ ...errors, comment: undefined });
+                                                        }}
+                                                        placeholder={t('commentPlaceholder')}
+                                                        rows={3}
+                                                        maxLength={500}
+                                                        showCharacterCount={false}
+                                                        error={errors.comment}
+                                                        className="focus:ring-1 focus:ring-primary/20 border-border/60"
+                                                        actionContainerClassName="flex items-center gap-3"
+                                                    >
+                                                        <span className="text-[10px] tabular-nums font-semibold uppercase tracking-wider text-muted-foreground/60">
+                                                            {newComment.length} / 500
+                                                        </span>
+                                                        <Tooltip title={isReadOnlyStatus ? readOnlyTooltip : ""} position="bottom">
+                                                            <button
+                                                                onClick={handleAddComment}
+                                                                disabled={!newComment.trim() || isAddingComment || isReadOnlyStatus}
+                                                                className={cn(
+                                                                    "px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 font-semibold shadow-sm shadow-primary/10 hover:shadow-primary/20 active:scale-95",
+                                                                    (isAddingComment || isReadOnlyStatus) ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                                                )}
+                                                                style={{ fontSize: 'var(--text-small)' }}
+                                                            >
+                                                                {isAddingComment ? (
+                                                                    <div className="w-3.5 h-3.5 border-2 border-primary-foreground/30 border-t-transparent rounded-full animate-spin" />
+                                                                ) : (
+                                                                    <Send className="w-3.5 h-3.5" />
+                                                                )}
+                                                                <span>{t('addComment')}</span>
+                                                            </button>
+                                                        </Tooltip>
+                                                    </ValidatedTextarea>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Activity Log Section */}
+                                    <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
+                                        <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
+                                            <h3 className="text-foreground flex items-center gap-2 min-w-0" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                                <History className="w-5 h-5 text-primary flex-shrink-0" />
+                                                <span className="truncate">{t('activityLog')}</span>
+                                            </h3>
+                                            <span className="px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-xs font-medium border border-border">
+                                                {comments.filter(c => c.type === 'system').length}
+                                            </span>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div className="max-h-[400px] overflow-y-auto pr-2 space-y-4 -mr-2 scrollbar-thin">
+                                                {comments.filter(c => c.type === 'system').length === 0 ? (
+                                                    <div className="text-center py-8 bg-muted/20 rounded-lg border border-dashed border-border">
+                                                        <History className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                                                        <p className="text-muted-foreground text-sm">{t('noActivity')}</p>
+                                                    </div>
+                                                ) : (
+                                                    comments
+                                                        .filter(c => c.type === 'system')
+                                                        .slice()
+                                                        .reverse()
+                                                        .map((contact, index) => (
+                                                            <CommentItem key={index} contact={contact} t={t} commonT={commonT} />
+                                                        ))
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </TabsContent>
+
+                                {/* Requests Tab */}
+                                <TabsContent value="requests" className="space-y-6">
+                                    {/* Customer Check-ins */}
+                                    <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
+                                        <div className="flex items-center justify-between mb-5">
+                                            <h3 className="text-foreground flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                                <CheckCircle2 className="w-5 h-5 text-primary" /> {t('checkins')}
+                                            </h3>
+                                            <span className="px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-xs font-medium border border-border">
+                                                {(checkins && checkins.length > 0) ? '1' : '0'} {t('items')}
+                                            </span>
+                                        </div>
+                                        <div className="space-y-4">
+                                            {!checkins || checkins.length === 0 ? (
+                                                <div className="text-center py-8 bg-muted/20 rounded-lg border border-dashed border-border">
+                                                    <CheckCircle2 className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                                                    <p className="text-muted-foreground text-sm">{t('noCheckins')}</p>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-6">
+                                                    {(() => {
+                                                        // Get only the latest check-in (assuming they're sorted by date, newest first)
+                                                        const latestCheckin = checkins[0];
+                                                        return (
+                                                            <div key={latestCheckin.id} className="p-4 bg-muted/10 border border-border rounded-xl space-y-4">
+                                                                <div className="flex justify-between items-start">
+                                                                    <div>
+                                                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${latestCheckin.hasChanges ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
+                                                                            {latestCheckin.hasChanges ? 'Changes Requested' : 'Confirmed'}
+                                                                        </span>
+                                                                        <p className="text-xs text-muted-foreground mt-1">
+                                                                            {new Date(latestCheckin.submittedAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                    <div className="space-y-1">
+                                                                        <p className="text-[10px] uppercase text-muted-foreground font-bold">Guest Split</p>
+                                                                        <p className="text-sm">
+                                                                            Total: <span className="font-semibold">{latestCheckin.newGuestCount}</span>
+                                                                            <span className="text-muted-foreground ml-2">({latestCheckin.vegetarianCount} Veg / {latestCheckin.veganCount} Vegan / {latestCheckin.nonVegetarianCount} Non-Veg)</span>
+                                                                        </p>
+                                                                    </div>
+                                                                    {latestCheckin.guestCountChanged && (
+                                                                        <div className="space-y-1">
+                                                                            <p className="text-[10px] uppercase text-amber-600 font-bold">Guest Count Changed</p>
+                                                                            <p className="text-xs italic">Client reported a change in total guests.</p>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                {latestCheckin.menuChanges && (
+                                                                    <div className="space-y-1 bg-background/50 p-3 rounded-lg border border-border/50">
+                                                                        <p className="text-[10px] uppercase text-primary font-bold">Menu Changes</p>
+                                                                        <p className="text-sm italic line-clamp-3" title={latestCheckin.menuChanges}>{latestCheckin.menuChanges}</p>
+                                                                    </div>
+                                                                )}
+
+                                                                {latestCheckin.additionalDetails && (
+                                                                    <div className="space-y-1 bg-background/50 p-3 rounded-lg border border-border/50">
+                                                                        <p className="text-[10px] uppercase text-primary font-bold">Additional Details</p>
+                                                                        <p className="text-sm italic line-clamp-3" title={latestCheckin.additionalDetails}>{latestCheckin.additionalDetails}</p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })()}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </TabsContent>
                             </div>
-                        </TabsContent>
+                        </div>
                     </Tabs>
                 </div>
 

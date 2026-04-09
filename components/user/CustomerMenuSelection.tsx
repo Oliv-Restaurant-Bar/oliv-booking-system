@@ -35,7 +35,7 @@ export function CustomerMenuSelection({
   const sectionRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const isManualScrolling = React.useRef(false);
-  
+
   const t = useWizardTranslation();
   const {
     loadingMenu, cart, removeItem,
@@ -125,7 +125,7 @@ export function CustomerMenuSelection({
   return (
     <div className={`bg-[#f7f7f8] h-screen flex overflow-hidden ${isSubmitting ? 'pointer-events-none select-none' : ''}`}>
       {/* Left Column: Menu Content */}
-      <div 
+      <div
         ref={scrollContainerRef}
         className={`flex-1 min-w-0 flex flex-col overflow-y-auto h-full scrollbar-hide transition-opacity duration-300 ${isSubmitting ? 'opacity-50' : ''}`}
       >
@@ -179,11 +179,10 @@ export function CustomerMenuSelection({
                 <div className="relative" ref={filterRef}>
                   <button
                     onClick={() => setIsFilterOpen(!isFilterOpen)}
-                    className={`h-[42px] px-4 flex items-center gap-2 rounded-full border transition-all cursor-pointer ${
-                      selectedDietary 
-                        ? "bg-[#9dae91]/10 border-[#9dae91] text-[#2c2f34]" 
+                    className={`h-[42px] px-4 flex items-center gap-2 rounded-full border transition-all cursor-pointer ${selectedDietary
+                        ? "bg-[#9dae91]/10 border-[#9dae91] text-[#2c2f34]"
                         : "bg-white border-[#e5e7eb] text-[#6b7280] hover:border-[#9ca3af]"
-                    }`}
+                      }`}
                   >
                     <Filter className={`w-4 h-4 ${selectedDietary ? "text-[#9dae91]" : "text-[#9ca3af]"}`} />
                     <span className="text-[14px] font-medium hidden sm:inline">
@@ -210,9 +209,8 @@ export function CustomerMenuSelection({
                               setSelectedDietary(type === selectedDietary ? null : type);
                               setIsFilterOpen(false);
                             }}
-                            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-colors cursor-pointer ${
-                              selectedDietary === type ? "bg-[#9dae91]/10 text-[#2c2f34]" : "hover:bg-[#f9fafb] text-[#6b7280]"
-                            }`}
+                            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-colors cursor-pointer ${selectedDietary === type ? "bg-[#9dae91]/10 text-[#2c2f34]" : "hover:bg-[#f9fafb] text-[#6b7280]"
+                              }`}
                           >
                             <div className="flex items-center gap-3">
                               <DietaryIcon type={type} size="sm" />
@@ -222,7 +220,7 @@ export function CustomerMenuSelection({
                           </button>
                         ))}
                       </div>
-                      
+
                       {selectedDietary && (
                         <div className="p-1.5 border-top border-[#f3f4f6] bg-[#f9fafb]">
                           <button
@@ -418,12 +416,10 @@ export function CustomerMenuSelection({
                 })}
               </div>
 
-          {/* Warning Message Removed */}
+              {/* Warning Message Removed */}
             </div>
           )}
 
-          {/* Error Message for Step 2 */}
-          {/* We can handle errors from store if needed */}
         </div>
 
       </div>
@@ -434,7 +430,7 @@ export function CustomerMenuSelection({
           onContinue={handleStep2Navigation}
           continueButtonText={t('actions.continueToReview')}
           onEditDateTime={() => setIsDateTimePickerOpen(true)}
-          isDrawer={true} 
+          isDrawer={true}
         />
       </div>
 

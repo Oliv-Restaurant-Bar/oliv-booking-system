@@ -90,6 +90,7 @@ interface WizardState {
   setActiveCategory: (category: string) => void;
   setDetailsModalItem: (item: any | null) => void;
   setIsLoadingEdit: (isLoading: boolean) => void;
+  setIsSubmitting: (isSubmitting: boolean) => void;
 
 
   
@@ -230,6 +231,7 @@ export const useWizardStore = create<WizardState>((set, get) => ({
   setActiveCategory: (activeCategory) => set({ activeCategory }),
   setDetailsModalItem: (detailsModalItem) => set({ detailsModalItem }),
   setIsLoadingEdit: (isLoadingEdit) => set({ isLoadingEdit }),
+  setIsSubmitting: (isSubmitting) => set({ isSubmitting }),
 
 
 
@@ -244,6 +246,7 @@ export const useWizardStore = create<WizardState>((set, get) => ({
 
   // Cart Actions
   addItem: (itemId, config) => set((state) => {
+    if (state.isSubmitting) return state;
     // If item already in cart, don't re-add unless explicit
     if (state.cart[itemId] && !config) return state;
     
@@ -261,12 +264,14 @@ export const useWizardStore = create<WizardState>((set, get) => ({
   }),
 
   removeItem: (itemId) => set((state) => {
+    if (state.isSubmitting) return state;
     const newCart = { ...state.cart };
     delete newCart[itemId];
     return { cart: newCart };
   }),
 
   updateItem: (itemId, updates) => set((state) => {
+    if (state.isSubmitting) return state;
     if (!state.cart[itemId]) return state;
     return {
       cart: {

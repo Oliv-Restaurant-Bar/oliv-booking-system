@@ -27,7 +27,8 @@ export function ItemDetailsModal({
   const {
     cart, eventDetails, 
     isPerPerson, isConsumption, isFlatFee, 
-    calculateRecommendedQuantity, addItem
+    calculateRecommendedQuantity, addItem,
+    isSubmitting
   } = useWizardStore();
 
   const selectedItems = Object.keys(cart);
@@ -213,9 +214,9 @@ export function ItemDetailsModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className={`fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 ${isSubmitting ? 'pointer-events-none select-none overflow-hidden' : ''}`} onClick={onClose}>
       <div
-        className="bg-card rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        className={`bg-card rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] transition-opacity duration-300 ${isSubmitting ? 'opacity-70' : ''}`}
         style={{ borderRadius: 'var(--radius-card)' }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -744,11 +745,14 @@ export function ItemDetailsModal({
             {/* Right: Add to Cart Button with Total - Full width on mobile */}
             <button
               onClick={handleAddToCart}
-              className="flex-shrink-0 w-full sm:w-auto flex items-center justify-center gap-3 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              disabled={isSubmitting}
+              className={`flex-shrink-0 w-full sm:w-auto flex items-center justify-center gap-3 px-6 py-3 rounded-lg transition-all ${isSubmitting ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}
               style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
             >
               <ShoppingCart className="w-5 h-5" />
-              <span style={{ fontWeight: 'var(--font-weight-medium)' }}>Add to Cart</span>
+              <span style={{ fontWeight: 'var(--font-weight-medium)' }}>
+                {isSubmitting ? t('status.processing') : (selectedItems.includes(item.id) ? t('actions.updateCart') : t('actions.addToCart'))}
+              </span>
             </button>
           </div>
         </div>

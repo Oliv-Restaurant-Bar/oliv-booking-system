@@ -29,9 +29,10 @@ interface BookingMiniCardProps {
   };
   onClick: () => void;
   showDate?: boolean;
+  isLoading?: boolean;
 }
 
-export function BookingMiniCard({ booking, onClick, showDate = true }: BookingMiniCardProps) {
+export function BookingMiniCard({ booking, onClick, showDate = true, isLoading = false }: BookingMiniCardProps) {
   const t = useTranslations('admin.bookings');
   const { formatDate } = useDateFormat();
 
@@ -107,12 +108,17 @@ export function BookingMiniCard({ booking, onClick, showDate = true }: BookingMi
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onClick();
+            if (!isLoading) onClick();
           }}
-          className="group/btn inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/5 text-primary-foreground hover:bg-secondary hover:text-white rounded-lg transition-all text-[11px] font-bold shrink-0 border border-secondary/10 hover:border-secondary"
+          disabled={isLoading}
+          className={`group/btn inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/5 text-primary-foreground hover:bg-secondary hover:text-white rounded-lg transition-all text-[11px] font-bold shrink-0 border border-secondary/10 hover:border-secondary ${isLoading ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
         >
-          {t('calendar.view')}
-          <span className="transition-transform group-hover/btn:translate-x-0.5">→</span>
+          {isLoading ? (
+            <Clock className="w-3 h-3 animate-spin" />
+          ) : (
+            t('calendar.view')
+          )}
+          {!isLoading && <span className="transition-transform group-hover/btn:translate-x-0.5">→</span>}
         </button>
       </div>
     </div>

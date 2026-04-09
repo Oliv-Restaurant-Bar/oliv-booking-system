@@ -294,6 +294,17 @@ html {
 .animate-slide-up {
   animation: slide-up 0.3s ease-out;
 }
+
+@keyframes progress-bar {
+  0% { transform: scaleX(0); }
+  50% { transform: scaleX(0.7); }
+  100% { transform: scaleX(1); }
+}
+
+.animate-progress-bar {
+  animation: progress-bar 2s ease-in-out infinite;
+  transform-origin: left;
+}
 /* Sonner Toast Customization */
 [data-sonner-toast] {
   background-color: var(--popover);

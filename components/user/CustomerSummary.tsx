@@ -58,11 +58,17 @@ export function CustomerSummary({
   }, [selectedItems, menuItems, cart, eventDetails.guestCount, isPerPerson]);
 
   const perPersonTotalValue = getPerPersonSubtotal();
-
+  const absoluteFoodTotal = useMemo(() => {
+    return Object.entries(cart).reduce((total, [itemId, cartItem]) => {
+      const item = menuItems.find(i => i.id === itemId);
+      if (!item || !isPerPerson(item)) return total;
+      return total + (getItemPerPersonPrice(item) * (cartItem.guestCount || parseInt(eventDetails.guestCount) || 1));
+    }, 0);
+  }, [cart, menuItems, eventDetails.guestCount, isPerPerson, getItemPerPersonPrice]);
 
   const flatRateTotalValue = getFlatRateSubtotal();
   const consumptionTotalValue = includeBeveragePrices ? getConsumptionSubtotal() : 0;
-  const grandTotalValue = perPersonTotalValue + flatRateTotalValue + consumptionTotalValue;
+  const grandTotalValue = absoluteFoodTotal + flatRateTotalValue + consumptionTotalValue;
 
 
   return (

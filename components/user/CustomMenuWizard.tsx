@@ -71,6 +71,7 @@ export function CustomMenuWizard({
     inquiryNumber, step2Error, setStep2Error,
     bookingPdfData, setBookingPdfData,
     isLoadingEdit, setIsLoadingEdit,
+    setIsSubmitting,
     activeCategory, setActiveCategory,
     detailsModalItem, setDetailsModalItem
   } = useWizardStore();
@@ -813,99 +814,108 @@ export function CustomMenuWizard({
   };
 
   const handleSubmit = async () => {
-    // Submit to server
-    const billingStreet = eventDetails.useSameAddressForBilling
-      ? eventDetails.street
-      : eventDetails.billingStreet;
-    const billingPlz = eventDetails.useSameAddressForBilling
-      ? eventDetails.plz
-      : eventDetails.billingPlz;
-    const billingLocation = eventDetails.useSameAddressForBilling
-      ? eventDetails.location
-      : eventDetails.billingLocation;
+    setIsSubmitting(true);
+    try {
+      // Submit to server
+      const billingStreet = eventDetails.useSameAddressForBilling
+        ? eventDetails.street
+        : eventDetails.billingStreet;
+      const billingPlz = eventDetails.useSameAddressForBilling
+        ? eventDetails.plz
+        : eventDetails.billingPlz;
+      const billingLocation = eventDetails.useSameAddressForBilling
+        ? eventDetails.location
+        : eventDetails.billingLocation;
 
-    const result = await submitWizardForm({
-      contactName: eventDetails.name,
-      contactEmail: eventDetails.email,
-      contactPhone: eventDetails.telephone,
-      business: eventDetails.business,
-      street: eventDetails.street,
-      plz: eventDetails.plz,
-      location: eventDetails.location,
-      eventDate: eventDetails.eventDate,
-      eventTime: eventDetails.eventTime,
-      guestCount: parseInt(eventDetails.guestCount) || 0,
-      occasion: eventDetails.occasion,
-      specialRequests: eventDetails.specialRequests,
-      paymentMethod: eventDetails.paymentMethod || 'cash',
-      useSameAddressForBilling: eventDetails.useSameAddressForBilling ?? true,
-      billingStreet: billingStreet || '',
-      billingPlz: billingPlz || '',
-      billingLocation: billingLocation || '',
-      billingReference: eventDetails.billingReference || '',
-      room: eventDetails.room || '',
-      reference: eventDetails.reference || '',
-      selectedItems: selectedItemIds,
-      itemQuantities: Object.fromEntries(selectedItemIds.map(id => [id, cart[id]?.quantity || 1])),
-      itemGuestCounts: Object.fromEntries(selectedItemIds.map(id => [id, cart[id]?.guestCount || parseInt(eventDetails.guestCount) || 1])),
-      itemVariants: Object.fromEntries(selectedItemIds.map(id => [id, cart[id]?.variantId || ''])),
-      itemAddOns: Object.fromEntries(selectedItemIds.map(id => [id, cart[id]?.addOnIds || []])),
-      itemComments: Object.fromEntries(selectedItemIds.map(id => [id, cart[id]?.comment || ''])),
-      allergyDetails: [],
-      bookingId,
-    });
-
-    if (result.success && result.data) {
-      const newBookingId = result.data.bookingId;
-      setBookingInfo(newBookingId, null);
-
-      const pdfData = {
-        id: result.data.bookingId,
-        customerName: eventDetails.name,
-        business: eventDetails.business || undefined,
+      const result = await submitWizardForm({
+        contactName: eventDetails.name,
+        contactEmail: eventDetails.email,
+        contactPhone: eventDetails.telephone,
+        business: eventDetails.business,
+        street: eventDetails.street,
+        plz: eventDetails.plz,
+        location: eventDetails.location,
         eventDate: eventDetails.eventDate,
         eventTime: eventDetails.eventTime,
         guestCount: parseInt(eventDetails.guestCount) || 0,
-        occasion: eventDetails.occasion || undefined,
-        items: selectedItemIds.map(itemId => {
-          const item = menuItems.find(i => i.id === itemId);
-          if (!item) return null;
+        occasion: eventDetails.occasion,
+        specialRequests: eventDetails.specialRequests,
+        paymentMethod: eventDetails.paymentMethod || 'cash',
+        useSameAddressForBilling: eventDetails.useSameAddressForBilling ?? true,
+        billingStreet: billingStreet || '',
+        billingPlz: billingPlz || '',
+        billingLocation: billingLocation || '',
+        billingReference: eventDetails.billingReference || '',
+        room: eventDetails.room || '',
+        reference: eventDetails.reference || '',
+        selectedItems: selectedItemIds,
+        itemQuantities: Object.fromEntries(selectedItemIds.map(id => [id, cart[id]?.quantity || 1])),
+        itemGuestCounts: Object.fromEntries(selectedItemIds.map(id => [id, cart[id]?.guestCount || parseInt(eventDetails.guestCount) || 1])),
+        itemVariants: Object.fromEntries(selectedItemIds.map(id => [id, cart[id]?.variantId || ''])),
+        itemAddOns: Object.fromEntries(selectedItemIds.map(id => [id, cart[id]?.addOnIds || []])),
+        itemComments: Object.fromEntries(selectedItemIds.map(id => [id, cart[id]?.comment || ''])),
+        allergyDetails: [],
+        bookingId,
+      });
 
-          const cartItem = cart[itemId];
-          const quantity = (isPerPerson(item) ? (cartItem.guestCount || parseInt(eventDetails.guestCount) || 1) : cartItem.quantity || 1);
-          const unitPrice = getItemPerPersonPrice(item);
-          
-          return {
-            id: itemId,
-            name: item.name,
-            category: item.category,
-            quantity: quantity,
-            unitPrice: unitPrice,
-            totalPrice: unitPrice * quantity,
-            notes: (cartItem.variantId ? `Variant: ${cartItem.variantId} | ` : '') + (cartItem.addOnIds.length > 0 ? `Choices: ${cartItem.addOnIds.join(', ')}` : ''),
-            customerComment: cartItem.comment || '',
-            pricingType: item.pricingType,
-            dietaryType: item.dietaryType || 'none',
-          };
-        }).filter(Boolean),
-        estimatedTotal: result.data.estimatedTotal,
-        specialRequests: eventDetails.specialRequests || undefined,
-      };
-      setBookingPdfData(pdfData);
-      const inquiryNo = result.data.inquiryNumber || `INQ-${Math.floor(Math.random() * 9000) + 1000}`;
-      
-      if (isEditMode) {
-        toast.success(t('status.requestSent'));
-        sessionStorage.removeItem('edit_booking_id');
-        sessionStorage.removeItem('edit_secret');
-        router.push(`/admin/bookings?id=${newBookingId}&tab=menu-details`);
+      if (result.success && result.data) {
+        const newBookingId = result.data.bookingId;
+        setBookingInfo(newBookingId, null);
+
+        const pdfData = {
+          id: result.data.bookingId,
+          customerName: eventDetails.name,
+          business: eventDetails.business || undefined,
+          eventDate: eventDetails.eventDate,
+          eventTime: eventDetails.eventTime,
+          guestCount: parseInt(eventDetails.guestCount) || 0,
+          occasion: eventDetails.occasion || undefined,
+          items: selectedItemIds.map(itemId => {
+            const item = menuItems.find(i => i.id === itemId);
+            if (!item) return null;
+
+            const cartItem = cart[itemId];
+            const quantity = (isPerPerson(item) ? (cartItem.guestCount || parseInt(eventDetails.guestCount) || 1) : cartItem.quantity || 1);
+            const unitPrice = getItemPerPersonPrice(item);
+            
+            return {
+              id: itemId,
+              name: item.name,
+              category: item.category,
+              quantity: quantity,
+              unitPrice: unitPrice,
+              totalPrice: unitPrice * quantity,
+              notes: (cartItem.variantId ? `Variant: ${cartItem.variantId} | ` : '') + (cartItem.addOnIds.length > 0 ? `Choices: ${cartItem.addOnIds.join(', ')}` : ''),
+              customerComment: cartItem.comment || '',
+              pricingType: item.pricingType,
+              dietaryType: item.dietaryType || 'none',
+            };
+          }).filter(Boolean),
+          estimatedTotal: result.data.estimatedTotal,
+          specialRequests: eventDetails.specialRequests || undefined,
+        };
+        setBookingPdfData(pdfData);
+        const inquiryNo = result.data.inquiryNumber || `INQ-${Math.floor(Math.random() * 9000) + 1000}`;
+        
+        if (isEditMode) {
+          toast.success(t('status.requestSent'));
+          sessionStorage.removeItem('edit_booking_id');
+          sessionStorage.removeItem('edit_secret');
+          router.push(`/admin/bookings?id=${newBookingId}&tab=menu-details`);
+        } else {
+          setSubmitted(true, inquiryNo);
+          sessionStorage.removeItem('edit_booking_id');
+          sessionStorage.removeItem('edit_secret');
+          setIsSubmitting(false);
+        }
       } else {
-        setSubmitted(true, inquiryNo);
-        sessionStorage.removeItem('edit_booking_id');
-        sessionStorage.removeItem('edit_secret');
+        setIsSubmitting(false);
+        toast.error(result.error || t('status.noItems'));
       }
-    } else {
-      toast.error(result.error || t('status.noItems'));
+    } catch (error: any) {
+      console.error('Submission error:', error);
+      setIsSubmitting(false);
+      toast.error(t('status.error'));
     }
   };
 
@@ -1235,6 +1245,21 @@ export function CustomMenuWizard({
         initialDate={eventDetails.eventDate}
         initialTime={eventDetails.eventTime}
       />
+      {/* Global Submission Overlay */}
+      {isSubmitting && (
+        <div className="fixed inset-0 z-[10000] bg-white/60 backdrop-blur-[2px] flex flex-col items-center justify-center animate-in fade-in duration-300 transition-all cursor-wait">
+          <div className="relative">
+            <div className="size-16 border-4 border-[#9dae91]/20 border-t-[#9dae91] rounded-full animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Send className="w-6 h-6 text-[#9dae91] animate-pulse" />
+            </div>
+          </div>
+          <div className="mt-6 text-center space-y-1">
+            <p className="text-[17px] font-bold text-[#2c2f34]">Bestellung wird gesendet...</p>
+            <p className="text-[14px] text-[#6b7280]">Einen Moment bitte, wir bearbeiten Ihre Anfrage.</p>
+          </div>
+        </div>
+      )}
     </>
   );
 }

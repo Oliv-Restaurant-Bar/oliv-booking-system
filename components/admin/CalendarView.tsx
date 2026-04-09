@@ -84,6 +84,7 @@ interface CalendarViewProps {
     };
   }>;
   onOpenModal: (booking: any) => void;
+  navigatingId?: string | number | null;
 }
 
 interface DayBookingsModalProps {
@@ -92,9 +93,10 @@ interface DayBookingsModalProps {
   date: Date | null;
   bookings: any[];
   onOpenBooking: (booking: any) => void;
+  navigatingId?: string | number | null;
 }
 
-function DayBookingsModal({ isOpen, onClose, date, bookings, onOpenBooking }: DayBookingsModalProps) {
+function DayBookingsModal({ isOpen, onClose, date, bookings, onOpenBooking, navigatingId }: DayBookingsModalProps) {
   const t = useTranslations('admin.bookings');
   const commonT = useCommonTranslation();
   const locale = useLocale();
@@ -132,6 +134,7 @@ function DayBookingsModal({ isOpen, onClose, date, bookings, onOpenBooking }: Da
               booking={booking}
               onClick={() => onOpenBooking(booking)}
               showDate={false}
+              isLoading={navigatingId === booking.id}
             />
           ))}
         </div>
@@ -149,7 +152,7 @@ function DayBookingsModal({ isOpen, onClose, date, bookings, onOpenBooking }: Da
   );
 }
 
-export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
+export function CalendarView({ bookings, onOpenModal, navigatingId }: CalendarViewProps) {
   const t = useTranslations('admin.bookings');
   const commonT = useCommonTranslation();
   const monthT = useTranslations('admin.bookings.months');
@@ -380,6 +383,7 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
                       title={`${booking.customer.name} - ${booking.event.occasion}${booking.room || booking.event.location ? ` @ ${booking.room || booking.event.location}` : ''}`}
                     >
                       {booking.customer.name}
+                      {navigatingId === booking.id && <Clock className="w-2.5 h-2.5 animate-spin ml-1 inline" />}
                     </div>
                   ))}
                   {dayBookings.length > 3 && (
@@ -413,6 +417,7 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
                   booking={booking}
                   onClick={() => onOpenModal(booking)}
                   showDate={true}
+                  isLoading={navigatingId === booking.id}
                 />
               ))}
             </div>
@@ -430,6 +435,7 @@ export function CalendarView({ bookings, onOpenModal }: CalendarViewProps) {
           setIsDayModalOpen(false);
           onOpenModal(booking);
         }}
+        navigatingId={navigatingId}
       />
     </div>
   );

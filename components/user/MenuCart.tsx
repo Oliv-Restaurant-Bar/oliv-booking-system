@@ -739,7 +739,7 @@ export function MenuCart({
 
                 <button
                   onClick={() => {
-                    if (totalAmount > 5000 && !isEditMode) {
+                    if (totalAbsoluteAmount > 5000 && !isEditMode) {
                       setIsDepositModalOpen(true);
                     } else {
                       onContinue?.();

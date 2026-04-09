@@ -42,9 +42,10 @@ interface GridViewProps {
     createdAt?: string;
   }>;
   onOpenModal: (booking: any) => void;
+  navigatingId?: string | number | null;
 }
 
-export function GridView({ onOpenModal, bookings }: GridViewProps) {
+export function GridView({ onOpenModal, bookings, navigatingId }: GridViewProps) {
   const t = useAdminTranslation();
   const commonT = useCommonTranslation();
   const bookingT = useBookingTranslation();
@@ -189,6 +190,8 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
           <Button
             onClick={() => onOpenModal(booking)}
             variant='primary'
+            isLoading={navigatingId === booking.id}
+            disabled={!!navigatingId}
             className="w-full px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-secondary hover:text-white transition-colors flex items-center justify-center gap-2 cursor-pointer"
             style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
           >
