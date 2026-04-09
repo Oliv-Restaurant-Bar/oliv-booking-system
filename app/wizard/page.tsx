@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { CustomMenuWizard } from '@/components/user/CustomMenuWizardVariant1';
+import { CustomMenuWizard } from '@/components/user/CustomMenuWizard';
 import { WizardHeader } from '@/components/user/WizardHeader';
 import { SkeletonMenuSelection } from '@/components/ui/skeleton-loaders';
 import { getCompleteMenuData } from '@/lib/actions/menu';

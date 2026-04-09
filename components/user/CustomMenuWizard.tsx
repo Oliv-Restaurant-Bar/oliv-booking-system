@@ -65,7 +65,7 @@ export function CustomMenuWizard({
   const [itemAddOns, setItemAddOns] = useState<Record<string, string[]>>({});
   const [itemVariants, setItemVariants] = useState<Record<string, string>>({});
   const [itemComments, setItemComments] = useState<Record<string, string>>({});
-  const [selectedCategory, setSelectedCategory] = useState('Appetizers');
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [isCartCollapsed, setIsCartCollapsed] = useState(true);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [showCartFab, setShowCartFab] = useState(true);
@@ -584,7 +584,6 @@ export function CustomMenuWizard({
     setVisibilitySchedules(data.visibilitySchedules || []);
     
     if (categoryNames.length > 0) {
-      setSelectedCategory(categoryNames[0]);
       // Initialize all categories as collapsed (closed by default)
       const initialCollapsedState = categoryNames.reduce((acc: Record<string, boolean>, cat: string) => {
         acc[cat] = true;
@@ -695,8 +694,13 @@ export function CustomMenuWizard({
   }, [menuItems, categoryData, isCurrentlyVisible]);
 
   useEffect(() => {
-    if (visibleCategories.length > 0 && !visibleCategories.includes(selectedCategory)) {
-      setSelectedCategory(visibleCategories[0]);
+    // Ensure the first visible category is selected if none is selected
+    // or if the current choice is no longer visible.
+    if (visibleCategories.length > 0) {
+      if (!selectedCategory || !visibleCategories.includes(selectedCategory)) {
+        console.log('[Wizard] Defaulting selection to first visible category:', visibleCategories[0]);
+        setSelectedCategory(visibleCategories[0]);
+      }
     }
   }, [visibleCategories, selectedCategory]);
 
@@ -1043,6 +1047,10 @@ export function CustomMenuWizard({
     // Since all sections are visible on one page, validate and proceed directly to Step 2
     if (validateStep1()) {
       setCurrentStep(2);
+      // Proactively select the first category to ensure UI sync
+      if (visibleCategories.length > 0) {
+        setSelectedCategory(visibleCategories[0]);
+      }
     }
   };
 
