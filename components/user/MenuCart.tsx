@@ -19,80 +19,65 @@ import { EventDetails } from '@/lib/types';
 import { DietaryIcon } from './DietaryIcon';
 import { Edit2 } from 'lucide-react';
 import { TermsAndConditionsModal } from './TermsAndConditionsModal';
+import { useWizardStore } from '@/lib/store/useWizardStore';
+import { useWizardTranslation } from '@/lib/i18n/client';
+
 
 interface MenuCartProps {
-  selectedItems: string[];
-  menuItems: MenuItem[];
-  itemQuantities: Record<string, number>;
-  itemVariants: Record<string, string>;
-  itemAddOns: Record<string, string[]>;
-  itemComments: Record<string, string>;
-  isCartCollapsed: boolean;
-  setIsCartCollapsed: (value: boolean) => void;
-  eventDetails: EventDetails;
-  itemGuestCounts: Record<string, number>;
-  getItemPerPersonPrice: (item: MenuItem) => number;
-  getPerPersonSubtotal: () => number;
-  getFlatRateSubtotal: () => number;
-  getConsumptionSubtotal: () => number;
-  calculateRecommendedQuantity: (item: MenuItem, itemId?: string) => number | null;
-  openDetailsModal: (item: MenuItem) => void;
-  removeFromCart: (itemId: string) => void;
-  setItemQuantities: React.Dispatch<React.SetStateAction<Record<string, number>>>;
-  isConsumption: (item: MenuItem) => boolean;
-  isFlatFee: (item: MenuItem) => boolean;
-  isPerPerson: (item: MenuItem) => boolean;
+  isCartCollapsed?: boolean;
+  setIsCartCollapsed?: (value: boolean) => void;
   onContinue?: () => void;
   continueButtonText?: string;
   onEditDateTime?: () => void;
   isDrawer?: boolean;
-  isSubmitting?: boolean;
-  includeBeveragePrices: boolean;
-  setIncludeBeveragePrices: (value: boolean) => void;
-  setItemGuestCounts: React.Dispatch<React.SetStateAction<Record<string, number>>>;
-  categories: string[];
   onCloseDrawer?: () => void;
-  isEditMode?: boolean;
-  originalGuestCount?: string;
 }
 
 export function MenuCart({
-  selectedItems,
-  menuItems,
-  itemQuantities,
-  itemVariants,
-  itemAddOns,
-  itemComments,
-  isCartCollapsed,
-  setIsCartCollapsed,
-  eventDetails,
-  itemGuestCounts,
-  getItemPerPersonPrice,
-  getPerPersonSubtotal,
-  getFlatRateSubtotal,
-  getConsumptionSubtotal,
-  calculateRecommendedQuantity,
-  openDetailsModal,
-  removeFromCart,
-  setItemQuantities,
-  isConsumption,
-  isFlatFee,
-  isPerPerson,
   onContinue,
   onEditDateTime,
-  includeBeveragePrices,
-  setIncludeBeveragePrices,
-  continueButtonText = 'Anfrage absenden',
+  continueButtonText = 'Fortfahren',
   isDrawer = false,
-  isSubmitting = false,
-  setItemGuestCounts,
-  categories,
   onCloseDrawer,
-  isEditMode = false,
-  originalGuestCount = '',
 }: MenuCartProps) {
+  const t = useWizardTranslation();
+  const {
+    cart, removeItem, updateItem,
+    menuItems,
+    eventDetails,
+    categories,
+    isSubmitting,
+    isEditMode,
+    editBookingData,
+    includeBeveragePrices, setIncludeBeveragePrices,
+    getItemPerPersonPrice, getItemTotalPrice,
+    getPerPersonSubtotal, getFlatRateSubtotal, getConsumptionSubtotal,
+    isPerPerson, isFlatFee, isConsumption,
+    setEventDetails
+  } = useWizardStore();
+
+  const selectedItems = React.useMemo(() => Object.keys(cart), [cart]);
+
   const [viewMode, setViewMode] = React.useState<'per-person' | 'total'>('per-person');
   const [termsAccepted, setTermsAccepted] = React.useState(isEditMode);
+
+  // Map store cart to legacy prop format for internal logic compatibility
+  const itemVariants = React.useMemo(() => 
+    Object.fromEntries(Object.entries(cart).map(([id, item]) => [id, item.variantId || ''])), 
+    [cart]
+  );
+  const itemAddOns = React.useMemo(() => 
+    Object.fromEntries(Object.entries(cart).map(([id, item]) => [id, item.addOnIds || []])), 
+    [cart]
+  );
+  const itemQuantities = React.useMemo(() => 
+    Object.fromEntries(Object.entries(cart).map(([id, item]) => [id, item.quantity])), 
+    [cart]
+  );
+  const itemGuestCounts = React.useMemo(() => 
+    Object.fromEntries(Object.entries(cart).map(([id, item]) => [id, item.guestCount || 0])), 
+    [cart]
+  );
 
   // Also sync when isEditMode changes
   React.useEffect(() => {
@@ -110,26 +95,11 @@ export function MenuCart({
     setExpandedItems(prev => ({ ...prev, [itemId]: !prev[itemId] }));
   };
 
-  // ✅ Initialize guest counts ONCE (no fallback issues later)
-  React.useEffect(() => {
-    if (!eventDetails.guestCount) return;
-
-    setItemGuestCounts(prev => {
-      const updated = { ...prev };
-
-      selectedItems.forEach(id => {
-        if (updated[id] === undefined) {
-          updated[id] = parseInt(eventDetails.guestCount) || 1;
-        }
-      });
-
-      return updated;
-    });
-  }, [selectedItems, eventDetails.guestCount, setItemGuestCounts]);
+  // Removed redundant local guest count sync - store handles this
 
   // Helper for formatting date: "Thu, Mar 12, 2026"
   const getFormattedDate = () => {
-    if (!eventDetails.eventDate) return 'Select date';
+    if (!eventDetails.eventDate) return t('common.selectDate');
     try {
       const date = parseISO(eventDetails.eventDate);
       if (!isValid(date)) return eventDetails.eventDate;
@@ -138,6 +108,7 @@ export function MenuCart({
       return eventDetails.eventDate;
     }
   };
+
 
   const cartItems = React.useMemo(() => selectedItems.map(id => menuItems.find(item => item.id === id)).filter(Boolean) as MenuItem[], [selectedItems, menuItems]);
   const foodItems = React.useMemo(() => cartItems.filter(item => item.category !== 'Beverages' && item.category !== 'Add-ons' && !isFlatFee(item)), [cartItems]);
@@ -152,6 +123,7 @@ export function MenuCart({
     vegCount: pureVegItemCount,
     nonVegCount: nonVegItemCount,
     veganCount: veganItemCount,
+    absoluteFoodTotal
   } = React.useMemo(() => {
     const hasDietaryType = (item: MenuItem, type: string) => {
       if (item.dietaryType === type) return true;
@@ -176,6 +148,9 @@ export function MenuCart({
     let vegSubtotal = 0;
     let nonVegSubtotal = 0;
     let veganSubtotal = 0;
+    let absoluteVegSubtotal = 0;
+    let absoluteNonVegSubtotal = 0;
+    let absoluteVeganSubtotal = 0;
     let vegCount = 0;
     let nonVegCount = 0;
     let veganCount = 0;
@@ -263,27 +238,35 @@ export function MenuCart({
       const sharedPrice = Math.max(maxVeg, maxNonVeg, maxVegan, maxNoneVeg, maxNoneNonVeg, maxNoneVegan, maxNoneShared);
       const sharedCount = items.length;
 
+      // Guest calculation for absolute totals
+      const categoryTotalGuests = items.reduce((sum, item) => sum + (cart[item.id]?.guestCount || parseInt(eventDetails.guestCount) || 1), 0);
+      const getCategoryMaxGuests = (subset: MenuItem[]) => subset.reduce((sum, item) => sum + (cart[item.id]?.guestCount || parseInt(eventDetails.guestCount) || 1), 0);
+
+      const vegG = getCategoryMaxGuests(vegItems) + (isVegActivated ? getCategoryMaxGuests(noneItems) : 0);
+      const nvG = getCategoryMaxGuests(nonVegItems) + (isNonVegActivated ? getCategoryMaxGuests(noneItems) : 0);
+      const veganG = getCategoryMaxGuests(veganItems) + (isVeganActivated ? getCategoryMaxGuests(noneItems) : 0);
+
       if (totalGroupings === 1) {
         if (hasNoneSplit || hasNoneShared) {
-          // Rule: Use specific price for None splits, even if only 1 grouping
-          if (isVegActivated) { vegSubtotal += Math.max(maxVeg, maxNoneVeg, maxNoneShared); vegCount += sharedCount; }
-          if (isNonVegActivated) { nonVegSubtotal += Math.max(maxNonVeg, maxNoneNonVeg, maxNoneShared); nonVegCount += sharedCount; }
-          if (isVeganActivated) { veganSubtotal += Math.max(maxVegan, maxNoneVegan, maxNoneShared); veganCount += sharedCount; }
+          const finalMaxVeg = Math.max(maxVeg, maxNoneVeg, maxNoneShared);
+          const finalMaxNV = Math.max(maxNonVeg, maxNoneNonVeg, maxNoneShared);
+          const finalMaxVegan = Math.max(maxVegan, maxNoneVegan, maxNoneShared);
+
+          if (isVegActivated) { vegSubtotal += finalMaxVeg; vegCount += sharedCount; absoluteVegSubtotal += finalMaxVeg * categoryTotalGuests; }
+          if (isNonVegActivated) { nonVegSubtotal += finalMaxNV; nonVegCount += sharedCount; absoluteNonVegSubtotal += finalMaxNV * categoryTotalGuests; }
+          if (isVeganActivated) { veganSubtotal += finalMaxVegan; veganCount += sharedCount; absoluteVeganSubtotal += finalMaxVegan * categoryTotalGuests; }
         } else {
-          // Rule: Shared for Restricted, Separate for General (Mains)
           if (isRestricted) {
-            vegSubtotal += sharedPrice; vegCount += sharedCount;
-            nonVegSubtotal += sharedPrice; nonVegCount += sharedCount;
-            veganSubtotal += sharedPrice; veganCount += sharedCount;
+            vegSubtotal += sharedPrice; vegCount += sharedCount; absoluteVegSubtotal += sharedPrice * categoryTotalGuests;
+            nonVegSubtotal += sharedPrice; nonVegCount += sharedCount; absoluteNonVegSubtotal += sharedPrice * categoryTotalGuests;
+            veganSubtotal += sharedPrice; veganCount += sharedCount; absoluteVeganSubtotal += sharedPrice * categoryTotalGuests;
           } else {
-            if (maxVeg > 0) { vegSubtotal += maxVeg; vegCount += sharedCount; }
-            if (maxNonVeg > 0) { nonVegSubtotal += maxNonVeg; nonVegCount += sharedCount; }
-            if (maxVegan > 0) { veganSubtotal += maxVegan; veganCount += sharedCount; }
+            if (maxVeg > 0) { vegSubtotal += maxVeg; vegCount += sharedCount; absoluteVegSubtotal += maxVeg * categoryTotalGuests; }
+            if (maxNonVeg > 0) { nonVegSubtotal += maxNonVeg; nonVegCount += sharedCount; absoluteNonVegSubtotal += maxNonVeg * categoryTotalGuests; }
+            if (maxVegan > 0) { veganSubtotal += maxVegan; veganCount += sharedCount; absoluteVeganSubtotal += maxVegan * categoryTotalGuests; }
           }
         }
       } else {
-        // Separate rule: Multiple dietary groups or Dietary + None
-        // Rule: Activation-Only for "None" globally
         const vegNoneAdd = isVegActivated ? Math.max(maxNoneVeg, maxNoneShared) : 0;
         const nvNoneAdd = isNonVegActivated ? Math.max(maxNoneNonVeg, maxNoneShared) : 0;
         const veganNoneAdd = isVeganActivated ? Math.max(maxNoneVegan, maxNoneShared) : 0;
@@ -292,57 +275,49 @@ export function MenuCart({
         nonVegSubtotal += maxNonVeg + nvNoneAdd;
         veganSubtotal += maxVegan + veganNoneAdd;
 
+        absoluteVegSubtotal += (maxVeg + vegNoneAdd) * vegG;
+        absoluteNonVegSubtotal += (maxNonVeg + nvNoneAdd) * nvG;
+        absoluteVeganSubtotal += (maxVegan + veganNoneAdd) * veganG;
+
         vegCount += vegItems.length + (isVegActivated ? noneItems.length : 0);
         nonVegCount += nonVegItems.length + (isNonVegActivated ? noneItems.length : 0);
         veganCount += veganItems.length + (isVeganActivated ? noneItems.length : 0);
       }
     });
 
-    return { vegSubtotal, nonVegSubtotal, veganSubtotal, vegCount, nonVegCount, veganCount };
-  }, [ppFoodItems, getItemPerPersonPrice]);
+    const absoluteFoodTotal = absoluteVegSubtotal + absoluteNonVegSubtotal + absoluteVeganSubtotal;
 
-  const updateQuantity = (itemId: string, delta: number) => {
-    setItemQuantities(prev => {
-      const current = prev[itemId] || 1;
-      const next = Math.max(1, current + delta);
-      return { ...prev, [itemId]: next };
-    });
-  };
-
-  const updateGuestCount = (itemId: string, delta: number) => {
-    setItemGuestCounts(prev => {
-      const current = prev[itemId] ?? parseInt(eventDetails.guestCount) ?? 1;
-      return {
-        ...prev,
-        [itemId]: Math.max(1, current + delta),
-      };
-    });
-  };
+    return { vegSubtotal, nonVegSubtotal, veganSubtotal, vegCount, nonVegCount, veganCount, absoluteFoodTotal };
+  }, [ppFoodItems, getItemPerPersonPrice, cart, eventDetails.guestCount]);
 
   const currentGuestCount = React.useMemo(() => {
     return parseInt(eventDetails.guestCount) || 1;
   }, [eventDetails.guestCount]);
 
-  const perPersonTotal = React.useMemo(() => {
-    return ppFoodItems.reduce((sum, item) => {
-      // ✅ Always use itemGuestCounts (no fallback confusion)
-      const guestCount = itemGuestCounts[item.id] ?? 1;
-      return sum + (getItemPerPersonPrice(item) * guestCount);
-    }, 0);
-  }, [ppFoodItems, itemGuestCounts, getItemPerPersonPrice]);
+  const perPersonTotal = pureVegPerPersonSubtotal + nonVegPerPersonSubtotal + veganPerPersonSubtotal;
 
-  const totalAmount = React.useMemo(() => {
-    return perPersonTotal + getFlatRateSubtotal() + (includeBeveragePrices ? getConsumptionSubtotal() : 0);
-  }, [perPersonTotal, getFlatRateSubtotal, includeBeveragePrices, getConsumptionSubtotal, itemQuantities, selectedItems]);
+  const totalAbsoluteAmount = absoluteFoodTotal + 
+                            getFlatRateSubtotal() + 
+                            (includeBeveragePrices ? getConsumptionSubtotal() : 0);
+
+  const totalAmount = (viewMode === 'total' ? absoluteFoodTotal : perPersonTotal) + 
+                    getFlatRateSubtotal() + 
+                    (includeBeveragePrices ? getConsumptionSubtotal() : 0);
+
   const isUg1Exklusiv = eventDetails.room === 'ug1_exklusiv';
+  const showMinSpendWarning = !isEditMode && isUg1Exklusiv && totalAbsoluteAmount < 1000;
 
   const renderItemRow = (item: MenuItem, sectionColor: string) => {
     const isPP = isPerPerson(item);
+    const cartItem = cart[item.id];
+    if (!cartItem) return null;
+
     const useQtyLabel = item.category === 'Beverages' || isFlatFee(item) || isConsumption(item);
-    const quantity = itemQuantities[item.id] || 1;
-    const guestCount = itemGuestCounts[item.id] || parseInt(eventDetails.guestCount) || 1;
+    const quantity = cartItem.quantity;
+    const guestCount = cartItem.guestCount || parseInt(eventDetails.guestCount) || 1;
     const price = getItemPerPersonPrice(item);
-    const total = price * (isPP && !useQtyLabel ? guestCount : quantity);
+    const total = getItemTotalPrice(item);
+
 
     return (
       <div key={item.id} className="py-1 space-y-0.5">
@@ -389,18 +364,18 @@ export function MenuCart({
             {expandedItems[item.id] && (
               <div className="mt-2 flex flex-col gap-3 pb-2 border-l-2 border-primary/40 pl-3 ml-[5px]">
                 {/* Variant (if any) */}
-                {itemVariants[item.id] && item.variants && (
+                {cartItem.variantId && item.variants && (
                   <div className="flex flex-col">
                     <span className="text-[9px] font-bold text-[#9dae91] uppercase tracking-wider mb-0.5">Variant</span>
                     <span className="text-[11px] text-[#2c2f34]">
-                      {item.variants.find(v => v.id === itemVariants[item.id])?.name}
+                      {item.variants.find(v => v.id === cartItem.variantId)?.name}
                     </span>
                   </div>
                 )}
 
                 {/* Grouped Addons */}
                 {item.addonGroups?.map(group => {
-                  const selectedInGroup = group.items.filter(i => itemAddOns[item.id]?.includes(i.id));
+                  const selectedInGroup = group.items.filter(i => cartItem.addOnIds?.includes(i.id));
                   if (selectedInGroup.length === 0) return null;
 
                   return (
@@ -416,43 +391,11 @@ export function MenuCart({
                             )}
                             <span className="text-[11px] font-medium text-[#2c2f34]">{addon.name}</span>
                           </div>
-                          {(addon as any).description && (
-                            <span className="text-[10px] text-[#9ca3af] leading-snug mt-0.5">{(addon as any).description}</span>
-                          )}
                         </div>
                       ))}
                     </div>
                   );
                 })}
-
-                {/* Legacy Addons (if not in a group) */}
-                {(() => {
-                  const legacyAddonIds = itemAddOns[item.id]?.filter(addonId => {
-                    return !item.addonGroups?.some(g => g.items.some(i => i.id === addonId));
-                  });
-                  return legacyAddonIds && legacyAddonIds.length > 0 ? (
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-bold text-[#9dae91] uppercase tracking-wider mb-1">Extras</span>
-                      {legacyAddonIds.map(addonId => {
-                        const ao = item.addOns?.find(a => a.id === addonId);
-                        if (!ao) return null;
-                        return (
-                          <div key={addonId} className="flex flex-col mb-1.5 last:mb-0">
-                            <div className="flex items-center gap-1.5">
-                              {ao.dietaryType && ao.dietaryType !== 'none' && (
-                                <DietaryIcon type={ao.dietaryType} size="xs" />
-                              )}
-                              <span className="text-[11px] font-medium text-[#2c2f34]">{ao.name}</span>
-                            </div>
-                            {(ao as any).description && (
-                              <span className="text-[10px] text-[#9ca3af] leading-snug mt-0.5">{(ao as any).description}</span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : null;
-                })()}
               </div>
             )}
           </div>
@@ -462,33 +405,30 @@ export function MenuCart({
         <div className="flex items-center justify-between pl-2">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => removeFromCart(item.id)}
+              onClick={() => removeItem(item.id)}
               className="text-[#9ca3af] hover:text-[#ef4444] transition-colors"
               title="Remove"
             >
               <X className="w-4.5 h-4.5" />
             </button>
-            <button
-              onClick={() => {
-                // Close the drawer first (on mobile), then open the modal
-                onCloseDrawer?.();
-                // Small delay to allow drawer to close before modal opens
-                setTimeout(() => openDetailsModal(item), 100);
-              }}
-              className="text-[#9ca3af] hover:text-[#2c2f34] transition-colors"
-              title="Edit"
-            >
-              <Edit2 className="w-4 h-4" />
-            </button>
           </div>
 
           <div className="flex items-center gap-3">
             <span className="text-[10px] font-bold text-[#9ca3af] uppercase tracking-wider">
-              {item.category === 'Beverages' || isFlatFee(item) ? 'Qty' : 'Guests'}
+              {useQtyLabel ? 'Qty' : 'Guests'}
             </span>
             <div className="flex items-center bg-[#f9fafb] border border-[#e5e7eb] rounded-lg p-0.5">
               <button
-                onClick={() => isPP ? updateGuestCount(item.id, -1) : updateQuantity(item.id, -1)}
+                onClick={() => {
+                  if (isPP) {
+                    const newCount = guestCount - 1;
+                    if (newCount >= 1) {
+                      updateItem(item.id, { guestCount: newCount });
+                    }
+                  } else {
+                    updateItem(item.id, { quantity: Math.max(1, quantity - 1) });
+                  }
+                }}
                 className="size-[24px] flex items-center justify-center hover:bg-white hover:shadow-sm rounded-md transition-all"
               >
                 <Minus className="w-2.5 h-2.5 text-[#6b7280]" />
@@ -497,7 +437,13 @@ export function MenuCart({
                 {isPP ? guestCount : quantity}
               </span>
               <button
-                onClick={() => isPP ? updateGuestCount(item.id, 1) : updateQuantity(item.id, 1)}
+                onClick={() => {
+                  if (isPP) {
+                    updateItem(item.id, { guestCount: guestCount + 1 });
+                  } else {
+                    updateItem(item.id, { quantity: quantity + 1 });
+                  }
+                }}
                 className="size-[24px] flex items-center justify-center hover:bg-white hover:shadow-sm rounded-md transition-all"
               >
                 <Plus className="w-2.5 h-2.5 text-[#6b7280]" />
@@ -505,6 +451,7 @@ export function MenuCart({
             </div>
           </div>
         </div>
+
       </div>
     );
   };
@@ -526,11 +473,12 @@ export function MenuCart({
               <div className="text-[#9dae91] font-bold text-[12px]">
                 {currentGuestCount} Gäste
               </div>
-              {isEditMode && originalGuestCount && parseInt(originalGuestCount) !== currentGuestCount && (
+              {isEditMode && editBookingData?.guestCount && parseInt(editBookingData.guestCount) !== currentGuestCount && (
                 <div className="text-[9px] text-[#9ca3af] font-medium tracking-tight mt-[-2px]">
-                  Ursprünglich: {originalGuestCount}
+                  Ursprünglich: {editBookingData.guestCount}
                 </div>
               )}
+
             </div>
           </div>
 
@@ -707,7 +655,7 @@ export function MenuCart({
                     <div className="flex justify-between items-center text-[13px]">
                       <span className="text-[#6b7280]">Food Items</span>
                       <span className="text-[#2c2f34] font-bold">
-                        CHF {perPersonTotal.toFixed(2)}
+                        CHF {absoluteFoodTotal.toFixed(2)}
                       </span>
                     </div>
                     {getFlatRateSubtotal() > 0 && (
@@ -780,7 +728,7 @@ export function MenuCart({
                   </span>
                 </label>
 
-                {isUg1Exklusiv && totalAmount < 1000 && (
+                {showMinSpendWarning && (
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-amber-800 animate-in fade-in slide-in-from-top-1 duration-200">
                     <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
                     <p className="text-[11px] leading-relaxed font-medium">
@@ -797,13 +745,13 @@ export function MenuCart({
                       onContinue?.();
                     }
                   }}
-                  disabled={!termsAccepted || selectedItems.length === 0 || isSubmitting || (isUg1Exklusiv && totalAmount < 1000)}
-                  className={`w-full h-[46px] rounded-xl flex items-center justify-center font-bold text-[14px] transition-all shadow-sm ${termsAccepted && selectedItems.length > 0 && !isSubmitting && !(isUg1Exklusiv && totalAmount < 1000)
+                  disabled={!termsAccepted || selectedItems.length === 0 || isSubmitting || showMinSpendWarning}
+                  className={`w-full h-[46px] rounded-xl flex items-center justify-center font-bold text-[14px] transition-all shadow-sm ${termsAccepted && selectedItems.length > 0 && !isSubmitting && !showMinSpendWarning
                     ? "bg-[#9dae91] text-[#2c2f34] hover:bg-[#8da081] active:translate-y-[1px]"
                     : "bg-[#f3f4f6] text-[#9ca3af] cursor-not-allowed"
                     }`}
                 >
-                  {isSubmitting ? 'Wird gesendet...' : continueButtonText}
+                  {isSubmitting ? 'Wird gesendet...' : (isEditMode ? 'Aktualisieren' : continueButtonText)}
                 </button>
 
                 <p className="text-[10px] text-[#9ca3af] text-center">

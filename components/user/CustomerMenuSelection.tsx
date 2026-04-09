@@ -10,97 +10,20 @@ import { MenuCart } from './MenuCart';
 import { WizardHeader } from './WizardHeader';
 import { useWizardTranslation } from '@/lib/i18n/client';
 import { SkeletonMenuSelection } from '@/components/ui/skeleton-loaders';
+import { useWizardStore } from '@/lib/store/useWizardStore';
+
 
 interface CustomerMenuSelectionProps {
-  selectedCategory: string;
-  categories: string[];
-  eventDetails: EventDetails;
-  itemGuestCounts: Record<string, number>;
-  loadingMenu: boolean;
-  menuItems: MenuItem[];
-  selectedItems: string[];
-  itemQuantities: Record<string, number>;
-  itemVariants: Record<string, string>;
-  itemAddOns: Record<string, string[]>;
-  itemComments: Record<string, string>;
-  isCartCollapsed: boolean;
-  step2Error: string;
   categoryRefs: React.MutableRefObject<Record<string, HTMLButtonElement | null>>;
-  setSelectedCategory: (category: string) => void;
-  setItemGuestCounts: React.Dispatch<React.SetStateAction<Record<string, number>>>;
-  setIsCartCollapsed: (value: boolean) => void;
-  setSelectedItems: React.Dispatch<React.SetStateAction<string[]>>;
-  setItemQuantities: React.Dispatch<React.SetStateAction<Record<string, number>>>;
-  setItemAddOns: React.Dispatch<React.SetStateAction<Record<string, string[]>>>;
-  setItemVariants: React.Dispatch<React.SetStateAction<Record<string, string>>>;
-  setItemComments: React.Dispatch<React.SetStateAction<Record<string, string>>>;
-  getItemPerPersonPrice: (item: MenuItem) => number;
-  getFlatRateSubtotal: () => number;
-  getPerPersonSubtotal: () => number;
-  getConsumptionSubtotal: () => number;
-  getSelectedItemsByCategory: (category: string) => MenuItem[];
-  handleCategoryChange: (category: string) => void;
-  isConsumption: (item: MenuItem) => boolean;
-  isFlatFee: (item: MenuItem) => boolean;
-  isPerPerson: (item: MenuItem) => boolean;
-  openDetailsModal: (item: MenuItem) => void;
-  removeFromCart: (itemId: string) => void;
-  isLastCategory: () => boolean;
-  calculateRecommendedQuantity: (item: MenuItem, itemId?: string) => number | null;
-  handleStep2Navigation: () => void;
-  onEditDateTime?: () => void;
-  isSubmitting: boolean;
-  includeBeveragePrices: boolean;
-  setIncludeBeveragePrices: (value: boolean) => void;
-  isEditMode?: boolean;
-  originalGuestCount?: string;
   onBack?: () => void;
+  handleStep2Navigation: () => void;
 }
 
+
 export function CustomerMenuSelection({
-  selectedCategory,
-  categories,
-  eventDetails,
-  itemGuestCounts,
-  loadingMenu,
-  menuItems,
-  selectedItems,
-  itemQuantities,
-  itemVariants,
-  itemAddOns,
-  itemComments,
-  isCartCollapsed,
-  step2Error,
   categoryRefs,
-  setSelectedCategory,
-  setItemGuestCounts,
-  setIsCartCollapsed,
-  setSelectedItems,
-  setItemQuantities,
-  setItemAddOns,
-  setItemVariants,
-  setItemComments,
-  getItemPerPersonPrice,
-  getFlatRateSubtotal,
-  getPerPersonSubtotal,
-  getConsumptionSubtotal,
-  getSelectedItemsByCategory,
-  handleCategoryChange,
-  isConsumption,
-  isFlatFee,
-  isPerPerson,
-  openDetailsModal,
-  removeFromCart,
-  isLastCategory,
-  calculateRecommendedQuantity,
-  handleStep2Navigation,
-  onEditDateTime,
-  isSubmitting,
-  includeBeveragePrices,
-  setIncludeBeveragePrices,
-  isEditMode = false,
-  originalGuestCount = '',
   onBack,
+  handleStep2Navigation
 }: CustomerMenuSelectionProps) {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedDietary, setSelectedDietary] = React.useState<'veg' | 'non-veg' | 'vegan' | null>(null);
@@ -112,7 +35,23 @@ export function CustomerMenuSelection({
   const sectionRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const isManualScrolling = React.useRef(false);
+  
   const t = useWizardTranslation();
+  const {
+    loadingMenu, cart, removeItem,
+    eventDetails, isSubmitting,
+    getVisibleCategories, getVisibleMenuItems,
+    getSelectedItemsByCategory, getTotalPrice,
+    isConsumption, isFlatFee, isPerPerson,
+    setIsDateTimePickerOpen,
+    activeCategory, setActiveCategory,
+    setDetailsModalItem
+  } = useWizardStore();
+
+  const categories = getVisibleCategories();
+  const menuItems = getVisibleMenuItems();
+  const selectedItems = Object.keys(cart);
+
 
   // Detect when sticky bar becomes stuck
   React.useEffect(() => {
@@ -146,7 +85,7 @@ export function CustomerMenuSelection({
         // Find the most visible section (the one closest to the top of the viewport)
         const visibleEntry = entries.find(entry => entry.isIntersecting);
         if (visibleEntry) {
-          setSelectedCategory(visibleEntry.target.id);
+          setActiveCategory(visibleEntry.target.id);
         }
       },
       {
@@ -166,7 +105,7 @@ export function CustomerMenuSelection({
   const handleTabClick = (category: string) => {
     // Set flag first to block the IntersectionObserver
     isManualScrolling.current = true;
-    setSelectedCategory(category);
+    setActiveCategory(category);
 
     // Wrap scroll in setTimeout(0) to ensure it executes AFTER the state update/re-render
     setTimeout(() => {
@@ -316,7 +255,7 @@ export function CustomerMenuSelection({
                 </button>
                 <div ref={tabsScrollRef} className="flex items-center gap-1.5 overflow-auto flex-1 no-scrollbar" style={{ scrollbarWidth: "none" }}>
                   {categories.map((category) => {
-                    const isActive = selectedCategory === category;
+                    const isActive = activeCategory === category;
                     const categoryItemCount = getSelectedItemsByCategory(category).length;
 
                     return (
@@ -399,7 +338,7 @@ export function CustomerMenuSelection({
                               key={item.id}
                               className={`bg-white rounded-[16px] border overflow-hidden flex flex-row h-[140px] transition-all hover:shadow-md cursor-pointer group ${isSelected ? "border-[#9dae91] shadow-[0_0_0_1px_#9dae91]" : "border-[#e5e7eb]"
                                 }`}
-                              onClick={() => openDetailsModal(item)}
+                              onClick={() => setDetailsModalItem(item)}
                             >
                               {item.image && (
                                 <div className="w-[140px] shrink-0 bg-[#f3f4f6] overflow-hidden relative">
@@ -441,25 +380,26 @@ export function CustomerMenuSelection({
                                   {isSelected ? (
                                     <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                                       <button
-                                        onClick={() => openDetailsModal(item)}
+                                        onClick={() => setDetailsModalItem(item)}
                                         className="size-[32px] rounded-[10px] border border-[#e5e7eb] flex items-center justify-center cursor-pointer hover:bg-[#f9fafb] transition-colors"
                                         title={t('actions.edit')}
                                       >
                                         <Edit2 className="w-3.5 h-3.5 text-[#6b7280]" />
                                       </button>
                                       <button
-                                        onClick={() => removeFromCart(item.id)}
+                                        onClick={() => removeItem(item.id)}
                                         className="size-[32px] rounded-[10px] border border-[#e5e7eb] flex items-center justify-center cursor-pointer hover:bg-[#fef2f2] hover:border-[#fecaca] transition-colors text-[#9ca3af] hover:text-[#ef4444]"
                                         title={t('actions.remove')}
                                       >
                                         <X className="w-3.5 h-3.5" />
                                       </button>
                                     </div>
+
                                   ) : (
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        openDetailsModal(item);
+                                        setDetailsModalItem(item);
                                       }}
                                       className="bg-[#9dae91] h-[34px] px-4 rounded-[10px] flex items-center gap-1.5 cursor-pointer hover:opacity-90 transition-opacity"
                                     >
@@ -478,56 +418,26 @@ export function CustomerMenuSelection({
                 })}
               </div>
 
-              {/* Warning Message Removed */}
+          {/* Warning Message Removed */}
             </div>
           )}
 
           {/* Error Message for Step 2 */}
-          {step2Error && (
-            <div className="mt-8 p-6 bg-[#fdf2f2] border border-[#fbd5d5] rounded-2xl flex items-start gap-4">
-              <AlertTriangle className="w-6 h-6 text-[#ef4444] shrink-0 mt-0.5" />
-              <p className="text-[#c81e1e] font-medium text-[16px]">{step2Error}</p>
-            </div>
-          )}
+          {/* We can handle errors from store if needed */}
         </div>
+
       </div>
 
       {/* Right Column: Sidebar Cart */}
       <div className="hidden lg:flex w-[380px] shrink-0 border-l border-[#e5e7eb] bg-white h-screen overflow-hidden flex-col z-[50]">
         <MenuCart
-          selectedItems={selectedItems}
-          menuItems={menuItems}
-          itemQuantities={itemQuantities}
-          itemVariants={itemVariants}
-          itemAddOns={itemAddOns}
-          itemComments={itemComments}
-          isCartCollapsed={isCartCollapsed}
-          setIsCartCollapsed={setIsCartCollapsed}
-          eventDetails={eventDetails}
-          itemGuestCounts={itemGuestCounts}
-          getItemPerPersonPrice={getItemPerPersonPrice}
-          getPerPersonSubtotal={getPerPersonSubtotal}
-          getFlatRateSubtotal={getFlatRateSubtotal}
-          getConsumptionSubtotal={getConsumptionSubtotal}
-          calculateRecommendedQuantity={calculateRecommendedQuantity}
-          openDetailsModal={openDetailsModal}
-          removeFromCart={removeFromCart}
-          setItemQuantities={setItemQuantities}
           onContinue={handleStep2Navigation}
-          onEditDateTime={onEditDateTime}
-          isConsumption={isConsumption}
-          isFlatFee={isFlatFee}
-          isPerPerson={isPerPerson}
-          isDrawer={true} // Add this to handle scroll properly inside sidebar
-          isSubmitting={isSubmitting}
-          includeBeveragePrices={includeBeveragePrices}
-          setIncludeBeveragePrices={setIncludeBeveragePrices}
-          setItemGuestCounts={setItemGuestCounts}
-          categories={categories}
-          isEditMode={isEditMode}
-          originalGuestCount={originalGuestCount}
+          continueButtonText={t('actions.continueToReview')}
+          onEditDateTime={() => setIsDateTimePickerOpen(true)}
+          isDrawer={true} 
         />
       </div>
+
     </div>
   );
 }

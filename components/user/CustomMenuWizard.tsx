@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Calendar, User, Check, ChevronLeft, ChevronRight, Send, ClipboardList, MapPin, ShoppingCart, Lock } from 'lucide-react';
+import { Calendar, User, Check, ChevronLeft, ChevronRight, Send, MapPin, ShoppingCart, Lock, ClipboardList } from 'lucide-react';
 import { Button } from './Button';
 import { MenuItem } from './menuItemsData';
 import { ThankYouScreen } from './ThankYouScreen';
@@ -19,6 +19,8 @@ import { CustomerSummary } from './CustomerSummary';
 import { ItemDetailsModal } from './ItemDetailsModal';
 import { MenuCart } from './MenuCart';
 import { toast } from 'sonner';
+import { useWizardStore } from '@/lib/store/useWizardStore';
+
 
 export function CustomMenuWizard({ 
   initialMenuData,
@@ -31,394 +33,141 @@ export function CustomMenuWizard({
   const searchParams = useSearchParams();
   const t = useWizardTranslation();
 
-  const [currentStep, setCurrentStep] = useState(1);
-  const [activeTab, setActiveTab] = useState('contact');
-  const [eventDetails, setEventDetails] = useState<EventDetails>({
-    name: '',
-    business: '',
-    email: '',
-    telephone: '',
-    street: '',
-    plz: '',
-    location: '',
-    eventDate: '',
-    eventTime: '',
-    guestCount: '',
-    occasion: '',
-    specialRequests: '',
-    reference: '',
-    paymentMethod: 'ec_card',
-    useSameAddressForBilling: true,
-    billingStreet: '',
-    billingPlz: '',
-    billingLocation: '',
-    billingStreetError: undefined,
-    billingPlzError: undefined,
-    billingLocationError: undefined,
-    billingReference: '',
-    room: '',
-    roomError: undefined,
-  });
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
-  const [itemGuestCounts, setItemGuestCounts] = useState<Record<string, number>>({});
-  const [itemAddOns, setItemAddOns] = useState<Record<string, string[]>>({});
-  const [itemVariants, setItemVariants] = useState<Record<string, string>>({});
-  const [itemComments, setItemComments] = useState<Record<string, string>>({});
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [isCartCollapsed, setIsCartCollapsed] = useState(true);
-  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
-  const [showCartFab, setShowCartFab] = useState(true);
-  const [summaryViewMode, setSummaryViewMode] = useState<'per-person' | 'total'>('total');
-  const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
-  const [errors, setErrors] = useState<Partial<EventDetails>>({});
-  const [touched, setTouched] = useState<Record<keyof EventDetails, boolean>>({
-    name: false,
-    email: false,
-    telephone: false,
-    street: false,
-    plz: false,
-    location: false,
-    eventDate: false,
-    eventTime: false,
-    guestCount: false,
-    occasion: false,
-    specialRequests: false,
-    business: false,
-    reference: false,
-    billingStreet: false,
-    billingPlz: false,
-    billingLocation: false,
-    billingReference: false,
-    room: false,
-  } as Record<keyof EventDetails, boolean>);
+  const {
+    currentStep, setCurrentStep,
+    activeTab, setActiveTab,
+    eventDetails, setEventDetails,
+    cart, addItem, removeItem, updateItem, clearCart,
+    menuItems, setMenuData,
+    categories,
+    categoryData,
+    visibilitySchedules,
+    loadingMenu, setLoadingMenu,
+    isSubmitting,
+    isEditMode, setEditMode,
+    isAdminEdit,
+    bookingId, setBookingInfo,
+    editSecret,
+    editBookingData, restoreBooking,
+    includeBeveragePrices, setIncludeBeveragePrices,
+    getVisibleCategories, getVisibleMenuItems,
+    getTotalPrice, getItemPerPersonPrice, getItemTotalPrice,
+    getPerPersonSubtotal, getFlatRateSubtotal, getConsumptionSubtotal,
+    getSelectedItemsByCategory, calculateRecommendedQuantity,
+    isPerPerson, isFlatFee, isConsumption,
+    validationErrors, setValidationErrors,
+    touchedFields, setTouchedFields,
+    isDateTimePickerOpen, setIsDateTimePickerOpen,
+    isLocked, setIsLocked,
+    isUnlockRequested, setIsUnlockRequested,
+    isRequestingUnlock, setIsRequestingUnlock,
+    termsAccepted, setTermsAccepted,
+    summaryViewMode, setSummaryViewMode,
+    collapsedCategories, setCollapsedCategories,
+    isCartCollapsed, setIsCartCollapsed,
+    isMobileDrawerOpen, setIsMobileDrawerOpen,
+    showCartFab, setShowCartFab,
+    isSubmitted, setSubmitted,
+    inquiryNumber, step2Error, setStep2Error,
+    bookingPdfData, setBookingPdfData,
+    isLoadingEdit, setIsLoadingEdit,
+    activeCategory, setActiveCategory,
+    detailsModalItem, setDetailsModalItem
+  } = useWizardStore();
 
-  // Refs for category pill auto-scroll
+  const selectedItemIds = useMemo(() => Object.keys(cart), [cart]);
+
+  // Refs and local UI state
   const categoryRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const lastScrollY = useRef(0);
-  const [detailsModalItem, setDetailsModalItem] = useState<MenuItem | null>(null);
-  const [termsAccepted, setTermsAccepted] = useState(false);
-  const [signature, setSignature] = useState('');
-  const [editBookingData, setEditBookingData] = useState<{ items: any[], guestCount: string } | null>(null);
-  const [isEditRestored, setIsEditRestored] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [inquiryNumber, setInquiryNumber] = useState('');
-  const [step2Error, setStep2Error] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [categoryData, setCategoryData] = useState<Record<string, { guestCount: boolean; useSpecialCalculation: boolean; assignedVisibilitySchedules: string[] }>>({});
-  const [visibilitySchedules, setVisibilitySchedules] = useState<VisibilitySchedule[]>([]);
-  const [loadingMenu, setLoadingMenu] = useState(!initialMenuData);
-  const [bookingId, setBookingId] = useState<string | null>(null);
-  const [editSecret, setEditSecret] = useState<string | null>(null);
-  const [bookingPdfData, setBookingPdfData] = useState<any>(null); // New state for PDF
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [isAdminEdit, setIsAdminEdit] = useState(false); // Track if admin initiated edit
-  const [originalGuestCount, setOriginalGuestCount] = useState<string>(''); // Store original guest count from booking
-  const [isLocked, setIsLocked] = useState(false);
-  const [isLoadingEdit, setIsLoadingEdit] = useState(false);
-
-  // Pre-check terms for edit mode
-  useEffect(() => {
-    if (isEditMode) {
-      setTermsAccepted(true);
-    }
-  }, [isEditMode]);
 
 
 
-  const [isUnlockRequested, setIsUnlockRequested] = useState(false);
-  const [isRequestingUnlock, setIsRequestingUnlock] = useState(false);
-  const [includeBeveragePrices, setIncludeBeveragePrices] = useState(false);
-
-  // Date and Time picker modal states
-  const [isDateTimePickerOpen, setIsDateTimePickerOpen] = useState(false);
 
   // Scroll to top when step changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentStep]);
 
-  // Check for edit mode from sessionStorage
+  // Main loader: Fetch menu data AND handle edit mode initialization
   useEffect(() => {
-    const editMode = searchParams.get('edit');
-
-    if (editMode === 'true') {
-      const bookingIdParam = searchParams.get('id');
-      const secretParam = searchParams.get('secret');
-
-      // Check temporary localStorage (for secure new tab redirection)
-      const tempId = localStorage.getItem('temp_edit_id');
-      const tempSecret = localStorage.getItem('temp_edit_secret');
-      const tempTimestamp = localStorage.getItem('temp_edit_timestamp');
-      const now = Date.now();
-
-      let finalId = bookingIdParam || sessionStorage.getItem('edit_booking_id');
-      let finalSecret = secretParam || sessionStorage.getItem('edit_secret');
-
-      // Use temporary localStorage if it's less than 60 seconds old
-      if (tempId && tempSecret && tempTimestamp && (now - parseInt(tempTimestamp) < 60000)) {
-        // Edit mode activated via secure localStorage
-        finalId = tempId;
-        finalSecret = tempSecret;
-
-        // Check if this is an admin-initiated edit
-        const isAdmin = localStorage.getItem('temp_edit_is_admin') === 'true';
-        setIsAdminEdit(isAdmin);
-        if (isAdmin) {
-          console.log('Admin edit mode detected');
+    const loadEverything = async () => {
+      // 1. Load Menu (if not SSR)
+      if (!initialMenuData && menuItems.length === 0) {
+        setLoadingMenu(true);
+        try {
+          const response = await fetch('/api/menu');
+          if (response.ok) {
+            const data = await response.json();
+            processMenuData(data);
+          }
+        } catch (error) {
+          console.error('Menu load error:', error);
+        } finally {
+          setLoadingMenu(false);
         }
-
-        // Clean up immediately for security, then store in sessionStorage for refresh persistence
-        localStorage.removeItem('temp_edit_id');
-        localStorage.removeItem('temp_edit_secret');
-        localStorage.removeItem('temp_edit_timestamp');
-        localStorage.removeItem('temp_edit_is_admin'); // Clean up admin flag
-
-        sessionStorage.setItem('edit_booking_id', tempId);
-        sessionStorage.setItem('edit_secret', tempSecret);
+      } else if (initialMenuData && menuItems.length === 0) {
+        processMenuData(initialMenuData);
       }
 
-      if (finalId && finalSecret) {
-        setIsLoadingEdit(true);
+      // 2. Handle Edit Mode
+      const editMode = searchParams.get('edit') === 'true';
+      if (editMode) {
+        const bookingIdParam = searchParams.get('id');
+        const secretParam = searchParams.get('secret');
+        
+        // Persistence/Secure transfer logic
+        const tempId = localStorage.getItem('temp_edit_id');
+        const tempSecret = localStorage.getItem('temp_edit_secret');
+        const tempTimestamp = localStorage.getItem('temp_edit_timestamp');
+        const now = Date.now();
 
-        // Set edit mode FIRST before any async operations
-        setBookingId(finalId);
-        setEditSecret(finalSecret);
-        setIsEditMode(true);
+        let finalId = bookingIdParam || sessionStorage.getItem('edit_booking_id');
+        let finalSecret = secretParam || sessionStorage.getItem('edit_secret');
 
-        // Sync to sessionStorage to survive refreshes
-        sessionStorage.setItem('edit_booking_id', finalId);
-        sessionStorage.setItem('edit_secret', finalSecret);
+        if (tempId && tempSecret && tempTimestamp && (now - parseInt(tempTimestamp) < 60000)) {
+          finalId = tempId;
+          finalSecret = tempSecret;
+          const isAdmin = localStorage.getItem('temp_edit_is_admin') === 'true';
+          setEditMode(true, isAdmin);
+          
+          localStorage.removeItem('temp_edit_id');
+          localStorage.removeItem('temp_edit_secret');
+          localStorage.removeItem('temp_edit_timestamp');
+          localStorage.removeItem('temp_edit_is_admin');
+        }
 
-        // Check lock status by fetching booking
-        const checkLockStatus = async () => {
+        if (finalId && finalSecret) {
+          setBookingInfo(finalId, finalSecret);
+          setEditMode(true);
+          setSubmitted(false); // Reset submitted state for new edit session
+          sessionStorage.setItem('edit_booking_id', finalId);
+          sessionStorage.setItem('edit_secret', finalSecret);
+          
+          setIsLoadingEdit(true);
           try {
             const response = await fetch(`/api/booking/${finalId}/edit/${finalSecret}`);
             if (response.ok) {
               const result = await response.json();
               if (result.success && result.data) {
                 setIsLocked(result.data.isLocked || false);
-
-                const booking = result.data;
-                const lead = booking.lead;
-
-                // Store the original guest count for display in cart
-                const originalGuestCountValue = booking.guestCount?.toString() || '';
-                setOriginalGuestCount(originalGuestCountValue);
-
-                // Populate eventDetails from booking
-                setEventDetails({
-                  name: booking.name || lead?.contactName || '',
-                  business: booking.business || '',
-                  email: booking.email || lead?.contactEmail || '',
-                  telephone: booking.telephone || lead?.contactPhone || '',
-                  street: booking.street || '',
-                  plz: booking.plz || '',
-                  location: booking.location || '',
-                  eventDate: booking.eventDate ? booking.eventDate.split('T')[0] : '',
-                  eventTime: booking.eventTime || '',
-                  guestCount: originalGuestCountValue,
-                  occasion: booking.occasion || '',
-                  specialRequests: booking.specialRequests || '',
-                  reference: booking.reference || '',
-                  paymentMethod: booking.paymentMethod || 'ec_card',
-                  useSameAddressForBilling: booking.useSameAddressForBilling ?? true,
-                  billingStreet: booking.billingStreet || '',
-                  billingPlz: booking.billingPlz || '',
-                  billingLocation: booking.billingLocation || '',
-                  billingStreetError: undefined,
-                  billingPlzError: undefined,
-                  billingLocationError: undefined,
-                  billingReference: booking.billingReference || '',
-                  room: (booking.room || '').toLowerCase(),
-                  roomError: undefined,
-                  bookingId: finalId,
-                });
-
-                // Load menu items from booking_items
-                if (booking.booking_items && booking.booking_items.length > 0) {
-                  // Save for later restoration after menuItems is ready
-                  setEditBookingData({
-                    items: booking.booking_items,
-                    guestCount: booking.guestCount?.toString() || '1'
-                  });
-
-                  const items = booking.booking_items.map((item: any) => item.itemId || item.item_id);
-                  setSelectedItems(items);
-
-                  const quantities: Record<string, number> = {};
-                  const guestCounts: Record<string, number> = {};
-                  const comments: Record<string, string> = {};
-
-                  const totalBookingGuestCount = booking.guestCount || 0;
-
-                  booking.booking_items.forEach((item: any) => {
-                    const id = item.itemId || item.item_id;
-                    if (id) {
-                      quantities[id] = item.quantity || 1;
-                      
-                      // Only set an individual guest count if it's different from the total
-                      // This allows items to follow the main guest count if the user updates it in Step 1
-                      if (item.quantity !== totalBookingGuestCount && totalBookingGuestCount > 0) {
-                        guestCounts[id] = item.quantity || 1;
-                        console.log(`[Edit Mode] Item ${id} has custom quantity ${item.quantity} (Total: ${totalBookingGuestCount}). Pinned.`);
-                      } else {
-                        console.log(`[Edit Mode] Item ${id} matches total ${totalBookingGuestCount}. Staying in sync.`);
-                      }
-
-                      // Extract comment from notes
-                      if (item.notes) {
-                        const commentMatch = item.notes.match(/Comment: ([^|]+)/);
-                        if (commentMatch) {
-                          comments[id] = commentMatch[1].trim();
-                        }
-                      }
-                    }
-                  });
-
-                  setItemQuantities(quantities);
-                  setItemGuestCounts(guestCounts);
-                  setItemComments(comments);
-                }
-
-                // Clear sessionStorage - commented out because it breaks StrictMode (dev) re-mounts
-                // sessionStorage.removeItem('edit_booking_id');
-                // sessionStorage.removeItem('edit_secret');
-                // sessionStorage.removeItem('edit_mode');
-
-                // Go to menu selection page
+                // The actual restoration happens in Step 3 below when menuItems is ready
+                // but we trigger it by saving the editBookingData in the store
+                restoreBooking(result.data); 
                 setCurrentStep(2);
               }
             }
-          } catch (error) {
-            console.error('Error checking lock status:', error);
+          } catch (e) {
+            console.error('Edit load error:', e);
           } finally {
             setIsLoadingEdit(false);
           }
-        };
-
-        checkLockStatus();
+        }
       }
-    }
-  }, [searchParams]);
+    };
+    loadEverything();
+  }, [initialMenuData, searchParams, setBookingInfo, setEditMode, restoreBooking, setCurrentStep]);
 
-  // Extra effect to restore variants and addons once menu data is loaded
-  useEffect(() => {
-    if (menuItems.length > 0 && editBookingData && !isEditRestored) {
-      console.log('[Edit Mode] Restoring variants and addons from booking notes...');
-      console.log('[Edit Mode] Menu items loaded:', menuItems.length);
-      console.log('[Edit Mode] Booking items to restore:', editBookingData.items.length);
-      const restoredVariants: Record<string, string> = {};
-      const restoredAddOns: Record<string, string[]> = {};
-
-      editBookingData.items.forEach((item: any) => {
-        const itemId = item.itemId || item.item_id;
-        if (!itemId || !item.notes) {
-          console.log(`[Edit Mode] Skipping item ${itemId} - no notes`);
-          return;
-        }
-
-        const menuItem = menuItems.find(mi => mi.id === itemId);
-        if (!menuItem) {
-          console.warn(`[Edit Mode] Menu item ${itemId} not found in current menu!`);
-          return;
-        }
-
-        console.log(`[Edit Mode] Restoring item: ${menuItem.name}`);
-        console.log(`[Edit Mode] Notes: ${item.notes}`);
-        console.log(`[Edit Mode] Unit price from booking: ${item.unitPrice}`);
-
-        // Helper to normalize names for comparison (strip emojis, extra spaces, etc.)
-        const normalizeName = (s: string) => s.replace(/[\u2700-\u27BF\uE000-\uF8FF|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDC00-\uDFFF]]/g, '').replace(/[🟢🔴⚪⚫]|^\s*[-•]\s*/g, '').trim().toLowerCase();
-
-        // Restore Variants
-        const variantMatch = item.notes.match(/Variant: ([^|]+)/);
-        if (variantMatch && menuItem.variants) {
-          const variantName = variantMatch[1].trim();
-          const normalizedVariantName = normalizeName(variantName);
-          const variant = menuItem.variants.find(v => normalizeName(v.name) === normalizedVariantName);
-          if (variant) {
-            console.log(`[Edit Mode] ✓ Restored variant "${variantName}" (price: ${variant.price}) for item ${menuItem.name}`);
-            restoredVariants[itemId] = variant.id;
-          } else {
-            console.warn(`[Edit Mode] ✗ Variant "${variantName}" not found in current menu variants for ${menuItem.name}`);
-            console.log(`[Edit Mode] Available variants:`, menuItem.variants.map(v => v.name));
-          }
-        }
-
-        // Restore Add-ons
-        const addonsMatch = item.notes.match(/(?:Add-ons|Choices): ([^|]+)/);
-        if (addonsMatch) {
-          // Support both comma and pipe separators
-          const addonNames = addonsMatch[1].split(/[|,]/).map((s: string) => s.trim()).filter(Boolean);
-          const addonIds: string[] = [];
-
-          console.log(`[Edit Mode] Restoring addons: ${addonNames.join(', ')}`);
-          
-          addonNames.forEach((name: string) => {
-            const normalizedSearchName = normalizeName(name);
-            if (!normalizedSearchName) return;
-
-            // Check in addonGroups if they exist
-            if (menuItem.addonGroups) {
-              for (const group of menuItem.addonGroups) {
-                // Try exact normalized match first, then fuzzy match
-                const addOn = group.items.find(i => {
-                  const normalizedItemName = normalizeName(i.name);
-                  return (
-                    normalizedItemName === normalizedSearchName ||
-                    normalizedSearchName.includes(normalizedItemName) ||
-                    normalizedItemName.includes(normalizedSearchName)
-                  );
-                });
-
-                if (addOn) {
-                  addonIds.push(addOn.id);
-                  console.log(`[Edit Mode] ✓ Found addon "${name}" in group "${group.name}" (price: ${addOn.price})`);
-                  break;
-                }
-              }
-            } else if (menuItem.addOns) {
-              // Check in legacy addOns
-              const addOn = menuItem.addOns.find(a => {
-                const normalizedItemName = normalizeName(a.name);
-                return (
-                  normalizedItemName === normalizedSearchName ||
-                  normalizedSearchName.includes(normalizedItemName) ||
-                  normalizedItemName.includes(normalizedSearchName)
-                );
-              });
-
-              if (addOn) {
-                addonIds.push(addOn.id);
-                console.log(`[Edit Mode] ✓ Found legacy addon "${name}" (price: ${addOn.price})`);
-              }
-            }
-          });
-
-          if (addonIds.length > 0) {
-            console.log(`[Edit Mode] ✓ Restored ${addonIds.length}/${addonNames.length} addons for item ${menuItem.name}`);
-            restoredAddOns[itemId] = addonIds;
-          } else {
-            console.warn(`[Edit Mode] ✗ Failed to restore any addons for ${menuItem.name}`);
-          }
-        }
-      });
-
-      if (Object.keys(restoredVariants).length > 0) {
-        console.log(`[Edit Mode] Setting ${Object.keys(restoredVariants).length} restored variants`);
-        setItemVariants(prev => ({ ...prev, ...restoredVariants }));
-      }
-      if (Object.keys(restoredAddOns).length > 0) {
-        console.log(`[Edit Mode] Setting ${Object.keys(restoredAddOns).length} restored addon groups`);
-        setItemAddOns(prev => ({ ...prev, ...restoredAddOns }));
-      }
-      setIsEditRestored(true);
-      console.log('[Edit Mode] Restoration complete!');
-    }
-  }, [menuItems, editBookingData, isEditRestored]);
 
   // Initialize menu data if provided via props (SSR)
   useEffect(() => {
@@ -578,10 +327,12 @@ export function CustomMenuWizard({
       categoryDataMap['Add-ons'] = { guestCount: false, useSpecialCalculation: false, assignedVisibilitySchedules: [] };
     }
 
-    setMenuItems(allItems);
-    setCategories(categoryNames);
-    setCategoryData(categoryDataMap);
-    setVisibilitySchedules(data.visibilitySchedules || []);
+    setMenuData({
+      menuItems: allItems,
+      categories: categoryNames,
+      categoryData: categoryDataMap,
+      visibilitySchedules: data.visibilitySchedules || []
+    });
     
     if (categoryNames.length > 0) {
       // Initialize all categories as collapsed (closed by default)
@@ -591,8 +342,8 @@ export function CustomMenuWizard({
       }, {} as Record<string, boolean>);
       setCollapsedCategories(initialCollapsedState);
     }
-    setLoadingMenu(false);
   };
+
 
   // Fetch menu data from database
   useEffect(() => {
@@ -620,102 +371,53 @@ export function CustomMenuWizard({
 
   // Auto-scroll active category pill into view
   useEffect(() => {
-    const btn = categoryRefs.current[selectedCategory];
+    const btn = categoryRefs.current[activeCategory];
     if (btn) {
       btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
-  }, [selectedCategory]);
+  }, [activeCategory]);
 
   // Show/hide cart FAB based on scroll direction (mobile only)
   useEffect(() => {
     const handleScroll = () => {
       const currentY = window.scrollY;
-      if (window.innerWidth < 1024 && selectedItems.length > 0) {
+      if (window.innerWidth < 1024 && selectedItemIds.length > 0) {
         setShowCartFab(currentY < lastScrollY.current || currentY < 100);
       }
       lastScrollY.current = currentY;
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [selectedItems.length]);
+  }, [selectedItemIds.length]);
 
-  // Helper to check if a category/item is visible based on schedules
-  const isCurrentlyVisible = useCallback((assignedSchedules: string[]) => {
-    // If no schedules assigned, it's visible by default (isActive check is handled elsewhere)
-    if (!assignedSchedules || assignedSchedules.length === 0) return true;
 
-    // Filter based on selected date
-    if (!eventDetails.eventDate) return false;
-
-    try {
-      const selectedDate = new Date(eventDetails.eventDate);
-      selectedDate.setHours(0, 0, 0, 0);
-
-      return assignedSchedules.some(scheduleId => {
-        const schedule = visibilitySchedules.find(s => s.id === scheduleId);
-        if (!schedule || !schedule.isActive) return false;
-
-        const start = new Date(schedule.startDate);
-        start.setHours(0, 0, 0, 0);
-        const end = new Date(schedule.endDate);
-        end.setHours(23, 59, 59, 999);
-
-        return selectedDate >= start && selectedDate <= end;
-      });
-    } catch (e) {
-      console.error('Error checking visibility:', e);
-      return true; // Fallback to visible if error
-    }
-  }, [eventDetails.eventDate, visibilitySchedules]);
-
-  // Filtered categories and items based on visibility schedules
-  const visibleCategories = useMemo(() => {
-    return categories.filter(catName => {
-      const data = categoryData[catName];
-      if (!data) return true;
-      return isCurrentlyVisible(data.assignedVisibilitySchedules);
-    });
-  }, [categories, categoryData, isCurrentlyVisible]);
-
-  const visibleMenuItems = useMemo(() => {
-    return menuItems.filter(item => {
-      // 1. Check if item itself is visible
-      const itemVisible = isCurrentlyVisible(item.assignedVisibilitySchedules || []);
-      if (!itemVisible) return false;
-
-      // 2. Check if parent category is visible
-      const catData = categoryData[item.category];
-      if (catData && !isCurrentlyVisible(catData.assignedVisibilitySchedules)) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [menuItems, categoryData, isCurrentlyVisible]);
+  // Filtered categories and items based on visibility schedules (unified with store)
+  const visibleCategories = getVisibleCategories();
+  const visibleMenuItems = getVisibleMenuItems();
 
   useEffect(() => {
     // Ensure the first visible category is selected if none is selected
     // or if the current choice is no longer visible.
     if (visibleCategories.length > 0) {
-      if (!selectedCategory || !visibleCategories.includes(selectedCategory)) {
+      if (!activeCategory || !visibleCategories.includes(activeCategory)) {
         console.log('[Wizard] Defaulting selection to first visible category:', visibleCategories[0]);
-        setSelectedCategory(visibleCategories[0]);
+        setActiveCategory(visibleCategories[0]);
       }
     }
-  }, [visibleCategories, selectedCategory]);
+  }, [visibleCategories, activeCategory]);
 
   // Auto-remove items from cart if they become invisible due to date changes
   useEffect(() => {
-    const hiddenSelectedItems = selectedItems.filter(itemId => !visibleMenuItems.some(item => item.id === itemId));
+    const hiddenSelectedItems = selectedItemIds.filter(itemId => !visibleMenuItems.some(item => item.id === itemId));
     if (hiddenSelectedItems.length > 0) {
-      setSelectedItems(prev => prev.filter(itemId => !hiddenSelectedItems.includes(itemId)));
-      // Optionally toast the user? User didn't specify, but filtering is safer.
+      hiddenSelectedItems.forEach(itemId => removeItem(itemId));
     }
-  }, [visibleMenuItems, selectedItems]);
+  }, [visibleMenuItems, selectedItemIds, removeItem]);
+
 
   // Handle category change 
   const handleCategoryChange = (category: string) => {
-    setSelectedCategory(category);
+    setActiveCategory(category);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -751,39 +453,39 @@ export function CustomMenuWizard({
   const realtimeErrors = useMemo(() => {
     const newErrors: Partial<EventDetails> = {};
 
-    if (touched.name) {
+    if (touchedFields.name) {
       const nameResult = customerNameSchema.safeParse(eventDetails.name);
       if (!nameResult.success) newErrors.name = nameResult.error.errors[0].message;
     }
 
-    if (touched.email) {
+    if (touchedFields.email) {
       const emailResult = userEmailSchema.safeParse(eventDetails.email);
       if (!emailResult.success) newErrors.email = emailResult.error.errors[0].message;
     }
 
-    if (touched.telephone) {
+    if (touchedFields.telephone) {
       const phoneResult = customerPhoneSchema.safeParse(eventDetails.telephone);
       if (!phoneResult.success) newErrors.telephone = phoneResult.error.errors[0].message;
     }
 
-    if (touched.street) {
+    if (touchedFields.street) {
       const streetResult = customerStreetSchema.safeParse(eventDetails.street);
       if (!streetResult.success) newErrors.street = streetResult.error.errors[0].message;
     }
 
-    if (touched.plz) {
+    if (touchedFields.plz) {
       const plzResult = customerPlzSchema.safeParse(eventDetails.plz);
       if (!plzResult.success) newErrors.plz = plzResult.error.errors[0].message;
     }
 
-    if (touched.location) {
+    if (touchedFields.location) {
       const locationResult = customerLocationSchema.safeParse(eventDetails.location);
       if (!locationResult.success) newErrors.location = locationResult.error.errors[0].message;
     }
 
-    if (touched.eventDate && !eventDetails.eventDate) {
+    if (touchedFields.eventDate && !eventDetails.eventDate) {
       newErrors.eventDate = 'Event date is required';
-    } else if (touched.eventDate && eventDetails.eventDate) {
+    } else if (touchedFields.eventDate && eventDetails.eventDate) {
       const selectedDateTime = new Date(`${eventDetails.eventDate}T${eventDetails.eventTime || '00:00'}`);
       const twentyFourHoursFromNow = new Date(Date.now() + 24 * 60 * 60 * 1000);
       if (selectedDateTime < twentyFourHoursFromNow) {
@@ -791,11 +493,11 @@ export function CustomMenuWizard({
       }
     }
 
-    if (touched.eventTime && !eventDetails.eventTime) {
+    if (touchedFields.eventTime && !eventDetails.eventTime) {
       newErrors.eventTime = 'Event time is required';
     }
 
-    if (touched.guestCount) {
+    if (touchedFields.guestCount) {
       if (!eventDetails.guestCount) {
         newErrors.guestCount = 'Number of guests is required';
       } else if (parseInt(eventDetails.guestCount) < 1) {
@@ -805,26 +507,26 @@ export function CustomMenuWizard({
       }
     }
 
-    if (touched.occasion && eventDetails.occasion) {
+    if (touchedFields.occasion && eventDetails.occasion) {
       const occasionResult = customerOccasionSchema.safeParse(eventDetails.occasion);
       if (!occasionResult.success) newErrors.occasion = occasionResult.error.errors[0].message;
     }
 
-    if (touched.specialRequests && eventDetails.specialRequests) {
+    if (touchedFields.specialRequests && eventDetails.specialRequests) {
       const specialRequestsResult = customerSpecialRequestsSchema.safeParse(eventDetails.specialRequests);
       if (!specialRequestsResult.success) newErrors.specialRequests = specialRequestsResult.error.errors[0].message;
     }
 
     return newErrors;
-  }, [touched, eventDetails]);
+  }, [touchedFields, eventDetails]);
 
-  // Merge real-time errors with submit errors (submit errors take precedence)
+  // Merge real-time errors with partial state validation
   const displayErrors = useMemo(() => {
-    return { ...realtimeErrors, ...errors };
-  }, [realtimeErrors, errors]);
+    return { ...realtimeErrors, ...validationErrors };
+  }, [realtimeErrors, validationErrors]);
 
   const validateStep1 = () => {
-    const newErrors: Partial<EventDetails> = {};
+    const newErrors: Record<string, string | undefined> = {};
 
     // Validate name
     const nameResult = customerNameSchema.safeParse(eventDetails.name);
@@ -924,7 +626,7 @@ export function CustomMenuWizard({
       }
     }
 
-    setErrors(newErrors);
+    setValidationErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
@@ -1015,6 +717,7 @@ export function CustomMenuWizard({
     );
   }, [eventDetails.eventDate, eventDetails.eventTime, eventDetails.telephone, eventDetails.street, eventDetails.plz, eventDetails.location, eventDetails.name, eventDetails.email, eventDetails.guestCount, eventDetails.room, eventDetails.paymentMethod, eventDetails.useSameAddressForBilling, eventDetails.billingStreet, eventDetails.billingPlz, eventDetails.billingLocation]);
 
+
   const isCurrentTabValid = useMemo(() => {
     switch (activeTab) {
       case 'contact':
@@ -1049,13 +752,13 @@ export function CustomMenuWizard({
       setCurrentStep(2);
       // Proactively select the first category to ensure UI sync
       if (visibleCategories.length > 0) {
-        setSelectedCategory(visibleCategories[0]);
+        setActiveCategory(visibleCategories[0]);
       }
     }
   };
 
   const validateStep2 = () => {
-    if (selectedItems.length === 0) {
+    if (selectedItemIds.length === 0) {
       setStep2Error('Please select at least one menu item to continue');
       return false;
     }
@@ -1083,29 +786,6 @@ export function CustomMenuWizard({
     }
   };
 
-  const handleNext = () => {
-    if (currentStep === 1) {
-      if (validateStep1()) {
-        setCurrentStep(2);
-      }
-    } else if (currentStep === 2) {
-      handleStep2Navigation();
-    }
-  };
-
-  // Helper functions for category navigation
-  const getNextCategory = () => {
-    const currentIndex = categories.indexOf(selectedCategory);
-    if (currentIndex < categories.length - 1) {
-      return categories[currentIndex + 1];
-    }
-    return null;
-  };
-
-  const isLastCategory = () => {
-    return selectedCategory === categories[categories.length - 1];
-  };
-
   const handleStep2Navigation = () => {
     // Start submission directly skipping Step 3
     if (validateStep2()) {
@@ -1120,11 +800,11 @@ export function CustomMenuWizard({
   };
 
   const handleStep2Back = () => {
-    // On Step 2, check if on first category
-    const currentCategoryIndex = categories.indexOf(selectedCategory);
+    // On Step 2, check if on first visible category
+    const currentCategoryIndex = visibleCategories.indexOf(activeCategory);
     if (currentCategoryIndex > 0) {
       // Go to previous category
-      setSelectedCategory(categories[currentCategoryIndex - 1]);
+      setActiveCategory(visibleCategories[currentCategoryIndex - 1]);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       // On first category, go back to Step 1
@@ -1133,15 +813,7 @@ export function CustomMenuWizard({
   };
 
   const handleSubmit = async () => {
-    setIsSubmitting(true);
-
-    console.log('Event Details:', eventDetails);
-    console.log('Selected Menu Items:', selectedItems);
-    console.log('Is Edit Mode:', isEditMode);
-    console.log('Booking ID:', bookingId);
-
     // Submit to server
-    // If using same address for billing, copy main address to billing fields
     const billingStreet = eventDetails.useSameAddressForBilling
       ? eventDetails.street
       : eventDetails.billingStreet;
@@ -1173,27 +845,20 @@ export function CustomMenuWizard({
       billingReference: eventDetails.billingReference || '',
       room: eventDetails.room || '',
       reference: eventDetails.reference || '',
-      selectedItems,
-      itemQuantities,
-      itemGuestCounts, // Pass per-item guest counts
-      itemVariants,
-      itemAddOns,
-      itemComments,
+      selectedItems: selectedItemIds,
+      itemQuantities: Object.fromEntries(selectedItemIds.map(id => [id, cart[id]?.quantity || 1])),
+      itemGuestCounts: Object.fromEntries(selectedItemIds.map(id => [id, cart[id]?.guestCount || parseInt(eventDetails.guestCount) || 1])),
+      itemVariants: Object.fromEntries(selectedItemIds.map(id => [id, cart[id]?.variantId || ''])),
+      itemAddOns: Object.fromEntries(selectedItemIds.map(id => [id, cart[id]?.addOnIds || []])),
+      itemComments: Object.fromEntries(selectedItemIds.map(id => [id, cart[id]?.comment || ''])),
       allergyDetails: [],
-      bookingId, // Pass bookingId if editing
+      bookingId,
     });
 
-    setIsSubmitting(false);
-
     if (result.success && result.data) {
-      // Store booking ID
       const newBookingId = result.data.bookingId;
-      setBookingId(newBookingId);
+      setBookingInfo(newBookingId, null);
 
-      // Update eventDetails with bookingId for change request functionality
-      setEventDetails(prev => ({ ...prev, bookingId: newBookingId }));
-
-      // Prepare data for PDF download on Thank You screen
       const pdfData = {
         id: result.data.bookingId,
         customerName: eventDetails.name,
@@ -1202,243 +867,46 @@ export function CustomMenuWizard({
         eventTime: eventDetails.eventTime,
         guestCount: parseInt(eventDetails.guestCount) || 0,
         occasion: eventDetails.occasion || undefined,
-        items: selectedItems.map(itemId => {
+        items: selectedItemIds.map(itemId => {
           const item = menuItems.find(i => i.id === itemId);
           if (!item) return null;
 
-          const isPerPersonItem = item.pricingType === 'per_person';
-          const quantity = isPerPersonItem
-            ? (itemGuestCounts[itemId] || parseInt(eventDetails.guestCount) || 1)
-            : (itemQuantities[itemId] || 1);
-
-          const variantId = itemVariants[itemId];
-          const variant = variantId && Array.isArray(item?.variants)
-            ? (item?.variants as any[]).find(v => v.id === variantId)
-            : null;
-
-          // Format Display Name with Variant
-          let displayName = item?.name || 'Unknown Item';
-          if (variant) {
-            displayName += ` (${variant.name})`;
-          }
-
-          // Format Add-ons / Choices
-          let choicesPart = '';
-          const selectedAddOnIds = itemAddOns[itemId] || [];
-          if (selectedAddOnIds.length > 0) {
-            const addOnNames: string[] = [];
-
-            selectedAddOnIds.forEach(id => {
-              // 1. Check in legacy addOns
-              if (item?.addOns) {
-                const ao = item.addOns.find(a => a.id === id);
-                if (ao) {
-                  let aoL = ao.name;
-                  if (ao.dietaryType === 'veg') aoL += ' (Veg)';
-                  else if (ao.dietaryType === 'vegan') aoL += ' (Vegan)';
-                  else if (ao.dietaryType === 'non-veg') aoL += ' (Non-Veg)';
-                  addOnNames.push(aoL);
-                  return;
-                }
-              }
-
-              // 2. Check in addonGroups
-              if (item?.addonGroups) {
-                for (const group of item.addonGroups) {
-                  const ao = group.items.find((i: any) => i.id === id);
-                  if (ao) {
-                    let aoL = ao.name;
-                    if ((ao as any).dietaryType === 'veg') aoL += ' (Veg)';
-                    else if ((ao as any).dietaryType === 'vegan') aoL += ' (Vegan)';
-                    else if ((ao as any).dietaryType === 'non-veg') aoL += ' (Non-Veg)';
-                    addOnNames.push(aoL);
-                    break;
-                  }
-                }
-              }
-            });
-
-            if (addOnNames.length > 0) {
-              choicesPart = addOnNames.join(', ');
-            }
-          }
-
-          const unitPrice = getItemPerPersonPrice(item!);
-          const totalPrice = unitPrice * quantity;
-
+          const cartItem = cart[itemId];
+          const quantity = (isPerPerson(item) ? (cartItem.guestCount || parseInt(eventDetails.guestCount) || 1) : cartItem.quantity || 1);
+          const unitPrice = getItemPerPersonPrice(item);
+          
           return {
             id: itemId,
-            name: displayName,
-            category: item?.category || 'Other',
+            name: item.name,
+            category: item.category,
             quantity: quantity,
             unitPrice: unitPrice,
-            totalPrice: totalPrice,
-            notes: choicesPart,
-            customerComment: itemComments[itemId] || '',
-            pricingType: item?.pricingType || 'per_person',
-            dietaryType: item?.dietaryType || 'none',
+            totalPrice: unitPrice * quantity,
+            notes: (cartItem.variantId ? `Variant: ${cartItem.variantId} | ` : '') + (cartItem.addOnIds.length > 0 ? `Choices: ${cartItem.addOnIds.join(', ')}` : ''),
+            customerComment: cartItem.comment || '',
+            pricingType: item.pricingType,
+            dietaryType: item.dietaryType || 'none',
           };
-        }).filter((i): i is any => i !== null),
+        }).filter(Boolean),
         estimatedTotal: result.data.estimatedTotal,
         specialRequests: eventDetails.specialRequests || undefined,
       };
       setBookingPdfData(pdfData);
-
-      // SECURITY: editSecret is NO LONGER returned here for security reasons
-      // It's sent via email only. Users must use the link from their email to edit.
-      setEditSecret(null);
-
-      // Use the inquiry number from the server response
-      setInquiryNumber(result.data.inquiryNumber || `INQ-${Math.floor(Math.random() * 9000) + 1000}`);
-
-      // Check if this is an admin editing a booking
-      // If so, redirect back to the booking details page instead of showing thank you screen
-      if (isAdminEdit && bookingId) {
-        // Admin edit mode - redirect back to booking details page
-        setIsEditMode(false); // Reset edit mode after successful submit
-        setIsAdminEdit(false); // Reset admin edit flag
-
-        // Clear persistence for refresh-resilience cleanup
-        sessionStorage.removeItem('edit_booking_id');
-        sessionStorage.removeItem('edit_secret');
-        localStorage.removeItem('temp_edit_is_admin'); // Clean up admin flag
-
-        // Show success message and redirect
-        toast.success('Booking updated successfully!');
-        router.push(`/admin/bookings?id=${bookingId}&tab=menu-details`);
-        return;
-      }
-
-      // Customer mode - show thank you screen
-      setIsEditMode(false); // Reset edit mode after successful submit
-      setIsSubmitted(true);
-
-      // Clear persistence for refresh-resilience cleanup
-      sessionStorage.removeItem('edit_booking_id');
-      sessionStorage.removeItem('edit_secret');
-
-      // Show success message
+      const inquiryNo = result.data.inquiryNumber || `INQ-${Math.floor(Math.random() * 9000) + 1000}`;
+      
       if (isEditMode) {
         toast.success(t('status.requestSent'));
+        sessionStorage.removeItem('edit_booking_id');
+        sessionStorage.removeItem('edit_secret');
+        router.push(`/admin/bookings?id=${newBookingId}&tab=menu-details`);
+      } else {
+        setSubmitted(true, inquiryNo);
+        sessionStorage.removeItem('edit_booking_id');
+        sessionStorage.removeItem('edit_secret');
       }
     } else {
       toast.error(result.error || t('status.noItems'));
     }
-  };
-
-  const toggleMenuItem = (itemId: string) => {
-    setSelectedItems(prev => {
-      if (prev.includes(itemId)) {
-        // Remove item
-        const newQuantities = { ...itemQuantities };
-        delete newQuantities[itemId];
-        setItemQuantities(newQuantities);
-
-        // Also remove variant
-        const newVariants = { ...itemVariants };
-        delete newVariants[itemId];
-        setItemVariants(newVariants);
-
-        return prev.filter(id => id !== itemId);
-      } else {
-        // Add item with quantity 1
-        setItemQuantities(prev => ({ ...prev, [itemId]: 1 }));
-
-        // Add default variant if exists
-        const item = visibleMenuItems.find(i => i.id === itemId);
-        if (item && item.variants && item.variants.length > 0) {
-          setItemVariants(prev => ({ ...prev, [itemId]: item.variants![0].id }));
-        }
-
-        return [...prev, itemId];
-      }
-    });
-  };
-
-  const updateQuantity = (itemId: string, delta: number) => {
-    setItemQuantities(prev => {
-      const currentQty = prev[itemId] || 1;
-      const newQty = Math.max(1, currentQty + delta);
-      return { ...prev, [itemId]: newQty };
-    });
-  };
-
-  const removeFromCart = (itemId: string) => {
-    setSelectedItems(prev => prev.filter(id => id !== itemId));
-    const newQuantities = { ...itemQuantities };
-    delete newQuantities[itemId];
-    setItemQuantities(newQuantities);
-  };
-
-  const getTotalPrice = () => {
-    return selectedItems.reduce((total, itemId) => {
-      const item = visibleMenuItems.find(i => i.id === itemId);
-      if (!item) return total;
-
-      // Exclude consumption based prices (beverages) if the user opted out
-      if (isConsumption(item) && !includeBeveragePrices) {
-        return total;
-      }
-
-      const quantity = itemQuantities[itemId] || 1;
-      const unitPrice = getItemPerPersonPrice(item);
-
-      // Fix: Prioritize individual guest counts if they've been edited (exists in itemGuestCounts)
-      // Otherwise, check categoryData if enabled, or fallback to global guest count
-      const effectiveGuestCount = itemGuestCounts[itemId] 
-        ? itemGuestCounts[itemId]
-        : (categoryData[item.category]?.guestCount
-           ? (parseInt(eventDetails.guestCount) || 1)
-           : (parseInt(eventDetails.guestCount) || 1));
-
-      // For flat-fee items (billed by consumption), use quantity
-      if (isFlatFee(item) || isConsumption(item)) {
-        return total + unitPrice * quantity;
-      }
-
-      // For per-person items, multiply by guest count
-      return total + unitPrice * effectiveGuestCount;
-    }, 0);
-  };
-
-  const getSelectedItemsByCategory = (category: string) => {
-    return visibleMenuItems.filter(item =>
-      item.category === category && selectedItems.includes(item.id)
-    );
-  };
-
-  // Helper functions for pricing types
-  const isPerPerson = useCallback((item: MenuItem) => item.pricingType === 'per-person' || item.pricingType === 'per_person', []);
-  const isPerPersonItem = useCallback((item: MenuItem | null): boolean => {
-    return item?.pricingType === 'per_person' || item?.pricingType === 'per-person';
-  }, []);
-  const isFlatFee = useCallback((item: MenuItem) => item.pricingType === 'flat-rate' || item.pricingType === 'flat_fee', []);
-  const isConsumption = useCallback((item: MenuItem) => item.pricingType === 'billed_by_consumption', []);
-  const isNonPerPerson = useCallback((item: MenuItem) => isFlatFee(item) || isConsumption(item), [isFlatFee, isConsumption]);
-
-  // Calculate recommended quantity for consumption-based items
-  const calculateRecommendedQuantity = (item: MenuItem, itemId?: string, variantIdOverride?: string): number | null => {
-    if (!isConsumption(item)) return null;
-
-    const guestCount = parseInt(eventDetails.guestCount) || 0;
-    if (guestCount === 0) return null;
-
-    // Get the average consumption value to use
-    let avgConsumption = item.averageConsumption || null;
-
-    // Use specific variant if provided or available in state
-    const currentVariantId = variantIdOverride || (itemId ? itemVariants[itemId] : null);
-
-    if (currentVariantId && item.variants) {
-      const selectedVariant = item.variants.find(v => v.id === currentVariantId);
-      if (selectedVariant?.averageConsumption) {
-        avgConsumption = selectedVariant.averageConsumption;
-      }
-    }
-
-    if (!avgConsumption || avgConsumption <= 0) return null;
-
-    return Math.ceil(guestCount / avgConsumption);
   };
 
   const openDetailsModal = (item: MenuItem) => {
@@ -1456,198 +924,17 @@ export function CustomMenuWizard({
     variant: string;
     comment: string;
   }) => {
-    // Add to selected items if not already there
-    if (!selectedItems.includes(itemId)) {
-      setSelectedItems(prev => [...prev, itemId]);
-    }
-
-    // Update state
-    setItemQuantities(prev => ({ ...prev, [itemId]: data.quantity }));
-    if (data.guestCount !== null) {
-      setItemGuestCounts(prev => ({ ...prev, [itemId]: data.guestCount! }));
-    } else {
-      setItemGuestCounts(prev => {
-        const updated = { ...prev };
-        delete updated[itemId];
-        return updated;
-      });
-    }
-    setItemAddOns(prev => ({ ...prev, [itemId]: data.addOns }));
-    if (data.variant) {
-      setItemVariants(prev => ({ ...prev, [itemId]: data.variant }));
-    } else {
-      setItemVariants(prev => {
-        const updated = { ...prev };
-        delete updated[itemId];
-        return updated;
-      });
-    }
-    if (data.comment?.trim()) {
-      setItemComments(prev => ({ ...prev, [itemId]: data.comment }));
-    } else {
-      setItemComments(prev => {
-        const updated = { ...prev };
-        delete updated[itemId];
-        return updated;
-      });
-    }
-
+    updateItem(itemId, {
+      quantity: data.quantity,
+      guestCount: data.guestCount || undefined,
+      addOnIds: data.addOns,
+      variantId: data.variant,
+      comment: data.comment
+    });
     setDetailsModalItem(null);
   };
 
-  const getItemTotalPrice = (item: MenuItem) => {
-    const quantity = itemQuantities[item.id] || 1;
-    const unitPrice = getItemPerPersonPrice(item);
 
-    // Fix: Prioritize individual guest counts if they've been edited
-    const effectiveGuestCount = itemGuestCounts[item.id]
-      ? itemGuestCounts[item.id]
-      : (categoryData[item.category]?.guestCount
-         ? (parseInt(eventDetails.guestCount) || 1)
-         : (parseInt(eventDetails.guestCount) || 1));
-
-    // For flat-fee or consumption items, multiply by quantity
-    if (isNonPerPerson(item)) {
-      return unitPrice * quantity;
-    }
-
-    // For per-person items, multiply by guest count
-    return unitPrice * effectiveGuestCount;
-  };
-
-  const getTotalPriceWithAddOns = () => {
-    return selectedItems.reduce((total, itemId) => {
-      const item = visibleMenuItems.find(i => i.id === itemId);
-      if (!item) return total;
-
-      // Exclude consumption based prices if the user opted out
-      if (isConsumption(item) && !includeBeveragePrices) {
-        return total;
-      }
-
-      return total + getItemTotalPrice(item);
-    }, 0);
-  };
-
-  // Per-person price (NOT multiplied by guest count) – used for cart display
-  const getItemPerPersonPrice = useCallback((item: MenuItem) => {
-    if (!item) return 0;
-
-    // 1. First, calculate the modern menu price based on current selection (variant + addons)
-    const currentVariantId = itemVariants[item.id];
-    let basePrice = item.price;
-    if (currentVariantId && item.variants && item.variants.length > 0) {
-      const variant = item.variants.find(v => v.id === currentVariantId);
-      if (variant) basePrice = variant.price;
-    }
-
-    const currentAddOnIds = itemAddOns[item.id] || [];
-    const currentAddOnsPrice = currentAddOnIds.reduce((total, addOnId) => {
-      if (item.addonGroups && item.addonGroups.length > 0) {
-        for (const group of item.addonGroups) {
-          const groupAddOn = group.items.find(i => i.id === addOnId);
-          if (groupAddOn) return total + (groupAddOn.price || 0);
-        }
-      }
-      const addOn = item.addOns?.find(ao => ao.id === addOnId);
-      return total + (addOn?.price || 0);
-    }, 0);
-
-    const calculatedMenuPrice = basePrice + currentAddOnsPrice;
-
-    // 2. In edit mode, check if we should override with the original booking price
-    if (isEditMode && editBookingData?.items) {
-      const bookingItem = editBookingData.items.find((bi: any) => (bi.itemId || bi.item_id) === item.id);
-
-      if (bookingItem) {
-        const originalPrice = Number(bookingItem.unitPrice) || 0;
-
-        // If original price is 0 but menu has a price, it's likely a data issue in the booking
-        // We should show the real price to the user
-        if (originalPrice === 0 && calculatedMenuPrice > 0) {
-          return calculatedMenuPrice;
-        }
-
-        // Check if the item's configuration has changed (variant or addons)
-        let isModified = false;
-
-        // Compare variants
-        const variantMatch = bookingItem.notes?.match(/Variant: ([^|]+)/);
-        const originalVariantName = variantMatch ? variantMatch[1].trim() : null;
-        const currentVariant = item.variants?.find(v => v.id === currentVariantId);
-        const currentVariantName = currentVariant?.name || null;
-
-        if (originalVariantName !== currentVariantName) {
-          isModified = true;
-        }
-
-        // Compare addons
-        if (!isModified) {
-          const addonsMatch = bookingItem.notes?.match(/(?:Add-ons|Choices): ([^|]+)/);
-          const originalAddonNames = addonsMatch
-            ? addonsMatch[1].split(',').map((s: string) => s.trim()).filter(Boolean)
-            : [];
-
-          const currentAddonNames: string[] = [];
-          currentAddOnIds.forEach(id => {
-            const ao = item.addOns?.find(a => a.id === id);
-            if (ao) currentAddonNames.push(ao.name);
-            else if (item.addonGroups) {
-              for (const g of item.addonGroups) {
-                const ga = g.items.find(i => i.id === id);
-                if (ga) { currentAddonNames.push(ga.name); break; }
-              }
-            }
-          });
-
-          if (originalAddonNames.length !== currentAddonNames.length) {
-            isModified = true;
-          } else {
-            const sortedOriginal = [...originalAddonNames].sort();
-            const sortedCurrent = [...currentAddonNames].sort();
-            if (JSON.stringify(sortedOriginal) !== JSON.stringify(sortedCurrent)) {
-              isModified = true;
-            }
-          }
-        }
-
-        if (!isModified) {
-          return originalPrice;
-        }
-      }
-    }
-
-    return calculatedMenuPrice;
-  }, [itemVariants, itemAddOns, isEditMode, editBookingData?.items]);
-
-  // Per-person subtotal: returns the sum of all selected per-person items
-  const getPerPersonSubtotal = useCallback(() => {
-    return selectedItems.reduce((total, itemId) => {
-      const item = visibleMenuItems.find(i => i.id === itemId);
-      if (!item || !isPerPerson(item)) return total;
-      return total + getItemPerPersonPrice(item);
-    }, 0);
-  }, [selectedItems, visibleMenuItems, getItemPerPersonPrice, isPerPerson]);
-
-  // Flat-rate subtotal (items like Technology, Decoration etc. that have a fixed price)
-  const getFlatRateSubtotal = useCallback(() => {
-    return selectedItems.reduce((total, itemId) => {
-      const item = visibleMenuItems.find(i => i.id === itemId);
-      if (!item || !isFlatFee(item)) return total;
-      const quantity = itemQuantities[itemId] || 1;
-      return total + (getItemPerPersonPrice(item) * quantity);
-    }, 0);
-  }, [selectedItems, visibleMenuItems, isFlatFee, itemQuantities, getItemPerPersonPrice]);
-
-  // Consumption-based subtotal (items billed by consumption)
-  const getConsumptionSubtotal = useCallback(() => {
-    return selectedItems.reduce((total, itemId) => {
-      const item = visibleMenuItems.find(i => i.id === itemId);
-      if (!item || !isConsumption(item)) return total;
-      const quantity = itemQuantities[itemId] || 1;
-      return total + (getItemPerPersonPrice(item) * quantity);
-    }, 0);
-  }, [selectedItems, visibleMenuItems, isConsumption, itemQuantities, getItemPerPersonPrice]);
 
   // Show thank you screen if submitted
   if (isSubmitted) {
@@ -1655,35 +942,21 @@ export function CustomMenuWizard({
       <ThankYouScreen
         inquiryNumber={inquiryNumber}
         bookingData={bookingPdfData}
-        variant="split" // Options: 'centered' | 'split' | 'minimal'
         onCreateNew={() => {
-          setIsEditMode(false);
-          setIsSubmitted(false);
-          setCurrentStep(1);
-          setSelectedItems([]);
-          setItemQuantities({});
-          setItemAddOns({});
-          setItemVariants({});
-          setItemComments({});
-          setTermsAccepted(false);
-          setInquiryNumber('');
-          setBookingId(null);
-          setEditSecret(null);
+          setEditMode(false);
+          setSubmitted(false);
+          setBookingInfo(null, null);
           setBookingPdfData(null);
 
           // Clear persistence
           sessionStorage.removeItem('edit_booking_id');
           sessionStorage.removeItem('edit_secret');
         }}
+
         onEditOrder={() => {
-          // Go back to summary/review page with edit mode enabled
-          console.log('Edit Order clicked!');
-          console.log('Current eventDetails:', eventDetails);
-          console.log('Current selectedItems:', selectedItems);
-          console.log('Current itemQuantities:', itemQuantities);
-          setIsEditMode(true);
-          setIsSubmitted(false);
-          setCurrentStep(3); // Step 3 is the Review & Submit page
+          setEditMode(true);
+          setSubmitted(false, inquiryNumber);
+          setCurrentStep(2); // Go back to menu selection
         }}
         onGoHome={() => {
           // Navigation is handled by the WizardHeader back button
@@ -1763,64 +1036,13 @@ export function CustomMenuWizard({
               <div>
                 {/* Step 1: Event Details - SINGLE PAGE LAYOUT WITH GROUPED SECTIONS */}
                 {currentStep === 1 && (
-                  <CustomerDetailsForm
-                    eventDetails={eventDetails}
-                    setEventDetails={setEventDetails}
-                    errors={errors}
-                    setErrors={setErrors}
-                    touched={touched as Record<string, boolean>}
-                    setTouched={setTouched as (touched: Record<string, boolean>) => void}
-                    displayErrors={displayErrors}
-                    setIsDateTimePickerOpen={setIsDateTimePickerOpen}
-                  />
-
+                  <CustomerDetailsForm />
                 )}
 
-                {/* Step 2 & 3 remain the same... (truncated for brevity) */}
                 {currentStep === 2 && (
                   <CustomerMenuSelection
-                    selectedCategory={selectedCategory}
-                    categories={visibleCategories}
-                    eventDetails={eventDetails}
-                    itemGuestCounts={itemGuestCounts}
-                    loadingMenu={loadingMenu}
-                    menuItems={visibleMenuItems}
-                    selectedItems={selectedItems}
-                    itemQuantities={itemQuantities}
-                    itemVariants={itemVariants}
-                    itemAddOns={itemAddOns}
-                    itemComments={itemComments}
-                    isCartCollapsed={isCartCollapsed}
-                    step2Error={step2Error}
                     categoryRefs={categoryRefs}
-                    setSelectedCategory={setSelectedCategory}
-                    setItemGuestCounts={setItemGuestCounts}
-                    setIsCartCollapsed={setIsCartCollapsed}
-                    setSelectedItems={setSelectedItems}
-                    setItemQuantities={setItemQuantities}
-                    setItemAddOns={setItemAddOns}
-                    setItemVariants={setItemVariants}
-                    setItemComments={setItemComments}
-                    getItemPerPersonPrice={getItemPerPersonPrice}
-                    getFlatRateSubtotal={getFlatRateSubtotal}
-                    getPerPersonSubtotal={getPerPersonSubtotal}
-                    getConsumptionSubtotal={getConsumptionSubtotal}
-                    getSelectedItemsByCategory={getSelectedItemsByCategory}
-                    handleCategoryChange={handleCategoryChange}
-                    isConsumption={isConsumption}
-                    isFlatFee={isFlatFee}
-                    isPerPerson={isPerPerson}
-                    openDetailsModal={openDetailsModal}
-                    removeFromCart={removeFromCart}
-                    isLastCategory={isLastCategory}
-                    calculateRecommendedQuantity={calculateRecommendedQuantity}
                     handleStep2Navigation={handleStep2Navigation}
-                    onEditDateTime={() => setIsDateTimePickerOpen(true)}
-                    isSubmitting={isSubmitting}
-                    includeBeveragePrices={includeBeveragePrices}
-                    setIncludeBeveragePrices={setIncludeBeveragePrices}
-                    isEditMode={isEditMode}
-                    originalGuestCount={originalGuestCount || eventDetails.guestCount}
                     onBack={
                       currentStep > 1
                         ? () => setCurrentStep(1)
@@ -1833,37 +1055,7 @@ export function CustomMenuWizard({
 
                 {currentStep === 3 && (
                   <CustomerSummary
-                    eventDetails={eventDetails}
-                    isLocked={isLocked}
-                    isUnlockRequested={isUnlockRequested}
-                    isRequestingUnlock={isRequestingUnlock}
                     handleRequestUnlock={handleRequestUnlock}
-                    isEditMode={isEditMode}
-                    setCurrentStep={setCurrentStep}
-                    setActiveTab={setActiveTab}
-                    selectedItems={selectedItems}
-                    menuItems={visibleMenuItems}
-                    categories={visibleCategories}
-                    collapsedCategories={collapsedCategories}
-                    setCollapsedCategories={setCollapsedCategories}
-                    itemQuantities={itemQuantities}
-                    itemGuestCounts={itemGuestCounts}
-                    itemVariants={itemVariants}
-                    itemAddOns={itemAddOns}
-                    itemComments={itemComments}
-                    getItemPerPersonPrice={getItemPerPersonPrice}
-                    getItemTotalPrice={getItemTotalPrice}
-                    getPerPersonSubtotal={getPerPersonSubtotal}
-                    summaryViewMode={summaryViewMode}
-                    setSummaryViewMode={setSummaryViewMode}
-                    includeBeveragePrices={includeBeveragePrices}
-                    setIncludeBeveragePrices={setIncludeBeveragePrices}
-                    isConsumption={isConsumption}
-                    isPerPerson={isPerPerson}
-                    getFlatRateSubtotal={getFlatRateSubtotal}
-                    getConsumptionSubtotal={getConsumptionSubtotal}
-                    termsAccepted={termsAccepted}
-                    setTermsAccepted={setTermsAccepted}
                   />
                 )}
 
@@ -1946,22 +1138,10 @@ export function CustomMenuWizard({
         <ItemDetailsModal
           item={detailsModalItem}
           onClose={closeDetailsModal}
-          onConfirm={handleModalConfirm}
-          eventDetails={eventDetails}
-          selectedItems={selectedItems}
-          itemQuantities={itemQuantities}
-          itemGuestCounts={itemGuestCounts}
-          itemAddOns={itemAddOns}
-          itemVariants={itemVariants}
-          itemComments={itemComments}
-          isPerPerson={isPerPerson}
-          isConsumption={isConsumption}
-          isFlatFee={isFlatFee}
-          calculateRecommendedQuantity={calculateRecommendedQuantity}
         />
         {/* Mobile Cart FAB - side-attached style, only on step 2 with items selected */}
         {
-          currentStep === 2 && selectedItems.length > 0 && showCartFab && (
+          currentStep === 2 && selectedItemIds.length > 0 && showCartFab && (
             <button
               onClick={() => setIsMobileDrawerOpen(true)}
               className="lg:hidden fixed right-0 bottom-24 z-40 bg-primary text-primary-foreground shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200 p-4 flex items-center gap-2.5 border-2 border-primary-foreground/10 border-r-0"
@@ -1974,7 +1154,7 @@ export function CustomMenuWizard({
                   className="absolute -top-2 -right-2 bg-secondary text-secondary-foreground rounded-full w-5 h-5 flex items-center justify-center"
                   style={{ fontSize: '11px', fontWeight: 'var(--font-weight-semibold)' }}
                 >
-                  {selectedItems.length}
+                  {selectedItemIds.length}
                 </span>
               </div>
               <div className="flex flex-col items-start">
@@ -1999,47 +1179,30 @@ export function CustomMenuWizard({
                 onClick={(e) => e.stopPropagation()}
               >
                 <MenuCart
-                  selectedItems={selectedItems}
-                  menuItems={menuItems}
-                  itemQuantities={itemQuantities}
-                  itemVariants={itemVariants}
-                  itemAddOns={itemAddOns}
-                  itemComments={itemComments}
-                  isCartCollapsed={false}
-                  setIsCartCollapsed={() => { }}
-                  eventDetails={eventDetails}
-                  itemGuestCounts={itemGuestCounts}
-                  getItemPerPersonPrice={getItemPerPersonPrice}
-                  getPerPersonSubtotal={getPerPersonSubtotal}
-                  getFlatRateSubtotal={getFlatRateSubtotal}
-                  getConsumptionSubtotal={getConsumptionSubtotal}
-                  calculateRecommendedQuantity={calculateRecommendedQuantity}
-                  openDetailsModal={openDetailsModal}
-                  removeFromCart={removeFromCart}
-                  setItemQuantities={setItemQuantities}
-                  isConsumption={isConsumption}
-                  isFlatFee={isFlatFee}
-                  isPerPerson={isPerPerson}
+                  isCartCollapsed={isCartCollapsed}
+                  setIsCartCollapsed={setIsCartCollapsed}
                   onContinue={() => { setIsMobileDrawerOpen(false); handleStep2Navigation(); }}
+                  continueButtonText={t('actions.continueToReview')}
                   onEditDateTime={() => {
                     setIsMobileDrawerOpen(false);
                     setIsDateTimePickerOpen(true);
                   }}
-                  includeBeveragePrices={includeBeveragePrices}
-                  setIncludeBeveragePrices={setIncludeBeveragePrices}
                   isDrawer
-                  isSubmitting={isSubmitting}
-                  setItemGuestCounts={setItemGuestCounts}
-                  categories={categories}
                   onCloseDrawer={() => setIsMobileDrawerOpen(false)}
-                  isEditMode={isEditMode}
-                  originalGuestCount={originalGuestCount || eventDetails.guestCount}
                 />
               </div>
             </div>
           )
         }
       </div >
+
+      {/* Item Details Modal */}
+      {detailsModalItem && (
+        <ItemDetailsModal
+          item={detailsModalItem}
+          onClose={() => setDetailsModalItem(null)}
+        />
+      )}
 
       {/* Date & Time Picker Modal */}
       <DateTimePickerModal
@@ -2048,18 +1211,26 @@ export function CustomMenuWizard({
           setIsDateTimePickerOpen(false);
           // Mark fields as touched when modal closes to trigger validation
           if (eventDetails.eventDate || eventDetails.eventTime) {
-            setTouched(prev => ({ ...prev, eventDate: true, eventTime: true }));
+            setTouchedFields({ eventDate: true, eventTime: true });
           }
         }}
         onSelectDate={(date) => {
-          setEventDetails({ ...eventDetails, eventDate: date });
-          setTouched(prev => ({ ...prev, eventDate: true }));
-          if (errors.eventDate) setErrors({ ...errors, eventDate: undefined });
+          setEventDetails({ eventDate: date });
+          setTouchedFields({ eventDate: true });
+          if (validationErrors.eventDate) {
+            const nextErrors = { ...validationErrors };
+            delete nextErrors.eventDate;
+            setValidationErrors(nextErrors);
+          }
         }}
         onSelectTime={(time) => {
-          setEventDetails({ ...eventDetails, eventTime: time });
-          setTouched(prev => ({ ...prev, eventTime: true }));
-          if (errors.eventTime) setErrors({ ...errors, eventTime: undefined });
+          setEventDetails({ eventTime: time });
+          setTouchedFields({ eventTime: true });
+          if (validationErrors.eventTime) {
+            const nextErrors = { ...validationErrors };
+            delete nextErrors.eventTime;
+            setValidationErrors(nextErrors);
+          }
         }}
         initialDate={eventDetails.eventDate}
         initialTime={eventDetails.eventTime}

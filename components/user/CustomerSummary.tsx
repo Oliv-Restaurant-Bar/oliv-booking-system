@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import Image from 'next/image';
 import { Eye, Lock, Check, Clock, Edit2, User, MapPin, Calendar, ClipboardList, ShoppingCart, Users, ChevronDown, ChevronUp, AlertTriangle, LayoutList } from 'lucide-react';
 import { MenuItem } from './menuItemsData';
@@ -7,77 +7,43 @@ import { DietaryIcon } from './DietaryIcon';
 import { NativeCheckbox } from '@/components/ui/NativeCheckbox';
 import { useWizardTranslation } from '@/lib/i18n/client';
 import { useLocale } from 'next-intl';
+import { useWizardStore } from '@/lib/store/useWizardStore';
+
 
 interface CustomerSummaryProps {
-  eventDetails: EventDetails;
-  isLocked: boolean;
-  isUnlockRequested: boolean;
-  isRequestingUnlock: boolean;
   handleRequestUnlock: () => void;
-  isEditMode: boolean;
-  setCurrentStep: (step: number) => void;
-  setActiveTab: (tab: string) => void;
-  selectedItems: string[];
-  menuItems: MenuItem[];
-  categories: string[];
-  collapsedCategories: Record<string, boolean>;
-  setCollapsedCategories: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
-  itemQuantities: Record<string, number>;
-  itemGuestCounts: Record<string, number>;
-  itemVariants: Record<string, string>;
-  itemAddOns: Record<string, string[]>;
-  itemComments: Record<string, string>;
-  getItemPerPersonPrice: (item: MenuItem) => number;
-  getItemTotalPrice: (item: MenuItem) => number;
-  getPerPersonSubtotal: () => number;
-  summaryViewMode: 'per-person' | 'total';
-  setSummaryViewMode: (mode: 'per-person' | 'total') => void;
-  includeBeveragePrices: boolean;
-  setIncludeBeveragePrices: (value: boolean) => void;
-  isConsumption: (item: MenuItem) => boolean;
-  isPerPerson: (item: MenuItem) => boolean;
-  getFlatRateSubtotal: () => number;
-  getConsumptionSubtotal: () => number;
-  termsAccepted: boolean;
-  setTermsAccepted: (value: boolean) => void;
 }
 
+
 export function CustomerSummary({
-  eventDetails,
-  isLocked,
-  isUnlockRequested,
-  isRequestingUnlock,
   handleRequestUnlock,
-  isEditMode,
-  setCurrentStep,
-  setActiveTab,
-  selectedItems,
-  menuItems,
-  categories,
-  collapsedCategories,
-  setCollapsedCategories,
-  itemQuantities,
-  itemGuestCounts,
-  itemVariants,
-  itemAddOns,
-  itemComments,
-  getItemPerPersonPrice,
-  getItemTotalPrice,
-  getPerPersonSubtotal,
-  summaryViewMode,
-  setSummaryViewMode,
-  includeBeveragePrices,
-  setIncludeBeveragePrices,
-  isConsumption,
-  isPerPerson,
-  getFlatRateSubtotal,
-  getConsumptionSubtotal,
-  termsAccepted,
-  setTermsAccepted,
 }: CustomerSummaryProps) {
   const t = useWizardTranslation();
   const locale = useLocale();
-  const isFlatFee = (item: MenuItem) => item.pricingType === 'flat-rate' || item.pricingType === 'flat_fee';
+  
+  const {
+    eventDetails, isLocked, isUnlockRequested, isRequestingUnlock,
+    isEditMode, setCurrentStep, setActiveTab,
+    cart, menuItems, getVisibleCategories,
+    collapsedCategories, setCollapsedCategory,
+    getItemPerPersonPrice, getItemTotalPrice, getPerPersonSubtotal,
+    summaryViewMode, setSummaryViewMode,
+    includeBeveragePrices, setIncludeBeveragePrices,
+    isConsumption, isPerPerson, isFlatFee,
+    getFlatRateSubtotal, getConsumptionSubtotal,
+    termsAccepted, setTermsAccepted
+  } = useWizardStore();
+
+  const selectedItems = Object.keys(cart);
+  const itemQuantities = useMemo(() => {
+    const quantities: Record<string, number> = {};
+    Object.entries(cart).forEach(([id, item]) => {
+      quantities[id] = item.quantity;
+    });
+    return quantities;
+  }, [cart]);
+  const categories = getVisibleCategories();
+
   
   // Use a derived guest count that prioritizes per-item overrides from the cart/modal
   const guestCountValue = React.useMemo(() => {
@@ -88,21 +54,16 @@ export function CustomerSummary({
     if (ppItems.length === 0) return parseInt(eventDetails.guestCount) || 0;
     
     // Take the max guest count among per-person items
-    return Math.max(...ppItems.map(item => itemGuestCounts[item.id] || parseInt(eventDetails.guestCount) || 1), parseInt(eventDetails.guestCount) || 0);
-  }, [selectedItems, menuItems, itemGuestCounts, eventDetails.guestCount]);
+    return Math.max(...ppItems.map(item => cart[item.id].guestCount || parseInt(eventDetails.guestCount) || 1), parseInt(eventDetails.guestCount) || 0);
+  }, [selectedItems, menuItems, cart, eventDetails.guestCount, isPerPerson]);
 
-  const perPersonTotal = React.useMemo(() => {
-    return selectedItems.reduce((total, itemId) => {
-      const item = menuItems.find(i => i.id === itemId);
-      if (!item || !isPerPerson(item)) return total;
-      const guestCount = itemGuestCounts[item.id] || parseInt(eventDetails.guestCount) || 1;
-      return total + (getItemPerPersonPrice(item) * guestCount);
-    }, 0);
-  }, [selectedItems, menuItems, itemGuestCounts, eventDetails, getItemPerPersonPrice, isPerPerson]);
+  const perPersonTotalValue = getPerPersonSubtotal();
 
-  const flatRateTotal = getFlatRateSubtotal();
-  const consumptionTotal = includeBeveragePrices ? getConsumptionSubtotal() : 0;
-  const grandTotal = perPersonTotal + flatRateTotal + consumptionTotal;
+
+  const flatRateTotalValue = getFlatRateSubtotal();
+  const consumptionTotalValue = includeBeveragePrices ? getConsumptionSubtotal() : 0;
+  const grandTotalValue = perPersonTotalValue + flatRateTotalValue + consumptionTotalValue;
+
 
   return (
     <div>
@@ -418,10 +379,8 @@ export function CustomerSummary({
                     {/* Collapsible Category Header */}
                     <button
                       onClick={() =>
-                        setCollapsedCategories((prev) => ({
-                          ...prev,
-                          [category]: !prev[category],
-                        }))
+                        setCollapsedCategory(category, !collapsedCategories[category])
+
                       }
                       className="w-full flex items-center justify-between gap-2 p-2 hover:bg-muted/50 transition-colors"
                     >
@@ -448,7 +407,8 @@ export function CustomerSummary({
                       <div className="p-4 pt-2 space-y-2">
                         {categoryItems.map((item) => {
                           const itemId = item.id;
-                          const quantity = itemQuantities[itemId] || 1;
+                          const quantity = cart[itemId].quantity;
+
 
                           return (
                             <div
@@ -493,16 +453,18 @@ export function CustomerSummary({
 
                                 {/* Variants, Add-ons, Comments */}
                                 <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-xs text-muted-foreground">
-                                  {itemVariants[itemId] && item.variants && (() => {
-                                    const variant = item.variants.find((v) => v.id === itemVariants[itemId]);
+                                  {cart[itemId].variantId && item.variants && (() => {
+                                    const variant = item.variants.find((v) => v.id === cart[itemId].variantId);
                                     return variant ? (
                                       <span>{t('labels.variant')}: {variant.name}</span>
                                     ) : null;
                                   })()}
-                                  {itemAddOns[itemId] && itemAddOns[itemId].length > 0 && (
+
+                                  {cart[itemId].addOnIds && cart[itemId].addOnIds.length > 0 && (
                                     <span>
                                       {t('labels.addons')}:{' '}
-                                      {itemAddOns[itemId]
+                                      {cart[itemId].addOnIds
+
                                         .map((addOnId) => {
                                           const addOn = item.addOns?.find((ao) => ao.id === addOnId);
                                           return addOn ? addOn.name : null;
@@ -511,9 +473,10 @@ export function CustomerSummary({
                                         .join(', ')}
                                     </span>
                                   )}
-                                  {itemComments[itemId] && (
-                                    <span className="italic truncate max-w-125">{t('labels.itemNote')}: {itemComments[itemId]}</span>
+                                  {cart[itemId].comment && (
+                                    <span className="italic truncate max-w-125">{t('labels.itemNote')}: {cart[itemId].comment}</span>
                                   )}
+
                                 </div>
                               </div>
 
@@ -522,13 +485,14 @@ export function CustomerSummary({
                                 <p className="text-primary font-semibold text-sm">
                                   {isConsumption(item)
                                     ? `CHF ${item.price.toFixed(2)}/unit`
-                                    : `CHF ${(getItemPerPersonPrice(item) * (isPerPerson(item) ? (itemGuestCounts[itemId] || parseInt(eventDetails.guestCount) || 1) : quantity)).toFixed(2)}`}
+                                    : `CHF ${(getItemPerPersonPrice(item) * (isPerPerson(item) ? (cart[itemId].guestCount || parseInt(eventDetails.guestCount) || 1) : quantity)).toFixed(2)}`}
+
                                 </p>
                                 <p className="text-muted-foreground text-xs">
                                   {isConsumption(item)
                                     ? t('status.billedByConsumption')
                                     : (isPerPerson(item) && !isFlatFee(item) && item.category !== 'Beverages')
-                                      ? t('status.guestsCalculation', { count: itemGuestCounts[itemId] || parseInt(eventDetails.guestCount) || 1, price: getItemPerPersonPrice(item).toFixed(2) })
+                                      ? t('status.guestsCalculation', { count: cart[itemId].guestCount || parseInt(eventDetails.guestCount) || 1, price: getItemPerPersonPrice(item).toFixed(2) })
                                       : t('status.qtyCalculation', { qty: quantity, price: getItemPerPersonPrice(item).toFixed(2) })}
                                 </p>
                               </div>
@@ -554,8 +518,9 @@ export function CustomerSummary({
                     </p>
                   </div>
                   <p className="text-primary" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                    CHF {perPersonTotal.toFixed(2)}
+                    CHF {perPersonTotalValue.toFixed(2)}
                   </p>
+
                 </div>
               </div>
             </div>
@@ -596,7 +561,8 @@ export function CustomerSummary({
                           const item = menuItems.find((i) => i.id === itemId);
                           return (item?.dietaryType === 'non-veg' && item?.pricingType === 'per-person') || (item?.dietaryType === 'non-veg' && item?.pricingType === 'flat_fee');
                         })
-                        .reduce((total, itemId) => total + (itemQuantities[itemId] || 1), 0) * guestCountValue
+                        .reduce((total, itemId) => total + (cart[itemId].quantity), 0) * guestCountValue
+
                     })}
                   </p>
                 )}
@@ -622,7 +588,8 @@ export function CustomerSummary({
                           const item = menuItems.find((i) => i.id === itemId);
                           return ((item?.dietaryType === 'veg' || item?.dietaryType === 'vegan') && item?.pricingType === 'per-person') || ((item?.dietaryType === 'veg' || item?.dietaryType === 'vegan') && item?.pricingType === 'flat_fee');
                         })
-                        .reduce((total, itemId) => total + (itemQuantities[itemId] || 1), 0) * guestCountValue
+                        .reduce((total, itemId) => total + (cart[itemId].quantity), 0) * guestCountValue
+
                     })}
                   </p>
                 )}
@@ -709,12 +676,14 @@ export function CustomerSummary({
                                     {item.name}
                                   </span>
                                   <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                                    ×{quantity}
+                                    ×{cart[itemId].quantity}
                                   </span>
+
                                 </div>
                                 <span className="text-foreground font-medium">
-                                  CHF {(getItemPerPersonPrice(item) * quantity).toFixed(2)}
+                                  CHF {(getItemPerPersonPrice(item) * cart[itemId].quantity).toFixed(2)}
                                 </span>
+
                               </div>
                             );
                           })}
@@ -737,7 +706,8 @@ export function CustomerSummary({
                     </div>
                     <div className="text-right">
                       <p className="text-primary" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-bold)' }}>
-                        CHF {perPersonTotal.toFixed(2)}
+                        CHF {perPersonTotalValue.toFixed(2)}
+
                       </p>
                     </div>
                   </div>
@@ -846,10 +816,11 @@ export function CustomerSummary({
                           const item = menuItems.find((i) => i.id === itemId);
                           if (!item) return null;
                           const itemTotal = getItemTotalPrice(item);
-                          const variant = itemVariants[itemId] && item.variants
-                            ? item.variants.find(v => v.id === itemVariants[itemId])
+                          const variant = cart[itemId].variantId && item.variants
+                            ? item.variants.find((v: any) => v.id === cart[itemId].variantId)
                             : null;
-                          const quantity = itemQuantities[itemId] || 1;
+                          const quantity = cart[itemId].quantity;
+
 
                           return (
                             <div key={itemId} className="flex justify-between items-center py-1.5 border-b border-gray-100 last:border-0 hover:bg-gray-50/50 px-1 rounded transition-colors group">
@@ -877,7 +848,8 @@ export function CustomerSummary({
                             {t('labels.consumptionSubtotal')}
                           </span>
                           <span className="text-[#374151] font-bold flex-shrink-0 whitespace-nowrap">
-                            CHF {includeBeveragePrices ? consumptionSubtotal.toFixed(2) : '0.00'}
+                            CHF {includeBeveragePrices ? getConsumptionSubtotal().toFixed(2) : '0.00'}
+
                           </span>
                         </div>
                       </div>
@@ -917,7 +889,8 @@ export function CustomerSummary({
                         {categoryItems.map((itemId) => {
                           const item = menuItems.find((i) => i.id === itemId);
                           if (!item) return null;
-                          const quantity = itemQuantities[itemId] || 1;
+                          const quantity = cart[itemId].quantity;
+
                           return (
                             <div key={itemId} className="flex justify-between items-center py-1">
                               <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
@@ -986,14 +959,16 @@ export function CustomerSummary({
                 <div className="flex flex-col items-end flex-shrink-0 text-right">
                   <span className="text-xs font-bold text-muted-foreground mb-[-4px] uppercase tracking-widest">CHF</span>
                   <div className="font-bold leading-none" style={{ fontSize: 'var(--text-h2)', color: '#8da78d' }}>
-                    {grandTotal.toFixed(2)}
+                    {grandTotalValue.toFixed(2)}
+
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        {grandTotal > 5000 && !isEditMode && (
+        {grandTotalValue > 5000 && !isEditMode && (
+
           <div className="bg-[#1e293b] text-white p-6 rounded-lg flex gap-4 items-start shadow-md" style={{ borderRadius: 'var(--radius)' }}>
             <AlertTriangle className="w-6 h-6 text-amber-400 flex-shrink-0 mt-1" />
             <div>

@@ -7,30 +7,31 @@ import { NativeCheckbox } from '@/components/ui/NativeCheckbox';
 import { EventDetails } from '@/lib/types';
 import { useWizardTranslation } from '@/lib/i18n/client';
 import { useLocale } from 'next-intl';
+import { useWizardStore } from '@/lib/store/useWizardStore';
+
 
 interface CustomerDetailsFormProps {
-    eventDetails: EventDetails;
-    setEventDetails: (details: EventDetails) => void;
-    errors: Partial<EventDetails>;
-    setErrors: (errors: Partial<EventDetails>) => void;
-    touched: Record<string, boolean>;
-    setTouched: (touched: Record<string, boolean>) => void;
-    displayErrors: Partial<EventDetails>;
-    setIsDateTimePickerOpen: (isOpen: boolean) => void;
+    // No props needed as we use the store
 }
 
-export function CustomerDetailsForm({
-    eventDetails,
-    setEventDetails,
-    errors,
-    setErrors,
-    touched,
-    setTouched,
-    displayErrors,
-    setIsDateTimePickerOpen
-}: CustomerDetailsFormProps) {
+
+export function CustomerDetailsForm({}: CustomerDetailsFormProps) {
     const t = useWizardTranslation();
     const locale = useLocale();
+    const {
+        eventDetails, setEventDetails,
+        validationErrors, setValidationErrors,
+        touchedFields, setTouchedFields,
+        setIsDateTimePickerOpen
+    } = useWizardStore();
+
+    const displayErrors = Object.keys(validationErrors).reduce((acc, key) => {
+        if (touchedFields[key]) {
+            acc[key] = validationErrors[key];
+        }
+        return acc;
+    }, {} as Record<string, string | undefined>);
+
 
     return (
         <div className="w-full">
@@ -63,11 +64,11 @@ export function CustomerDetailsForm({
                             value={eventDetails.name}
                             onChange={(e) => {
                                 setEventDetails({ ...eventDetails, name: e.target.value });
-                                if (errors.name) setErrors({ ...errors, name: undefined });
+                                if (validationErrors.name) setValidationErrors({ ...validationErrors, name: undefined });
                             }}
                             onBlur={() => {
-                                setTouched({ ...touched, name: true });
-                                if (errors.name) setErrors({ ...errors, name: undefined });
+                                setTouchedFields({ ...touchedFields, name: true });
+                                if (validationErrors.name) setValidationErrors({ ...validationErrors, name: undefined });
                             }}
                             placeholder={t('placeholders.name')}
                             maxLength={100}
@@ -83,11 +84,11 @@ export function CustomerDetailsForm({
                             value={eventDetails.business}
                             onChange={(e) => {
                                 setEventDetails({ ...eventDetails, business: e.target.value });
-                                if (errors.business) setErrors({ ...errors, business: undefined });
+                                if (validationErrors.business) setValidationErrors({ ...validationErrors, business: undefined });
                             }}
                             onBlur={() => {
-                                setTouched({ ...touched, business: true });
-                                if (errors.business) setErrors({ ...errors, business: undefined });
+                                setTouchedFields({ ...touchedFields, business: true });
+                                if (validationErrors.business) setValidationErrors({ ...validationErrors, business: undefined });
                             }}
                             placeholder="Musterfirma AG"
                             maxLength={100}
@@ -102,11 +103,11 @@ export function CustomerDetailsForm({
                             value={eventDetails.email}
                             onChange={(e) => {
                                 setEventDetails({ ...eventDetails, email: e.target.value });
-                                if (errors.email) setErrors({ ...errors, email: undefined });
+                                if (validationErrors.email) setValidationErrors({ ...validationErrors, email: undefined });
                             }}
                             onBlur={() => {
-                                setTouched({ ...touched, email: true });
-                                if (errors.email) setErrors({ ...errors, email: undefined });
+                                setTouchedFields({ ...touchedFields, email: true });
+                                if (validationErrors.email) setValidationErrors({ ...validationErrors, email: undefined });
                             }}
                             placeholder="max@firma.ch"
                             maxLength={255}
@@ -123,11 +124,11 @@ export function CustomerDetailsForm({
                             onChange={(e) => {
                                 const value = e.target.value.replace(/[^0-9+\s]/g, '');
                                 setEventDetails({ ...eventDetails, telephone: value });
-                                if (errors.telephone) setErrors({ ...errors, telephone: undefined });
+                                if (validationErrors.telephone) setValidationErrors({ ...validationErrors, telephone: undefined });
                             }}
                             onBlur={() => {
-                                setTouched({ ...touched, telephone: true });
-                                if (errors.telephone) setErrors({ ...errors, telephone: undefined });
+                                setTouchedFields({ ...touchedFields, telephone: true });
+                                if (validationErrors.telephone) setValidationErrors({ ...validationErrors, telephone: undefined });
                             }}
                             placeholder="07XXXXXXXX"
                             maxLength={20}
@@ -152,11 +153,11 @@ export function CustomerDetailsForm({
                             value={eventDetails.street}
                             onChange={(e) => {
                                 setEventDetails({ ...eventDetails, street: e.target.value });
-                                if (errors.street) setErrors({ ...errors, street: undefined });
+                                if (validationErrors.street) setValidationErrors({ ...validationErrors, street: undefined });
                             }}
                             onBlur={() => {
-                                setTouched({ ...touched, street: true });
-                                if (errors.street) setErrors({ ...errors, street: undefined });
+                                setTouchedFields({ ...touchedFields, street: true });
+                                if (validationErrors.street) setValidationErrors({ ...validationErrors, street: undefined });
                             }}
                             placeholder={t('placeholders.street')}
                             maxLength={100}
@@ -173,11 +174,11 @@ export function CustomerDetailsForm({
                             onChange={(e) => {
                                 const value = e.target.value.replace(/[^0-9]/g, '');
                                 setEventDetails({ ...eventDetails, plz: value });
-                                if (errors.plz) setErrors({ ...errors, plz: undefined });
+                                if (validationErrors.plz) setValidationErrors({ ...validationErrors, plz: undefined });
                             }}
                             onBlur={() => {
-                                setTouched({ ...touched, plz: true });
-                                if (errors.plz) setErrors({ ...errors, plz: undefined });
+                                setTouchedFields({ ...touchedFields, plz: true });
+                                if (validationErrors.plz) setValidationErrors({ ...validationErrors, plz: undefined });
                             }}
                             placeholder={t('placeholders.plz')}
                             maxLength={10}
@@ -193,11 +194,11 @@ export function CustomerDetailsForm({
                             value={eventDetails.location}
                             onChange={(e) => {
                                 setEventDetails({ ...eventDetails, location: e.target.value });
-                                if (errors.location) setErrors({ ...errors, location: undefined });
+                                if (validationErrors.location) setValidationErrors({ ...validationErrors, location: undefined });
                             }}
                             onBlur={() => {
-                                setTouched({ ...touched, location: true });
-                                if (errors.location) setErrors({ ...errors, location: undefined });
+                                setTouchedFields({ ...touchedFields, location: true });
+                                if (validationErrors.location) setValidationErrors({ ...validationErrors, location: undefined });
                             }}
                             placeholder={t('placeholders.location')}
                             maxLength={50}
@@ -213,11 +214,11 @@ export function CustomerDetailsForm({
                             value={eventDetails.reference}
                             onChange={(e) => {
                                 setEventDetails({ ...eventDetails, reference: e.target.value });
-                                if (errors.reference) setErrors({ ...errors, reference: undefined });
+                                if (validationErrors.reference) setValidationErrors({ ...validationErrors, reference: undefined });
                             }}
                             onBlur={() => {
-                                setTouched({ ...touched, reference: true as any });
-                                if (errors.reference) setErrors({ ...errors, reference: undefined });
+                                setTouchedFields({ ...touchedFields, reference: true as any });
+                                if (validationErrors.reference) setValidationErrors({ ...validationErrors, reference: undefined });
                             }}
                             placeholder={t('placeholders.occasion')}
                             maxLength={100}
@@ -247,7 +248,7 @@ export function CustomerDetailsForm({
                                 className={`
                                         w-full px-4 py-3 bg-background border rounded-lg transition-colors text-left
                                         flex items-center justify-between group
-                                        ${(errors.eventDate || errors.eventTime) ? 'border-destructive' : 'border-border hover:border-primary hover:shadow-sm'}
+                                        ${(validationErrors.eventDate || validationErrors.eventTime) ? 'border-destructive' : 'border-border hover:border-primary hover:shadow-sm'}
                                       `}
                                 style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
                             >
@@ -270,9 +271,9 @@ export function CustomerDetailsForm({
                                 </span>
                                 <Calendar className="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors" />
                             </button>
-                            {(errors.eventDate || errors.eventTime) && (
+                            {(validationErrors.eventDate || validationErrors.eventTime) && (
                                 <p className="text-destructive mt-1" style={{ fontSize: 'var(--text-small)' }}>
-                                    {errors.eventDate || errors.eventTime}
+                                    {validationErrors.eventDate || validationErrors.eventTime}
                                 </p>
                             )}
                         </div>
@@ -301,11 +302,11 @@ export function CustomerDetailsForm({
                                         guestCount: e.target.value,
                                         room: newRoom
                                     });
-                                    if (errors.guestCount) setErrors({ ...errors, guestCount: undefined });
+                                    if (validationErrors.guestCount) setValidationErrors({ ...validationErrors, guestCount: undefined });
                                 }}
                                 onBlur={() => {
-                                    setTouched({ ...touched, guestCount: true });
-                                    if (errors.guestCount) setErrors({ ...errors, guestCount: undefined });
+                                    setTouchedFields({ ...touchedFields, guestCount: true });
+                                    if (validationErrors.guestCount) setValidationErrors({ ...validationErrors, guestCount: undefined });
                                 }}
                                 className={`w-full px-4 py-2.5 bg-background border rounded-lg transition-colors ${displayErrors.guestCount ? 'border-destructive' : 'border-border focus:border-primary'
                                     }`}
@@ -331,10 +332,10 @@ export function CustomerDetailsForm({
                                 value={eventDetails.room}
                                 onChange={(e) => {
                                     setEventDetails({ ...eventDetails, room: e.target.value });
-                                    if (errors.room) setErrors({ ...errors, room: undefined });
+                                    if (validationErrors.room) setValidationErrors({ ...validationErrors, room: undefined });
                                 }}
                                 onBlur={() => {
-                                    setTouched({ ...touched, room: true });
+                                    setTouchedFields({ ...touchedFields, room: true });
                                 }}
                                 className={`w-full px-4 py-2.5 bg-background border rounded-lg transition-colors focus:outline-none ${
                                     displayErrors.room ? 'border-destructive' : 'border-border focus:border-primary'
@@ -378,11 +379,11 @@ export function CustomerDetailsForm({
                             value={eventDetails.occasion}
                             onChange={(e) => {
                                 setEventDetails({ ...eventDetails, occasion: e.target.value });
-                                if (errors.occasion) setErrors({ ...errors, occasion: undefined });
+                                if (validationErrors.occasion) setValidationErrors({ ...validationErrors, occasion: undefined });
                             }}
                             onBlur={() => {
-                                setTouched({ ...touched, occasion: true });
-                                if (errors.occasion) setErrors({ ...errors, occasion: undefined });
+                                setTouchedFields({ ...touchedFields, occasion: true });
+                                if (validationErrors.occasion) setValidationErrors({ ...validationErrors, occasion: undefined });
                             }}
                             placeholder={t('placeholders.occasion')}
                             maxLength={100}
@@ -405,11 +406,11 @@ export function CustomerDetailsForm({
                         value={eventDetails.specialRequests}
                         onChange={(e) => {
                             setEventDetails({ ...eventDetails, specialRequests: e.target.value });
-                            if (errors.specialRequests) setErrors({ ...errors, specialRequests: undefined });
+                            if (validationErrors.specialRequests) setValidationErrors({ ...validationErrors, specialRequests: undefined });
                         }}
                         onBlur={() => {
-                            setTouched({ ...touched, specialRequests: true });
-                            if (errors.specialRequests) setErrors({ ...errors, specialRequests: undefined });
+                            setTouchedFields({ ...touchedFields, specialRequests: true });
+                            if (validationErrors.specialRequests) setValidationErrors({ ...validationErrors, specialRequests: undefined });
                         }}
                         placeholder={t('placeholders.specialRequests')}
                         rows={4}
@@ -538,7 +539,7 @@ export function CustomerDetailsForm({
                                             value={eventDetails.billingStreet}
                                             onChange={(e) => {
                                                 setEventDetails({ ...eventDetails, billingStreet: e.target.value, billingStreetError: undefined });
-                                                if (errors.billingStreet) setErrors({ ...errors, billingStreet: undefined });
+                                                if (validationErrors.billingStreet) setValidationErrors({ ...validationErrors, billingStreet: undefined });
                                             }}
                                             onBlur={() => {
                                                 // Validate billing street on blur if filled
@@ -560,7 +561,7 @@ export function CustomerDetailsForm({
                                             onChange={(e) => {
                                                 const value = e.target.value.replace(/[^0-9]/g, '');
                                                 setEventDetails({ ...eventDetails, billingPlz: value, billingPlzError: undefined });
-                                                if (errors.billingPlz) setErrors({ ...errors, billingPlz: undefined });
+                                                if (validationErrors.billingPlz) setValidationErrors({ ...validationErrors, billingPlz: undefined });
                                             }}
                                             onBlur={() => {
                                                 // Validate billing PLZ on blur if filled
@@ -581,7 +582,7 @@ export function CustomerDetailsForm({
                                             value={eventDetails.billingLocation}
                                             onChange={(e) => {
                                                 setEventDetails({ ...eventDetails, billingLocation: e.target.value, billingLocationError: undefined });
-                                                if (errors.billingLocation) setErrors({ ...errors, billingLocation: undefined });
+                                                if (validationErrors.billingLocation) setValidationErrors({ ...validationErrors, billingLocation: undefined });
                                             }}
                                             onBlur={() => {
                                                 // Validate billing location on blur if filled

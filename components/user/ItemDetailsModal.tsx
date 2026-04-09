@@ -10,48 +10,27 @@ import { Input } from '@/components/ui/input';
 import { ValidatedTextarea } from '@/components/ui/validated-textarea';
 import { toast } from 'sonner';
 import { useWizardTranslation, useMenuConfigTranslation } from '@/lib/i18n/client';
+import { useWizardStore } from '@/lib/store/useWizardStore';
 
 interface ItemDetailsModalProps {
   item: MenuItem | null;
   onClose: () => void;
-  onConfirm: (itemId: string, data: {
-    quantity: number;
-    guestCount: number | null;
-    addOns: string[];
-    variant: string;
-    comment: string;
-  }) => void;
-  eventDetails: EventDetails;
-  selectedItems: string[];
-  itemQuantities: Record<string, number>;
-  itemGuestCounts: Record<string, number>;
-  itemAddOns: Record<string, string[]>;
-  itemVariants: Record<string, string>;
-  itemComments: Record<string, string>;
-  isPerPerson: (item: MenuItem) => boolean;
-  isConsumption: (item: MenuItem) => boolean;
-  isFlatFee?: (item: MenuItem) => boolean;
-  calculateRecommendedQuantity: (item: MenuItem, itemId?: string, variantIdOverride?: string) => number | null;
 }
 
 export function ItemDetailsModal({
   item,
   onClose,
-  onConfirm,
-  eventDetails,
-  selectedItems,
-  itemQuantities,
-  itemGuestCounts,
-  itemAddOns,
-  itemVariants,
-  itemComments,
-  isPerPerson,
-  isConsumption,
-  isFlatFee,
-  calculateRecommendedQuantity,
 }: ItemDetailsModalProps) {
   const t = useWizardTranslation();
   const mt = useMenuConfigTranslation();
+  
+  const {
+    cart, eventDetails, 
+    isPerPerson, isConsumption, isFlatFee, 
+    calculateRecommendedQuantity, addItem
+  } = useWizardStore();
+
+  const selectedItems = Object.keys(cart);
 
   // Helper functions to get translated labels
   const getDietaryTagLabel = (tag: string) => {
@@ -119,7 +98,7 @@ export function ItemDetailsModal({
       const isAlreadySelected = selectedItems.includes(item.id);
 
       // Initialize add-ons
-      let defaultAddOns = isAlreadySelected ? (itemAddOns[item.id] || []) : [];
+      let defaultAddOns = isAlreadySelected ? (cart[item.id].addOnIds || []) : [];
       if (!isAlreadySelected && item.addonGroups) {
         item.addonGroups.forEach(group => {
           if (group.isRequired && group.items.length > 0) {
@@ -136,31 +115,31 @@ export function ItemDetailsModal({
 
       // Initialize variant
       const defaultVariantId = item.variants?.[0]?.id || '';
-      setTempVariant(isAlreadySelected ? (itemVariants[item.id] || defaultVariantId) : defaultVariantId);
+      setTempVariant(isAlreadySelected ? (cart[item.id].variantId || defaultVariantId) : defaultVariantId);
 
       // Initialize comment
-      setTempComment(isAlreadySelected ? (itemComments[item.id] || '') : '');
+      setTempComment(isAlreadySelected ? (cart[item.id].comment || '') : '');
 
       // Initialize quantity and guest count
       if (isPerPerson(item)) {
         const totalGuestCount = parseInt(eventDetails.guestCount) || 1;
-        setTempGuestCount(isAlreadySelected ? (itemGuestCounts[item.id] || totalGuestCount) : totalGuestCount);
+        setTempGuestCount(isAlreadySelected ? (cart[item.id].guestCount || totalGuestCount) : totalGuestCount);
         setTempQuantity(1);
       } else if (isConsumption(item)) {
-        const recommended = calculateRecommendedQuantity(item, item.id, itemVariants[item.id]);
-        setTempQuantity(isAlreadySelected ? (itemQuantities[item.id] || recommended || 1) : (recommended || 1));
+        const recommended = calculateRecommendedQuantity(item, cart[item.id]?.variantId);
+        setTempQuantity(isAlreadySelected ? (cart[item.id].quantity || (recommended ?? 1)) : (recommended ?? 1));
         setTempGuestCount(null);
       } else {
-        setTempQuantity(isAlreadySelected ? (itemQuantities[item.id] || 1) : 1);
+        setTempQuantity(isAlreadySelected ? (cart[item.id].quantity || 1) : 1);
         setTempGuestCount(null);
       }
     }
-  }, [item, selectedItems, itemQuantities, itemGuestCounts, itemAddOns, itemVariants, itemComments, eventDetails.guestCount]);
+  }, [item?.id]);
 
   // Update quantity automatically when variant changes for consumption items
   useEffect(() => {
     if (item && isConsumption(item) && tempVariant) {
-      const recommended = calculateRecommendedQuantity(item, undefined, tempVariant);
+      const recommended = calculateRecommendedQuantity(item, tempVariant);
       if (recommended) {
         setTempQuantity(recommended);
       }
@@ -223,13 +202,14 @@ export function ItemDetailsModal({
   };
 
   const handleAddToCart = () => {
-    onConfirm(item.id, {
+    addItem(item.id, {
       quantity: tempQuantity,
-      guestCount: tempGuestCount,
-      addOns: tempAddOns,
-      variant: tempVariant,
+      guestCount: tempGuestCount ?? undefined,
+      addOnIds: tempAddOns,
+      variantId: tempVariant,
       comment: tempComment,
     });
+    onClose();
   };
 
   return (
@@ -298,7 +278,7 @@ export function ItemDetailsModal({
 
           {/* Recommendation for consumption-based items */}
           {isConsumption(item) && (() => {
-            const recommended = calculateRecommendedQuantity(item, undefined, tempVariant);
+            const recommended = calculateRecommendedQuantity(item, tempVariant);
             if (!recommended) return null;
 
             // For display purposes, we still want to show the specific consumption rate
@@ -769,36 +749,6 @@ export function ItemDetailsModal({
             >
               <ShoppingCart className="w-5 h-5" />
               <span style={{ fontWeight: 'var(--font-weight-medium)' }}>Add to Cart</span>
-              {/* <span style={{ fontWeight: 'var(--font-weight-bold)' }}>
-                {(() => {
-                  let basePrice = item.price;
-                  if (tempVariant && item.variants) {
-                    const variant = item.variants.find(v => v.id === tempVariant);
-                    if (variant) basePrice = variant.price;
-                  }
-                  let addOnsTotal = 0;
-
-                  if (item.addonGroups && item.addonGroups.length > 0) {
-                    tempAddOns.forEach(addOnId => {
-                      for (const group of item.addonGroups!) {
-                        const groupAddOn = group.items.find(i => i.id === addOnId);
-                        if (groupAddOn) {
-                          addOnsTotal += groupAddOn.price;
-                          break;
-                        }
-                      }
-                    });
-                  } else if (item.addOns && item.addOns.length > 0) {
-                    tempAddOns.forEach(addOnId => {
-                      const addOn = item.addOns?.find(ao => ao.id === addOnId);
-                      if (addOn) addOnsTotal += addOn.price;
-                    });
-                  }
-
-                  const multiplier = isPerPerson(item) ? (tempGuestCount || parseInt(eventDetails.guestCount) || 1) : tempQuantity;
-                  return ((basePrice + addOnsTotal) * multiplier).toFixed(2);
-                })()}
-              </span> */}
             </button>
           </div>
         </div>
