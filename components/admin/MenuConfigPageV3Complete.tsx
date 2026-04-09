@@ -854,40 +854,40 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
         {!loading && (
           <>
             {/* Tabs Header */}
-            <div className="flex items-center gap-1 mb-6">
-              <div className="inline-flex items-center gap-1 p-1 bg-card border border-border rounded-lg">
+            <div className="flex items-center mb-6 overflow-hidden">
+              <div className="flex flex-wrap items-center gap-1 p-1 bg-card border border-border rounded-xl w-full sm:w-auto">
                 <button
                   onClick={() => setActiveTab('items')}
-                  className={`px-4 py-2 rounded-md flex items-center gap-2 transition-colors ${activeTab === 'items'
-                    ? 'bg-primary text-primary-foreground'
+                  className={`px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-all duration-200 flex-1 sm:flex-none ${activeTab === 'items'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                     }`}
                   style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
                 >
                   <UtensilsCrossed className="w-4 h-4" />
-                  {t('tabs.items')}
+                  <span className="whitespace-nowrap">{t('tabs.items')}</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('addons')}
-                  className={`px-4 py-2 rounded-md flex items-center gap-2 transition-colors ${activeTab === 'addons'
-                    ? 'bg-primary text-primary-foreground'
+                  className={`px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-all duration-200 flex-1 sm:flex-none ${activeTab === 'addons'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                     }`}
                   style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
                 >
                   <ListPlus className="w-4 h-4" />
-                  {t('tabs.addons')}
+                  <span className="whitespace-nowrap">{t('tabs.addons')}</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('visibilities')}
-                  className={`px-4 py-2 rounded-md flex items-center gap-2 transition-colors ${activeTab === 'visibilities'
-                    ? 'bg-primary text-primary-foreground'
+                  className={`px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-all duration-200 flex-1 sm:flex-none ${activeTab === 'visibilities'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                     }`}
                   style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
                 >
                   <Calendar className="w-4 h-4" />
-                  Visibilities
+                  <span className="whitespace-nowrap">{t('tabs.visibilities')}</span>
                 </button>
               </div>
             </div>

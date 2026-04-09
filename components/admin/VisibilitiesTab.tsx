@@ -32,7 +32,7 @@ export function VisibilitiesTab({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search schedules..."
+              placeholder={t('placeholders.searchSchedules')}
               className="w-full pl-10 pr-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
               style={{ fontSize: 'var(--text-base)' }}
             />
@@ -44,7 +44,7 @@ export function VisibilitiesTab({
             icon={Plus}
             onClick={onAddSchedule}
           >
-            Add Schedule
+            {t('buttons.addSchedule')}
           </Button>
         )}
       </div>
@@ -54,8 +54,8 @@ export function VisibilitiesTab({
         {visibilitySchedules.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground flex flex-col items-center">
              <Calendar className="w-10 h-10 mb-3 opacity-50" />
-             <p style={{ fontSize: 'var(--text-base)' }}>No visibility schedules exist yet.</p>
-             <p className="mt-1 opacity-70" style={{ fontSize: 'var(--text-small)' }}>Create a schedule to control when items or categories appear on the menu based on specific dates.</p>
+             <p style={{ fontSize: 'var(--text-base)' }}>{t('messages.noSchedulesFound')}</p>
+             <p className="mt-1 opacity-70" style={{ fontSize: 'var(--text-small)' }}>{t('messages.createScheduleDesc')}</p>
           </div>
         ) : (
           <div className="divide-y divide-border">
@@ -72,7 +72,7 @@ export function VisibilitiesTab({
                   )}
                   <p className="text-muted-foreground mt-1 flex items-center gap-1.5" style={{ fontSize: 'var(--text-small)' }}>
                     <Calendar className="w-3.5 h-3.5" />
-                    {new Date(schedule.startDate).toLocaleDateString()} to {new Date(schedule.endDate).toLocaleDateString()}
+                    {new Date(schedule.startDate).toLocaleDateString()} {ct('to')} {new Date(schedule.endDate).toLocaleDateString()}
                   </p>
                 </div>
                 
@@ -81,14 +81,14 @@ export function VisibilitiesTab({
                     <button
                       onClick={() => onEditSchedule(schedule)}
                       className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
-                      title="Edit Schedule"
+                      title={ct('edit')}
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => onDeleteSchedule(schedule.id)}
                       className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-destructive"
-                      title="Delete Schedule"
+                      title={ct('delete')}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

@@ -60,7 +60,8 @@
       "desserts": "Dessert",
       "starters": "Appetizer"
     },
-    "currencySymbol": "CHF"
+    "currencySymbol": "CHF",
+    "to": "to"
   },
   "nav": {
     "home": "Home",
@@ -676,6 +677,7 @@
       "tabs": {
         "items": "Menu Categories",
         "addons": "Options & Extras",
+        "visibilities": "Visibilities",
         "menuItems": "Menu Categories",
         "choices": "Options & Extras"
       },
@@ -698,7 +700,8 @@
         "addAddons": "Add Extras",
         "addVariant": "Add Variant",
         "uploading": "Uploading...",
-        "uploadImageDesc": "Click to browse or drag and drop"
+        "uploadImageDesc": "Click to browse or drag and drop",
+        "addSchedule": "Add Schedule"
       },
       "messages": {
         "categoryHidden": "Category hidden",
@@ -724,7 +727,9 @@
         "groupUpdated": "Group updated",
         "groupCreated": "Group created",
         "orderUpdated": "Order updated successfully",
-        "updateOrderFailed": "Failed to update sorting order"
+        "updateOrderFailed": "Failed to update sorting order",
+        "noSchedulesFound": "No visibility schedules exist yet.",
+        "createScheduleDesc": "Create a schedule to control when items or categories appear on the menu based on specific dates."
       },
       "labels": {
         "categoryName": "Category Name",

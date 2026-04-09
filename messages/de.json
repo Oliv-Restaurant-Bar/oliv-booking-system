@@ -60,7 +60,8 @@
       "desserts": "Dessert",
       "starters": "Vorspeise"
     },
-    "currencySymbol": "CHF"
+    "currencySymbol": "CHF",
+    "to": "bis"
   },
   "nav": {
     "home": "Startseite",
@@ -676,6 +677,7 @@
       "tabs": {
         "items": "Menükategorien",
         "addons": "Auswahlmöglichkeiten & Extras",
+        "visibilities": "Sichtbarkeiten",
         "menuItems": "Menükategorien",
         "choices": "Auswahlmöglichkeiten & Extras"
       },
@@ -698,7 +700,8 @@
         "addAddons": "Extras hinzufügen",
         "addVariant": "Variante hinzufügen",
         "uploading": "Wird hochgeladen...",
-        "uploadImageDesc": "Klicken zum Durchsuchen oder Drag & Drop"
+        "uploadImageDesc": "Klicken zum Durchsuchen oder Drag & Drop",
+        "addSchedule": "Sichtbarkeit hinzufügen"
       },
       "messages": {
         "categoryHidden": "Kategorie ausgeblendet",
@@ -724,7 +727,9 @@
         "groupUpdated": "Gruppe aktualisiert",
         "groupCreated": "Gruppe erstellt",
         "orderUpdated": "Reihenfolge erfolgreich aktualisiert",
-        "updateOrderFailed": "Reihenfolge konnte nicht aktualisiert werden"
+        "updateOrderFailed": "Reihenfolge konnte nicht aktualisiert werden",
+        "noSchedulesFound": "Noch keine Sichtbarkeiten vorhanden.",
+        "createScheduleDesc": "Erstellen Sie eine Sichtbarkeit, um zu steuern, wann Artikel oder Kategorien im Menü erscheinen."
       },
       "labels": {
         "categoryName": "Kategoriename",
@@ -792,6 +797,7 @@
         "sodium": "Natrium"
       },
       "placeholders": {
+        "searchSchedules": "Sichtbarkeiten suchen...",
         "searchCategories": "Menüartikel nach Name, Beschreibung suchen...",
         "searchGroups": "Auswahlmöglichkeiten & Extras nach Namen suchen...",
         "categoryName": "z.B. Vorspeisen, Hauptgerichte",
