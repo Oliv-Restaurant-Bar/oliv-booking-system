@@ -127,6 +127,20 @@
       "when": 1775193239959,
       "tag": "0017_hot_roland_deschain",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1775652052715,
+      "tag": "0018_organic_the_leader",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1775652483468,
+      "tag": "0019_remarkable_falcon",
+      "breakpoints": true
     }
   ]
 }

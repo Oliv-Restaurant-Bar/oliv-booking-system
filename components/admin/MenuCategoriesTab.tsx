@@ -1,6 +1,6 @@
 'use client';
 
-import { Search, Plus, GripVertical, ChevronDown, ChevronRight, Edit2, ListPlus, MoreVertical, Copy, EyeOff, Eye, Trash2, Settings } from 'lucide-react';
+import { Search, Plus, GripVertical, ChevronDown, ChevronRight, Edit2, ListPlus, MoreVertical, Copy, EyeOff, Eye, Trash2, Settings, Calendar } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
@@ -34,6 +34,7 @@ interface MenuCategoriesTabProps {
   onAddChoice: (categoryId: string, itemId?: string) => void;
   onDuplicateCategory: (category: Category) => void;
   onDuplicateMenuItem: (categoryId: string, item: MenuItemData) => void;
+  onAddVisibility: (categoryId: string, itemId?: string) => void;
   SortableCategory: any;
   SortableItem: any;
   sensors: any;
@@ -65,6 +66,7 @@ export function MenuCategoriesTab({
   onAddChoice,
   onDuplicateCategory,
   onDuplicateMenuItem,
+  onAddVisibility,
   SortableCategory,
   SortableItem,
   sensors,
@@ -204,6 +206,17 @@ export function MenuCategoriesTab({
                             </button>
                           )}
 
+                          {/* Desktop: Visibility Button */}
+                          {canEditCategory && (
+                            <button
+                              onClick={() => onAddVisibility(category.id)}
+                              className="hidden md:flex p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                              title="Visibility Schedules"
+                            >
+                              <Calendar className="w-4 h-4" />
+                            </button>
+                          )}
+
                           {/* Mobile Dropdown + Desktop Duplicate, Show/Hide & Delete */}
                           <div className="relative">
                             <button
@@ -267,6 +280,22 @@ export function MenuCategoriesTab({
                                       <ListPlus className="w-4 h-4 text-muted-foreground" />
                                       <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
                                         {t('buttons.addChoice')}
+                                      </span>
+                                    </button>
+                                  )}
+
+                                  {/* Mobile: Visibility */}
+                                  {canEditCategory && (
+                                    <button
+                                      onClick={() => {
+                                        onAddVisibility(category.id);
+                                        setOpenDropdownId(null);
+                                      }}
+                                      className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border md:hidden"
+                                    >
+                                      <Calendar className="w-4 h-4 text-muted-foreground" />
+                                      <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                        Visibility
                                       </span>
                                     </button>
                                   )}
@@ -441,6 +470,15 @@ export function MenuCategoriesTab({
                                           >
                                             <ListPlus className="w-4 h-4" />
                                           </button>
+
+                                          {/* Desktop: Visibility Button */}
+                                          <button
+                                            onClick={() => onAddVisibility(category.id, item.id)}
+                                            className="hidden md:flex p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                            title="Visibility Schedules"
+                                          >
+                                            <Calendar className="w-4 h-4" />
+                                          </button>
                                         </>
                                       )}
 
@@ -495,6 +533,16 @@ export function MenuCategoriesTab({
                                                   >
                                                     <ListPlus className="w-4 h-4 text-muted-foreground" />
                                                     <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>{t('buttons.addChoice')}</span>
+                                                  </button>
+                                                  <button
+                                                    onClick={() => {
+                                                      onAddVisibility(category.id, item.id);
+                                                      setOpenDropdownId(null);
+                                                    }}
+                                                    className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left"
+                                                  >
+                                                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                                                    <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>Visibility</span>
                                                   </button>
                                                 </div>
 

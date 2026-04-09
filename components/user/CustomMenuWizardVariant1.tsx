@@ -12,7 +12,7 @@ import { DateTimePickerModal } from './DateTimePickerModal';
 import { submitWizardForm, requestBookingUnlock } from '@/lib/actions/wizard';
 import { SkeletonKPI, SkeletonPage, SkeletonMenuSelection } from '@/components/ui/skeleton-loaders';
 import { customerNameSchema, customerBusinessSchema, customerPhoneSchema, customerStreetSchema, customerPlzSchema, customerLocationSchema, customerOccasionSchema, customerSpecialRequestsSchema, userEmailSchema } from '@/lib/validation/schemas';
-import { EventDetails } from '@/lib/types';
+import { EventDetails, VisibilitySchedule } from '@/lib/types';
 import { CustomerDetailsForm } from './CustomerDetailsForm';
 import { CustomerMenuSelection } from './CustomerMenuSelection';
 import { CustomerSummary } from './CustomerSummary';
@@ -107,7 +107,8 @@ export function CustomMenuWizard({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
-  const [categoryData, setCategoryData] = useState<Record<string, { guestCount: boolean; useSpecialCalculation: boolean }>>({});
+  const [categoryData, setCategoryData] = useState<Record<string, { guestCount: boolean; useSpecialCalculation: boolean; assignedVisibilitySchedules: string[] }>>({});
+  const [visibilitySchedules, setVisibilitySchedules] = useState<VisibilitySchedule[]>([]);
   const [loadingMenu, setLoadingMenu] = useState(!initialMenuData);
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [editSecret, setEditSecret] = useState<string | null>(null);
@@ -427,6 +428,7 @@ export function CustomMenuWizard({
     }
   }, [initialMenuData]);
 
+
   // Shared function to process menu data (from props or fetch)
   const processMenuData = (data: any) => {
     // Filter to only include ACTIVE categories that have at least ONE active item
@@ -527,6 +529,7 @@ export function CustomMenuWizard({
             }).filter(Boolean);
           })(),
           sortOrder: item.sortOrder || 0,
+          assignedVisibilitySchedules: item.assignedVisibilitySchedules || [],
         };
       });
 
@@ -557,22 +560,29 @@ export function CustomMenuWizard({
     ])];
 
     // Store category data including guestCount flag
-    const categoryDataMap: Record<string, { guestCount: boolean; useSpecialCalculation: boolean }> = {};
+    const categoryDataMap: Record<string, { 
+      guestCount: boolean; 
+      useSpecialCalculation: boolean; 
+      assignedVisibilitySchedules: string[] 
+    }> = {};
     categoriesWithActiveItems.forEach((cat: any) => {
       categoryDataMap[cat.name] = {
         guestCount: cat.guestCount || false,
         useSpecialCalculation: !!cat.useSpecialCalculation,
+        assignedVisibilitySchedules: cat.assignedVisibilitySchedules || [],
       };
     });
     
     // Add default data for addon categories
     if (addonItems.length > 0 && !categoryDataMap['Add-ons']) {
-      categoryDataMap['Add-ons'] = { guestCount: false, useSpecialCalculation: false };
+      categoryDataMap['Add-ons'] = { guestCount: false, useSpecialCalculation: false, assignedVisibilitySchedules: [] };
     }
 
     setMenuItems(allItems);
     setCategories(categoryNames);
     setCategoryData(categoryDataMap);
+    setVisibilitySchedules(data.visibilitySchedules || []);
+    
     if (categoryNames.length > 0) {
       setSelectedCategory(categoryNames[0]);
       // Initialize all categories as collapsed (closed by default)
@@ -629,6 +639,75 @@ export function CustomMenuWizard({
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [selectedItems.length]);
+
+  // Helper to check if a category/item is visible based on schedules
+  const isCurrentlyVisible = useCallback((assignedSchedules: string[]) => {
+    // If no schedules assigned, it's visible by default (isActive check is handled elsewhere)
+    if (!assignedSchedules || assignedSchedules.length === 0) return true;
+
+    // Filter based on selected date
+    if (!eventDetails.eventDate) return false;
+
+    try {
+      const selectedDate = new Date(eventDetails.eventDate);
+      selectedDate.setHours(0, 0, 0, 0);
+
+      return assignedSchedules.some(scheduleId => {
+        const schedule = visibilitySchedules.find(s => s.id === scheduleId);
+        if (!schedule || !schedule.isActive) return false;
+
+        const start = new Date(schedule.startDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(schedule.endDate);
+        end.setHours(23, 59, 59, 999);
+
+        return selectedDate >= start && selectedDate <= end;
+      });
+    } catch (e) {
+      console.error('Error checking visibility:', e);
+      return true; // Fallback to visible if error
+    }
+  }, [eventDetails.eventDate, visibilitySchedules]);
+
+  // Filtered categories and items based on visibility schedules
+  const visibleCategories = useMemo(() => {
+    return categories.filter(catName => {
+      const data = categoryData[catName];
+      if (!data) return true;
+      return isCurrentlyVisible(data.assignedVisibilitySchedules);
+    });
+  }, [categories, categoryData, isCurrentlyVisible]);
+
+  const visibleMenuItems = useMemo(() => {
+    return menuItems.filter(item => {
+      // 1. Check if item itself is visible
+      const itemVisible = isCurrentlyVisible(item.assignedVisibilitySchedules || []);
+      if (!itemVisible) return false;
+
+      // 2. Check if parent category is visible
+      const catData = categoryData[item.category];
+      if (catData && !isCurrentlyVisible(catData.assignedVisibilitySchedules)) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [menuItems, categoryData, isCurrentlyVisible]);
+
+  useEffect(() => {
+    if (visibleCategories.length > 0 && !visibleCategories.includes(selectedCategory)) {
+      setSelectedCategory(visibleCategories[0]);
+    }
+  }, [visibleCategories, selectedCategory]);
+
+  // Auto-remove items from cart if they become invisible due to date changes
+  useEffect(() => {
+    const hiddenSelectedItems = selectedItems.filter(itemId => !visibleMenuItems.some(item => item.id === itemId));
+    if (hiddenSelectedItems.length > 0) {
+      setSelectedItems(prev => prev.filter(itemId => !hiddenSelectedItems.includes(itemId)));
+      // Optionally toast the user? User didn't specify, but filtering is safer.
+    }
+  }, [visibleMenuItems, selectedItems]);
 
   // Handle category change 
   const handleCategoryChange = (category: string) => {
@@ -1258,7 +1337,7 @@ export function CustomMenuWizard({
         setItemQuantities(prev => ({ ...prev, [itemId]: 1 }));
 
         // Add default variant if exists
-        const item = menuItems.find(i => i.id === itemId);
+        const item = visibleMenuItems.find(i => i.id === itemId);
         if (item && item.variants && item.variants.length > 0) {
           setItemVariants(prev => ({ ...prev, [itemId]: item.variants![0].id }));
         }
@@ -1285,7 +1364,7 @@ export function CustomMenuWizard({
 
   const getTotalPrice = () => {
     return selectedItems.reduce((total, itemId) => {
-      const item = menuItems.find(i => i.id === itemId);
+      const item = visibleMenuItems.find(i => i.id === itemId);
       if (!item) return total;
 
       // Exclude consumption based prices (beverages) if the user opted out
@@ -1315,7 +1394,7 @@ export function CustomMenuWizard({
   };
 
   const getSelectedItemsByCategory = (category: string) => {
-    return menuItems.filter(item =>
+    return visibleMenuItems.filter(item =>
       item.category === category && selectedItems.includes(item.id)
     );
   };
@@ -1430,7 +1509,7 @@ export function CustomMenuWizard({
 
   const getTotalPriceWithAddOns = () => {
     return selectedItems.reduce((total, itemId) => {
-      const item = menuItems.find(i => i.id === itemId);
+      const item = visibleMenuItems.find(i => i.id === itemId);
       if (!item) return total;
 
       // Exclude consumption based prices if the user opted out
@@ -1536,31 +1615,31 @@ export function CustomMenuWizard({
   // Per-person subtotal: returns the sum of all selected per-person items
   const getPerPersonSubtotal = useCallback(() => {
     return selectedItems.reduce((total, itemId) => {
-      const item = menuItems.find(i => i.id === itemId);
+      const item = visibleMenuItems.find(i => i.id === itemId);
       if (!item || !isPerPerson(item)) return total;
       return total + getItemPerPersonPrice(item);
     }, 0);
-  }, [selectedItems, menuItems, getItemPerPersonPrice, isPerPerson]);
+  }, [selectedItems, visibleMenuItems, getItemPerPersonPrice, isPerPerson]);
 
   // Flat-rate subtotal (items like Technology, Decoration etc. that have a fixed price)
   const getFlatRateSubtotal = useCallback(() => {
     return selectedItems.reduce((total, itemId) => {
-      const item = menuItems.find(i => i.id === itemId);
+      const item = visibleMenuItems.find(i => i.id === itemId);
       if (!item || !isFlatFee(item)) return total;
       const quantity = itemQuantities[itemId] || 1;
       return total + (getItemPerPersonPrice(item) * quantity);
     }, 0);
-  }, [selectedItems, menuItems, isFlatFee, itemQuantities, getItemPerPersonPrice]);
+  }, [selectedItems, visibleMenuItems, isFlatFee, itemQuantities, getItemPerPersonPrice]);
 
   // Consumption-based subtotal (items billed by consumption)
   const getConsumptionSubtotal = useCallback(() => {
     return selectedItems.reduce((total, itemId) => {
-      const item = menuItems.find(i => i.id === itemId);
+      const item = visibleMenuItems.find(i => i.id === itemId);
       if (!item || !isConsumption(item)) return total;
       const quantity = itemQuantities[itemId] || 1;
       return total + (getItemPerPersonPrice(item) * quantity);
     }, 0);
-  }, [selectedItems, menuItems, isConsumption, itemQuantities, getItemPerPersonPrice]);
+  }, [selectedItems, visibleMenuItems, isConsumption, itemQuantities, getItemPerPersonPrice]);
 
   // Show thank you screen if submitted
   if (isSubmitted) {
@@ -1693,11 +1772,11 @@ export function CustomMenuWizard({
                 {currentStep === 2 && (
                   <CustomerMenuSelection
                     selectedCategory={selectedCategory}
-                    categories={categories}
+                    categories={visibleCategories}
                     eventDetails={eventDetails}
                     itemGuestCounts={itemGuestCounts}
                     loadingMenu={loadingMenu}
-                    menuItems={menuItems}
+                    menuItems={visibleMenuItems}
                     selectedItems={selectedItems}
                     itemQuantities={itemQuantities}
                     itemVariants={itemVariants}
@@ -1755,8 +1834,8 @@ export function CustomMenuWizard({
                     setCurrentStep={setCurrentStep}
                     setActiveTab={setActiveTab}
                     selectedItems={selectedItems}
-                    menuItems={menuItems}
-                    categories={categories}
+                    menuItems={visibleMenuItems}
+                    categories={visibleCategories}
                     collapsedCategories={collapsedCategories}
                     setCollapsedCategories={setCollapsedCategories}
                     itemQuantities={itemQuantities}

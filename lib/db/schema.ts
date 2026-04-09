@@ -643,6 +643,59 @@ export const bookingCheckins = pgTable(
   }),
 );
 
+// VISIBILITY_SCHEDULES table
+export const visibilitySchedules = pgTable(
+  "visibility_schedules",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    description: text("description"),
+    startDate: timestamp("start_date").notNull(),
+    endDate: timestamp("end_date").notNull(),
+    isActive: boolean("is_active").notNull().default(true),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  }
+);
+
+// CATEGORY_VISIBILITY_SCHEDULES table
+export const categoryVisibilitySchedules = pgTable(
+  "category_visibility_schedules",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    categoryId: uuid("category_id").references(() => menuCategories.id, {
+      onDelete: "cascade",
+    }),
+    visibilityScheduleId: uuid("visibility_schedule_id").references(() => visibilitySchedules.id, {
+      onDelete: "cascade",
+    }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    categoryIdIdx: index("category_visibility_schedules_category_id_idx").on(table.categoryId),
+    visibilityScheduleIdIdx: index("category_visibility_schedules_schedule_id_idx").on(table.visibilityScheduleId),
+  })
+);
+
+// ITEM_VISIBILITY_SCHEDULES table
+export const itemVisibilitySchedules = pgTable(
+  "item_visibility_schedules",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    itemId: uuid("item_id").references(() => menuItems.id, {
+      onDelete: "cascade",
+    }),
+    visibilityScheduleId: uuid("visibility_schedule_id").references(() => visibilitySchedules.id, {
+      onDelete: "cascade",
+    }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    itemIdIdx: index("item_visibility_schedules_item_id_idx").on(table.itemId),
+    visibilityScheduleIdIdx: index("item_visibility_schedules_schedule_id_idx").on(table.visibilityScheduleId),
+  })
+);
+
 // Better Auth type exports
 export type Session = typeof session.$inferSelect;
 export type NewSession = typeof session.$inferInsert;
@@ -691,3 +744,9 @@ export type SystemSettings = typeof systemSettings.$inferSelect;
 export type NewSystemSettings = typeof systemSettings.$inferInsert;
 export type BookingCheckin = typeof bookingCheckins.$inferSelect;
 export type NewBookingCheckin = typeof bookingCheckins.$inferInsert;
+export type VisibilitySchedule = typeof visibilitySchedules.$inferSelect;
+export type NewVisibilitySchedule = typeof visibilitySchedules.$inferInsert;
+export type CategoryVisibilitySchedule = typeof categoryVisibilitySchedules.$inferSelect;
+export type NewCategoryVisibilitySchedule = typeof categoryVisibilitySchedules.$inferInsert;
+export type ItemVisibilitySchedule = typeof itemVisibilitySchedules.$inferSelect;
+export type NewItemVisibilitySchedule = typeof itemVisibilitySchedules.$inferInsert;

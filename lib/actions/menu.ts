@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from "@/lib/db";
-import { menuCategories, menuItems, menuItemDependencies, addons, addonGroups, addonItems, categoryAddonGroups, itemAddonGroups } from "@/lib/db/schema";
+import { menuCategories, menuItems, menuItemDependencies, addons, addonGroups, addonItems, categoryAddonGroups, itemAddonGroups, visibilitySchedules, categoryVisibilitySchedules, itemVisibilitySchedules } from "@/lib/db/schema";
 import { eq, asc, and, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
@@ -521,9 +521,14 @@ export async function getCompleteMenuData() {
     const addonGroupsResult = await getAddonGroups();
     const addonItemsResult = await getAddonItems();
 
+    const visibilitySchedulesResult = await getAllVisibilitySchedules();
+
     // Fetch active assignments
     const categoryAddons = await db.select().from(categoryAddonGroups);
     const itemAddons = await db.select().from(itemAddonGroups);
+
+    const categoryVisibilities = await db.select().from(categoryVisibilitySchedules);
+    const itemVisibilities = await db.select().from(itemVisibilitySchedules);
 
     // Map assignments for quick lookup
     const categoryAddonsMap = new Map<string, string[]>();
@@ -542,15 +547,33 @@ export async function getCompleteMenuData() {
       }
     });
 
+    const categoryVisibilitiesMap = new Map<string, string[]>();
+    categoryVisibilities.forEach(v => {
+      if (v.categoryId && v.visibilityScheduleId) {
+        const existing = categoryVisibilitiesMap.get(v.categoryId) || [];
+        categoryVisibilitiesMap.set(v.categoryId, [...existing, v.visibilityScheduleId]);
+      }
+    });
+
+    const itemVisibilitiesMap = new Map<string, string[]>();
+    itemVisibilities.forEach(v => {
+      if (v.itemId && v.visibilityScheduleId) {
+        const existing = itemVisibilitiesMap.get(v.itemId) || [];
+        itemVisibilitiesMap.set(v.itemId, [...existing, v.visibilityScheduleId]);
+      }
+    });
+
     // Merge assignments into categories and items
     const categoriesWithAddons = categoriesResult.data.map(cat => ({
       ...cat,
       assignedAddonGroups: categoryAddonsMap.get(cat.id) || [],
+      assignedVisibilitySchedules: categoryVisibilitiesMap.get(cat.id) || [],
     }));
 
     const itemsWithAddons = itemsResult.data.map(item => ({
       ...item,
       assignedAddonGroups: itemAddonsMap.get(item.id) || [],
+      assignedVisibilitySchedules: itemVisibilitiesMap.get(item.id) || [],
     }));
 
     // Group items by category (using merged items)
@@ -583,6 +606,9 @@ export async function getCompleteMenuData() {
       addonItemsByGroup: Object.fromEntries(addonItemsByGroup),
       categoryAddonGroups: categoryAddons,
       itemAddonGroups: itemAddons,
+      visibilitySchedules: visibilitySchedulesResult.data || [],
+      categoryVisibilitySchedules: categoryVisibilities,
+      itemVisibilitySchedules: itemVisibilities,
     };
   } catch (error) {
     console.error("Error fetching complete menu data:", error);
@@ -596,6 +622,9 @@ export async function getCompleteMenuData() {
       addonItemsByGroup: {},
       categoryAddonGroups: [],
       itemAddonGroups: [],
+      visibilitySchedules: [],
+      categoryVisibilitySchedules: [],
+      itemVisibilitySchedules: [],
     };
   }
 }
@@ -612,9 +641,14 @@ export async function getAllMenuData() {
     const addonGroupsResult = await getAllAddonGroups();
     const addonItemsResult = await getAllAddonItems();
 
+    const visibilitySchedulesResult = await getAllVisibilitySchedules();
+
     // Fetch all assignments without requiring a new standalone function
     const categoryAddons = await db.select().from(categoryAddonGroups);
     const itemAddons = await db.select().from(itemAddonGroups);
+
+    const categoryVisibilities = await db.select().from(categoryVisibilitySchedules);
+    const itemVisibilities = await db.select().from(itemVisibilitySchedules);
 
     if (!categoriesResult.success || !itemsResult.success || !addonsResult.success) {
       throw new Error("Failed to fetch all menu data");
@@ -637,15 +671,33 @@ export async function getAllMenuData() {
       }
     });
 
+    const categoryVisibilitiesMap = new Map<string, string[]>();
+    categoryVisibilities.forEach(v => {
+      if (v.categoryId && v.visibilityScheduleId) {
+        const existing = categoryVisibilitiesMap.get(v.categoryId) || [];
+        categoryVisibilitiesMap.set(v.categoryId, [...existing, v.visibilityScheduleId]);
+      }
+    });
+
+    const itemVisibilitiesMap = new Map<string, string[]>();
+    itemVisibilities.forEach(v => {
+      if (v.itemId && v.visibilityScheduleId) {
+        const existing = itemVisibilitiesMap.get(v.itemId) || [];
+        itemVisibilitiesMap.set(v.itemId, [...existing, v.visibilityScheduleId]);
+      }
+    });
+
     // Merge assignments into categories and items
     const categoriesWithAddons = categoriesResult.data.map(cat => ({
       ...cat,
       assignedAddonGroups: categoryAddonsMap.get(cat.id) || [],
+      assignedVisibilitySchedules: categoryVisibilitiesMap.get(cat.id) || [],
     }));
 
     const itemsWithAddons = itemsResult.data.map(item => ({
       ...item,
       assignedAddonGroups: itemAddonsMap.get(item.id) || [],
+      assignedVisibilitySchedules: itemVisibilitiesMap.get(item.id) || [],
     }));
 
     // Group items by category (using merged items)
@@ -678,6 +730,9 @@ export async function getAllMenuData() {
       addonItemsByGroup: Object.fromEntries(addonItemsByGroup),
       categoryAddonGroups: categoryAddons,
       itemAddonGroups: itemAddons,
+      visibilitySchedules: visibilitySchedulesResult.data || [],
+      categoryVisibilitySchedules: categoryVisibilities,
+      itemVisibilitySchedules: itemVisibilities,
     };
   } catch (error) {
     console.error("Error fetching all menu data:", error);
@@ -1172,5 +1227,104 @@ export async function getItemAddonGroups(itemId: string) {
   } catch (error) {
     console.error("Error fetching item addon groups:", error);
     return { success: false, error: "Failed to fetch item addon groups", data: [] };
+  }
+}
+
+// ==================== VISIBILITY SCHEDULES ====================
+
+export async function createVisibilitySchedule(input: {
+  name: string;
+  description?: string | null;
+  startDate: Date;
+  endDate: Date;
+}) {
+  try {
+    const [schedule] = await db
+      .insert(visibilitySchedules)
+      .values({
+        ...input,
+        isActive: true,
+      })
+      .returning();
+    revalidatePath("/admin/menu-config");
+    return { success: true, data: schedule };
+  } catch (error) {
+    console.error("Error creating visibility schedule:", error);
+    return { success: false, error: "Failed to create visibility schedule" };
+  }
+}
+
+export async function updateVisibilitySchedule(id: string, updates: Partial<typeof visibilitySchedules.$inferInsert>) {
+  try {
+    const { id: _, createdAt, ...validUpdates } = updates as any;
+    
+    const [schedule] = await db
+      .update(visibilitySchedules)
+      .set({ ...validUpdates, updatedAt: new Date() })
+      .where(eq(visibilitySchedules.id, id))
+      .returning();
+      
+    revalidatePath("/admin/menu-config");
+    return { success: true, data: schedule };
+  } catch (error) {
+    console.error("Error updating visibility schedule:", error);
+    return { success: false, error: "Failed to update visibility schedule" };
+  }
+}
+
+export async function deleteVisibilitySchedule(id: string) {
+  try {
+    await db.delete(visibilitySchedules).where(eq(visibilitySchedules.id, id));
+    revalidatePath("/admin/menu-config");
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting visibility schedule:", error);
+    return { success: false, error: "Failed to delete visibility schedule" };
+  }
+}
+
+export async function getAllVisibilitySchedules() {
+  try {
+    const schedules = await db.select().from(visibilitySchedules).orderBy(asc(visibilitySchedules.createdAt));
+    return { success: true, data: schedules };
+  } catch (error) {
+    console.error("Error fetching visibility schedules:", error);
+    return { success: false, error: "Failed to fetch visibility schedules", data: [] };
+  }
+}
+
+export async function updateCategoryVisibilitySchedules(categoryId: string, scheduleIds: string[]) {
+  try {
+    await db.transaction(async (tx) => {
+      await tx.delete(categoryVisibilitySchedules).where(eq(categoryVisibilitySchedules.categoryId, categoryId));
+      if (scheduleIds.length > 0) {
+        await tx.insert(categoryVisibilitySchedules).values(
+          scheduleIds.map(id => ({ categoryId, visibilityScheduleId: id }))
+        );
+      }
+    });
+    revalidatePath("/admin/menu-config");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating category visibility schedules:", error);
+    return { success: false, error: "Failed to update assignments" };
+  }
+}
+
+export async function updateItemVisibilitySchedules(itemId: string, scheduleIds: string[]) {
+  try {
+    await db.transaction(async (tx) => {
+      await tx.delete(itemVisibilitySchedules).where(eq(itemVisibilitySchedules.itemId, itemId));
+      if (scheduleIds.length > 0) {
+        await tx.insert(itemVisibilitySchedules).values(
+          scheduleIds.map(id => ({ itemId, visibilityScheduleId: id }))
+        );
+      }
+    });
+    revalidatePath("/admin/menu-config");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating item visibility schedules:", error);
+    return { success: false, error: "Failed to update assignments" };
   }
 }

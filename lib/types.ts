@@ -24,6 +24,7 @@ export interface MenuItemData {
     sodium: string;
   };
   assignedAddonGroups?: string[];
+  assignedVisibilitySchedules?: string[];
 }
 
 export interface VariantOption {
@@ -44,6 +45,7 @@ export interface Category {
   useSpecialCalculation?: boolean;
   items: MenuItemData[];
   assignedAddonGroups?: string[]; // IDs of assigned addon groups
+  assignedVisibilitySchedules?: string[];
 }
 
 export interface AddonItem {
@@ -64,6 +66,15 @@ export interface AddonGroup {
   isExpanded: boolean;
   isRequired: boolean;
   isActive?: boolean;
+}
+
+export interface VisibilitySchedule {
+  id: string;
+  name: string;
+  description: string | null;
+  startDate: Date | string; // Dates can come from DB as Date objects or JSON as string
+  endDate: Date | string;
+  isActive: boolean;
 }
 
 

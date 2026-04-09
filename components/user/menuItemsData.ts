@@ -50,4 +50,5 @@ export interface MenuItem {
     sodium: string;
   };
   sortOrder?: number;
+  assignedVisibilitySchedules?: string[];
 }

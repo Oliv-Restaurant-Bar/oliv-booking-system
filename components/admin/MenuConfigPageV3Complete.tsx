@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { UtensilsCrossed, ListPlus } from 'lucide-react';
+import { UtensilsCrossed, ListPlus, Calendar } from 'lucide-react';
 import { useMenuConfigTranslation, useCommonTranslation } from '@/lib/i18n/client';
 import { ConfirmationModal } from '../user/ConfirmationModal';
 import { ItemSettingsModal } from '../user/ItemSettingsModal';
@@ -52,9 +52,15 @@ import {
   updateMenuItemOrder,
   updateAddonGroupOrder,
   updateAddonItemOrder,
+  createVisibilitySchedule,
+  updateVisibilitySchedule,
+  deleteVisibilitySchedule,
+  getAllVisibilitySchedules,
+  updateCategoryVisibilitySchedules,
+  updateItemVisibilitySchedules,
 } from '@/lib/actions/menu';
 import { Permission, hasPermission } from '@/lib/auth/rbac';
-import { MenuItemData, Category, AddonGroup, AddonItem } from '@/lib/types';
+import { MenuItemData, Category, AddonGroup, AddonItem, VisibilitySchedule } from '@/lib/types';
 
 // Extracted Components
 import { AddCategoryModal } from './AddCategoryModal';
@@ -64,6 +70,9 @@ import { AddGroupModal } from './AddGroupModal';
 import { AddAddonItemModal } from './AddAddonItemModal';
 import { MenuCategoriesTab } from './MenuCategoriesTab';
 import { ChoicesAddonsTab } from './ChoicesAddonsTab';
+import { VisibilitiesTab } from './VisibilitiesTab';
+import { AddVisibilityModal } from './AddVisibilityModal';
+import { AssignVisibilityModal } from './AssignVisibilityModal';
 
 function SortableCategory({
   id,
@@ -141,7 +150,7 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
   const t = useMenuConfigTranslation();
   const ct = useCommonTranslation();
 
-  const [activeTab, setActiveTab] = useState<'items' | 'addons'>('items');
+  const [activeTab, setActiveTab] = useState<'items' | 'addons' | 'visibilities'>('items');
   const [loading, setLoading] = useState(!initialData);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -167,18 +176,21 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
       isExpanded: false,
     }));
 
-    return { assembledCategories, assembledAddonGroups };
+    const visibilitySchedulesData = data.visibilitySchedules || [];
+
+    return { assembledCategories, assembledAddonGroups, visibilitySchedules: visibilitySchedulesData };
   };
 
   const initialStates = useMemo(() => {
     if (initialData) {
       return processMenuData(initialData);
     }
-    return { assembledCategories: [], assembledAddonGroups: [] };
+    return { assembledCategories: [], assembledAddonGroups: [], visibilitySchedules: [] };
   }, [initialData]);
 
   const [categories, setCategories] = useState<Category[]>(initialStates.assembledCategories);
   const [addonGroups, setAddonGroups] = useState<AddonGroup[]>(initialStates.assembledAddonGroups);
+  const [visibilitySchedules, setVisibilitySchedules] = useState<VisibilitySchedule[]>(initialStates.visibilitySchedules);
   const [searchQuery, setSearchQuery] = useState('');
 
   const role = user?.role || 'read_only';
@@ -199,6 +211,8 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
   const [isAddChoiceModalOpen, setIsAddChoiceModalOpen] = useState(false);
   const [isAddGroupModalOpen, setIsAddGroupModalOpen] = useState(false);
   const [isAddAddonItemModalOpen, setIsAddAddonItemModalOpen] = useState(false);
+  const [isAddVisibilityModalOpen, setIsAddVisibilityModalOpen] = useState(false);
+  const [isAssignVisibilityModalOpen, setIsAssignVisibilityModalOpen] = useState(false);
 
   // Form states and errors (omitted logic for brevity, keeping state names same)
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
@@ -291,6 +305,19 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
   const [deleteMenuItemId, setDeleteMenuItemId] = useState<string | null>(null);
   const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
   const [deleteAddonItemId, setDeleteAddonItemId] = useState<string | null>(null);
+  const [deleteVisibilityId, setDeleteVisibilityId] = useState<string | null>(null);
+
+  const [editingVisibilityId, setEditingVisibilityId] = useState<string | null>(null);
+  const [newVisibility, setNewVisibility] = useState({
+    name: '',
+    description: '',
+    startDate: '',
+    endDate: '',
+  });
+
+  const [assignVisibilityCategoryId, setAssignVisibilityCategoryId] = useState<string | null>(null);
+  const [assignVisibilityItemId, setAssignVisibilityItemId] = useState<string | null>(null);
+  const [selectedVisibilitySchedules, setSelectedVisibilitySchedules] = useState<string[]>([]);
 
   const [uploadingImage, setUploadingImage] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -314,9 +341,10 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
         const response = await fetch('/api/admin/menu');
         if (response.ok) {
           const data = await response.json();
-          const { assembledCategories, assembledAddonGroups } = processMenuData(data);
+          const { assembledCategories, assembledAddonGroups, visibilitySchedules } = processMenuData(data);
           setCategories(assembledCategories);
           setAddonGroups(assembledAddonGroups);
+          setVisibilitySchedules(visibilitySchedules);
         }
       } catch (error) {
         toast.error(t('messages.loadFailed'));
@@ -615,6 +643,54 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
     }
   };
 
+  const handleSaveVisibility = async () => {
+    const data = {
+      name: newVisibility.name,
+      description: newVisibility.description || null,
+      startDate: newVisibility.startDate ? new Date(newVisibility.startDate) : new Date(),
+      endDate: newVisibility.endDate ? new Date(newVisibility.endDate) : new Date(),
+    };
+
+    if (editingVisibilityId) {
+      const result = await updateVisibilitySchedule(editingVisibilityId, data as any);
+      if (result.success) {
+        setVisibilitySchedules(visibilitySchedules.map(s => s.id === editingVisibilityId ? { ...s, ...data } as any : s));
+        setIsAddVisibilityModalOpen(false);
+        toast.success('Visibility schedule updated');
+      }
+    } else {
+      const result = await createVisibilitySchedule(data as any);
+      if (result.success && result.data) {
+        setVisibilitySchedules([...visibilitySchedules, result.data as any]);
+        setIsAddVisibilityModalOpen(false);
+        toast.success('Visibility schedule created');
+      }
+    }
+  };
+
+  const handleSaveVisibilityAssignment = async () => {
+    if (assignVisibilityCategoryId) {
+      const result = await updateCategoryVisibilitySchedules(assignVisibilityCategoryId, selectedVisibilitySchedules);
+      if (result.success) {
+        setCategories(categories.map(cat =>
+          cat.id === assignVisibilityCategoryId ? { ...cat, assignedVisibilitySchedules: selectedVisibilitySchedules } : cat
+        ));
+        setIsAssignVisibilityModalOpen(false);
+        toast.success('Category visibility updated');
+      }
+    } else if (assignVisibilityItemId) {
+      const result = await updateItemVisibilitySchedules(assignVisibilityItemId, selectedVisibilitySchedules);
+      if (result.success) {
+        setCategories(categories.map(cat => ({
+          ...cat,
+          items: cat.items.map(i => i.id === assignVisibilityItemId ? { ...i, assignedVisibilitySchedules: selectedVisibilitySchedules } : i)
+        })));
+        setIsAssignVisibilityModalOpen(false);
+        toast.success('Item visibility updated');
+      }
+    }
+  };
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -802,219 +878,269 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
                   <ListPlus className="w-4 h-4" />
                   {t('tabs.addons')}
                 </button>
+                <button
+                  onClick={() => setActiveTab('visibilities')}
+                  className={`px-4 py-2 rounded-md flex items-center gap-2 transition-colors ${activeTab === 'visibilities'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                    }`}
+                  style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+                >
+                  <Calendar className="w-4 h-4" />
+                  Visibilities
+                </button>
               </div>
             </div>
 
             {/* Tab Content */}
             {!isMounted ? (
               <SkeletonMenuConfig />
-            ) : activeTab === 'items' ? (
-              <MenuCategoriesTab
-                filteredCategories={filteredCategories}
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-                canCreateCategory={canCreateCategory}
-                canEditCategory={canEditCategory}
-                canDeleteCategory={canDeleteCategory}
-                canCreateItem={canCreateItem}
-                canEditItem={canEditItem}
-                canDeleteItem={canDeleteItem}
-                onAddCategory={() => {
-                  setEditingCategoryId(null);
-                  setNewCategory({ name: '', description: '', image: null, imageUrl: '', useSpecialCalculation: false });
-                  setIsAddCategoryModalOpen(true);
-                }}
-                onEditCategory={onEditCategory}
-                onDeleteCategory={(id) => setDeleteCategoryId(id)}
-                onToggleCategoryExpanded={(id) => setCategories(categories.map(c => c.id === id ? { ...c, isExpanded: !c.isExpanded } : c))}
-                onToggleCategoryActive={async (id) => {
-                  const cat = categories.find(c => c.id === id);
-                  if (cat) {
-                    const result = await updateMenuCategory(id, { isActive: !cat.isActive });
-                    if (result.success) {
-                      setCategories(categories.map(c => c.id === id ? { ...c, isActive: !c.isActive } : c));
-                      toast.success(cat.isActive ? t('messages.categoryHidden') : t('messages.categoryShown'));
-                    } else {
-                      toast.error(t('messages.updateStatusFailed'));
-                    }
-                  }
-                }}
-                onAddMenuItem={(id) => {
-                  setActiveCategoryId(id);
-                  setEditingMenuItemId(null);
-                  setNewMenuItem({
-                    name: '', description: '', price: '', pricingType: 'per_person', averageConsumption: '',
-                    image: null, imageUrl: '', isActive: true, variants: [], assignedAddonGroups: [],
-                    dietaryType: 'veg', dietaryTags: [], ingredients: '', allergens: [], additives: [],
-                    nutritionalInfo: { servingSize: '', calories: '', protein: '', carbs: '', fat: '', fiber: '', sugar: '', sodium: '' }
-                  });
-                  setIsAddMenuItemModalOpen(true);
-                }}
-                onEditMenuItem={(catId, item) => {
-                  setActiveCategoryId(catId);
-                  setEditingMenuItemId(item.id);
-                  setNewMenuItem({
-                    ...item, price: (item.price ?? '').toString(),
-                    pricingType: item.pricingType || 'per_person',
-                    averageConsumption: (item as any).averageConsumption ? String((item as any).averageConsumption) : '1',
-                    image: null, imageUrl: item.image,
-                    variants: item.variants || [],
-                    assignedAddonGroups: item.assignedAddonGroups || [],
-                    nutritionalInfo: (item as any).nutritionalInfo || { servingSize: '', calories: '', protein: '', carbs: '', fat: '', fiber: '', sugar: '', sodium: '' }
-                  });
-                  setIsAddMenuItemModalOpen(true);
-                }}
-                onDeleteMenuItem={(catId, itemId) => {
-                  setActiveCategoryId(catId);
-                  setDeleteMenuItemId(itemId);
-                }}
-                onToggleMenuItemActive={async (catId, itemId) => {
-                  const item = categories.find(c => c.id === catId)?.items.find(i => i.id === itemId);
-                  if (item) {
-                    const result = await updateMenuItem(itemId, { isActive: !item.isActive });
-                    if (result.success) {
-                      setCategories(categories.map(c => c.id === catId ?
-                        { ...c, items: c.items.map(i => i.id === itemId ? { ...i, isActive: !i.isActive } : i) } : c
-                      ));
-                      toast.success(item.isActive ? t('messages.itemHidden') : t('messages.itemShown'));
-                    } else {
-                      toast.error(t('messages.updateStatusFailed'));
-                    }
-                  }
-                }}
-                onDuplicateMenuItem={onDuplicateMenuItem}
-                onDuplicateCategory={onDuplicateCategory}
-                onOpenItemSettings={(catId, item) => {
-                  setSettingsMenuItemId(item.id);
-                  setItemSettings(item);
-                  setIsItemSettingsModalOpen(true);
-                }}
-                onAddChoice={(catId, itemId) => {
-                  setChoiceCategoryId(itemId ? null : catId);
-                  setChoiceItemId(itemId || null);
-                  if (itemId) setActiveCategoryId(catId);
-                  const groups = itemId ?
-                    categories.find(c => c.id === catId)?.items.find(i => i.id === itemId)?.assignedAddonGroups :
-                    categories.find(c => c.id === catId)?.assignedAddonGroups;
-                  setSelectedAddonGroups(groups || []);
-                  setIsAddChoiceModalOpen(true);
-                }}
-                SortableCategory={SortableCategory}
-                SortableItem={SortableItem}
-                sensors={sensorsState}
-                handleDragEnd={handleDragEnd}
-                openDropdownId={openDropdownId}
-                setOpenDropdownId={setOpenDropdownId}
-              />
             ) : (
-              <ChoicesAddonsTab
-                addonGroups={addonGroups}
-                canManageAddons={canManageAddons}
-                onAddGroup={() => {
-                  setEditingGroupId(null);
-                  setNewGroup({ name: '', subtitle: '', type: 'optional', minSelect: 0, maxSelect: 1 });
-                  setIsAddGroupModalOpen(true);
-                }}
-                onEditGroup={(group) => {
-                  setEditingGroupId(group.id);
-                  setNewGroup({
-                    name: group.name, subtitle: group.subtitle || '',
-                    type: group.isRequired ? 'mandatory' : 'optional',
-                    minSelect: group.minSelect, maxSelect: group.maxSelect
-                  });
-                  setIsAddGroupModalOpen(true);
-                }}
-                onDeleteGroup={(id) => setDeleteGroupId(id)}
-                onToggleGroupExpanded={(id) => setAddonGroups(addonGroups.map(g => g.id === id ? { ...g, isExpanded: !g.isExpanded } : g))}
-                onToggleAddonGroupActive={async (id) => {
-                  const group = addonGroups.find(g => g.id === id);
-                  if (group) {
-                    const result = await updateAddonGroup(id, { isActive: !group.isActive });
-                    if (result.success) {
-                      setAddonGroups(addonGroups.map(g => g.id === id ? { ...g, isActive: !g.isActive } : g));
-                      toast.success(group.isActive ? t('messages.groupHidden') : t('messages.groupShown'));
-                    } else {
-                      toast.error(t('messages.updateStatusFailed'));
-                    }
-                  }
-                }}
-                onDuplicateAddonGroup={(id) => {
-                  const group = addonGroups.find(g => g.id === id);
-                  if (group) onDuplicateAddonGroup(group);
-                }}
-                onAddAddonItem={(id) => {
-                  setCurrentGroupId(id);
-                  setEditingAddonItemId(null);
-                  setNewAddonItem({
-                    name: '',
-                    price: '',
-                    dietaryType: 'veg',
-                    isActive: true,
-                    dietaryTags: [],
-                    ingredients: '',
-                    allergens: [],
-                    additives: [],
-                    nutritionalInfo: {
-                      servingSize: '',
-                      calories: '',
-                      protein: '',
-                      carbs: '',
-                      fat: '',
-                      fiber: '',
-                      sugar: '',
-                      sodium: '',
-                    },
-                  });
-                  setIsAddAddonItemModalOpen(true);
-                }}
-                onEditAddonItem={(groupId, item) => {
-                  setCurrentGroupId(groupId);
-                  setEditingAddonItemId(item.id);
-                  setNewAddonItem({
-                    ...item,
-                    price: (item.price ?? '').toString(),
-                    dietaryTags: (item as any).dietaryTags || [],
-                    ingredients: (item as any).ingredients || '',
-                    allergens: (item as any).allergens || [],
-                    additives: (item as any).additives || [],
-                    nutritionalInfo: (item as any).nutritionalInfo || {
-                      servingSize: '',
-                      calories: '',
-                      protein: '',
-                      carbs: '',
-                      fat: '',
-                      fiber: '',
-                      sugar: '',
-                      sodium: '',
-                    },
-                  });
-                  setIsAddAddonItemModalOpen(true);
-                }}
-                onDeleteAddonItem={(groupId, itemId) => {
-                  setCurrentGroupId(groupId);
-                  setDeleteAddonItemId(itemId);
-                }}
-                onToggleAddonItemActive={async (groupId, itemId) => {
-                  const item = addonGroups.find(g => g.id === groupId)?.items.find(i => i.id === itemId);
-                  if (item) {
-                    const result = await updateAddonItem(itemId, { isActive: !item.isActive });
-                    if (result.success) {
-                      setAddonGroups(addonGroups.map(g => g.id === groupId ?
-                        { ...g, items: g.items.map(i => i.id === itemId ? { ...i, isActive: !i.isActive } : i) } : g
-                      ));
-                      toast.success(item.isActive ? t('messages.addonHidden') : t('messages.addonShown'));
-                    } else {
-                      toast.error(t('messages.updateStatusFailed'));
-                    }
-                  }
-                }}
-                openAddonGroupDropdownId={openAddonGroupDropdownId}
-                setOpenAddonGroupDropdownId={setOpenAddonGroupDropdownId}
-                SortableGroup={SortableCategory}
-                SortableAddonItem={SortableItem}
-                sensors={sensorsState}
-                handleDragEnd={handleDragEnd}
-              />
+              <>
+                {activeTab === 'items' && (
+                  <MenuCategoriesTab
+                    filteredCategories={filteredCategories}
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    canCreateCategory={canCreateCategory}
+                    canEditCategory={canEditCategory}
+                    canDeleteCategory={canDeleteCategory}
+                    canCreateItem={canCreateItem}
+                    canEditItem={canEditItem}
+                    canDeleteItem={canDeleteItem}
+                    onAddCategory={() => {
+                      setEditingCategoryId(null);
+                      setNewCategory({ name: '', description: '', image: null, imageUrl: '', useSpecialCalculation: false });
+                      setIsAddCategoryModalOpen(true);
+                    }}
+                    onEditCategory={onEditCategory}
+                    onDeleteCategory={(id: string) => setDeleteCategoryId(id)}
+                    onToggleCategoryExpanded={(id: string) => setCategories(categories.map(c => c.id === id ? { ...c, isExpanded: !c.isExpanded } : c))}
+                    onToggleCategoryActive={async (id: string) => {
+                      const cat = categories.find(c => c.id === id);
+                      if (cat) {
+                        const result = await updateMenuCategory(id, { isActive: !cat.isActive });
+                        if (result.success) {
+                          setCategories(categories.map(c => c.id === id ? { ...c, isActive: !cat.isActive } : c));
+                          toast.success(cat.isActive ? t('messages.categoryHidden') : t('messages.categoryShown'));
+                        } else {
+                          toast.error(t('messages.updateStatusFailed'));
+                        }
+                      }
+                    }}
+                    onAddMenuItem={(id: string) => {
+                      setActiveCategoryId(id);
+                      setEditingMenuItemId(null);
+                      setNewMenuItem({
+                        name: '', description: '', price: '', pricingType: 'per_person', averageConsumption: '',
+                        image: null, imageUrl: '', isActive: true, variants: [], assignedAddonGroups: [],
+                        dietaryType: 'veg', dietaryTags: [], ingredients: '', allergens: [], additives: [],
+                        nutritionalInfo: { servingSize: '', calories: '', protein: '', carbs: '', fat: '', fiber: '', sugar: '', sodium: '' }
+                      });
+                      setIsAddMenuItemModalOpen(true);
+                    }}
+                    onEditMenuItem={(catId: string, item: MenuItemData) => {
+                      setActiveCategoryId(catId);
+                      setEditingMenuItemId(item.id);
+                      setNewMenuItem({
+                        ...item, price: (item.price ?? '').toString(),
+                        pricingType: item.pricingType || 'per_person',
+                        averageConsumption: (item as any).averageConsumption ? String((item as any).averageConsumption) : '1',
+                        image: null, imageUrl: item.image,
+                        variants: item.variants || [],
+                        assignedAddonGroups: item.assignedAddonGroups || [],
+                        nutritionalInfo: (item as any).nutritionalInfo || { servingSize: '', calories: '', protein: '', carbs: '', fat: '', fiber: '', sugar: '', sodium: '' }
+                      });
+                      setIsAddMenuItemModalOpen(true);
+                    }}
+                    onDeleteMenuItem={(catId: string, itemId: string) => {
+                      setActiveCategoryId(catId);
+                      setDeleteMenuItemId(itemId);
+                    }}
+                    onToggleMenuItemActive={async (catId: string, itemId: string) => {
+                      const item = categories.find(c => c.id === catId)?.items.find(i => i.id === itemId);
+                      if (item) {
+                        const result = await updateMenuItem(itemId, { isActive: !item.isActive });
+                        if (result.success) {
+                          setCategories(categories.map(c => c.id === catId ?
+                            { ...c, items: c.items.map(i => i.id === itemId ? { ...i, isActive: !i.isActive } : i) } : c
+                          ));
+                          toast.success(item.isActive ? t('messages.itemHidden') : t('messages.itemShown'));
+                        } else {
+                          toast.error(t('messages.updateStatusFailed'));
+                        }
+                      }
+                    }}
+                    onDuplicateMenuItem={onDuplicateMenuItem}
+                    onDuplicateCategory={onDuplicateCategory}
+                    onOpenItemSettings={(catId: string, item: MenuItemData) => {
+                      setSettingsMenuItemId(item.id);
+                      setItemSettings(item);
+                      setIsItemSettingsModalOpen(true);
+                    }}
+                    onAddChoice={(catId: string, itemId?: string) => {
+                      setChoiceCategoryId(itemId ? null : catId);
+                      setChoiceItemId(itemId || null);
+                      if (itemId) setActiveCategoryId(catId);
+                      const groups = itemId ?
+                        categories.find(c => c.id === catId)?.items.find(i => i.id === itemId)?.assignedAddonGroups :
+                        categories.find(c => c.id === catId)?.assignedAddonGroups;
+                      setSelectedAddonGroups(groups || []);
+                      setIsAddChoiceModalOpen(true);
+                    }}
+                    onAddVisibility={(catId: string, itemId?: string) => {
+                      setAssignVisibilityCategoryId(itemId ? null : catId);
+                      setAssignVisibilityItemId(itemId || null);
+                      if (itemId) setActiveCategoryId(catId);
+                      const schedules = itemId ?
+                        categories.find(c => c.id === catId)?.items.find(i => i.id === itemId)?.assignedVisibilitySchedules :
+                        categories.find(c => c.id === catId)?.assignedVisibilitySchedules;
+                      setSelectedVisibilitySchedules(schedules || []);
+                      setIsAssignVisibilityModalOpen(true);
+                    }}
+                    SortableCategory={SortableCategory}
+                    SortableItem={SortableItem}
+                    sensors={sensorsState}
+                    handleDragEnd={handleDragEnd}
+                    openDropdownId={openDropdownId}
+                    setOpenDropdownId={setOpenDropdownId}
+                  />
+                )}
+
+                {activeTab === 'addons' && (
+                  <ChoicesAddonsTab
+                    addonGroups={addonGroups}
+                    canManageAddons={canManageAddons}
+                    onAddGroup={() => {
+                      setEditingGroupId(null);
+                      setNewGroup({ name: '', subtitle: '', type: 'optional', minSelect: 0, maxSelect: 1 });
+                      setIsAddGroupModalOpen(true);
+                    }}
+                    onEditGroup={(group) => {
+                      setEditingGroupId(group.id);
+                      setNewGroup({
+                        name: group.name, subtitle: group.subtitle || '',
+                        type: group.isRequired ? 'mandatory' : 'optional',
+                        minSelect: group.minSelect, maxSelect: group.maxSelect
+                      });
+                      setIsAddGroupModalOpen(true);
+                    }}
+                    onDeleteGroup={(id) => setDeleteGroupId(id)}
+                    onToggleGroupExpanded={(id) => setAddonGroups(addonGroups.map(g => g.id === id ? { ...g, isExpanded: !g.isExpanded } : g))}
+                    onToggleAddonGroupActive={async (id) => {
+                      const group = addonGroups.find(g => g.id === id);
+                      if (group) {
+                        const result = await updateAddonGroup(id, { isActive: !group.isActive });
+                        if (result.success) {
+                          setAddonGroups(addonGroups.map(g => g.id === id ? { ...g, isActive: !g.isActive } : g));
+                          toast.success(group.isActive ? t('messages.groupHidden') : t('messages.groupShown'));
+                        } else {
+                          toast.error(t('messages.updateStatusFailed'));
+                        }
+                      }
+                    }}
+                    onDuplicateAddonGroup={(id) => {
+                      const group = addonGroups.find(g => g.id === id);
+                      if (group) onDuplicateAddonGroup(group);
+                    }}
+                    onAddAddonItem={(id) => {
+                      setCurrentGroupId(id);
+                      setEditingAddonItemId(null);
+                      setNewAddonItem({
+                        name: '',
+                        price: '',
+                        dietaryType: 'veg',
+                        isActive: true,
+                        dietaryTags: [],
+                        ingredients: '',
+                        allergens: [],
+                        additives: [],
+                        nutritionalInfo: {
+                          servingSize: '',
+                          calories: '',
+                          protein: '',
+                          carbs: '',
+                          fat: '',
+                          fiber: '',
+                          sugar: '',
+                          sodium: '',
+                        },
+                      });
+                      setIsAddAddonItemModalOpen(true);
+                    }}
+                    onEditAddonItem={(groupId, item) => {
+                      setCurrentGroupId(groupId);
+                      setEditingAddonItemId(item.id);
+                      setNewAddonItem({
+                        ...item,
+                        price: (item.price ?? '').toString(),
+                        dietaryTags: (item as any).dietaryTags || [],
+                        ingredients: (item as any).ingredients || '',
+                        allergens: (item as any).allergens || [],
+                        additives: (item as any).additives || [],
+                        nutritionalInfo: (item as any).nutritionalInfo || {
+                          servingSize: '',
+                          calories: '',
+                          protein: '',
+                          carbs: '',
+                          fat: '',
+                          fiber: '',
+                          sugar: '',
+                          sodium: '',
+                        },
+                      });
+                      setIsAddAddonItemModalOpen(true);
+                    }}
+                    onDeleteAddonItem={(groupId, itemId) => {
+                      setCurrentGroupId(groupId);
+                      setDeleteAddonItemId(itemId);
+                    }}
+                    onToggleAddonItemActive={async (groupId, itemId) => {
+                      const item = addonGroups.find(g => g.id === groupId)?.items.find(i => i.id === itemId);
+                      if (item) {
+                        const result = await updateAddonItem(itemId, { isActive: !item.isActive });
+                        if (result.success) {
+                          setAddonGroups(addonGroups.map(g => g.id === groupId ?
+                            { ...g, items: g.items.map(i => i.id === itemId ? { ...i, isActive: !i.isActive } : i) } : g
+                          ));
+                          toast.success(item.isActive ? t('messages.addonHidden') : t('messages.addonShown'));
+                        } else {
+                          toast.error(t('messages.updateStatusFailed'));
+                        }
+                      }
+                    }}
+                    openAddonGroupDropdownId={openAddonGroupDropdownId}
+                    setOpenAddonGroupDropdownId={setOpenAddonGroupDropdownId}
+                    SortableGroup={SortableCategory}
+                    SortableAddonItem={SortableItem}
+                    sensors={sensorsState}
+                    handleDragEnd={handleDragEnd}
+                  />
+                )}
+
+                {activeTab === 'visibilities' && (
+                  <VisibilitiesTab
+                    visibilitySchedules={visibilitySchedules}
+                    canManageSchedules={canManageAddons}
+                    onAddSchedule={() => {
+                      setEditingVisibilityId(null);
+                      setNewVisibility({ name: '', description: '', startDate: '', endDate: '' });
+                      setIsAddVisibilityModalOpen(true);
+                    }}
+                    onEditSchedule={(schedule) => {
+                      setEditingVisibilityId(schedule.id);
+                      setNewVisibility({
+                        name: schedule.name,
+                        description: schedule.description || '',
+                        startDate: schedule.startDate ? new Date(schedule.startDate).toISOString().split('T')[0] : '',
+                        endDate: schedule.endDate ? new Date(schedule.endDate).toISOString().split('T')[0] : ''
+                      });
+                      setIsAddVisibilityModalOpen(true);
+                    }}
+                    onDeleteSchedule={(id) => setDeleteVisibilityId(id)}
+                  />
+                )}
+              </>
             )}
           </>
         )}
@@ -1102,6 +1228,28 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
         onSave={handleSaveAddonItem}
       />
 
+      <AddVisibilityModal
+        isOpen={isAddVisibilityModalOpen}
+        onClose={() => setIsAddVisibilityModalOpen(false)}
+        editingVisibilityId={editingVisibilityId}
+        newVisibility={newVisibility}
+        setNewVisibility={setNewVisibility}
+        onSave={handleSaveVisibility}
+      />
+
+      <AssignVisibilityModal
+        isOpen={isAssignVisibilityModalOpen}
+        onClose={() => setIsAssignVisibilityModalOpen(false)}
+        assignCategoryId={assignVisibilityCategoryId}
+        assignItemId={assignVisibilityItemId}
+        activeCategoryId={activeCategoryId}
+        categories={categories}
+        visibilitySchedules={visibilitySchedules}
+        selectedSchedules={selectedVisibilitySchedules}
+        setSelectedSchedules={setSelectedVisibilitySchedules}
+        onSave={handleSaveVisibilityAssignment}
+      />
+
       {/* Confirmation Modals */}
       <ConfirmationModal
         isOpen={!!deleteCategoryId}
@@ -1169,6 +1317,23 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
         }}
         title={t('confirmations.deleteAddonItem')}
         message={t('confirmations.deleteAddonItemDesc')}
+      />
+
+      <ConfirmationModal
+        isOpen={!!deleteVisibilityId}
+        onClose={() => setDeleteVisibilityId(null)}
+        onConfirm={async () => {
+          if (deleteVisibilityId) {
+            const result = await deleteVisibilitySchedule(deleteVisibilityId);
+            if (result.success) {
+              setVisibilitySchedules(visibilitySchedules.filter(s => s.id !== deleteVisibilityId));
+              setDeleteVisibilityId(null);
+              toast.success('Visibility schedule deleted');
+            }
+          }
+        }}
+        title="Delete Visibility Schedule"
+        message="Are you sure you want to delete this visibility schedule? This will remove it from all assigned categories and items."
       />
 
       {isItemSettingsModalOpen && itemSettings && (
