@@ -18,12 +18,14 @@ interface TrendingItem {
   categoryDe?: string;
   sales: number;
   totalRevenue: number;
-  bookingCount: number;
+  totalProfit: number;
+  trendPercentage: number;
   image?: string | null;
 }
 
 interface TrendingItemsProps {
   trendingData?: TrendingItem[];
+  currencySymbol?: string;
 }
 
 // Generate a consistent color for any category based on its name
@@ -50,7 +52,7 @@ const getCategoryColor = (categoryName: string): string => {
 
 // Default image for items without image
 
-export function TrendingItems({ trendingData: propTrendingData }: TrendingItemsProps) {
+export function TrendingItems({ trendingData: propTrendingData, currencySymbol = 'CHF' }: TrendingItemsProps) {
   const t = useTranslations('admin.reports');
   const commonT = useCommonTranslation();
   const locale = useLocale();
@@ -228,24 +230,34 @@ export function TrendingItems({ trendingData: propTrendingData }: TrendingItemsP
                 </div>
               </div>
 
-              {/* Trend Indicator */}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <div className="text-right">
-                  <div className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                    {item.sales}
+              {/* Stats Row */}
+              <div className="flex flex-col items-end flex-shrink-0 min-w-[150px]">
+                <div className="flex items-center gap-2">
+                  <div className="text-primary bg-primary/10 px-2 py-1 rounded-md border border-primary/20" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                    {currencySymbol} {item.totalProfit.toLocaleString('en-US')}
                   </div>
-                  <div
-                    className="flex items-center gap-1 text-emerald-500"
-                    style={{ fontSize: 'var(--text-small)' }}
-                  >
-                    <TrendingUp className="w-3.5 h-3.5" />
-                    +{(item.sales > 0 ? (Math.random() * 15 + 5).toFixed(1) : 0)}%
+                  <div className="text-muted-foreground mr-1" style={{ fontSize: 'var(--text-small)', opacity: 0.8 }}>
+                    {t('salesCount', { count: item.sales })}
                   </div>
+                </div>
+
+                {/* Margin Line */}
+                <div className="flex items-center gap-1 mt-1 text-emerald-600 dark:text-emerald-400" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
+                  <span className="opacity-70">{(item as any).profitMargin || 0}%</span>
+                  <span>{t('profitMargin', { defaultValue: 'Margin' }) || 'Margin'}</span>
                 </div>
               </div>
             </div>
           ))
         )}
+      </div>
+
+      {/* Calculation Logic Footer */}
+      <div className="mt-6 pt-4 border-t border-border">
+        <p className="text-muted-foreground flex items-center gap-1.5" style={{ fontSize: '11px', lineHeight: '1.4' }}>
+          <span className="font-semibold text-foreground/70">{t('marginCalcLabel', { defaultValue: 'Margin Logic:' }) || 'Margin Logic:'}</span>
+          <span>{currencySymbol} (Total Revenue - Internal Cost) / Total Revenue  * 100%</span>
+        </p>
       </div>
     </div>
   );

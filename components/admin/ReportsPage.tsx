@@ -108,32 +108,41 @@ export function ReportsPage({ user, initialData }: ReportsPageProps) {
                         </p>
                       </div>
 
-                      {/* Revenue Stats */}
+                      {/* Profit Stats */}
                       <div className="text-right flex-shrink-0">
-                        <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                          {currencySymbol} {contact.totalRevenue.toLocaleString('en-US')}
+                        <p className="text-primary bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20 inline-block" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                          {currencySymbol} {contact.totalProfit.toLocaleString('en-US')}
+                        </p>
+                        <div className="flex items-center justify-end gap-1 mt-1 text-emerald-600 dark:text-emerald-400" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
+                          <span className="opacity-70">{(contact.profitMargin || 0)}%</span>
+                          <span>{t('profitMargin', { defaultValue: 'Margin' }) || 'Margin'}</span>
+                        </div>
+                      </div>
+
+                      {/* Revenue & Bookings - Hide on small screens/laptops */}
+                      <div className="text-right hidden xl:block flex-shrink-0 min-w-[120px]">
+                        <p className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
+                          {t('totalRevenueAmount', { amount: contact.totalRevenue.toLocaleString('en-US') })}
                         </p>
                         <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
                           {t('bookings', { count: Math.floor(contact.bookings) })}
                         </p>
                       </div>
-
-                      {/* Additional Stats - Hide on small screens/laptops */}
-                      <div className="text-right hidden xl:block flex-shrink-0">
-                        <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                          {t('avgRevenue', { amount: contact.avgRevenue.toLocaleString('en-US') })}
-                        </p>
-                        <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                          {t('guests', { count: contact.totalPersons })}
-                        </p>
-                      </div>
                     </div>
                   ))}
+                </div>
+
+                {/* Calculation Logic Footer */}
+                <div className="mt-6 pt-4 border-t border-border">
+                  <p className="text-muted-foreground flex items-center gap-1.5" style={{ fontSize: '11px', lineHeight: '1.4' }}>
+                    <span className="font-semibold text-foreground/70">{t('marginCalcLabel', { defaultValue: 'Margin Logic:' })}</span>
+                    <span>{currencySymbol} (Total Revenue - Internal Cost) / Total Revenue  * 100%</span>
+                  </p>
                 </div>
               </div>
 
               {/* Trending Items */}
-              <TrendingItems trendingData={initialData?.trendingItems} />
+              <TrendingItems trendingData={initialData?.trendingItems} currencySymbol={currencySymbol} />
             </div>
 
             {/* Monthly Booking Report */}

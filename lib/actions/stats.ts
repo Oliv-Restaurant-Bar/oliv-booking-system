@@ -362,6 +362,15 @@ export async function getTopCustomersByRevenue(limit: number = 10) {
     // Group by customer email (unique identifier) to aggregate all bookings per customer
     // IMPORTANT: Only count revenue from non-cancelled/non-declined bookings
     const result = await db.execute(sql`
+      WITH booking_costs AS (
+        SELECT 
+          bi.booking_id,
+          SUM(bi.quantity * COALESCE(mi.internal_cost, ai.internal_cost, 0)) as booking_cost
+        FROM booking_items bi
+        LEFT JOIN menu_items mi ON bi.item_id = mi.id AND bi.item_type = 'menu_item'
+        LEFT JOIN addon_items ai ON bi.item_id = ai.id AND bi.item_type = 'addon'
+        GROUP BY bi.booking_id
+      )
       SELECT
         l.contact_email,
         MAX(l.contact_name) as contact_name,
@@ -370,9 +379,11 @@ export async function getTopCustomersByRevenue(limit: number = 10) {
         COUNT(DISTINCT b.id) FILTER (WHERE b.status NOT IN ('declined', 'cancelled', 'no_show')) as active_booking_count,
         COALESCE(SUM(CAST(b.estimated_total AS NUMERIC)) FILTER (WHERE b.status IN ('confirmed', 'completed')), 0) as realized_revenue,
         COALESCE(SUM(CAST(b.estimated_total AS NUMERIC)) FILTER (WHERE b.status NOT IN ('declined', 'cancelled', 'no_show')), 0) as total_revenue,
+        COALESCE(SUM(bc.booking_cost) FILTER (WHERE b.status NOT IN ('declined', 'cancelled', 'no_show')), 0) as total_cost,
         COALESCE(SUM(b.guest_count) FILTER (WHERE b.status NOT IN ('declined', 'cancelled', 'no_show')), 0) as total_guests
       FROM bookings b
       LEFT JOIN leads l ON b.lead_id = l.id
+      LEFT JOIN booking_costs bc ON b.id = bc.booking_id
       WHERE b.lead_id IS NOT NULL 
         AND l.contact_email IS NOT NULL 
         AND l.contact_email != ''
@@ -389,6 +400,7 @@ export async function getTopCustomersByRevenue(limit: number = 10) {
       const activeBookingCount = Number(booking.active_booking_count) || 0;
       const totalRevenue = Number(booking.total_revenue) || 0;
       const realizedRevenue = Number(booking.realized_revenue) || 0;
+      const totalCost = Number(booking.total_cost) || 0;
       const totalGuests = Number(booking.total_guests) || 0;
 
       return {
@@ -398,6 +410,8 @@ export async function getTopCustomersByRevenue(limit: number = 10) {
         bookings: bookingCount,
         totalRevenue: totalRevenue,
         realizedRevenue: realizedRevenue,
+        totalProfit: totalRevenue - totalCost,
+        profitMargin: totalRevenue > 0 ? Math.round(((totalRevenue - totalCost) / totalRevenue) * 100) : 0,
         avgRevenue: bookingCount > 0 ? Math.round(totalRevenue / bookingCount) : 0,
         totalPersons: totalGuests,
         avgPersons: bookingCount > 0 ? Math.round(totalGuests / bookingCount) : 0,
@@ -416,31 +430,51 @@ export async function getTrendingItems(limit: number = 10) {
     // Require VIEW_REPORTS permission
     await requirePermissionWrapper(Permission.VIEW_REPORTS);
 
-    // Get menu items with their sales data from booking_items for the last 30 days
-    // This makes it a "Trending" (recent) report rather than all-time
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
     const result = await db.execute(sql`
-      SELECT
-        mi.id,
-        mi.name,
-        mi.name_de as name_de,
-        mi.price_per_person,
-        mc.name as category,
-        mc.name_de as category_de,
+      WITH periods AS (
+        SELECT 
+          bi.item_id,
+          -- Current Period (Last 30 days)
+          SUM(CASE WHEN b.event_date >= ${thirtyDaysAgo.toISOString()} THEN bi.quantity ELSE 0 END) as current_qty,
+          SUM(CASE WHEN b.event_date >= ${thirtyDaysAgo.toISOString()} THEN (CAST(bi.unit_price AS NUMERIC) - COALESCE(mi.internal_cost, 0)) * bi.quantity ELSE 0 END) as current_profit,
+          SUM(CASE WHEN b.event_date >= ${thirtyDaysAgo.toISOString()} THEN CAST(bi.unit_price AS NUMERIC) * bi.quantity ELSE 0 END) as current_revenue,
+          -- Previous Period (30-60 days ago)
+          SUM(CASE WHEN b.event_date >= ${sixtyDaysAgo.toISOString()} AND b.event_date < ${thirtyDaysAgo.toISOString()} THEN bi.quantity ELSE 0 END) as previous_qty
+        FROM booking_items bi
+        JOIN bookings b ON bi.booking_id = b.id
+        LEFT JOIN menu_items mi ON bi.item_id = mi.id
+        WHERE bi.item_type = 'menu_item'
+          AND b.status NOT IN ('declined', 'cancelled', 'no_show')
+          AND b.deleted_at IS NULL
+        GROUP BY bi.item_id
+      )
+      SELECT 
+        mi.id, 
+        mi.name, 
+        mi.name_de as name_de, 
+        mi.price_per_person, 
         mi.image_url,
-        COUNT(DISTINCT bi.booking_id) as booking_count,
-        COALESCE(SUM(bi.quantity), 0) as total_quantity,
-        COALESCE(SUM(CAST(bi.unit_price AS NUMERIC) * bi.quantity), 0) as total_revenue
+        mc.name as category, 
+        mc.name_de as category_de,
+        p.current_qty as total_quantity,
+        p.current_profit as total_profit,
+        p.current_revenue as total_revenue,
+        CASE 
+          WHEN p.previous_qty > 0 THEN ROUND(((p.current_qty::float - p.previous_qty::float) / p.previous_qty::float) * 100)
+          WHEN p.current_qty > 0 AND (p.previous_qty IS NULL OR p.previous_qty = 0) THEN 100
+          ELSE 0 
+        END as trend_percentage
       FROM menu_items mi
       INNER JOIN menu_categories mc ON mi.category_id = mc.id
-      LEFT JOIN booking_items bi ON bi.item_id = mi.id AND bi.item_type = 'menu_item'
-      LEFT JOIN bookings b ON bi.booking_id = b.id
+      INNER JOIN periods p ON mi.id = p.item_id
       WHERE mi.is_active = true
-        AND (b.id IS NULL OR (b.event_date >= ${thirtyDaysAgo.toISOString()} AND b.status NOT IN ('declined', 'cancelled', 'no_show') AND b.deleted_at IS NULL))
-      GROUP BY mi.id, mi.name, mi.name_de, mc.name, mc.name_de, mi.price_per_person, mi.image_url
-      ORDER BY total_quantity DESC, total_revenue DESC
+        AND p.current_qty > 0
+      ORDER BY total_profit DESC, total_quantity DESC
       LIMIT ${limit}
     `);
 
@@ -460,8 +494,9 @@ export async function getTrendingItems(limit: number = 10) {
 
     return (itemsData as any[]).map((item, index) => {
       const totalQuantity = Number(item.total_quantity) || 0;
-      const totalPrice = Number(item.price_per_person) || 0;
+      const totalProfit = Number(item.total_profit) || 0;
       const totalRevenue = Number(item.total_revenue) || 0;
+      const trendPercentage = Number(item.trend_percentage) || 0;
 
       return {
         rank: index + 1,
@@ -470,11 +505,13 @@ export async function getTrendingItems(limit: number = 10) {
         nameDe: item.name_de,
         category: item.category,
         categoryDe: item.category_de,
-        price: `CHF ${totalPrice.toFixed(2)}`,
+        price: `CHF ${Number(item.price_per_person).toFixed(2)}`,
         categoryColor: categoryColors[item.category] || '#9DAE91',
         sales: totalQuantity,
         totalRevenue: totalRevenue,
-        bookingCount: Number(item.booking_count) || 0,
+        totalProfit: totalProfit,
+        profitMargin: totalRevenue > 0 ? Math.round((totalProfit / totalRevenue) * 100) : 0,
+        trendPercentage: trendPercentage,
         image: item.image_url || null,
       };
     });
@@ -535,7 +572,7 @@ export async function getMonthlyReportData(year: number = new Date().getFullYear
           month: (d.month_name as string).trim(),
           totalBookings: Math.floor(Number(d.total_bookings) || 0),
           totalRevenue: Number(d.total_revenue) || 0,
-          avgRevenue: Number(d.total_bookings) > 0 ? Number(d.total_revenue) / Number(d.total_bookings) : 0,
+          avgRevenue: Number(d.active_bookings) > 0 ? Math.round(Number(d.total_revenue) / Number(d.active_bookings)) : 0,
           // All status counts
           pending: Math.floor(Number(d.pending_count) || 0),
           new: Math.floor(Number(d.new_count) || 0),
