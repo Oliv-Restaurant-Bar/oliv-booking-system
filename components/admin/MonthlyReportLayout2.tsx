@@ -54,8 +54,8 @@ export function MonthlyReportLayout2({ data, user, selectedYear, onYearChange, c
     const excelData = data.map(month => ({
       [commonT('month')]: monthT(month.month.toLowerCase()),
       [t('bookingsLabel')]: month.totalBookings,
-      [t('revenue')]: `${currencySymbol} ${month.totalRevenue.toLocaleString()}`,
-      [t('avgRevenueLabel')]: `${currencySymbol} ${month.avgRevenue.toLocaleString()}`,
+      [t('revenue')]: `${currencySymbol} ${month.totalRevenue.toLocaleString('en-US')}`,
+      [t('avgRevenueLabel')]: `${currencySymbol} ${month.avgRevenue.toLocaleString('en-US')}`,
       [statusT('pending')]: month.pending,
       [statusT('new')]: month.new,
       [statusT('touchbase')]: month.touchbase,
@@ -143,7 +143,7 @@ export function MonthlyReportLayout2({ data, user, selectedYear, onYearChange, c
                   <div className="text-right">
                     <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>{t('revenue')}</p>
                     <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      {currencySymbol} {month.totalRevenue.toLocaleString()}
+                      {currencySymbol} {month.totalRevenue.toLocaleString('en-US')}
                     </p>
                   </div>
                 </div>
@@ -153,7 +153,7 @@ export function MonthlyReportLayout2({ data, user, selectedYear, onYearChange, c
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>{t('avgRevenueLabel')}</span>
                     <span className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      {currencySymbol} {month.avgRevenue.toLocaleString()}
+                      {currencySymbol} {month.avgRevenue.toLocaleString('en-US')}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">

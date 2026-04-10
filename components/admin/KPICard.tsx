@@ -32,16 +32,16 @@ export function KPICard({ title, value, iconName, trend, variant = 'default', is
     // If value is a string, check if it's a number that should be integer
     if (typeof val === 'string') {
       if (/^\d+\.?\d*$/.test(val) && isNumeric) {
-        return Math.floor(Number(val)).toLocaleString();
+        return Math.floor(Number(val)).toLocaleString('en-US');
       }
       return val;
     }
     // If value is a number
     if (typeof val === 'number') {
       if (isNumeric) {
-        return Math.floor(val).toLocaleString();
+        return Math.floor(val).toLocaleString('en-US');
       }
-      return val.toLocaleString();
+      return val.toLocaleString('en-US');
     }
     return val;
   };

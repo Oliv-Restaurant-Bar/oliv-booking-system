@@ -46,7 +46,7 @@ export default async function AdminDashboardPage() {
         />
         <KPICard
           title={t('kpis.revenue')}
-          value={`CHF ${stats.totalRevenue.toLocaleString()}`}
+          value={`CHF ${stats.totalRevenue.toLocaleString('en-US')}`}
           iconName="DollarSign"
           variant="compact"
         />

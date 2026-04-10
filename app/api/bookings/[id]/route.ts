@@ -281,7 +281,7 @@ export async function GET(
       location: booking.location || '',
       guests: booking.guest_count || 0,
       amount: booking.estimated_total
-        ? `CHF ${Number(booking.estimated_total).toLocaleString()}`
+        ? `CHF ${Number(booking.estimated_total).toLocaleString('en-US')}`
         : 'CHF 0',
       rawAmount: booking.estimated_total ? Number(booking.estimated_total) : 0,
       status: booking.status || 'pending',

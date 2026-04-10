@@ -111,7 +111,7 @@ export function ReportsPage({ user, initialData }: ReportsPageProps) {
                       {/* Revenue Stats */}
                       <div className="text-right flex-shrink-0">
                         <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                          {currencySymbol} {contact.totalRevenue.toLocaleString()}
+                          {currencySymbol} {contact.totalRevenue.toLocaleString('en-US')}
                         </p>
                         <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
                           {t('bookings', { count: Math.floor(contact.bookings) })}
@@ -121,7 +121,7 @@ export function ReportsPage({ user, initialData }: ReportsPageProps) {
                       {/* Additional Stats - Hide on small screens/laptops */}
                       <div className="text-right hidden xl:block flex-shrink-0">
                         <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                          {t('avgRevenue', { amount: contact.avgRevenue.toLocaleString() })}
+                          {t('avgRevenue', { amount: contact.avgRevenue.toLocaleString('en-US') })}
                         </p>
                         <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
                           {t('guests', { count: contact.totalPersons })}

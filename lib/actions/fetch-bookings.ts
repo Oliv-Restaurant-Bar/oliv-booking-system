@@ -231,7 +231,7 @@ export async function fetchBookings(options: {
         },
         guests: booking.guest_count || 0,
         amount: booking.estimated_total
-          ? `CHF ${Number(booking.estimated_total).toLocaleString()}`
+          ? `CHF ${Number(booking.estimated_total).toLocaleString('en-US')}`
           : 'CHF 0',
         status: booking.status || 'pending',
         contacted: {

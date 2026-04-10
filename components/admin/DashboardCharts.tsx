@@ -383,7 +383,7 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
                 return `
                   <b>${this.key}</b><br/>
                   ${t('dashboard.kpis.revenue')}: 
-                  <b>CHF ${this.y.toLocaleString()}</b>
+                  <b>CHF ${this.y.toLocaleString('en-US')}</b>
                 `;
               },
             },
