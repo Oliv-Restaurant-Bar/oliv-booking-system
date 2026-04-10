@@ -209,7 +209,8 @@ export async function createMenuItem(input: {
       'allergens',
       'additives',
       'nutritionalInfo',
-      'sortOrder'
+      'sortOrder',
+      'internalCost'
     ];
 
     const sanitizedInput: any = {};
@@ -222,6 +223,11 @@ export async function createMenuItem(input: {
     // Ensure pricePerPerson is string
     if (sanitizedInput.pricePerPerson !== undefined && sanitizedInput.pricePerPerson !== null) {
       sanitizedInput.pricePerPerson = sanitizedInput.pricePerPerson.toString();
+    }
+
+    // Ensure internalCost is string
+    if (sanitizedInput.internalCost !== undefined && sanitizedInput.internalCost !== null) {
+      sanitizedInput.internalCost = sanitizedInput.internalCost.toString();
     }
 
     const [item] = await db
@@ -266,7 +272,8 @@ export async function updateMenuItem(id: string, updates: Partial<typeof menuIte
       'allergens',
       'additives',
       'nutritionalInfo',
-      'sortOrder'
+      'sortOrder',
+      'internalCost'
     ];
 
     const sanitizedUpdates: any = {};
@@ -279,6 +286,11 @@ export async function updateMenuItem(id: string, updates: Partial<typeof menuIte
     // Ensure pricePerPerson is string if provided
     if (sanitizedUpdates.pricePerPerson !== undefined && sanitizedUpdates.pricePerPerson !== null) {
       sanitizedUpdates.pricePerPerson = sanitizedUpdates.pricePerPerson.toString();
+    }
+
+    // Ensure internalCost is string if provided
+    if (sanitizedUpdates.internalCost !== undefined && sanitizedUpdates.internalCost !== null) {
+      sanitizedUpdates.internalCost = sanitizedUpdates.internalCost.toString();
     }
 
     const [item] = await db
@@ -360,6 +372,7 @@ export async function getMenuItems(categoryId?: string) {
     const mappedItems = items.map(item => ({
       ...item,
       price: parseFloat(item.pricePerPerson),
+      internalCost: item.internalCost ? parseFloat(item.internalCost) : undefined,
       image: item.imageUrl
     }));
 
@@ -389,6 +402,7 @@ export async function getAllMenuItems(categoryId?: string) {
     const mappedItems = items.map(item => ({
       ...item,
       price: parseFloat(item.pricePerPerson),
+      internalCost: item.internalCost ? parseFloat(item.internalCost) : undefined,
       image: item.imageUrl
     }));
 
@@ -410,6 +424,7 @@ export async function getMenuItemById(id: string) {
     const mappedItem = {
       ...item,
       price: parseFloat(item.pricePerPerson),
+      internalCost: item.internalCost ? parseFloat(item.internalCost) : undefined,
       image: item.imageUrl
     };
 
@@ -905,6 +920,7 @@ export async function createAddonItem(input: {
   description?: string;
   descriptionDe?: string;
   price: number;
+  internalCost?: number;
   pricingType?: "per_person" | "flat_fee" | "billed_by_consumption";
   dietaryType?: string;
   sortOrder?: number;
@@ -923,6 +939,7 @@ export async function createAddonItem(input: {
         descriptionDe: input.descriptionDe,
         addonGroupId: input.addonGroupId,
         price: input.price.toString(),
+        internalCost: input.internalCost?.toString(),
         pricingType: input.pricingType || "per_person",
         dietaryType: input.dietaryType,
         sortOrder: input.sortOrder,
@@ -949,6 +966,7 @@ export async function updateAddonItem(id: string, updates: Partial<typeof addonI
       .set({
         ...updates,
         price: updates.price?.toString(),
+        internalCost: updates.internalCost?.toString(),
         updatedAt: new Date(),
       })
       .where(eq(addonItems.id, id))
@@ -1017,7 +1035,8 @@ export async function getAddonItems(addonGroupId?: string) {
 
     const mappedItems = items.map(item => ({
       ...item,
-      price: parseFloat(item.price)
+      price: parseFloat(item.price),
+      internalCost: item.internalCost ? parseFloat(item.internalCost) : undefined
     }));
 
     return { success: true, data: mappedItems };
@@ -1044,7 +1063,8 @@ export async function getAllAddonItems(addonGroupId?: string) {
 
     const mappedItems = items.map(item => ({
       ...item,
-      price: parseFloat(item.price)
+      price: parseFloat(item.price),
+      internalCost: item.internalCost ? parseFloat(item.internalCost) : undefined
     }));
 
     return { success: true, data: mappedItems };

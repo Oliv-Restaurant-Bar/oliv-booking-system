@@ -438,6 +438,11 @@ export function MenuCategoriesTab({
                                       <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
                                         {ct('currencySymbol')}{Number(item.price || 0).toFixed(2)}
                                       </p>
+                                      {item.internalCost !== undefined && item.internalCost !== 0 && (
+                                        <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                                          {t('labels.internalCost')}: {ct('currencySymbol')}{Number(item.internalCost).toFixed(2)}
+                                        </p>
+                                      )}
                                     </div>
 
                                     {/* Actions - Desktop buttons + Mobile dropdown */}

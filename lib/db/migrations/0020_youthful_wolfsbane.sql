@@ -1,0 +1,1 @@
+ALTER TABLE "menu_items" ADD COLUMN "internal_cost" numeric(10, 2);

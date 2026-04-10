@@ -13,6 +13,7 @@ interface ItemSettingsModalProps {
     dietaryType: 'none' | 'veg' | 'non-veg' | 'vegan';
     dietaryTags: string[];
     ingredients: string;
+    internalCost?: number;
     allergens: string[];
     additives: string[];
     nutritionalInfo: {
@@ -539,6 +540,26 @@ export function ItemSettingsModal({
                       style={{ fontSize: 'var(--text-base)' }}
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Internal Cost */}
+              <div>
+                <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                  {t('labels.internalCost')}
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>{ct('currencySymbol')}</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={itemSettings.internalCost || ''}
+                    onChange={(e) => setItemSettings({ ...itemSettings, internalCost: e.target.value ? parseFloat(e.target.value) : undefined })}
+                    placeholder={t('placeholders.internalCost')}
+                    className="w-full pl-12 pr-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    style={{ fontSize: 'var(--text-base)' }}
+                  />
                 </div>
               </div>
             </div>

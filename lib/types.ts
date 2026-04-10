@@ -4,6 +4,7 @@ export interface MenuItemData {
   description: string;
   image: string;
   price: number;
+  internalCost?: number;
   pricingType?: 'per_person' | 'flat_fee' | 'billed_by_consumption';
   averageConsumption?: number;
   isActive: boolean;
@@ -52,6 +53,7 @@ export interface AddonItem {
   id: string;
   name: string;
   price: number;
+  internalCost?: number;
   isActive: boolean;
   dietaryType: 'veg' | 'non-veg' | 'vegan' | 'none';
 }

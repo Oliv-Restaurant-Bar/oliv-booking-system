@@ -261,6 +261,10 @@ export const menuItems = pgTable(
       precision: 10,
       scale: 2,
     }).notNull(),
+    internalCost: decimal("internal_cost", {
+      precision: 10,
+      scale: 2,
+    }),
     pricingType: text("pricing_type", { enum: pricingTypeEnum }).notNull().default("per_person"),
     averageConsumption: integer("average_consumption"),
     imageUrl: text("image_url"),
@@ -373,6 +377,7 @@ export const addonItems = pgTable(
     description: text("description"),
     descriptionDe: text("description_de"),
     price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+    internalCost: decimal("internal_cost", { precision: 10, scale: 2 }),
     pricingType: text("pricing_type", { enum: pricingTypeEnum }).notNull().default("per_person"),
     dietaryType: text("dietary_type"), // vegetarian, vegan, gluten-free, etc.
     isActive: boolean("is_active").notNull().default(true),

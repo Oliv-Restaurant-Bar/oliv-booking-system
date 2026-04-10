@@ -20,6 +20,7 @@ interface AddMenuItemModalProps {
     name: string;
     description: string;
     price: string;
+    internalCost: string;
     pricingType: 'per_person' | 'flat_fee' | 'billed_by_consumption';
     averageConsumption: string;
     image: File | null;
@@ -164,6 +165,7 @@ export function AddMenuItemModal({
               (newMenuItem.description?.length || 0) > 500 ||
               (newMenuItem.ingredients?.length || 0) > 1000 ||
               (newMenuItem.price !== '' && parseFloat(newMenuItem.price) < 0) ||
+              (newMenuItem.internalCost !== '' && parseFloat(newMenuItem.internalCost) < 0) ||
               (newMenuItem.variants || []).some(v => !v.name?.trim() || v.name.length > 100 || v.price < 0) ||
               (newMenuItem.nutritionalInfo?.servingSize?.length || 0) > 50 ||
               (newMenuItem.nutritionalInfo?.calories?.length || 0) > 50 ||
@@ -364,6 +366,27 @@ export function AddMenuItemModal({
                 value={newMenuItem.price}
                 onChange={(e) => setNewMenuItem({ ...newMenuItem, price: e.target.value })}
                 placeholder={t('placeholders.price')}
+                className="w-full pl-12 pr-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                style={{ fontSize: 'var(--text-base)' }}
+              />
+            </div>
+          </div>
+        )}
+
+        {pricingMode === 'price' && (
+          <div>
+            <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+              {t('labels.internalCost')}
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>{ct('currencySymbol')}</span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={newMenuItem.internalCost}
+                onChange={(e) => setNewMenuItem({ ...newMenuItem, internalCost: e.target.value })}
+                placeholder={t('placeholders.internalCost')}
                 className="w-full pl-12 pr-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                 style={{ fontSize: 'var(--text-base)' }}
               />

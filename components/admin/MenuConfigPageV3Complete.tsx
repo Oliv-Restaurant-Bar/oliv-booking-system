@@ -239,6 +239,7 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
     name: '',
     description: '',
     price: '',
+    internalCost: '',
     pricingType: 'per_person' as 'per_person' | 'flat_fee' | 'billed_by_consumption',
     averageConsumption: '',
     image: null as File | null,
@@ -283,6 +284,7 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
   const [newAddonItem, setNewAddonItem] = useState({
     name: '',
     price: '',
+    internalCost: '',
     dietaryType: 'veg' as any,
     isActive: true,
     dietaryTags: [] as string[],
@@ -432,6 +434,7 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
       descriptionDe: newMenuItem.description, // Fallback
       price: parseFloat(newMenuItem.price) || 0,
       pricePerPerson: parseFloat(newMenuItem.price) || 0,
+      internalCost: parseFloat(newMenuItem.internalCost) || 0,
       pricingType: newMenuItem.pricingType,
       averageConsumption: parseInt(newMenuItem.averageConsumption) || 1,
       imageUrl: newMenuItem.imageUrl || null,
@@ -562,6 +565,7 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
       name: `Copy of ${item.name}`,
       nameDe: `Kopie von ${item.name}`,
       price: (item.price || 0).toString(),
+      internalCost: (item.internalCost || 0).toString(),
       categoryId: categoryId,
     };
     const result = await createMenuItem(itemData as any);
@@ -597,6 +601,7 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
           name: item.name,
           nameDe: item.name,
           price: item.price,
+          internalCost: item.internalCost,
           dietaryType: item.dietaryType as any,
           addonGroupId: newGroupId,
         });
@@ -617,25 +622,26 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
     const itemData = {
       name: newAddonItem.name,
       nameDe: newAddonItem.name, // Fallback
-      price: (parseFloat(newAddonItem.price) || 0).toString(),
+      price: parseFloat(newAddonItem.price) || 0,
+      internalCost: parseFloat(newAddonItem.internalCost) || 0,
       dietaryType: newAddonItem.dietaryType,
       isActive: newAddonItem.isActive,
     };
 
     if (editingAddonItemId) {
-      const result = await updateAddonItem(editingAddonItemId, itemData as any);
+      const result = await updateAddonItem(editingAddonItemId, { ...itemData, price: itemData.price.toString(), internalCost: itemData.internalCost.toString() } as any);
       if (result.success) {
         setAddonGroups(addonGroups.map(g =>
-          g.id === currentGroupId ? { ...g, items: g.items.map(i => i.id === editingAddonItemId ? { ...i, ...itemData, price: parseFloat(newAddonItem.price) || 0 } : i) } : g
+          g.id === currentGroupId ? { ...g, items: g.items.map(i => i.id === editingAddonItemId ? { ...i, ...itemData } : i) } : g
         ));
         setIsAddAddonItemModalOpen(false);
         toast.success(t('messages.settingsSaved'));
       }
     } else {
-      const result = await createAddonItem({ ...itemData, addonGroupId: currentGroupId, price: parseFloat(newAddonItem.price) || 0 });
+      const result = await createAddonItem({ ...itemData, addonGroupId: currentGroupId });
       if (result.success && result.data) {
         setAddonGroups(addonGroups.map(g =>
-          g.id === currentGroupId ? { ...g, items: [...g.items, { ...itemData, id: result.data.id, price: parseFloat(newAddonItem.price) || 0 }] as any[] } : g
+          g.id === currentGroupId ? { ...g, items: [...g.items, { ...itemData, id: result.data.id }] as any[] } : g
         ));
         setIsAddAddonItemModalOpen(false);
         toast.success(t('messages.settingsSaved'));
@@ -932,7 +938,7 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
                       setActiveCategoryId(id);
                       setEditingMenuItemId(null);
                       setNewMenuItem({
-                        name: '', description: '', price: '', pricingType: 'per_person', averageConsumption: '',
+                        name: '', description: '', price: '', internalCost: '', pricingType: 'per_person', averageConsumption: '',
                         image: null, imageUrl: '', isActive: true, variants: [], assignedAddonGroups: [],
                         dietaryType: 'veg', dietaryTags: [], ingredients: '', allergens: [], additives: [],
                         nutritionalInfo: { servingSize: '', calories: '', protein: '', carbs: '', fat: '', fiber: '', sugar: '', sodium: '' }
@@ -943,7 +949,9 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
                       setActiveCategoryId(catId);
                       setEditingMenuItemId(item.id);
                       setNewMenuItem({
-                        ...item, price: (item.price ?? '').toString(),
+                        ...item, 
+                        price: (item.price ?? '').toString(),
+                        internalCost: (item.internalCost ?? '').toString(),
                         pricingType: item.pricingType || 'per_person',
                         averageConsumption: (item as any).averageConsumption ? String((item as any).averageConsumption) : '1',
                         image: null, imageUrl: item.image,
@@ -1049,6 +1057,7 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
                       setNewAddonItem({
                         name: '',
                         price: '',
+                        internalCost: '',
                         dietaryType: 'veg',
                         isActive: true,
                         dietaryTags: [],
@@ -1074,6 +1083,7 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
                       setNewAddonItem({
                         ...item,
                         price: (item.price ?? '').toString(),
+                        internalCost: (item.internalCost ?? '').toString(),
                         dietaryTags: (item as any).dietaryTags || [],
                         ingredients: (item as any).ingredients || '',
                         allergens: (item as any).allergens || [],

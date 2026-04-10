@@ -177,9 +177,9 @@ export function BookingsPage({ user, translations, initialBookings, initialDeepL
       // Check if the booking is already in our loaded list
       const existingInList = allBookingsData.find(b => b.id === bookingId);
       if (existingInList && !selectedBooking) {
-         // We have basic info, but we still need full details (history, menu items etc.)
-         // So we proceed to fetch, but we could set what we have to show skeleton immediately
-         setSelectedBooking(existingInList);
+        // We have basic info, but we still need full details (history, menu items etc.)
+        // So we proceed to fetch, but we could set what we have to show skeleton immediately
+        setSelectedBooking(existingInList);
       }
 
       const fetchSingleBooking = async () => {
@@ -202,7 +202,7 @@ export function BookingsPage({ user, translations, initialBookings, initialDeepL
         }
       };
       fetchSingleBooking();
-    } 
+    }
     // Case 2: No ID in URL, but we are still in detail view -> Go back to list
     else if (!bookingId && currentPage === 'detail') {
       setCurrentPage('list');
@@ -270,12 +270,12 @@ export function BookingsPage({ user, translations, initialBookings, initialDeepL
 
   return (
     <div className="min-h-full bg-background flex flex-col relative">
-      {/* Top Loading Progress Bar */}
+      {/* Top Loading Progress Bar
       {(loading || navigatingId || isNavigating) && (
         <div className="fixed top-0 left-0 right-0 z-[100] h-1 bg-primary/20 overflow-hidden">
           <div className="h-full bg-primary animate-progress-bar origin-left w-full" />
         </div>
-      )}
+      )} */}
 
       {/* List View */}
       {currentPage === 'list' && (

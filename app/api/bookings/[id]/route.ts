@@ -84,19 +84,24 @@ export async function GET(
         SELECT
           bi.booking_id,
           bi.item_id,
+          bi.item_type,
           bi.quantity,
           bi.unit_price,
           bi.notes,
-          mi.name as item_name,
-          mi.pricing_type,
+          COALESCE(mi.name, ai.name) as item_name,
+          COALESCE(mi.pricing_type, ai.pricing_type) as pricing_type,
           mi.dietary_type,
+          COALESCE(mi.internal_cost, ai.internal_cost) as internal_cost,
           mc.name as category_name,
           mc.guest_count as category_guest_count,
-          mc.use_special_calculation
+          mc.use_special_calculation,
+          ag.name as addon_group_name
         FROM booking_items bi
-        LEFT JOIN menu_items mi ON bi.item_id = mi.id
+        LEFT JOIN menu_items mi ON bi.item_id = mi.id AND bi.item_type = 'menu_item'
         LEFT JOIN menu_categories mc ON mi.category_id = mc.id
-        WHERE bi.item_type = 'menu_item' AND bi.booking_id = ${validatedId}
+        LEFT JOIN addon_items ai ON bi.item_id = ai.id AND bi.item_type = 'addon'
+        LEFT JOIN addon_groups ag ON ai.addon_group_id = ag.id
+        WHERE bi.booking_id = ${validatedId}
       `);
 
       const itemsRows = 'rows' in bookingItemsResult ? bookingItemsResult.rows : bookingItemsResult;
@@ -104,6 +109,7 @@ export async function GET(
         const isPerPerson = item.pricing_type === 'per_person' || item.category_guest_count === true;
         const unitPrice = Number(item.unit_price);
         const totalPrice = unitPrice * item.quantity;
+        const internalCost = item.internal_cost ? Number(item.internal_cost) : 0;
 
         // Parse notes to extract variant, choices, and customer comment
         let variant = '';
@@ -119,26 +125,31 @@ export async function GET(
           if (commentMatch) customerComment = commentMatch[1].trim();
         }
 
-        // Combine choices and comment for display - NOT NEEDED ANYMORE since we handle them separately in PDF
-        // But we keep them for backward compatibility in some UI parts if needed
-        
         // Build display name with variant info only
         let displayName = item.item_name;
         if (variant) {
           displayName += ` (${variant})`;
         }
 
+        // Determine category name - for addons use the addon group or 'Add-on'
+        let categoryName = item.category_name;
+        if (item.item_type === 'addon') {
+          categoryName = item.addon_group_name || 'Add-on';
+        }
+
         return {
-          id: `menu-${item.item_id}`, // Add unique ID for React keys
+          id: `${item.item_type}-${item.item_id}`, // Add unique ID for React keys
           itemId: item.item_id, // IMPORTANT: This is needed for updates
           item: item.item_name || 'Unknown Item',
+          itemType: item.item_type,
           variant: variant || '',
-          category: item.category_name || 'Unknown',
+          category: categoryName || 'Unknown',
           quantity: isPerPerson
             ? `${item.quantity} guests x ${Math.round(unitPrice)} CHF`
             : `${item.quantity} x ${Math.round(unitPrice)} CHF`,
           rawQuantity: item.quantity,
           unitPrice: unitPrice,
+          internalCost: internalCost, // Unit internal cost
           price: `CHF ${totalPrice.toFixed(2)}`,
           pricingType: item.pricing_type || 'fixed',
           dietaryType: item.dietary_type || 'none',
