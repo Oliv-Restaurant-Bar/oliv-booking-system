@@ -412,7 +412,7 @@
       "noBookings": "Keine Buchungen gefunden",
       "tryAdjustFilters": "Versuchen Sie, Ihre Filter oder Suchanfrage anzupassen",
       "guests": "Gäste",
-      "internalCost": "Interne Kosten",
+      "internalCost": "Interner Preis",
       "statuses": {
         "all": "Alle Status",
         "new": "Neu",
@@ -743,7 +743,7 @@
         "categoryImage": "Kategoriebild",
         "itemName": "Artikelname",
         "price": "Preis",
-        "internalCost": "Interne Kosten",
+        "internalCost": "Interner Preis",
         "pricingType": "Preistyp",
         "averageConsumption": "Durchschnittlicher Verbrauch",
         "itemImage": "Artikelbild",
