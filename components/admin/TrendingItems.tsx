@@ -233,7 +233,7 @@ export function TrendingItems({ trendingData: propTrendingData, currencySymbol =
               {/* Stats Row */}
               <div className="flex flex-col items-end flex-shrink-0 min-w-[150px]">
                 <div className="flex items-center gap-2">
-                  <div className="text-primary bg-primary/10 px-2 py-1 rounded-md border border-primary/20" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                  <div className="text-primary px-2 inline-block" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
                     {currencySymbol} {item.totalProfit.toLocaleString('en-US')}
                   </div>
                   <div className="text-muted-foreground mr-1" style={{ fontSize: 'var(--text-small)', opacity: 0.8 }}>

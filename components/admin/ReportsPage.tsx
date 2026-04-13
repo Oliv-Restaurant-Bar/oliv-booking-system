@@ -110,7 +110,7 @@ export function ReportsPage({ user, initialData }: ReportsPageProps) {
 
                       {/* Profit Stats */}
                       <div className="text-right flex-shrink-0">
-                        <p className="text-primary bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20 inline-block" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                        <p className="text-primary px-2 inline-block" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
                           {currencySymbol} {contact.totalProfit.toLocaleString('en-US')}
                         </p>
                         <div className="flex items-center justify-end gap-1 mt-1 text-emerald-600 dark:text-emerald-400" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>

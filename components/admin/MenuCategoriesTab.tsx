@@ -77,6 +77,29 @@ export function MenuCategoriesTab({
   const t = useMenuConfigTranslation();
   const ct = useCommonTranslation();
 
+  // Helper functions to check if configurations are applied
+  const isChoicesApplied = (entity: Category | MenuItemData) => {
+    return (entity.assignedAddonGroups?.length || 0) > 0;
+  };
+
+  const isVisibilityApplied = (entity: Category | MenuItemData) => {
+    return (entity.assignedVisibilitySchedules?.length || 0) > 0;
+  };
+
+  const isItemSettingsApplied = (item: MenuItemData) => {
+    if (!item) return false;
+
+    return (
+      (item.dietaryTags?.length || 0) > 0 ||
+      (item.ingredients?.trim() || '') !== '' ||
+      (item.allergens?.length || 0) > 0 ||
+      (item.additives?.length || 0) > 0 ||
+      (item.nutritionalInfo && Object.entries(item.nutritionalInfo).some(([key, val]) => {
+        return val && val.trim() !== '';
+      }))
+    );
+  };
+
   return (
     <div className="bg-card border border-border rounded-xl">
       {/* Search Bar with Add Button */}
@@ -199,7 +222,7 @@ export function MenuCategoriesTab({
                           {canEditCategory && (
                             <button
                               onClick={() => onAddChoice(category.id)}
-                              className="hidden md:flex p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                              className={`hidden md:flex p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer ${isChoicesApplied(category) ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
                               title={t('buttons.addChoice')}
                             >
                               <ListPlus className="w-4 h-4" />
@@ -210,7 +233,7 @@ export function MenuCategoriesTab({
                           {canEditCategory && (
                             <button
                               onClick={() => onAddVisibility(category.id)}
-                              className="hidden md:flex p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                              className={`hidden md:flex p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer ${isVisibilityApplied(category) ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
                               title="Visibility Schedules"
                             >
                               <Calendar className="w-4 h-4" />
@@ -233,8 +256,8 @@ export function MenuCategoriesTab({
                                   onClick={() => setOpenDropdownId(null)}
                                 />
                                 <div className={`absolute right-0 w-48 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-20 ${catIndex >= filteredCategories.length - 1
-                                    ? 'bottom-full mb-2'
-                                    : 'mt-2'
+                                  ? 'bottom-full mb-2'
+                                  : 'mt-2'
                                   }`}>
                                   {/* Mobile: Edit Category */}
                                   {canEditCategory && (
@@ -277,8 +300,8 @@ export function MenuCategoriesTab({
                                       }}
                                       className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border md:hidden"
                                     >
-                                      <ListPlus className="w-4 h-4 text-muted-foreground" />
-                                      <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                      <ListPlus className={`w-4 h-4 ${isChoicesApplied(category) ? 'text-primary' : 'text-muted-foreground'}`} />
+                                      <span className={isChoicesApplied(category) ? 'text-primary' : 'text-foreground'} style={{ fontSize: 'var(--text-base)' }}>
                                         {t('buttons.addChoice')}
                                       </span>
                                     </button>
@@ -293,8 +316,8 @@ export function MenuCategoriesTab({
                                       }}
                                       className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border md:hidden"
                                     >
-                                      <Calendar className="w-4 h-4 text-muted-foreground" />
-                                      <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                      <Calendar className={`w-4 h-4 ${isVisibilityApplied(category) ? 'text-primary' : 'text-muted-foreground'}`} />
+                                      <span className={isVisibilityApplied(category) ? 'text-primary' : 'text-foreground'} style={{ fontSize: 'var(--text-base)' }}>
                                         Visibility
                                       </span>
                                     </button>
@@ -440,7 +463,7 @@ export function MenuCategoriesTab({
                                       </p>
                                       {item.internalCost !== undefined && item.internalCost !== 0 && (
                                         <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                                          {t('labels.internalCost')}: {ct('currencySymbol')}{Number(item.internalCost).toFixed(2)}
+                                          {t('labels.internalCost')}: {ct('currencySymbol')} {Number(item.internalCost).toFixed(2)}
                                         </p>
                                       )}
                                     </div>
@@ -461,7 +484,7 @@ export function MenuCategoriesTab({
                                           {/* Desktop: Item Settings Button */}
                                           <button
                                             onClick={() => onOpenItemSettings(category.id, item)}
-                                            className="hidden md:flex p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                            className={`hidden md:flex p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer ${isItemSettingsApplied(item) ? 'text-green-600' : 'text-muted-foreground hover:text-foreground'}`}
                                             title={t('labels.itemSettings')}
                                           >
                                             <Settings className="w-4 h-4" />
@@ -470,7 +493,7 @@ export function MenuCategoriesTab({
                                           {/* Desktop: Add Choice Button */}
                                           <button
                                             onClick={() => onAddChoice(category.id, item.id)}
-                                            className="hidden md:flex p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                            className={`hidden md:flex p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer ${isChoicesApplied(item) ? 'text-green-600' : 'text-muted-foreground hover:text-foreground'}`}
                                             title={t('buttons.addChoice')}
                                           >
                                             <ListPlus className="w-4 h-4" />
@@ -479,7 +502,7 @@ export function MenuCategoriesTab({
                                           {/* Desktop: Visibility Button */}
                                           <button
                                             onClick={() => onAddVisibility(category.id, item.id)}
-                                            className="hidden md:flex p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                            className={`hidden md:flex p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer ${isVisibilityApplied(item) ? 'text-green-600' : 'text-muted-foreground hover:text-foreground'}`}
                                             title="Visibility Schedules"
                                           >
                                             <Calendar className="w-4 h-4" />
@@ -504,8 +527,8 @@ export function MenuCategoriesTab({
                                                 onClick={() => setOpenDropdownId(null)}
                                               />
                                               <div className={`absolute right-0 w-48 bg-card border border-border rounded-lg shadow-xl z-20 py-1 overflow-hidden ${index >= (category.items?.length || 0) - 2 && (category.items?.length || 0) > 2
-                                                  ? 'bottom-full mb-1'
-                                                  : 'top-full mt-1'
+                                                ? 'bottom-full mb-1'
+                                                : 'top-full mt-1'
                                                 }`}>
                                                 {/* Mobile-only actions */}
                                                 <div className="md:hidden border-b border-border">
@@ -526,8 +549,8 @@ export function MenuCategoriesTab({
                                                     }}
                                                     className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left"
                                                   >
-                                                    <Settings className="w-4 h-4 text-muted-foreground" />
-                                                    <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>{t('labels.itemSettings')}</span>
+                                                    <Settings className={`w-4 h-4 ${isItemSettingsApplied(item) ? 'text-primary' : 'text-muted-foreground'}`} />
+                                                    <span className={isItemSettingsApplied(item) ? 'text-primary' : 'text-foreground'} style={{ fontSize: 'var(--text-base)' }}>{t('labels.itemSettings')}</span>
                                                   </button>
                                                   <button
                                                     onClick={() => {
@@ -536,8 +559,8 @@ export function MenuCategoriesTab({
                                                     }}
                                                     className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left"
                                                   >
-                                                    <ListPlus className="w-4 h-4 text-muted-foreground" />
-                                                    <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>{t('buttons.addChoice')}</span>
+                                                    <ListPlus className={`w-4 h-4 ${isChoicesApplied(item) ? 'text-primary' : 'text-muted-foreground'}`} />
+                                                    <span className={isChoicesApplied(item) ? 'text-primary' : 'text-foreground'} style={{ fontSize: 'var(--text-base)' }}>{t('buttons.addChoice')}</span>
                                                   </button>
                                                   <button
                                                     onClick={() => {
@@ -546,8 +569,8 @@ export function MenuCategoriesTab({
                                                     }}
                                                     className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left"
                                                   >
-                                                    <Calendar className="w-4 h-4 text-muted-foreground" />
-                                                    <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>Visibility</span>
+                                                    <Calendar className={`w-4 h-4 ${isVisibilityApplied(item) ? 'text-primary' : 'text-muted-foreground'}`} />
+                                                    <span className={isVisibilityApplied(item) ? 'text-primary' : 'text-foreground'} style={{ fontSize: 'var(--text-base)' }}>Visibility</span>
                                                   </button>
                                                 </div>
 
