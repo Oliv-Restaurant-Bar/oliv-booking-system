@@ -32,6 +32,7 @@ export interface VariantOption {
   id: string;
   name: string;
   price: number;
+  internalCost?: number;
   averageConsumption?: number;
 }
 

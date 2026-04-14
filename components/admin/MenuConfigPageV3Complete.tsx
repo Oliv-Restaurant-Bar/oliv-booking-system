@@ -1193,7 +1193,7 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
         showAddons={showAddons}
         setShowAddons={setShowAddons}
         addonGroups={addonGroups}
-        addVariant={() => setNewMenuItem({ ...newMenuItem, variants: [...newMenuItem.variants, { id: Math.random().toString(), name: '', price: 0 }] })}
+        addVariant={() => setNewMenuItem({ ...newMenuItem, variants: [...newMenuItem.variants, { id: Math.random().toString(), name: '', price: 0, internalCost: 0 }] })}
         updateVariant={(index, field, value) => {
           const v = [...newMenuItem.variants];
           v[index] = { ...v[index], [field]: value };

@@ -6,29 +6,36 @@ import path from 'path';
 async function main() {
   console.log("Applying manual migrations...");
   
-  const p15 = fs.readFileSync(path.join(__dirname, '../lib/db/migrations/0015_dusty_morlocks.sql'), 'utf8');
-  let statements = p15.split('--> statement-breakpoint').map(s => s.trim()).filter(s => s.length > 0);
-  for (const s of statements) {
-    console.log("Executing:", s);
+  const migrations = [
+    '0017_hot_roland_deschain.sql',
+    '0018_organic_the_leader.sql',
+    '0019_remarkable_falcon.sql',
+    '0020_youthful_wolfsbane.sql'
+  ];
+
+  for (const migration of migrations) {
+    console.log(`\n--- Applying ${migration} ---`);
     try {
-      await db.execute(sql.raw(s));
-    } catch (e: any) {
-      console.log("Skipped or errored:", e.message);
+      const content = fs.readFileSync(path.join(__dirname, `../lib/db/migrations/${migration}`), 'utf8');
+      const statements = content.split('--> statement-breakpoint').map(s => s.trim()).filter(s => s.length > 0);
+      
+      for (const s of statements) {
+        console.log("Executing:", s.substring(0, 50) + (s.length > 50 ? "..." : ""));
+        try {
+          await db.execute(sql.raw(s));
+          console.log("   Success!");
+        } catch (e: any) {
+          console.log("   Skipped/Errored:", e.message || e);
+          if (e.detail) console.log("   Detail:", e.detail);
+          if (e.code) console.log("   Code:", e.code);
+        }
+      }
+    } catch (err: any) {
+      console.error(`Failed to read or process ${migration}:`, err.message);
     }
   }
 
-  const p16 = fs.readFileSync(path.join(__dirname, '../lib/db/migrations/0016_free_winter_soldier.sql'), 'utf8');
-  statements = p16.split('--> statement-breakpoint').map(s => s.trim()).filter(s => s.length > 0);
-  for (const s of statements) {
-    console.log("Executing:", s);
-    try {
-      await db.execute(sql.raw(s));
-    } catch (e: any) {
-      console.log("Skipped or errored:", e.message);
-    }
-  }
-
-  console.log("Done");
+  console.log("\nAll migrations processed.");
   process.exit(0);
 }
 

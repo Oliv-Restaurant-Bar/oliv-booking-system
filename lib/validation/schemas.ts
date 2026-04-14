@@ -259,6 +259,11 @@ export const menuItemVariantPriceSchema = z.number()
   .min(0, 'Variant price must be at least 0')
   .max(100000, 'Variant price cannot exceed 100,000');
 
+export const menuItemVariantInternalCostSchema = z.number()
+  .min(0, 'Variant internal cost must be at least 0')
+  .max(100000, 'Variant internal cost cannot exceed 100,000')
+  .optional();
+
 export const nutritionalInfoValueSchema = z.string()
   .max(50, 'Value cannot exceed 50 characters')
   .transform(val => val.trim());

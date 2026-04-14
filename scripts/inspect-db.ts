@@ -1,24 +1,29 @@
-import postgres from "postgres";
-import dotenv from "dotenv";
-
-dotenv.config();
+import { db } from '../lib/db';
+import { sql } from 'drizzle-orm';
 
 async function main() {
-  const sql = postgres(process.env.DATABASE_URL!);
+  console.log("Checking database tables...");
   try {
-    const columns = await sql`
-      SELECT table_schema, column_name, data_type 
+    const result = await db.execute(sql`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public'
+    `);
+    console.log("Tables in public schema:");
+    console.table(result);
+    
+    console.log("\nChecking addon_items columns...");
+    const addonCols = await db.execute(sql`
+      SELECT column_name, data_type 
       FROM information_schema.columns 
-      WHERE table_name = 'bookings'
-      ORDER BY table_schema, column_name;
-    `;
-    console.log("Columns in 'bookings' table (sorted):");
-    columns.forEach(c => console.log(` - ${c.table_schema}.${c.column_name}: ${c.data_type}`));
-  } catch (error) {
-    console.error("Error inspecting DB:", error);
-  } finally {
-    await sql.end();
+      WHERE table_name = 'addon_items'
+    `);
+    console.table(addonCols);
+    
+  } catch (error: any) {
+    console.error("Error:", error.message);
   }
+  process.exit(0);
 }
 
 main();
