@@ -12,6 +12,7 @@ import * as XLSX from 'xlsx';
 import { Permission, hasPermission } from '@/lib/auth/rbac';
 import { useTranslations } from 'next-intl';
 import { useCommonTranslation } from '@/lib/i18n/client';
+import { Tooltip } from '@/components/user/Tooltip';
 
 interface MonthData {
   month: string;
@@ -122,9 +123,11 @@ export function MonthlyReportLayout2({ data, user, selectedYear, onYearChange, c
                   <h4 className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
                     {monthT(month.month.toLowerCase())}
                   </h4>
-                  <p className="text-primary" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                    {currencySymbol} {month.totalProfit.toLocaleString('en-US')}
-                  </p>
+                  <Tooltip title={t('profit')} position='bottom'>
+                    <p className="text-primary" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                      {currencySymbol} {month.totalProfit.toLocaleString('en-US')}
+                    </p>
+                  </Tooltip>
                   {/* Toggle button - Only visible on mobile */}
                   <button
                     onClick={() => toggleMonth(index)}

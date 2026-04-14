@@ -6,6 +6,7 @@ import { MonthlyReportLayout2 } from './MonthlyReportLayout2';
 import { SkeletonList, SkeletonTrendingItems, SkeletonMonthlyReport } from '@/components/ui/skeleton-loaders';
 import { useTranslations } from 'next-intl';
 import { SettingsService } from '@/services/settings.service';
+import { Tooltip } from '@/components/user/Tooltip';
 
 interface ReportsPageProps {
   user?: any;
@@ -110,9 +111,11 @@ export function ReportsPage({ user, initialData }: ReportsPageProps) {
 
                       {/* Profit Stats */}
                       <div className="text-right flex-shrink-0">
-                        <p className="text-primary px-2 inline-block" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-                          {currencySymbol} {contact.totalProfit.toLocaleString('en-US')}
-                        </p>
+                        <Tooltip title={t('profit')} position='bottom'>
+                          <p className="text-primary px-2 inline-block" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
+                            {currencySymbol} {contact.totalProfit.toLocaleString('en-US')}
+                          </p>
+                        </Tooltip>
                         <div className="flex items-center justify-end gap-1 mt-1 text-emerald-600 dark:text-emerald-400" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
                           <span className="">{(contact.profitMargin || 0)}%</span>
                           <span>{t('profitMargin', { defaultValue: 'Margin' }) || 'Margin'}</span>

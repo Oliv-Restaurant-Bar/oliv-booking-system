@@ -7,6 +7,8 @@ import { CategoryPill } from '../user/CategoryPill';
 import { SkeletonTrendingItems } from '@/components/ui/skeleton-loaders';
 import { useTranslations, useLocale } from 'next-intl';
 import { useCommonTranslation } from '@/lib/i18n/client';
+import { Tooltip } from '@/components/user/Tooltip';
+
 
 interface TrendingItem {
   rank: number;
@@ -234,7 +236,9 @@ export function TrendingItems({ trendingData: propTrendingData, currencySymbol =
               <div className="flex flex-col items-end flex-shrink-0 min-w-[150px]">
                 <div className="flex items-center gap-2">
                   <div className="text-primary px-2 inline-block" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-                    {currencySymbol} {item.totalProfit.toLocaleString('en-US')}
+                    <Tooltip title={t('profit')} position='bottom'>
+                      {currencySymbol} {item.totalProfit.toLocaleString('en-US')}
+                    </Tooltip>
                   </div>
                   <div className="text-muted-foreground mr-1" style={{ fontSize: 'var(--text-small)', opacity: 0.8 }}>
                     {t('salesCount', { count: item.sales })}
