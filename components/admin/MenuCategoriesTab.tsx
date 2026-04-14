@@ -222,7 +222,7 @@ export function MenuCategoriesTab({
                           {canEditCategory && (
                             <button
                               onClick={() => onAddChoice(category.id)}
-                              className={`hidden md:flex p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer ${isChoicesApplied(category) ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                              className={`hidden md:flex p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer ${isChoicesApplied(category) ? 'text-green-600' : 'text-muted-foreground hover:text-foreground'}`}
                               title={t('buttons.addChoice')}
                             >
                               <ListPlus className="w-4 h-4" />
@@ -233,7 +233,7 @@ export function MenuCategoriesTab({
                           {canEditCategory && (
                             <button
                               onClick={() => onAddVisibility(category.id)}
-                              className={`hidden md:flex p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer ${isVisibilityApplied(category) ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                              className={`hidden md:flex p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer ${isVisibilityApplied(category) ? 'text-green-600' : 'text-muted-foreground hover:text-foreground'}`}
                               title="Visibility Schedules"
                             >
                               <Calendar className="w-4 h-4" />
