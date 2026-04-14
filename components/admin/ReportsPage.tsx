@@ -114,7 +114,7 @@ export function ReportsPage({ user, initialData }: ReportsPageProps) {
                           {currencySymbol} {contact.totalProfit.toLocaleString('en-US')}
                         </p>
                         <div className="flex items-center justify-end gap-1 mt-1 text-emerald-600 dark:text-emerald-400" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
-                          <span className="opacity-70">{(contact.profitMargin || 0)}%</span>
+                          <span className="">{(contact.profitMargin || 0)}%</span>
                           <span>{t('profitMargin', { defaultValue: 'Margin' }) || 'Margin'}</span>
                         </div>
                       </div>

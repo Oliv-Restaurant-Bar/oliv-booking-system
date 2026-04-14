@@ -50,7 +50,7 @@ export default async function RootLayout({
   const settings = await getSystemSettings();
 
   return (
-    <html lang={locale}>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         {/* Preload LCP Hero Image for faster discovery */}
         <link 

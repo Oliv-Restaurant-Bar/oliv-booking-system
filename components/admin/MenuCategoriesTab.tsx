@@ -450,14 +450,14 @@ export function MenuCategoriesTab({
                                               className="px-2 py-0.5 bg-secondary text-secondary-foreground rounded"
                                               style={{ fontSize: 'var(--text-small)' }}
                                             >
-                                              {variant.name}: {ct('currencySymbol')}{Number(variant.price || 0).toFixed(2)}
+                                              {variant.name}: {ct('currencySymbol')} {Number(variant.price || 0).toFixed(2)}
                                             </span>
                                           ))}
                                         </div>
                                       )}
                                     </div>
                                     {/* Price */}
-                                    <div className="text-right flex-shrink-0">
+                                    {item.variants && item.variants.length > 0 ? null : <div className="text-right flex-shrink-0">
                                       <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
                                         {ct('currencySymbol')}{Number(item.price || 0).toFixed(2)}
                                       </p>
@@ -466,7 +466,7 @@ export function MenuCategoriesTab({
                                           {t('labels.internalCost')}: {ct('currencySymbol')} {Number(item.internalCost).toFixed(2)}
                                         </p>
                                       )}
-                                    </div>
+                                    </div>}
 
                                     {/* Actions - Desktop buttons + Mobile dropdown */}
                                     <div className="flex items-center gap-2 flex-shrink-0">

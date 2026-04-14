@@ -529,12 +529,22 @@ export async function getMonthlyReportData(year: number = new Date().getFullYear
     // Use raw SQL to get all status counts in one query
     // IMPORTANT: Exclude declined/cancelled/no_show from total_revenue and avg_revenue
     const result = await db.execute(sql`
+      WITH booking_costs AS (
+        SELECT 
+          bi.booking_id,
+          SUM(bi.quantity * COALESCE(mi.internal_cost, ai.internal_cost, 0)) as booking_cost
+        FROM booking_items bi
+        LEFT JOIN menu_items mi ON bi.item_id = mi.id AND bi.item_type = 'menu_item'
+        LEFT JOIN addon_items ai ON bi.item_id = ai.id AND bi.item_type = 'addon'
+        GROUP BY bi.booking_id
+      )
       SELECT
         EXTRACT(MONTH FROM event_date) as month_num,
         TO_CHAR(event_date, 'Month') as month_name,
         COUNT(*) as total_bookings,
         COUNT(*) FILTER (WHERE status NOT IN ('declined', 'cancelled', 'no_show')) as active_bookings,
         COALESCE(SUM(CAST(estimated_total AS NUMERIC)) FILTER (WHERE status NOT IN ('declined', 'cancelled', 'no_show')), 0) as total_revenue,
+        COALESCE(SUM(bc.booking_cost) FILTER (WHERE status NOT IN ('declined', 'cancelled', 'no_show')), 0) as total_cost,
         COUNT(*) FILTER (WHERE status = 'pending') as pending_count,
         COUNT(*) FILTER (WHERE status = 'new') as new_count,
         COUNT(*) FILTER (WHERE status = 'touchbase') as touchbase_count,
@@ -551,6 +561,7 @@ export async function getMonthlyReportData(year: number = new Date().getFullYear
         COALESCE(SUM(CAST(estimated_total AS NUMERIC)) FILTER (WHERE status = 'declined'), 0) as declined_revenue,
         COALESCE(SUM(CAST(estimated_total AS NUMERIC)) FILTER (WHERE status = 'no_show'), 0) as noshow_revenue
       FROM bookings
+      LEFT JOIN booking_costs bc ON bookings.id = bc.booking_id
       WHERE EXTRACT(YEAR FROM event_date) = ${year}
         AND deleted_at IS NULL
       GROUP BY EXTRACT(MONTH FROM event_date), TO_CHAR(event_date, 'Month')
@@ -570,8 +581,8 @@ export async function getMonthlyReportData(year: number = new Date().getFullYear
         Number(d.month_num),
         {
           month: (d.month_name as string).trim(),
-          totalBookings: Math.floor(Number(d.total_bookings) || 0),
-          totalRevenue: Number(d.total_revenue) || 0,
+          totalBookings: Math.floor(Number(d.total_bookings) || 0),          totalRevenue: Number(d.total_revenue) || 0,
+          totalProfit: (Number(d.total_revenue) || 0) - (Number(d.total_cost) || 0),
           avgRevenue: Number(d.active_bookings) > 0 ? Math.round(Number(d.total_revenue) / Number(d.active_bookings)) : 0,
           // All status counts
           pending: Math.floor(Number(d.pending_count) || 0),
@@ -593,7 +604,7 @@ export async function getMonthlyReportData(year: number = new Date().getFullYear
         }
       ])
     );
-
+ 
     return allMonths.map((month, index) => {
       const monthNum = index + 1;
       const data = dataMap.get(monthNum);
@@ -601,6 +612,7 @@ export async function getMonthlyReportData(year: number = new Date().getFullYear
         month,
         totalBookings: 0,
         totalRevenue: 0,
+        totalProfit: 0,
         avgRevenue: 0,
         pending: 0,
         new: 0,
@@ -617,7 +629,7 @@ export async function getMonthlyReportData(year: number = new Date().getFullYear
         declinedRevenue: 0,
         completedRevenue: 0,
       };
-    });
+    });;
   } catch (error) {
     console.error("Error fetching monthly report:", error);
     return [];

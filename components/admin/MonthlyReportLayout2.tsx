@@ -17,6 +17,7 @@ interface MonthData {
   month: string;
   totalBookings: number;
   totalRevenue: number;
+  totalProfit: number;
   avgRevenue: number;
   pending: number;
   new: number;
@@ -33,7 +34,7 @@ export function MonthlyReportLayout2({ data, user, selectedYear, onYearChange, c
   const commonT = useCommonTranslation();
   const statusT = useTranslations('bookingStatus');
   const monthT = useTranslations('admin.bookings.months');
-  
+
   const userRole = user?.role;
   const canExport = hasPermission(userRole, Permission.EXPORT_REPORTS);
 
@@ -55,6 +56,8 @@ export function MonthlyReportLayout2({ data, user, selectedYear, onYearChange, c
       [commonT('month')]: monthT(month.month.toLowerCase()),
       [t('bookingsLabel')]: month.totalBookings,
       [t('revenue')]: `${currencySymbol} ${month.totalRevenue.toLocaleString('en-US')}`,
+      [t('profit')]: `${currencySymbol} ${month.totalProfit.toLocaleString('en-US')}`,
+      [t('profitMargin')]: `${month.totalRevenue > 0 ? Math.round((month.totalProfit / month.totalRevenue) * 100) : 0}%`,
       [t('avgRevenueLabel')]: `${currencySymbol} ${month.avgRevenue.toLocaleString('en-US')}`,
       [statusT('pending')]: month.pending,
       [statusT('new')]: month.new,
@@ -119,6 +122,9 @@ export function MonthlyReportLayout2({ data, user, selectedYear, onYearChange, c
                   <h4 className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
                     {monthT(month.month.toLowerCase())}
                   </h4>
+                  <p className="text-primary" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                    {currencySymbol} {month.totalProfit.toLocaleString('en-US')}
+                  </p>
                   {/* Toggle button - Only visible on mobile */}
                   <button
                     onClick={() => toggleMonth(index)}
@@ -133,7 +139,7 @@ export function MonthlyReportLayout2({ data, user, selectedYear, onYearChange, c
                 </div>
 
                 {/* Bookings & Revenue - Always Visible */}
-                <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
+                <div className="flex items-start justify-between mb-4 pb-4 border-b border-border">
                   <div>
                     <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>{commonT('bookings')}</p>
                     <p className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-bold)' }}>
@@ -142,7 +148,7 @@ export function MonthlyReportLayout2({ data, user, selectedYear, onYearChange, c
                   </div>
                   <div className="text-right">
                     <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>{t('revenue')}</p>
-                    <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                    <p className="text-foreground mb-1" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
                       {currencySymbol} {month.totalRevenue.toLocaleString('en-US')}
                     </p>
                   </div>
