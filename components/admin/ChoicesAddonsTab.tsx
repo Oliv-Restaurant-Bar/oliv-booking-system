@@ -192,9 +192,8 @@ export function ChoicesAddonsTab({
                             />
 
                             {/* Dropdown */}
-                            <div className={`absolute right-0 w-48 bg-card border border-border rounded-lg shadow-xl overflow-hidden z-50 ${
-                               groupIndex >= addonGroups.length - 1 ? 'bottom-full mb-2' : 'top-full mt-2'
-                             }`}>
+                            <div className={`absolute right-0 w-48 bg-card border border-border rounded-lg shadow-xl overflow-hidden z-50 ${groupIndex >= addonGroups.length - 1 ? 'bottom-full mb-2' : 'top-full mt-2'
+                              }`}>
                               {/* Mobile: Edit Group */}
                               <button
                                 onClick={() => {
@@ -318,11 +317,11 @@ export function ChoicesAddonsTab({
                                 {/* Price and Internal Cost */}
                                 <div className="text-right flex-shrink-0">
                                   <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                    {ct('currencySymbol')}{Number(item.price || 0).toFixed(2)}
+                                    {ct('currencySymbol')} {Number(item.price || 0).toFixed(2)}
                                   </p>
                                   {item.internalCost !== undefined && item.internalCost !== 0 && (
                                     <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                                      {t('labels.internalCost')}: {ct('currencySymbol')}{Number(item.internalCost).toFixed(2)}
+                                      {t('labels.internalCost')}: {ct('currencySymbol')} {Number(item.internalCost).toFixed(2)}
                                     </p>
                                   )}
                                 </div>

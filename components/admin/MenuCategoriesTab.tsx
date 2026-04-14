@@ -459,7 +459,7 @@ export function MenuCategoriesTab({
                                     {/* Price */}
                                     {item.variants && item.variants.length > 0 ? null : <div className="text-right flex-shrink-0">
                                       <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                        {ct('currencySymbol')}{Number(item.price || 0).toFixed(2)}
+                                        {ct('currencySymbol')} {Number(item.price || 0).toFixed(2)}
                                       </p>
                                       {item.internalCost !== undefined && item.internalCost !== 0 && (
                                         <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
