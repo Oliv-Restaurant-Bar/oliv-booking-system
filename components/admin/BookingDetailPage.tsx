@@ -2648,10 +2648,10 @@ export function BookingDetailPage({
                                                                 <td className="px-4 py-3 text-foreground text-xs sm:text-sm">
                                                                     <div className="flex flex-col gap-1.5 py-1">
                                                                         <div className="flex flex-wrap items-center gap-x-2 font-medium text-foreground" title={item.item || item.name}>
-                                                                            {item.dietaryType && item.dietaryType !== 'none' && (
-                                                                                <DietaryIcon type={item.dietaryType} size="sm" />
-                                                                            )}
-                                                                            <div>
+                                                                            <div className="flex items-center gap-x-1">
+                                                                                {item.dietaryType && item.dietaryType !== 'none' && (
+                                                                                    <DietaryIcon type={item.dietaryType} size="sm" />
+                                                                                )}
                                                                                 <span className="truncate max-w-[200px] sm:max-w-[300px] inline-block" title={item.item || item.name}>{item.item || item.name}</span>
                                                                                 {item.variant && (
                                                                                     <span className="ml-1.5 text-muted-foreground font-normal">
@@ -2725,35 +2725,35 @@ export function BookingDetailPage({
                                                                                     )}
                                                                                 </Tooltip>
                                                                             </div>
-                                                                            <div className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">
+                                                                            <div className="text-xs sm:text-xs text-muted-foreground whitespace-nowrap">
                                                                                 x {Math.round(item.unitPrice || 0)} CHF
                                                                             </div>
                                                                         </div>
                                                                     )}
                                                                 </td>
-                                                                <td className="px-4 py-3 text-right text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }} translate="no">
+                                                                <td className="px-4 py-3 text-right text-foreground text-xs sm:text-sm whitespace-nowrap" style={{ fontWeight: 'var(--font-weight-semibold)' }} translate="no">
                                                                     {isEditingMenu ? (
                                                                         <span>CHF {((item.rawQuantity || 0) * (item.unitPrice || 0)).toFixed(2)}</span>
                                                                     ) : (
                                                                         <span>{item.price}</span>
                                                                     )}
                                                                 </td>
-                                                                <td className="px-4 py-3 text-right text-foreground text-xs sm:text-sm" translate="no">
+                                                                <td className="px-4 py-3 text-right text-foreground text-xs sm:text-sm whitespace-nowrap" translate="no">
                                                                     <div className="flex flex-col gap-0.5">
                                                                         <div className="font-medium text-foreground">
                                                                             CHF {((item.rawQuantity || 0) * (item.internalCost || 0)).toFixed(2)}
                                                                         </div>
-                                                                        <div className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">
+                                                                        <div className="text-xs sm:text-xs text-muted-foreground whitespace-nowrap">
                                                                             x {item.internalCost || 0} CHF
                                                                         </div>
                                                                     </div>
                                                                 </td>
-                                                                <td className="px-4 py-3 text-right text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }} translate="no">
+                                                                <td className="px-4 py-3 text-right text-foreground text-xs sm:text-sm whitespace-nowrap" style={{ fontWeight: 'var(--font-weight-semibold)' }} translate="no">
                                                                     <div className="flex flex-col gap-0.5">
-                                                                        <div className="font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20 whitespace-nowrap">
+                                                                        <div className="font-bold text-primary text-xs sm:text-sm">
                                                                             CHF {((item.rawQuantity || 0) * ((item.unitPrice || 0) - (item.internalCost || 0))).toFixed(2)}
                                                                         </div>
-                                                                        <div className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">
+                                                                        <div className="text-xs sm:text-xs text-muted-foreground whitespace-nowrap">
                                                                             x {((item.unitPrice || 0) - (item.internalCost || 0)).toFixed(2)} CHF
                                                                         </div>
                                                                     </div>
@@ -2774,13 +2774,13 @@ export function BookingDetailPage({
                                                                     <span>{booking.amount}</span>
                                                                 )}
                                                             </td>
-                                                            <td className="px-4 py-3 text-right text-foreground text-xs sm:text-sm font-bold text-foreground" translate="no">
+                                                            <td className="px-4 py-3 text-right text-foreground text-xs sm:text-sm font-bold text-foreground whitespace-nowrap" translate="no">
                                                                 <span>
                                                                     CHF {(isEditingMenu ? tempMenuItems : booking.menuItems)!.reduce((sum, item) => sum + ((item.rawQuantity || 0) * (item.internalCost || 0)), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                                 </span>
                                                             </td>
-                                                            <td className="px-4 py-3 text-right text-foreground text-xs sm:text-sm font-bold" translate="no">
-                                                                <span className="bg-primary text-primary-foreground px-2.5 py-1 rounded-lg shadow-sm inline-block">
+                                                            <td className="px-4 py-3 text-right text-foreground text-xs sm:text-sm font-bold whitespace-nowrap" translate="no">
+                                                                <span className="bg-primary px-2.5 py-1 rounded-lg shadow-sm inline-block">
                                                                     CHF {(isEditingMenu ? tempMenuItems : booking.menuItems)!.reduce((sum, item) => sum + ((item.rawQuantity || 0) * ((item.unitPrice || 0) - (item.internalCost || 0))), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                                 </span>
                                                             </td>
