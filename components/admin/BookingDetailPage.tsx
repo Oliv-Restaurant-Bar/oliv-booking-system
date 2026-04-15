@@ -2633,19 +2633,19 @@ export function BookingDetailPage({
                                             <table className="w-full min-w-[500px] sm:min-w-0">
                                                 <thead className="bg-muted">
                                                     <tr>
-                                                        <th className="px-4 py-3 text-left text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{commonT('item')}</th>
-                                                        <th className="px-4 py-3 text-left text-foreground text-xs sm:text-sm hidden sm:table-cell" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{commonT('category')}</th>
-                                                        <th className="px-4 py-3 text-left text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{t('quantity')}</th>
-                                                        <th className="px-4 py-3 text-right text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{buttonT('price')}</th>
-                                                        <th className="px-4 py-3 text-right text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{t('internalCost')}</th>
-                                                        <th className="px-4 py-3 text-right text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{t('profit')}</th>
+                                                        <th className="px-3 py-3 text-left text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{commonT('item')}</th>
+                                                        <th className="px-3 py-3 text-left text-foreground text-xs sm:text-sm hidden sm:table-cell" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{commonT('category')}</th>
+                                                        <th className="px-3 py-3 text-left text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{t('quantity')}</th>
+                                                        <th className="px-3 py-3 text-right text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{buttonT('price')}</th>
+                                                        <th className="px-3 py-3 text-right text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{t('internalCost')}</th>
+                                                        <th className="px-3 py-3 text-right text-foreground text-xs sm:text-sm" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{t('profit')}</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     {(isEditingMenu ? tempMenuItems : booking.menuItems) && (isEditingMenu ? tempMenuItems : booking.menuItems)!.length > 0 ? (
                                                         (isEditingMenu ? tempMenuItems : booking.menuItems)!.map((item: any, index: number) => (
                                                             <tr key={item.id || item.itemId || `row-${index}`} className="border-t border-border">
-                                                                <td className="px-4 py-3 text-foreground text-xs sm:text-sm">
+                                                                <td className="px-3 py-3 text-foreground text-xs sm:text-sm">
                                                                     <div className="flex flex-col gap-1.5 py-1">
                                                                         <div className="flex flex-wrap items-center gap-x-2 font-medium text-foreground" title={item.item || item.name}>
                                                                             <div className="flex items-center gap-x-1">
@@ -2678,8 +2678,8 @@ export function BookingDetailPage({
                                                                         )}
                                                                     </div>
                                                                 </td>
-                                                                <td className="px-4 py-3 text-muted-foreground text-xs sm:text-sm hidden sm:table-cell" title={item.category}>{item.category}</td>
-                                                                <td className="px-4 py-3 text-foreground text-xs sm:text-sm">
+                                                                <td className="px-3 py-3 text-muted-foreground text-xs sm:text-sm hidden sm:table-cell" title={item.category}>{item.category}</td>
+                                                                <td className="px-3 py-3 text-foreground text-xs sm:text-sm">
                                                                     {isEditingMenu ? (
                                                                         <div className="flex items-center gap-2" translate="no">
                                                                             <input
@@ -2731,14 +2731,14 @@ export function BookingDetailPage({
                                                                         </div>
                                                                     )}
                                                                 </td>
-                                                                <td className="px-4 py-3 text-right text-foreground text-xs sm:text-sm whitespace-nowrap" style={{ fontWeight: 'var(--font-weight-semibold)' }} translate="no">
+                                                                <td className="px-3 py-3 text-right text-foreground text-xs sm:text-sm whitespace-nowrap" style={{ fontWeight: 'var(--font-weight-semibold)' }} translate="no">
                                                                     {isEditingMenu ? (
                                                                         <span>CHF {((item.rawQuantity || 0) * (item.unitPrice || 0)).toFixed(2)}</span>
                                                                     ) : (
                                                                         <span>{item.price}</span>
                                                                     )}
                                                                 </td>
-                                                                <td className="px-4 py-3 text-right text-foreground text-xs sm:text-sm whitespace-nowrap" translate="no">
+                                                                <td className="px-3 py-3 text-right text-foreground text-xs sm:text-sm whitespace-nowrap" translate="no">
                                                                     <div className="flex flex-col gap-0.5">
                                                                         <div className="font-medium text-foreground">
                                                                             CHF {((item.rawQuantity || 0) * (item.internalCost || 0)).toFixed(2)}
@@ -2748,7 +2748,7 @@ export function BookingDetailPage({
                                                                         </div>
                                                                     </div>
                                                                 </td>
-                                                                <td className="px-4 py-3 text-right text-foreground text-xs sm:text-sm whitespace-nowrap" style={{ fontWeight: 'var(--font-weight-semibold)' }} translate="no">
+                                                                <td className="px-3 py-3 text-right text-foreground text-xs sm:text-sm whitespace-nowrap" style={{ fontWeight: 'var(--font-weight-semibold)' }} translate="no">
                                                                     <div className="flex flex-col gap-0.5">
                                                                         <div className="font-bold text-primary text-xs sm:text-sm">
                                                                             CHF {((item.rawQuantity || 0) * ((item.unitPrice || 0) - (item.internalCost || 0))).toFixed(2)}
@@ -2761,25 +2761,25 @@ export function BookingDetailPage({
                                                             </tr>
                                                         ))
                                                     ) : (
-                                                        <tr><td colSpan={6} className="px-4 py-6 sm:py-8 text-center text-muted-foreground text-xs sm:text-sm">{t('noItemsSelected')}</td></tr>
+                                                        <tr><td colSpan={6} className="px-3 py-6 sm:py-8 text-center text-muted-foreground text-xs sm:text-sm">{t('noItemsSelected')}</td></tr>
                                                     )}
                                                     {booking.menuItems && booking.menuItems.length > 0 && (
                                                         <tr className="border-t-2 border-border bg-muted">
-                                                            <td colSpan={2} className="px-4 py-3 text-foreground text-xs sm:text-sm sm:hidden" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{t('totalAmount')}</td>
-                                                            <td colSpan={3} className="px-4 py-3 text-foreground text-xs sm:text-sm hidden sm:table-cell" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{t('totalAmount')}</td>
-                                                            <td className="px-4 py-3 text-right text-foreground text-xs sm:text-sm font-bold" translate="no">
+                                                            <td colSpan={2} className="px-3 py-3 text-foreground text-xs sm:text-sm sm:hidden" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{t('totalAmount')}</td>
+                                                            <td colSpan={3} className="px-3 py-3 text-foreground text-xs sm:text-sm hidden sm:table-cell" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{t('totalAmount')}</td>
+                                                            <td className="px-3 py-3 text-right text-foreground text-xs sm:text-sm font-bold" translate="no">
                                                                 {isEditingMenu ? (
                                                                     <span>CHF {tempMenuItems.reduce((sum, item) => sum + ((item.rawQuantity || 0) * (item.unitPrice || 0)), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                                                 ) : (
                                                                     <span>{booking.amount}</span>
                                                                 )}
                                                             </td>
-                                                            <td className="px-4 py-3 text-right text-foreground text-xs sm:text-sm font-bold text-foreground whitespace-nowrap" translate="no">
+                                                            <td className="px-3 py-3 text-right text-foreground text-xs sm:text-sm font-bold text-foreground whitespace-nowrap" translate="no">
                                                                 <span>
                                                                     CHF {(isEditingMenu ? tempMenuItems : booking.menuItems)!.reduce((sum, item) => sum + ((item.rawQuantity || 0) * (item.internalCost || 0)), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                                 </span>
                                                             </td>
-                                                            <td className="px-4 py-3 text-right text-foreground text-xs sm:text-sm font-bold whitespace-nowrap" translate="no">
+                                                            <td className="px-3 py-3 text-right text-foreground text-xs sm:text-sm font-bold whitespace-nowrap" translate="no">
                                                                 <span className="bg-primary px-2.5 py-1 rounded-lg shadow-sm inline-block">
                                                                     CHF {(isEditingMenu ? tempMenuItems : booking.menuItems)!.reduce((sum, item) => sum + ((item.rawQuantity || 0) * ((item.unitPrice || 0) - (item.internalCost || 0))), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                                 </span>
