@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Globe, DollarSign, Check, MapPin, Plus, X, Edit2, Trash2, Save } from 'lucide-react';
+import { format } from 'date-fns';
+import { enUS, de } from 'date-fns/locale';
 import { SkeletonGrid, SkeletonKPI } from '@/components/ui/skeleton-loaders';
 import { StatusDropdown } from './StatusDropdown';
 import { VenueModal } from './VenueModal';
@@ -114,10 +116,7 @@ export function SettingsPage({ user, initialSettings, initialVenues }: SettingsP
     }
   }, [language, timeZone, dateFormat, currency, showCurrencySymbol]);
   const languageOptions = [
-    { value: 'English', label: 'English' },
     { value: 'German', label: 'German' },
-    { value: 'French', label: 'French' },
-    { value: 'Italian', label: 'Italian' },
   ];
 
   // Time Zone options
@@ -127,13 +126,16 @@ export function SettingsPage({ user, initialSettings, initialVenues }: SettingsP
     { value: 'Europe/Paris', label: 'Europe/Paris (GMT+1)' },
   ];
 
-  // Date Format options
+  // Date Format options with dynamic current date examples
+  const now = new Date();
+  const dateFnsLocale = language === 'German' ? de : enUS;
+
   const dateFormatOptions = [
-    { value: 'MM/DD/YYYY', label: 'MM/DD/YYYY (e.g., 02/05/2026)' },
-    { value: 'DD/MM/YYYY', label: 'DD/MM/YYYY (e.g., 05/02/2026)' },
-    { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD (e.g., 2026-02-05)' },
-    { value: 'DD MMM YYYY', label: 'DD MMM YYYY (e.g., 05 Feb 2026)' },
-    { value: 'MMM DD, YYYY', label: 'MMM DD, YYYY (e.g., Feb 05, 2026)' },
+    { value: 'MM/DD/YYYY', label: t('dateFormats.mdy', { date: format(now, 'MM/dd/yyyy') }) },
+    { value: 'DD/MM/YYYY', label: t('dateFormats.dmy', { date: format(now, 'dd/MM/yyyy') }) },
+    { value: 'YYYY-MM-DD', label: t('dateFormats.ymd', { date: format(now, 'yyyy-MM-dd') }) },
+    { value: 'DD MMM YYYY', label: t('dateFormats.dmyShort', { date: format(now, 'dd MMM yyyy', { locale: dateFnsLocale }) }) },
+    { value: 'MMM DD, YYYY', label: t('dateFormats.mdyShort', { date: format(now, 'MMM dd, yyyy', { locale: dateFnsLocale }) }) },
   ];
 
   // Currency options

@@ -44,8 +44,10 @@ export function HeaderVariant6() {
                 alt="Olive Restaurant & Bar"
                 width={120}
                 height={48}
+                priority
                 className="h-12 w-auto"
-                style={{ mixBlendMode: 'multiply', height: 'auto' }}
+                style={{ width: 'auto', height: 'auto' }}
+                loading="eager"
               />
             </a>
           </div>

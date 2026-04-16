@@ -121,7 +121,8 @@ function BrandHeader({ iconColor = 'var(--primary-foreground)', bgColor = 'var(-
           width={100}
           height={48}
           className="h-12 w-auto object-contain"
-          style={{ width: 'auto', height: '3rem' }}
+          style={{ width: 'auto', height: 'auto' }}
+          loading="eager"
         />
       </div>
 

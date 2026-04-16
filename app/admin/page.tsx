@@ -36,7 +36,7 @@ export default async function AdminDashboardPage() {
   return (
     <AdminPageLayout className="space-y-4 md:space-y-6">
       {/* KPI Cards - Compact Version */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-3 md:gap-4">
         <KPICard
           title={t('kpis.bookings')}
           value={stats.totalBookings.toString()}
@@ -48,6 +48,24 @@ export default async function AdminDashboardPage() {
           title={t('kpis.revenue')}
           value={`CHF ${stats.totalRevenue.toLocaleString('en-US')}`}
           iconName="DollarSign"
+          variant="compact"
+        />
+        <KPICard
+          title={t('kpis.internalCost')}
+          value={`CHF ${(stats as any).totalCost.toLocaleString('en-US')}`}
+          iconName="CreditCard"
+          variant="compact"
+        />
+        <KPICard
+          title={t('kpis.profit')}
+          value={`CHF ${(stats as any).totalProfit.toLocaleString('en-US')}`}
+          iconName="TrendingUp"
+          variant="compact"
+        />
+        <KPICard
+          title={t('kpis.margin')}
+          value={`${(stats as any).margin.toFixed(1)}%`}
+          iconName="Percent"
           variant="compact"
         />
         <KPICard

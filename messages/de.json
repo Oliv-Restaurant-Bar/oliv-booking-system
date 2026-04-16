@@ -152,7 +152,7 @@
     "deleteItem": "Artikel löschen",
     "itemName": "Artikelname",
     "description": "Beschreibung",
-    "price": "Preis",
+    "price": "Verkaufspreis",
     "category": "Kategorie",
     "dietaryLabel": "Ernährung",
     "available": "Verfügbar",
@@ -307,7 +307,7 @@
     "contact": "Kontaktieren",
     "confirm": "Bestätigen",
     "close": "Schliessen",
-    "price": "Preis"
+    "price": "Verkaufspreis"
   },
   "message": {
     "noDataFound": "Keine Daten gefunden",
@@ -384,6 +384,9 @@
         "bookings": "Anzahl Buchungen",
         "revenue": "Gesamtumsatz",
         "items": "Gesamtzahl der Artikel",
+        "profit": "Gesamtmarge",
+        "margin": "Marge",
+        "internalCost": "Interne Kosten",
         "vsLastMonth": "vs letzten Monat"
       },
       "charts": {
@@ -412,7 +415,7 @@
       "noBookings": "Keine Buchungen gefunden",
       "tryAdjustFilters": "Versuchen Sie, Ihre Filter oder Suchanfrage anzupassen",
       "guests": "Gäste",
-      "internalCost": "Interner Preis",
+      "internalCost": "Interne Kosten",
       "statuses": {
         "all": "Alle Status",
         "new": "Neu",
@@ -505,7 +508,7 @@
       "auditHistory": "Audit-Verlauf",
       "auditLog": "Detailliertes Verlaufsprotokoll",
       "quantity": "Anzahl",
-      "profit": "Profit",
+      "profit": "Marge",
       "manualComments": "Manuelle Kommentare",
       "activityLog": "Aktivitätsprotokoll",
       "dietarySelection": "Menüauswahl-Übersicht",
@@ -584,17 +587,23 @@
         "view": "Ansehen"
       },
       "quickActions": "Schnellaktionen",
-      "assignUser": "Benutzer zuweisen",
+      "assignUser": "Zuständige",
       "assigned": "Zugewiesen",
       "assignedTo": "Zugewiesen an"
     },
     "reports": {
       "title": "Berichte",
       "topCustomers": "Top-Kunden nach Umsatz",
+      "customerName": "Kundenname",
+      "phoneNumber": "Telefonnummer",
+      "salesPrice": "Verkaufspreis",
+      "internalCost": "Interne Kosten",
+      "profit": "Profit",
       "avgRevenue": "Durchschn: CHF {amount}",
       "totalRevenueAmount": "Gesamt: CHF {amount}",
       "bookings": "{count} Buchungen",
       "bookingsLabel": "Buchungen",
+      "guestsLabel": "Personen",
       "guests": "{count} Personen",
       "salesCount": "{count} Artikel",
       "profitMargin": "Marge",
@@ -604,7 +613,7 @@
       "allCategories": "Alle Kategorien",
       "monthlyBookingReport": "Monatlicher Buchungsbericht",
       "revenue": "Umsatz",
-      "profit": "Profit",
+      "profit": "Marge",
       "avgRevenueLabel": "Durchschnittsumsatz",
       "export": "Bericht exportieren"
     },
@@ -642,11 +651,11 @@
         "paris": "Europa/Paris (GMT+1)"
       },
       "dateFormats": {
-        "mdy": "MM/TT/JJJJ (z.B., 02/05/2026)",
-        "dmy": "TT/MM/JJJJ (z.B., 05/02/2026)",
-        "ymd": "JJJJ-MM-TT (z.B., 2026-02-05)",
-        "dmyShort": "TT MMM JJJJ (z.B., 05 Feb 2026)",
-        "mdyShort": "MMM TT, JJJJ (z.B., Feb 05, 2026)"
+        "mdy": "MM/TT/JJJJ (z.B., {date})",
+        "dmy": "TT/MM/JJJJ (z.B., {date})",
+        "ymd": "JJJJ-MM-TT (z.B., {date})",
+        "dmyShort": "TT MMM JJJJ (z.B., {date})",
+        "mdyShort": "MMM TT, JJJJ (z.B., {date})"
       },
       "currencies": {
         "chf": "CHF - Schweizer Franken",
@@ -702,13 +711,14 @@
         "changeImage": "Bild ändern",
         "removeImage": "Bild entfernen",
         "saveChanges": "Änderungen speichern",
-        "price": "Preis",
+        "price": "Verkaufspreis",
         "addSettings": "Einstellungen hinzufügen",
         "addAddons": "Extras hinzufügen",
         "addVariant": "Variante hinzufügen",
         "uploading": "Wird hochgeladen...",
         "uploadImageDesc": "Klicken zum Durchsuchen oder Drag & Drop",
-        "addSchedule": "Sichtbarkeit hinzufügen"
+        "addSchedule": "Sichtbarkeit hinzufügen",
+        "configureVisibility": "Sichtbarkeit konfigurieren"
       },
       "messages": {
         "categoryHidden": "Kategorie ausgeblendet",
@@ -743,8 +753,8 @@
         "description": "Beschreibung",
         "categoryImage": "Kategoriebild",
         "itemName": "Artikelname",
-        "price": "Preis",
-        "internalCost": "Interner Preis",
+        "price": "Verkaufspreis",
+        "internalCost": "Interne Kosten",
         "pricingType": "Preistyp",
         "averageConsumption": "Durchschnittlicher Verbrauch",
         "itemImage": "Artikelbild",
@@ -770,7 +780,7 @@
         "selectCategory": "Kategorie wählen",
         "chooseCategory": "Kategorie auswählen",
         "pricingMode": "Preismodus",
-        "pricingModePrice": "Preis",
+        "pricingModePrice": "Verkaufspreis",
         "pricingModeVariants": "Varianten",
         "itemSettingsOpt": "Artikeleinstellungen (Optional)",
         "addonsOpt": "Auswahlmöglichkeiten & Extras (Optional)",
@@ -792,7 +802,8 @@
         "priceHint": "0 für kostenlos",
         "dietaryType": "Ernährungsweise",
         "available": "Verfügbar",
-        "useSpecialCalculation": "Spezielle Berechnung"
+        "useSpecialCalculation": "Spezielle Berechnung",
+        "visibilityOptions": "Sichtbarkeitseinstellungen"
       },
       "nutrition": {
         "servingSize": "Portionsgröße",
@@ -848,7 +859,7 @@
       "addChoice": "Auswahlmöglichkeit hinzufügen",
       "pricing": {
         "perPerson": "Pro Person",
-        "perPersonDesc": "Preis pro Gast",
+        "perPersonDesc": "Verkaufspreis pro Gast",
         "flatRate": "Pauschale",
         "flatRateDesc": "Einmalige Gebühr unabhängig von der Gästezahl",
         "consumption": "Nach Konsumation",
@@ -872,7 +883,9 @@
         "selectionFixed": "Auswahl ist auf {count} Artikel festgelegt",
         "selectionMax": "Bis zu {count} Artikel können ausgewählt werden",
         "selectionRange": "Zwischen {min} und {max} Artikel können ausgewählt werden",
-        "nutritionServingSize": "Alle Werte basieren auf einer Portionsgrösse von {size}."
+        "nutritionServingSize": "Alle Werte basieren auf einer Portionsgrösse von {size}.",
+        "visibility": "Wählen Sie bestimmte Zeiträume aus, in denen dieser Artikel auf der Speisekarte sichtbar sein soll. Wenn kein Zeitplan ausgewählt ist, ist er jederzeit sichtbar.",
+        "noVisibilitySchedules": "Noch keine Sichtbarkeitspläne erstellt."
       },
       "dietary": {
         "none": "Keine",
@@ -1230,7 +1243,7 @@
       "available": "Verfügbar",
       "forEvent": "für Ihr Event",
       "billedByConsumption": "nach Konsumation abgerechnet",
-      "priceOnConsumption": "Preis nach Konsumation",
+      "priceOnConsumption": "Verkaufspreis nach Konsumation",
       "flatFee": "Pauschalpreis",
       "perPerson": "pro Person",
       "perBottle": "/Flasche",

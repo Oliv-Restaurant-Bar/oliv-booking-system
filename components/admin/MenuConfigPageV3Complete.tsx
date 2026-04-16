@@ -262,11 +262,13 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
       sodium: '',
     },
     assignedAddonGroups: [] as string[],
+    assignedVisibilitySchedules: [] as string[],
   });
   const [menuItemErrors, setMenuItemErrors] = useState<{ name?: string; description?: string }>({});
   const [menuItemTouched, setMenuItemTouched] = useState({ name: false, description: false });
   const [showItemSettings, setShowItemSettings] = useState(false);
   const [showAddons, setShowAddons] = useState(false);
+  const [showVisibility, setShowVisibility] = useState(false);
   const [showChoices, setShowChoices] = useState(false);
 
   const [settingsMenuItemId, setSettingsMenuItemId] = useState<string | null>(null);
@@ -446,12 +448,17 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
       additives: newMenuItem.additives,
       nutritionalInfo: newMenuItem.nutritionalInfo as any,
       assignedAddonGroups: newMenuItem.assignedAddonGroups,
+      assignedVisibilitySchedules: newMenuItem.assignedVisibilitySchedules,
       variants: newMenuItem.variants,
     };
 
     if (editingMenuItemId) {
       const result = await updateMenuItem(editingMenuItemId, { ...itemData, price: itemData.price.toString() } as any);
       if (result.success) {
+        // Update junction tables
+        await updateItemAddonGroups(editingMenuItemId, newMenuItem.assignedAddonGroups);
+        await updateItemVisibilitySchedules(editingMenuItemId, newMenuItem.assignedVisibilitySchedules);
+
         setCategories(categories.map(cat => ({
           ...cat,
           items: cat.items.map(i => i.id === editingMenuItemId ? { ...i, ...itemData, image: newMenuItem.imageUrl } : i)
@@ -462,9 +469,15 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
     } else if (activeCategoryId) {
       const result = await createMenuItem({ ...itemData, categoryId: activeCategoryId } as any);
       if (result.success && result.data) {
+        const newItemId = result.data.id;
+        
+        // Update junction tables for the new item
+        await updateItemAddonGroups(newItemId, newMenuItem.assignedAddonGroups);
+        await updateItemVisibilitySchedules(newItemId, newMenuItem.assignedVisibilitySchedules);
+
         setCategories(prev => prev.map(cat =>
           cat.id === activeCategoryId
-            ? { ...cat, items: [...cat.items, { ...itemData, id: result.data.id, image: newMenuItem.imageUrl }] as any[] }
+            ? { ...cat, items: [...cat.items, { ...itemData, id: newItemId, image: newMenuItem.imageUrl }] as any[] }
             : cat
         ));
         setIsAddMenuItemModalOpen(false);
@@ -939,10 +952,13 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
                       setEditingMenuItemId(null);
                       setNewMenuItem({
                         name: '', description: '', price: '', internalCost: '', pricingType: 'per_person', averageConsumption: '',
-                        image: null, imageUrl: '', isActive: true, variants: [], assignedAddonGroups: [],
+                        image: null, imageUrl: '', isActive: true, variants: [], assignedAddonGroups: [], assignedVisibilitySchedules: [],
                         dietaryType: 'veg', dietaryTags: [], ingredients: '', allergens: [], additives: [],
                         nutritionalInfo: { servingSize: '', calories: '', protein: '', carbs: '', fat: '', fiber: '', sugar: '', sodium: '' }
                       });
+                      setShowItemSettings(false);
+                      setShowAddons(false);
+                      setShowVisibility(false);
                       setIsAddMenuItemModalOpen(true);
                     }}
                     onEditMenuItem={(catId: string, item: MenuItemData) => {
@@ -957,8 +973,12 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
                         image: null, imageUrl: item.image,
                         variants: item.variants || [],
                         assignedAddonGroups: item.assignedAddonGroups || [],
+                        assignedVisibilitySchedules: (item as any).assignedVisibilitySchedules || [],
                         nutritionalInfo: (item as any).nutritionalInfo || { servingSize: '', calories: '', protein: '', carbs: '', fat: '', fiber: '', sugar: '', sodium: '' }
                       });
+                      setShowItemSettings(false);
+                      setShowAddons(false);
+                      setShowVisibility(false);
                       setIsAddMenuItemModalOpen(true);
                     }}
                     onDeleteMenuItem={(catId: string, itemId: string) => {
@@ -1193,6 +1213,9 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
         showAddons={showAddons}
         setShowAddons={setShowAddons}
         addonGroups={addonGroups}
+        showVisibility={showVisibility}
+        setShowVisibility={setShowVisibility}
+        visibilitySchedules={visibilitySchedules}
         addVariant={() => setNewMenuItem({ ...newMenuItem, variants: [...newMenuItem.variants, { id: Math.random().toString(), name: '', price: 0, internalCost: 0 }] })}
         updateVariant={(index, field, value) => {
           const v = [...newMenuItem.variants];

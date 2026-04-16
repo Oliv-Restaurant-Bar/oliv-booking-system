@@ -152,7 +152,7 @@
     "deleteItem": "Delete Item",
     "itemName": "Item Name",
     "description": "Description",
-    "price": "Price",
+    "price": "Sales Price",
     "category": "Category",
     "dietaryLabel": "Dietary",
     "available": "Available",
@@ -307,7 +307,7 @@
     "contact": "Contact",
     "confirm": "Confirm",
     "close": "Close",
-    "price": "Price"
+    "price": "Sales Price"
   },
   "message": {
     "noDataFound": "No data found",
@@ -384,6 +384,9 @@
         "bookings": "No. of Bookings",
         "revenue": "Total Revenue",
         "items": "Total Items",
+        "profit": "Total Margin",
+        "margin": "Margin",
+        "internalCost": "Internal Cost",
         "vsLastMonth": "vs last month"
       },
       "charts": {
@@ -504,8 +507,8 @@
       "auditHistory": "Audit History",
       "auditLog": "Detailed History Log",
       "quantity": "Quantity",
-      "internalCost": "Internal Price",
-      "profit": "Profit",
+      "internalCost": "Internal Cost",
+      "profit": "Margin",
       "manualComments": "Manual Comments",
       "activityLog": "Activity Log",
       "dietarySelection": "Dietary Selection",
@@ -584,17 +587,23 @@
         "view": "View"
       },
       "quickActions": "Quick Actions",
-      "assignUser": "Assign User",
+      "assignUser": "Assignees",
       "assigned": "Assigned",
       "assignedTo": "Assigned To"
     },
     "reports": {
       "title": "Reports",
       "topCustomers": "Top Customers by Revenue",
+      "customerName": "Customer Name",
+      "phoneNumber": "Phone Number",
+      "salesPrice": "Sales Price",
+      "internalCost": "Internal Cost",
+      "profit": "Profit",
       "avgRevenue": "Avg: CHF {amount}",
       "totalRevenueAmount": "Total: CHF {amount}",
       "bookings": "{count} bookings",
       "bookingsLabel": "Bookings",
+      "guestsLabel": "Persons",
       "guests": "{count} persons",
       "salesCount": "{count} Items",
       "profitMargin": "Margin",
@@ -641,11 +650,11 @@
         "paris": "Europe/Paris (GMT+1)"
       },
       "dateFormats": {
-        "mdy": "MM/DD/YYYY (e.g., 02/05/2026)",
-        "dmy": "DD/MM/YYYY (e.g., 05/02/2026)",
-        "ymd": "YYYY-MM-DD (e.g., 2026-02-05)",
-        "dmyShort": "DD MMM YYYY (e.g., 05 Feb 2026)",
-        "mdyShort": "MMM DD, YYYY (e.g., Feb 05, 2026)"
+        "mdy": "MM/DD/YYYY (e.g., {date})",
+        "dmy": "DD/MM/YYYY (e.g., {date})",
+        "ymd": "YYYY-MM-DD (e.g., {date})",
+        "dmyShort": "DD MMM YYYY (e.g., {date})",
+        "mdyShort": "MMM DD, YYYY (e.g., {date})"
       },
       "currencies": {
         "chf": "CHF - Swiss Franc",
@@ -701,13 +710,14 @@
         "changeImage": "Change Image",
         "removeImage": "Remove Image",
         "saveChanges": "Save Changes",
-        "price": "Price",
+        "price": "Sales Price",
         "addSettings": "Add Settings",
         "addAddons": "Add Extras",
         "addVariant": "Add Variant",
         "uploading": "Uploading...",
         "uploadImageDesc": "Click to browse or drag and drop",
-        "addSchedule": "Add Schedule"
+        "addSchedule": "Add Schedule",
+        "configureVisibility": "Configure Visibility"
       },
       "messages": {
         "categoryHidden": "Category hidden",
@@ -742,8 +752,8 @@
         "description": "Description",
         "categoryImage": "Category Image",
         "itemName": "Item Name",
-        "price": "Price",
-        "internalCost": "Internal Price",
+        "price": "Sales Price",
+        "internalCost": "Internal Cost",
         "pricingType": "Pricing Type",
         "averageConsumption": "Average Consumption",
         "itemImage": "Item Image",
@@ -769,7 +779,7 @@
         "selectCategory": "Select Category",
         "chooseCategory": "Choose a category",
         "pricingMode": "Pricing Mode",
-        "pricingModePrice": "Price",
+        "pricingModePrice": "Sales Price",
         "pricingModeVariants": "Variants",
         "itemSettingsOpt": "Item Settings (Optional)",
         "addonsOpt": "Options & Extras (Optional)",
@@ -791,7 +801,8 @@
         "priceHint": "0 for free",
         "dietaryType": "Dietary Type",
         "available": "Available",
-        "useSpecialCalculation": "Special Calculation"
+        "useSpecialCalculation": "Special Calculation",
+        "visibilityOptions": "Visibility Options"
       },
       "nutrition": {
         "servingSize": "Serving Size",
@@ -848,7 +859,7 @@
       "addChoice": "Add Option",
       "pricing": {
         "perPerson": "Per Person",
-        "perPersonDesc": "Price applied per guest",
+        "perPersonDesc": "Sales Price applied per guest",
         "flatRate": "Flat Rate",
         "flatRateDesc": "One-time fee regardless of guest count",
         "consumption": "By Consumption",
@@ -872,7 +883,9 @@
         "selectionFixed": "Selection is fixed at {count} items",
         "selectionMax": "Up to {count} items can be selected",
         "selectionRange": "Between {min} and {max} items can be selected",
-        "nutritionServingSize": "All values based on {size} serving size."
+        "nutritionServingSize": "All values based on {size} serving size.",
+        "visibility": "Choose specific timeframes when this item should be visible on the menu. If no schedule is selected, it will be visible at all times.",
+        "noVisibilitySchedules": "No visibility schedules created yet."
       },
       "dietary": {
         "none": "None",
@@ -1222,7 +1235,7 @@
       "available": "Available",
       "forEvent": "for your event",
       "billedByConsumption": "billed by consumption",
-      "priceOnConsumption": "Price on consumption",
+      "priceOnConsumption": "Sales Price on consumption",
       "flatFee": "flat fee",
       "perPerson": "per person",
       "perBottle": "/bottle",

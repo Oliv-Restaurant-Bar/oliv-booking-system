@@ -558,7 +558,7 @@ export function UserManagementPage({ currentUser, initialUsers }: UserManagement
                             {isSuperAdmin && user.id !== currentUserId && (
                               <button
                                 onClick={() => handleDeleteClick(user)}
-                                className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-muted-foreground hover:text-destructive"
+                                className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-destructive hover:text-destructive"
                                 disabled={user.id !== currentUserId && !isSuperAdmin}
                                 title={t('deleteUser')}
                               >

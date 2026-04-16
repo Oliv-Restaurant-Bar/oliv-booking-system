@@ -4,6 +4,7 @@ import { Calendar, X, Check } from 'lucide-react';
 import { Modal } from '../user/Modal';
 import { Button } from '../user/Button';
 import { useMenuConfigTranslation, useCommonTranslation } from '@/lib/i18n/client';
+import { useDateFormat } from '@/lib/contexts/SystemSettingsContext';
 import { Category, VisibilitySchedule } from '@/lib/types';
 
 interface AssignVisibilityModalProps {
@@ -33,6 +34,7 @@ export function AssignVisibilityModal({
 }: AssignVisibilityModalProps) {
   const t = useMenuConfigTranslation();
   const ct = useCommonTranslation();
+  const { formatDate } = useDateFormat();
 
   return (
     <Modal
@@ -110,7 +112,7 @@ export function AssignVisibilityModal({
                           {schedule.name}
                         </span>
                         <span className="text-muted-foreground truncate" style={{ fontSize: '10px' }}>
-                          {new Date(schedule.startDate).toLocaleDateString()} - {new Date(schedule.endDate).toLocaleDateString()}
+                          {formatDate(schedule.startDate)} - {formatDate(schedule.endDate)}
                         </span>
                       </div>
                     </div>

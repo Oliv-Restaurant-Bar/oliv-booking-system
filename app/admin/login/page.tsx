@@ -103,8 +103,9 @@ export default function AdminLoginPage() {
               alt="OLIV Logo"
               width={160}
               height={64}
+              priority
               className="h-16 w-auto"
-              style={{ width: 'auto', height: '4rem' }}
+              style={{ width: 'auto' }}
             />
           </div>
           <p className="text-muted-foreground">

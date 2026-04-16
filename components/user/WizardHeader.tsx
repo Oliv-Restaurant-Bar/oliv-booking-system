@@ -41,8 +41,10 @@ export function WizardHeader({ onBack, fullWidth = false }: WizardHeaderProps) {
                 alt="Olive Restaurant & Bar"
                 width={120}
                 height={48}
+                priority
                 className="h-12 w-auto"
-                style={{ mixBlendMode: 'multiply' }}
+                style={{ width: 'auto', height: 'auto' }}
+                loading="eager"
               />
             </Link>
           </div>

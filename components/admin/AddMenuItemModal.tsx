@@ -1,12 +1,13 @@
 'use client';
 
-import { UtensilsCrossed, X, Plus, Check, Upload, Trash2 } from 'lucide-react';
+import { UtensilsCrossed, X, Plus, Check, Upload, Trash2, Calendar } from 'lucide-react';
 import { Modal } from '../user/Modal';
 import { Button } from '../user/Button';
 import { DietaryIcon } from '../user/DietaryIcon';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import { useMenuConfigTranslation, useCommonTranslation } from '@/lib/i18n/client';
-import { Category, AddonGroup } from '@/lib/types';
+import { useDateFormat } from '@/lib/contexts/SystemSettingsContext';
+import { Category, AddonGroup, VisibilitySchedule } from '@/lib/types';
 import { dietaryTagOptions, allergenOptions, additiveOptions } from '@/lib/constants';
 
 interface AddMenuItemModalProps {
@@ -43,6 +44,7 @@ interface AddMenuItemModalProps {
       sodium: string;
     };
     assignedAddonGroups: string[];
+    assignedVisibilitySchedules: string[];
   };
   setNewMenuItem: (item: any) => void;
   pricingMode: 'price' | 'variants';
@@ -64,6 +66,9 @@ interface AddMenuItemModalProps {
   showAddons: boolean;
   setShowAddons: (show: boolean) => void;
   addonGroups: AddonGroup[];
+  showVisibility: boolean;
+  setShowVisibility: (show: boolean) => void;
+  visibilitySchedules: VisibilitySchedule[];
   addVariant: () => void;
   updateVariant: (index: number, field: string, value: any) => void;
   removeVariant: (index: number) => void;
@@ -92,6 +97,9 @@ export function AddMenuItemModal({
   showAddons,
   setShowAddons,
   addonGroups,
+  showVisibility,
+  setShowVisibility,
+  visibilitySchedules,
   addVariant,
   updateVariant,
   removeVariant,
@@ -99,6 +107,7 @@ export function AddMenuItemModal({
 }: AddMenuItemModalProps) {
   const t = useMenuConfigTranslation();
   const ct = useCommonTranslation();
+  const { formatDate } = useDateFormat();
 
   // Helper functions to get translated labels
   const getDietaryTagLabel = (tag: string) => {
@@ -393,92 +402,6 @@ export function AddMenuItemModal({
             </div>
           </div>
         )}
-
-
-
-        <div>
-          <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-            {t('labels.itemImage')}
-          </label>
-          <div className="border-2 border-dashed border-border rounded-lg p-4 bg-muted/20">
-            {(newMenuItem.imageUrl || newMenuItem.image) ? (
-              <div className="space-y-3">
-                <div className="w-full h-48 rounded-lg overflow-hidden bg-muted relative">
-                  <ImageWithFallback
-                    src={newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl}
-                    alt={t('labels.imagePreview')}
-                    fill
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <label className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity cursor-pointer flex items-center justify-center gap-2">
-                    <Upload className="w-4 h-4" />
-                    <span style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                      {uploadingImage ? t('buttons.uploading') : t('buttons.changeImage')}
-                    </span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      disabled={uploadingImage}
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          try {
-                            const imageUrl = await handleImageUpload(file);
-                            setNewMenuItem({ ...newMenuItem, image: null, imageUrl });
-                          } catch (error) {
-                            setNewMenuItem({ ...newMenuItem, image: file, imageUrl: URL.createObjectURL(file) });
-                          }
-                        }
-                      }}
-                      className="hidden"
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setNewMenuItem({ ...newMenuItem, image: null, imageUrl: '' })}
-                    className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                      {t('buttons.removeImage')}
-                    </span>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <label className="flex flex-col items-center justify-center py-8 cursor-pointer group">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors">
-                  <Upload className="w-8 h-8 text-primary" />
-                </div>
-                <span className="text-foreground mb-1" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                  {uploadingImage ? t('buttons.uploading') : t('buttons.uploadImage')}
-                </span>
-                <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                  {t('buttons.uploadImageDesc')}
-                </span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  disabled={uploadingImage}
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      try {
-                        const imageUrl = await handleImageUpload(file);
-                        setNewMenuItem({ ...newMenuItem, image: null, imageUrl });
-                      } catch (error) {
-                        setNewMenuItem({ ...newMenuItem, image: file, imageUrl: URL.createObjectURL(file) });
-                      }
-                    }
-                  }}
-                  className="hidden"
-                />
-              </label>
-            )}
-          </div>
-        </div>
 
         {pricingMode === 'variants' && (
           <div>
@@ -823,6 +746,110 @@ export function AddMenuItemModal({
           </div>
         )}
 
+        {showVisibility ? (
+          <div className="p-4 bg-muted/30 rounded-lg space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                {t('tabs.visibilities')} {newMenuItem.assignedVisibilitySchedules.length > 0 && `(${newMenuItem.assignedVisibilitySchedules.length})`}
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowVisibility(false)}
+                className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+              {t('descriptions.visibility')}
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              {visibilitySchedules.map((schedule) => {
+                const isSelected = newMenuItem.assignedVisibilitySchedules.includes(schedule.id);
+                return (
+                  <label
+                    key={schedule.id}
+                    className="cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setNewMenuItem({
+                            ...newMenuItem,
+                            assignedVisibilitySchedules: [...newMenuItem.assignedVisibilitySchedules, schedule.id]
+                          });
+                        } else {
+                          setNewMenuItem({
+                            ...newMenuItem,
+                            assignedVisibilitySchedules: newMenuItem.assignedVisibilitySchedules.filter(id => id !== schedule.id)
+                          });
+                        }
+                      }}
+                      className="sr-only peer"
+                    />
+                    <div
+                      className="px-4 py-3 bg-card border border-border rounded-lg transition-all hover:border-primary/50 peer-checked:border-primary peer-checked:bg-primary/5 h-full"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${isSelected
+                          ? 'bg-primary border-primary'
+                          : 'bg-background border-border'
+                          }`}>
+                          {isSelected && (
+                            <Check className="w-3.5 h-3.5 text-primary-foreground" strokeWidth={3} />
+                          )}
+                        </div>
+                        <div className="flex flex-col flex-1 min-w-0">
+                          <span
+                            className="text-foreground truncate"
+                            style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+                            title={schedule.name}
+                          >
+                            {schedule.name}
+                          </span>
+                          <span className="text-muted-foreground truncate" style={{ fontSize: '10px' }}>
+                            {formatDate(schedule.startDate)} - {formatDate(schedule.endDate)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+
+            {newMenuItem.assignedVisibilitySchedules.length > 0 && (
+              <p className="text-muted-foreground mt-3" style={{ fontSize: 'var(--text-small)' }}>
+                {newMenuItem.assignedVisibilitySchedules.length} {newMenuItem.assignedVisibilitySchedules.length === 1 ? t('labels.selected') : t('labels.selected')}
+              </p>
+            )}
+
+            {(!visibilitySchedules || visibilitySchedules.length === 0) && (
+              <p className="text-muted-foreground text-center py-4" style={{ fontSize: 'var(--text-small)' }}>
+                {t('descriptions.noVisibilitySchedules')}
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <label className="block text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+              {t('labels.visibilityOptions')} {newMenuItem.assignedVisibilitySchedules.length > 0 && <span className="text-muted-foreground ml-2">({newMenuItem.assignedVisibilitySchedules.length} {t('labels.selected')})</span>}
+            </label>
+            <button
+              type="button"
+              onClick={() => setShowVisibility(true)}
+              className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              <span style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>{t('buttons.configureVisibility')}</span>
+            </button>
+          </div>
+        )}
+
         {showAddons ? (
           <div className="p-4 bg-muted/30 rounded-lg space-y-4">
             <div className="flex items-center justify-between">
@@ -941,6 +968,89 @@ export function AddMenuItemModal({
             </button>
           </div>
         )}
+        <div>
+          <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+            {t('labels.itemImage')}
+          </label>
+          <div className="border-2 border-dashed border-border rounded-lg p-4 bg-muted/20">
+            {(newMenuItem.imageUrl || newMenuItem.image) ? (
+              <div className="space-y-3">
+                <div className="w-full h-48 rounded-lg overflow-hidden bg-muted relative">
+                  <ImageWithFallback
+                    src={newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl}
+                    alt={t('labels.imagePreview')}
+                    fill
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <label className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity cursor-pointer flex items-center justify-center gap-2">
+                    <Upload className="w-4 h-4" />
+                    <span style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                      {uploadingImage ? t('buttons.uploading') : t('buttons.changeImage')}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={uploadingImage}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          try {
+                            const imageUrl = await handleImageUpload(file);
+                            setNewMenuItem({ ...newMenuItem, image: null, imageUrl });
+                          } catch (error) {
+                            setNewMenuItem({ ...newMenuItem, image: file, imageUrl: URL.createObjectURL(file) });
+                          }
+                        }
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setNewMenuItem({ ...newMenuItem, image: null, imageUrl: '' })}
+                    className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                      {t('buttons.removeImage')}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center py-8 cursor-pointer group">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors">
+                  <Upload className="w-8 h-8 text-primary" />
+                </div>
+                <span className="text-foreground mb-1" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                  {uploadingImage ? t('buttons.uploading') : t('buttons.uploadImage')}
+                </span>
+                <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                  {t('buttons.uploadImageDesc')}
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={uploadingImage}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      try {
+                        const imageUrl = await handleImageUpload(file);
+                        setNewMenuItem({ ...newMenuItem, image: null, imageUrl });
+                      } catch (error) {
+                        setNewMenuItem({ ...newMenuItem, image: file, imageUrl: URL.createObjectURL(file) });
+                      }
+                    }
+                  }}
+                  className="hidden"
+                />
+              </label>
+            )}
+          </div>
+        </div>
 
         <div className="flex items-center gap-2 pt-2 border-t border-border mt-2">
           <input

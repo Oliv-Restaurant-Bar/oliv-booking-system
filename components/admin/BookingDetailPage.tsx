@@ -3076,11 +3076,7 @@ export function BookingDetailPage({
                                         style={{ fontWeight: 'var(--font-weight-medium)' }}
                                     >
                                         <UserPlus className="w-4 h-4" />
-                                        {assignedTo ? (
-                                            <span className="truncate">{adminUsers.find(u => u.id === assignedTo)?.name || t('assigned')}</span>
-                                        ) : (
-                                            <span>{t('assignUser')}</span>
-                                        )}
+                                        <span>{t('assignUser')}</span>
                                     </button>
                                 </Tooltip>
                             )}

@@ -13,6 +13,8 @@ interface DailyData {
 interface DailyRevenueData {
   date: string;
   revenue: number;
+  profit: number;
+  cost: number;
 }
 
 interface StatusData {
@@ -372,6 +374,7 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
               gridLineWidth: 1,
             },
             tooltip: {
+              shared: true,
               backgroundColor: '#FFFFFF',
               borderColor: '#E5E7EB',
               borderRadius: 8,
@@ -380,11 +383,12 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
                 fontFamily: 'var(--font-sans)',
               },
               formatter: function (this: any) {
-                return `
-                  <b>${this.key}</b><br/>
-                  ${t('dashboard.kpis.revenue')}: 
-                  <b>CHF ${this.y.toLocaleString('en-US')}</b>
-                `;
+                const points = this.points || [];
+                let s = `<b>${this.key}</b><br/>`;
+                points.forEach((point: any) => {
+                  s += `<span style="color:${point.color}">●</span> ${point.series.name}: <b>CHF ${point.y.toLocaleString('en-US')}</b><br/>`;
+                });
+                return s;
               },
             },
             plotOptions: {
@@ -418,9 +422,25 @@ export function DashboardCharts({ bookingsData, revenueData, statusData }: Dashb
                 data: revenueData.map((data) => data.revenue),
                 color: '#9DAE91',
               },
+              {
+                name: t('dashboard.kpis.internalCost'),
+                data: revenueData.map((data) => data.cost),
+                color: '#F59E0B',
+                dashStyle: 'ShortDash',
+              },
+              {
+                name: t('dashboard.kpis.profit'),
+                data: revenueData.map((data) => data.profit),
+                color: '#10B981',
+              },
             ],
             legend: {
-              enabled: false,
+              enabled: true,
+              itemStyle: {
+                fontSize: '12px',
+                fontFamily: 'var(--font-sans)',
+                color: '#6B7280',
+              },
             },
           }}
         />

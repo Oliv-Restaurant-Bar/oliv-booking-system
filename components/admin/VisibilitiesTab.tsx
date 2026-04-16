@@ -3,6 +3,7 @@
 import { Search, Plus, Edit2, Trash2, Calendar } from 'lucide-react';
 import { Button } from '../user/Button';
 import { useMenuConfigTranslation, useCommonTranslation } from '@/lib/i18n/client';
+import { useDateFormat } from '@/lib/contexts/SystemSettingsContext';
 import { VisibilitySchedule } from '@/lib/types';
 
 interface VisibilitiesTabProps {
@@ -22,6 +23,7 @@ export function VisibilitiesTab({
 }: VisibilitiesTabProps) {
   const t = useMenuConfigTranslation();
   const ct = useCommonTranslation();
+  const { formatDate } = useDateFormat();
 
   return (
     <div className="bg-card border border-border rounded-xl">
@@ -72,7 +74,7 @@ export function VisibilitiesTab({
                   )}
                   <p className="text-muted-foreground mt-1 flex items-center gap-1.5" style={{ fontSize: 'var(--text-small)' }}>
                     <Calendar className="w-3.5 h-3.5" />
-                    {new Date(schedule.startDate).toLocaleDateString()} {ct('to')} {new Date(schedule.endDate).toLocaleDateString()}
+                    {formatDate(schedule.startDate)} {ct('to')} {formatDate(schedule.endDate)}
                   </p>
                 </div>
                 

@@ -73,78 +73,114 @@ export function ReportsPage({ user, initialData }: ReportsPageProps) {
 
         {!loading && (
           <>
-            {/* Top Customers and Trending Items - 2 Column Grid on Desktop */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              {/* Top Customers */}
-              <div className="bg-card border border-border rounded-xl p-4 md:p-6">
-                <h3 className="text-foreground mb-4 md:mb-6" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+            {/* Top Customers and Trending Items - Stacked vertically */}
+            <div className="space-y-6">
+              {/* Top Customers - Full Width Table View */}
+              <div className="bg-card border border-border rounded-xl p-4 md:p-6 shadow-sm">
+                <h3 className="text-foreground mb-6" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
                   {t('topCustomers')}
                 </h3>
-                <div className="overflow-y-auto" style={{ maxHeight: '400px' }}>
+                
+                {/* Table Header */}
+                <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-3 bg-muted/30 rounded-lg mb-2 text-muted-foreground font-semibold uppercase tracking-wider" style={{ fontSize: '11px' }}>
+                  <div className="col-span-1">#</div>
+                  <div className="col-span-2">{t('customerName')}</div>
+                  <div className="col-span-1">{t('phoneNumber')}</div>
+                  <div className="col-span-1 text-center">{t('bookingsLabel')}</div>
+                  <div className="col-span-1 text-center">{t('guestsLabel')}</div>
+                  <div className="col-span-2 text-right">{t('salesPrice')}</div>
+                  <div className="col-span-2 text-right">{t('internalCost')}</div>
+                  <div className="col-span-2 text-right">{t('profit')}</div>
+                </div>
+
+                <div className="space-y-1">
                   {bookingsByContacts.slice(0, 5).map((contact, index) => (
                     <div
                       key={index}
-                      className={`flex items-center gap-3 md:gap-4 py-3 hover:bg-accent/50 transition-colors ${index < 4 ? 'border-b border-border' : ''
-                        }`}
+                      className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center px-4 py-4 hover:bg-accent/50 transition-all duration-200 rounded-xl group border border-transparent hover:border-border"
                     >
-                      {/* Rank */}
-                      <div className="text-muted-foreground w-5 md:w-6 flex-shrink-0" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                        {index + 1}
-                      </div>
-
-                      {/* Avatar */}
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-primary" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                          {contact.name.charAt(0)}
-                        </span>
-                      </div>
-
-                      {/* Customer Details */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-foreground truncate" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }} title={contact.name}>
-                          {contact.name}
-                        </p>
-                        <p className="text-muted-foreground hidden sm:block" style={{ fontSize: 'var(--text-small)' }}>
-                          {contact.phone}
-                        </p>
-                      </div>
-
-                      {/* Profit Stats */}
-                      <div className="text-right flex-shrink-0">
-                        <Tooltip title={t('profit')} position='bottom'>
-                          <p className="text-primary px-2 inline-block" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-                            {currencySymbol} {contact.totalProfit.toLocaleString('en-US')}
+                      {/* Rank & Customer (Mobile Header style on small screens) */}
+                      <div className="col-span-12 md:col-span-3 flex items-center gap-3">
+                        <div className="text-muted-foreground w-6 font-bold" style={{ fontSize: 'var(--text-base)' }}>
+                          {index + 1}
+                        </div>
+                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
+                          <span className="text-primary font-bold" style={{ fontSize: 'var(--text-base)' }}>
+                            {contact.name.charAt(0)}
+                          </span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-foreground font-semibold truncate" style={{ fontSize: 'var(--text-base)' }} title={contact.name}>
+                            {contact.name}
                           </p>
-                        </Tooltip>
-                        <div className="flex items-center justify-end gap-1 mt-1 text-emerald-600 dark:text-emerald-400" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
-                          <span className="">{(contact.profitMargin || 0)}%</span>
-                          <span>{t('profitMargin', { defaultValue: 'Margin' }) || 'Margin'}</span>
+                          <p className="text-muted-foreground md:hidden" style={{ fontSize: 'var(--text-small)' }}>
+                            {contact.phone}
+                          </p>
                         </div>
                       </div>
 
-                      {/* Revenue & Bookings - Hide on small screens/laptops */}
-                      <div className="text-right hidden xl:block flex-shrink-0 min-w-[120px]">
-                        <p className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-                          {t('totalRevenueAmount', { amount: contact.totalRevenue.toLocaleString('en-US') })}
+                      {/* Phone Number (Hidden on mobile as it's under Name) */}
+                      <div className="hidden md:block col-span-1 text-muted-foreground truncate" style={{ fontSize: 'var(--text-small)' }}>
+                        {contact.phone}
+                      </div>
+
+                      {/* Bookings Count */}
+                      <div className="hidden md:block col-span-1 text-center text-foreground font-medium" style={{ fontSize: 'var(--text-small)' }}>
+                        {contact.bookings}
+                      </div>
+
+                      {/* Total Guests */}
+                      <div className="hidden md:block col-span-1 text-center text-foreground font-medium" style={{ fontSize: 'var(--text-small)' }}>
+                        {contact.totalPersons}
+                      </div>
+
+                      {/* Sales Price */}
+                      <div className="col-span-6 md:col-span-2 md:text-right flex md:block justify-between items-center">
+                        <span className="md:hidden text-xs text-muted-foreground uppercase font-bold">{t('salesPrice')}</span>
+                        <p className="text-foreground font-semibold" style={{ fontSize: 'var(--text-small)' }}>
+                          {currencySymbol} {contact.totalRevenue.toLocaleString('en-US')}
                         </p>
+                      </div>
+
+                      {/* Internal Cost */}
+                      <div className="col-span-6 md:col-span-2 md:text-right flex md:block justify-between items-center">
+                        <span className="md:hidden text-xs text-muted-foreground uppercase font-bold">{t('internalCost')}</span>
                         <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                          {t('bookings', { count: Math.floor(contact.bookings) })}
+                          {currencySymbol} {(contact as any).totalInternalCost?.toLocaleString('en-US') || '0'}
                         </p>
+                      </div>
+
+                      {/* Profit & Margin */}
+                      <div className="col-span-12 md:col-span-2 md:text-right flex md:block justify-between items-center pt-2 md:pt-0 border-t md:border-t-0 border-border/50">
+                        <span className="md:hidden text-xs text-muted-foreground uppercase font-bold">{t('profit')}</span>
+                        <div>
+                          <Tooltip title={t('profit')} position='bottom'>
+                            <p className="text-primary font-bold inline-block" style={{ fontSize: 'var(--text-small)' }}>
+                              {currencySymbol} {contact.totalProfit.toLocaleString('en-US')}
+                            </p>
+                          </Tooltip>
+                          <div className="flex items-center justify-end gap-1 mt-0.5 text-emerald-600 dark:text-emerald-400 font-medium" style={{ fontSize: '11px' }}>
+                            <span>{(contact.profitMargin || 0)}%</span>
+                            <span className="opacity-80">{t('profitMargin', { defaultValue: 'Margin' })}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
 
                 {/* Calculation Logic Footer */}
-                <div className="mt-6 pt-4 border-t border-border">
-                  <p className="text-muted-foreground flex items-center gap-1.5" style={{ fontSize: '11px', lineHeight: '1.4' }}>
-                    <span className="font-semibold text-foreground/70">{t('marginCalcLabel', { defaultValue: 'Margin Logic:' })}</span>
-                    <span>{currencySymbol} (Total Revenue - Internal Cost) / Total Revenue  * 100%</span>
+                <div className="mt-8 pt-4 border-t border-border/60">
+                  <p className="text-muted-foreground flex items-center gap-2" style={{ fontSize: '11px', lineHeight: '1.4' }}>
+                    <span className="font-semibold text-foreground/70">
+                      {t('marginCalcLabel', { defaultValue: 'Margin Logic:' })}
+                    </span>
+                    <span>{currencySymbol} ({t('salesPrice')} - {t('internalCost')}) / {t('salesPrice')} * 100%</span>
                   </p>
                 </div>
               </div>
 
-              {/* Trending Items */}
+              {/* Trending Items - Now full width below Top Customers */}
               <TrendingItems trendingData={initialData?.trendingItems} currencySymbol={currencySymbol} />
             </div>
 

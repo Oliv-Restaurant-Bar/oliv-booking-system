@@ -45,11 +45,13 @@ export function DashboardSidebar({ user, activeItem = 'dashboard', onNavigate }:
         {/* Logo */}
         <div className="px-6 pt-8 pb-6 flex justify-center items-center">
           <ImageWithFallback
-            src="https://img.enacton.com/ShareX/2026/02/chrome_PHT9Ca0HbK.png"
+            src="/assets/oliv-logo.png"
             alt="oliv logo"
             width={161}
             height={40}
-            className="h-10 w-auto"
+            className="h-10 w-10"
+            style={{ width: 'auto', height: 'auto' }}
+            loading="eager"
           />
         </div>
 

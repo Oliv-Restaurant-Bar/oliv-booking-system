@@ -33,19 +33,61 @@ export async function getDashboardStats() {
       .from(menuCategories)
       .where(sql`${menuCategories.deletedAt} IS NULL`);
 
+    // NEW: Calculate profit and margin without affecting existing logic
+    const profitCostResult = await db.execute(sql`
+      WITH booking_costs AS (
+        SELECT 
+          bi.booking_id,
+          SUM(bi.quantity * COALESCE(
+            (
+              SELECT (v->>'internalCost')::NUMERIC 
+              FROM jsonb_array_elements(mi.variants) v 
+              WHERE v->>'name' = TRIM(SUBSTRING(COALESCE(bi.notes, '') FROM 'Variant: ([^|]+)'))
+              LIMIT 1
+            ),
+            mi.internal_cost, 
+            ai.internal_cost, 
+            0
+          )) as booking_cost
+        FROM booking_items bi
+        LEFT JOIN menu_items mi ON bi.item_id = mi.id AND bi.item_type = 'menu_item'
+        LEFT JOIN addon_items ai ON bi.item_id = ai.id AND bi.item_type = 'addon'
+        GROUP BY bi.booking_id
+      )
+      SELECT
+        COALESCE(SUM(CAST(estimated_total AS NUMERIC)) FILTER (WHERE status NOT IN ('declined', 'cancelled', 'no_show')), 0) as net_revenue,
+        COALESCE(SUM(bc.booking_cost) FILTER (WHERE status NOT IN ('declined', 'cancelled', 'no_show')), 0) as total_cost
+      FROM bookings b
+      LEFT JOIN booking_costs bc ON b.id = bc.booking_id
+      WHERE b.deleted_at IS NULL
+    `);
+
+    const profitRows = ('rows' in (profitCostResult as any) ? (profitCostResult as any).rows : profitCostResult) as any[];
+    const profitData = profitRows[0];
+    const netRevenue = Number(profitData?.net_revenue) || 0;
+    const totalCost = Number(profitData?.total_cost) || 0;
+    const totalProfit = netRevenue - totalCost;
+    const margin = netRevenue > 0 ? (totalProfit / netRevenue) * 100 : 0;
+
     return {
       totalBookings: Math.floor(Number(totalBookings[0]?.count) || 0),
       totalRevenue: Number(totalRevenueResult[0]?.total) || 0,
+      totalCost,
+      totalProfit,
       totalMenuItems: Math.floor(Number(totalMenuItems[0]?.count) || 0),
       totalCategories: Math.floor(Number(totalCategories[0]?.count) || 0),
+      margin,
     };
   } catch (error) {
     console.error("Error fetching dashboard stats:", error);
     return {
       totalBookings: 0,
       totalRevenue: 0,
+      totalCost: 0,
+      totalProfit: 0,
       totalMenuItems: 0,
       totalCategories: 0,
+      margin: 0,
     };
   }
 }
@@ -111,10 +153,31 @@ export async function getDailyRevenueData() {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     const result = await db.execute(sql`
+      WITH booking_costs AS (
+        SELECT 
+          bi.booking_id,
+          SUM(bi.quantity * COALESCE(
+            (
+              SELECT (v->>'internalCost')::NUMERIC 
+              FROM jsonb_array_elements(mi.variants) v 
+              WHERE v->>'name' = TRIM(SUBSTRING(COALESCE(bi.notes, '') FROM 'Variant: ([^|]+)'))
+              LIMIT 1
+            ),
+            mi.internal_cost, 
+            ai.internal_cost, 
+            0
+          )) as booking_cost
+        FROM booking_items bi
+        LEFT JOIN menu_items mi ON bi.item_id = mi.id AND bi.item_type = 'menu_item'
+        LEFT JOIN addon_items ai ON bi.item_id = ai.id AND bi.item_type = 'addon'
+        GROUP BY bi.booking_id
+      )
       SELECT
         TO_CHAR(event_date, 'MM/DD') as date,
-        COALESCE(SUM(CAST(estimated_total AS NUMERIC)), 0) as revenue
+        COALESCE(SUM(CAST(estimated_total AS NUMERIC)), 0) as revenue,
+        COALESCE(SUM(bc.booking_cost), 0) as cost
       FROM bookings
+      LEFT JOIN booking_costs bc ON bookings.id = bc.booking_id
       WHERE event_date >= ${thirtyDaysAgo.toISOString()}
         AND status NOT IN ('declined', 'cancelled', 'no_show')
         AND deleted_at IS NULL
@@ -128,7 +191,11 @@ export async function getDailyRevenueData() {
     const dataMap = new Map(
       (dailyData as any[]).map((d) => [
         d.date,
-        Number(d.revenue)
+        {
+          revenue: Number(d.revenue) || 0,
+          cost: Number(d.cost) || 0,
+          profit: (Number(d.revenue) || 0) - (Number(d.cost) || 0)
+        }
       ])
     );
 
@@ -139,9 +206,13 @@ export async function getDailyRevenueData() {
       date.setDate(date.getDate() - i);
       const dateStr = (date.getMonth() + 1).toString().padStart(2, '0') + '/' +
         date.getDate().toString().padStart(2, '0');
+      
+      const dayData = dataMap.get(dateStr);
       allDates.push({
         date: dateStr,
-        revenue: dataMap.get(dateStr) || 0,
+        revenue: dayData?.revenue || 0,
+        cost: dayData?.cost || 0,
+        profit: dayData?.profit || 0,
       });
     }
 
@@ -365,7 +436,17 @@ export async function getTopCustomersByRevenue(limit: number = 10) {
       WITH booking_costs AS (
         SELECT 
           bi.booking_id,
-          SUM(bi.quantity * COALESCE(mi.internal_cost, ai.internal_cost, 0)) as booking_cost
+          SUM(bi.quantity * COALESCE(
+            (
+              SELECT (v->>'internalCost')::NUMERIC 
+              FROM jsonb_array_elements(mi.variants) v 
+              WHERE v->>'name' = TRIM(SUBSTRING(COALESCE(bi.notes, '') FROM 'Variant: ([^|]+)'))
+              LIMIT 1
+            ),
+            mi.internal_cost, 
+            ai.internal_cost, 
+            0
+          )) as booking_cost
         FROM booking_items bi
         LEFT JOIN menu_items mi ON bi.item_id = mi.id AND bi.item_type = 'menu_item'
         LEFT JOIN addon_items ai ON bi.item_id = ai.id AND bi.item_type = 'addon'
@@ -410,6 +491,7 @@ export async function getTopCustomersByRevenue(limit: number = 10) {
         bookings: bookingCount,
         totalRevenue: totalRevenue,
         realizedRevenue: realizedRevenue,
+        totalInternalCost: totalCost,
         totalProfit: totalRevenue - totalCost,
         profitMargin: totalRevenue > 0 ? Math.round(((totalRevenue - totalCost) / totalRevenue) * 100) : 0,
         avgRevenue: bookingCount > 0 ? Math.round(totalRevenue / bookingCount) : 0,
@@ -441,7 +523,16 @@ export async function getTrendingItems(limit: number = 10) {
           bi.item_id,
           -- Current Period (Last 30 days)
           SUM(CASE WHEN b.event_date >= ${thirtyDaysAgo.toISOString()} THEN bi.quantity ELSE 0 END) as current_qty,
-          SUM(CASE WHEN b.event_date >= ${thirtyDaysAgo.toISOString()} THEN (CAST(bi.unit_price AS NUMERIC) - COALESCE(mi.internal_cost, 0)) * bi.quantity ELSE 0 END) as current_profit,
+          SUM(CASE WHEN b.event_date >= ${thirtyDaysAgo.toISOString()} THEN (CAST(bi.unit_price AS NUMERIC) - COALESCE(
+            (
+              SELECT (v->>'internalCost')::NUMERIC 
+              FROM jsonb_array_elements(mi.variants) v 
+              WHERE v->>'name' = TRIM(SUBSTRING(COALESCE(bi.notes, '') FROM 'Variant: ([^|]+)'))
+              LIMIT 1
+            ),
+            mi.internal_cost, 
+            0
+          )) * bi.quantity ELSE 0 END) as current_profit,
           SUM(CASE WHEN b.event_date >= ${thirtyDaysAgo.toISOString()} THEN CAST(bi.unit_price AS NUMERIC) * bi.quantity ELSE 0 END) as current_revenue,
           -- Previous Period (30-60 days ago)
           SUM(CASE WHEN b.event_date >= ${sixtyDaysAgo.toISOString()} AND b.event_date < ${thirtyDaysAgo.toISOString()} THEN bi.quantity ELSE 0 END) as previous_qty
@@ -532,7 +623,17 @@ export async function getMonthlyReportData(year: number = new Date().getFullYear
       WITH booking_costs AS (
         SELECT 
           bi.booking_id,
-          SUM(bi.quantity * COALESCE(mi.internal_cost, ai.internal_cost, 0)) as booking_cost
+          SUM(bi.quantity * COALESCE(
+            (
+              SELECT (v->>'internalCost')::NUMERIC 
+              FROM jsonb_array_elements(mi.variants) v 
+              WHERE v->>'name' = TRIM(SUBSTRING(COALESCE(bi.notes, '') FROM 'Variant: ([^|]+)'))
+              LIMIT 1
+            ),
+            mi.internal_cost, 
+            ai.internal_cost, 
+            0
+          )) as booking_cost
         FROM booking_items bi
         LEFT JOIN menu_items mi ON bi.item_id = mi.id AND bi.item_type = 'menu_item'
         LEFT JOIN addon_items ai ON bi.item_id = ai.id AND bi.item_type = 'addon'
