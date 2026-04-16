@@ -605,6 +605,7 @@
       "bookingsLabel": "Bookings",
       "guestsLabel": "Persons",
       "guests": "{count} persons",
+      "salesLabel": "Sales",
       "salesCount": "{count} Items",
       "profitMargin": "Margin",
       "marginCalcLabel": "Margin Logic:",

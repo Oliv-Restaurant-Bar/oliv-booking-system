@@ -605,6 +605,7 @@
       "bookingsLabel": "Buchungen",
       "guestsLabel": "Personen",
       "guests": "{count} Personen",
+      "salesLabel": "Verkäufe",
       "salesCount": "{count} Artikel",
       "profitMargin": "Marge",
       "marginCalcLabel": "Marge Logik:",
@@ -613,7 +614,6 @@
       "allCategories": "Alle Kategorien",
       "monthlyBookingReport": "Monatlicher Buchungsbericht",
       "revenue": "Umsatz",
-      "profit": "Marge",
       "avgRevenueLabel": "Durchschnittsumsatz",
       "export": "Bericht exportieren"
     },

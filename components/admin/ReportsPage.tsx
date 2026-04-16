@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { TrendingItems } from './TrendingItems';
 import { MonthlyReportLayout2 } from './MonthlyReportLayout2';
-import { SkeletonList, SkeletonTrendingItems, SkeletonMonthlyReport } from '@/components/ui/skeleton-loaders';
+import { SkeletonTopCustomers, SkeletonTrendingItems, SkeletonMonthlyReport } from '@/components/ui/skeleton-loaders';
 import { useTranslations } from 'next-intl';
 import { SettingsService } from '@/services/settings.service';
 import { Tooltip } from '@/components/user/Tooltip';
@@ -61,17 +61,13 @@ export function ReportsPage({ user, initialData }: ReportsPageProps) {
     <div className="min-h-full bg-background flex flex-col">
       <div className="w-full space-y-6 flex-1">
         {/* Loading State - Aligned with loading.tsx */}
-        {loading && (
+        {loading ? (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <SkeletonList items={5} />
-              <SkeletonTrendingItems />
-            </div>
+            <SkeletonTopCustomers />
+            <SkeletonTrendingItems />
             <SkeletonMonthlyReport />
           </div>
-        )}
-
-        {!loading && (
+        ) : (
           <>
             {/* Top Customers and Trending Items - Stacked vertically */}
             <div className="space-y-6">

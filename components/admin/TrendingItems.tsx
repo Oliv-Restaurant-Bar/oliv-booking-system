@@ -20,9 +20,11 @@ interface TrendingItem {
   categoryDe?: string;
   sales: number;
   totalRevenue: number;
+  totalInternalCost: number;
   totalProfit: number;
   trendPercentage: number;
   image?: string | null;
+  profitMargin?: number;
 }
 
 interface TrendingItemsProps {
@@ -181,7 +183,18 @@ export function TrendingItems({ trendingData: propTrendingData, currencySymbol =
         </div>
       </div>
 
-      {/* Trending Items List - Compact View */}
+      {/* Table Header */}
+      <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-3 bg-muted/30 rounded-lg mb-2 text-muted-foreground font-semibold uppercase tracking-wider" style={{ fontSize: '11px' }}>
+        <div className="col-span-1">#</div>
+        <div className="col-span-2">{commonT('name')}</div>
+        <div className="col-span-2">{commonT('category')}</div>
+        <div className="col-span-1 text-center">{t('salesLabel', { defaultValue: 'Sales' })}</div>
+        <div className="col-span-2 text-right">{t('revenue')}</div>
+        <div className="col-span-2 text-right">{t('internalCost')}</div>
+        <div className="col-span-2 text-right">{t('profit')}</div>
+      </div>
+
+      {/* Trending Items List - Table View */}
       <div>
         {filteredData.length === 0 ? (
           <div className="text-center py-8">
@@ -192,63 +205,77 @@ export function TrendingItems({ trendingData: propTrendingData, currencySymbol =
         ) : (
           filteredData.map((item, index) => (
             <div
-              key={item.rank}
-              className={`flex items-center gap-4 py-3 hover:bg-accent/50 transition-colors ${index < filteredData.length - 1 ? 'border-b border-border' : ''
-                }`}
+              key={item.id}
+              className={`grid grid-cols-1 md:grid-cols-12 gap-4 items-center px-4 py-4 hover:bg-accent/50 transition-all duration-200 rounded-xl group border border-transparent hover:border-border`}
             >
-              {/* Rank */}
-              <div className="text-muted-foreground w-6 flex-shrink-0" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                {index + 1}
-              </div>
-
-              {/* Item Image */}
-              {item.image && (
-                <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted relative">
-                  <ImageWithFallback
-                    src={item.image}
-                    alt={item.name}
-                    fill
-                    className="w-full h-full object-cover"
-                  />
+              {/* Rank, Image & Name */}
+              <div className="col-span-12 md:col-span-3 flex items-center gap-3">
+                <div className="text-muted-foreground w-6 font-bold" style={{ fontSize: 'var(--text-base)' }}>
+                  {index + 1}
                 </div>
-              )}
-
-
-              {/* Item Details */}
-              <div className="flex-1 min-w-0">
-                <h4 className="text-foreground truncate" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }} title={item.name}>
-                  {locale === 'de' && item.nameDe ? item.nameDe : item.name}
-                </h4>
-                <div className="flex items-center gap-3 mt-1">
-                  <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                    {item.price}
-                  </span>
-                  {/* Category Badge */}
-                  <CategoryPill
-                    label={locale === 'de' && item.categoryDe ? item.categoryDe : item.category}
-                    color={getCategoryColor(item.category)}
-                    variant="badge"
-                  />
+                {item.image && (
+                  <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-muted relative group-hover:scale-105 transition-transform duration-200">
+                    <ImageWithFallback
+                      src={item.image}
+                      alt={item.name}
+                      fill
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-foreground font-semibold truncate" style={{ fontSize: 'var(--text-base)' }} title={item.name}>
+                    {locale === 'de' && item.nameDe ? item.nameDe : item.name}
+                  </p>
+                  <p className="text-muted-foreground md:hidden" style={{ fontSize: 'var(--text-small)' }}>
+                    {locale === 'de' && item.categoryDe ? item.categoryDe : item.category}
+                  </p>
                 </div>
               </div>
 
-              {/* Stats Row */}
-              <div className="flex flex-col items-end flex-shrink-0 min-w-[150px]">
-                <div className="flex items-center gap-2">
-                  <div className="text-primary px-2 inline-block" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-                    <Tooltip title={t('profit')} position='bottom'>
+              {/* Category (Hidden on mobile as it's under Name) */}
+              <div className="hidden md:block col-span-2">
+                <CategoryPill
+                  label={locale === 'de' && item.categoryDe ? item.categoryDe : item.category}
+                  color={getCategoryColor(item.category)}
+                  variant="badge"
+                />
+              </div>
+
+              {/* Sales Count */}
+              <div className="hidden md:block col-span-1 text-center text-foreground font-medium" style={{ fontSize: 'var(--text-small)' }}>
+                {item.sales}
+              </div>
+
+              {/* Revenue */}
+              <div className="col-span-6 md:col-span-2 md:text-right flex md:block justify-between items-center">
+                <span className="md:hidden text-xs text-muted-foreground uppercase font-bold">{t('revenue')}</span>
+                <p className="text-foreground font-semibold" style={{ fontSize: 'var(--text-small)' }}>
+                  {currencySymbol} {item.totalRevenue.toLocaleString('en-US')}
+                </p>
+              </div>
+
+              {/* Internal Cost */}
+              <div className="col-span-6 md:col-span-2 md:text-right flex md:block justify-between items-center">
+                <span className="md:hidden text-xs text-muted-foreground uppercase font-bold">{t('internalCost')}</span>
+                <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                  {currencySymbol} {(item as any).totalInternalCost?.toLocaleString('en-US') || '0'}
+                </p>
+              </div>
+
+              {/* Profit & Margin */}
+              <div className="col-span-12 md:col-span-2 md:text-right flex md:block justify-between items-center pt-2 md:pt-0 border-t md:border-t-0 border-border/50">
+                <span className="md:hidden text-xs text-muted-foreground uppercase font-bold">{t('profit')}</span>
+                <div>
+                  <Tooltip title={t('profit')} position='bottom'>
+                    <p className="text-primary font-bold inline-block" style={{ fontSize: 'var(--text-small)' }}>
                       {currencySymbol} {item.totalProfit.toLocaleString('en-US')}
-                    </Tooltip>
+                    </p>
+                  </Tooltip>
+                  <div className="flex items-center gap-1 md:justify-end mt-0.5 text-emerald-600 dark:text-emerald-400" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
+                    <span>{item.profitMargin}%</span>
+                    <span className="text-[10px] opacity-80 uppercase tracking-tight">{t('profitMargin')}</span>
                   </div>
-                  <div className="text-muted-foreground mr-1" style={{ fontSize: 'var(--text-small)', opacity: 0.8 }}>
-                    {t('salesCount', { count: item.sales })}
-                  </div>
-                </div>
-
-                {/* Margin Line */}
-                <div className="flex items-center gap-1 mt-1 text-emerald-600 dark:text-emerald-400" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
-                  <span className="">{(item as any).profitMargin || 0}%</span>
-                  <span>{t('profitMargin', { defaultValue: 'Margin' }) || 'Margin'}</span>
                 </div>
               </div>
             </div>

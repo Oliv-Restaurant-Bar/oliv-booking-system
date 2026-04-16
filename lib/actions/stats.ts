@@ -600,6 +600,7 @@ export async function getTrendingItems(limit: number = 10) {
         categoryColor: categoryColors[item.category] || '#9DAE91',
         sales: totalQuantity,
         totalRevenue: totalRevenue,
+        totalInternalCost: totalRevenue - totalProfit,
         totalProfit: totalProfit,
         profitMargin: totalRevenue > 0 ? Math.round((totalProfit / totalRevenue) * 100) : 0,
         trendPercentage: trendPercentage,
