@@ -8,6 +8,7 @@ import { SystemSettingsProvider } from "@/lib/contexts/SystemSettingsContext";
 import { getSystemSettings } from "@/lib/actions/settings";
 import { Hanken_Grotesk } from 'next/font/google';
 import UserbackLoader from "@/components/common/UserbackLoader";
+import NextTopLoader from 'nextjs-toploader';
 
 const hankenGrotesk = Hanken_Grotesk({
   subsets: ['latin'],
@@ -61,6 +62,17 @@ export default async function RootLayout({
         />
       </head>
       <body className={`${hankenGrotesk.className} antialiased`}>
+        <NextTopLoader
+          color="var(--primary)"
+          initialPosition={0.08}
+          crawlSpeed={200}
+          height={3}
+          crawl={true}
+          showSpinner={false}
+          easing="ease"
+          speed={200}
+          shadow="0 0 10px var(--primary),0 0 5px var(--primary)"
+        />
         <SystemSettingsProvider initialSettings={settings}>
           <NextIntlClientProvider messages={messages} locale={locale}>
             {children}
