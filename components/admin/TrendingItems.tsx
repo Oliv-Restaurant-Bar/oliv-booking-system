@@ -184,7 +184,7 @@ export function TrendingItems({ trendingData: propTrendingData, currencySymbol =
       </div>
 
       {/* Table Header */}
-      <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-3 bg-muted/30 rounded-lg mb-2 text-muted-foreground font-semibold uppercase tracking-wider" style={{ fontSize: '11px' }}>
+      <div className="hidden md:grid grid-cols-12 gap-2 px-4 py-3 bg-muted/30 rounded-lg mb-2 text-muted-foreground font-semibold uppercase tracking-wider" style={{ fontSize: '11px' }}>
         <div className="col-span-1">#</div>
         <div className="col-span-2">{commonT('name')}</div>
         <div className="col-span-2">{commonT('category')}</div>
@@ -206,7 +206,7 @@ export function TrendingItems({ trendingData: propTrendingData, currencySymbol =
           filteredData.map((item, index) => (
             <div
               key={item.id}
-              className={`grid grid-cols-1 md:grid-cols-12 gap-4 items-center px-4 py-4 hover:bg-accent/50 transition-all duration-200 rounded-xl group border border-transparent hover:border-border`}
+              className={`grid grid-cols-1 md:grid-cols-12 gap-2 items-center px-4 py-4 hover:bg-accent/50 transition-all duration-200 rounded-xl group border border-transparent hover:border-border`}
             >
               {/* Rank, Image & Name */}
               <div className="col-span-12 md:col-span-3 flex items-center gap-3">

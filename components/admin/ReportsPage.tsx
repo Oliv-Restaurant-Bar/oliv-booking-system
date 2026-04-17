@@ -78,10 +78,11 @@ export function ReportsPage({ user, initialData }: ReportsPageProps) {
                 </h3>
                 
                 {/* Table Header */}
-                <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-3 bg-muted/30 rounded-lg mb-2 text-muted-foreground font-semibold uppercase tracking-wider" style={{ fontSize: '11px' }}>
+                {/* Table Header */}
+                <div className="hidden md:grid grid-cols-12 gap-2 px-4 py-3 bg-muted/30 rounded-lg mb-2 text-muted-foreground font-semibold uppercase tracking-wider" style={{ fontSize: '11px' }}>
                   <div className="col-span-1">#</div>
-                  <div className="col-span-2">{t('customerName')}</div>
-                  <div className="col-span-1">{t('phoneNumber')}</div>
+                  <div className="md:col-span-3 2xl:col-span-2">{t('customerName')}</div>
+                  <div className="hidden 2xl:block col-span-1">{t('phoneNumber')}</div>
                   <div className="col-span-1 text-center">{t('bookingsLabel')}</div>
                   <div className="col-span-1 text-center">{t('guestsLabel')}</div>
                   <div className="col-span-2 text-right">{t('salesPrice')}</div>
@@ -93,10 +94,10 @@ export function ReportsPage({ user, initialData }: ReportsPageProps) {
                   {bookingsByContacts.slice(0, 5).map((contact, index) => (
                     <div
                       key={index}
-                      className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center px-4 py-4 hover:bg-accent/50 transition-all duration-200 rounded-xl group border border-transparent hover:border-border"
+                      className="grid grid-cols-1 md:grid-cols-12 gap-2 items-center px-4 py-4 hover:bg-accent/50 transition-all duration-200 rounded-xl group border border-transparent hover:border-border"
                     >
-                      {/* Rank & Customer (Mobile Header style on small screens) */}
-                      <div className="col-span-12 md:col-span-3 flex items-center gap-3">
+                      {/* Rank & Customer (Combined Name & Phone on smaller desktop) */}
+                      <div className="col-span-12 md:col-span-4 2xl:col-span-3 flex items-center gap-3">
                         <div className="text-muted-foreground w-6 font-bold" style={{ fontSize: 'var(--text-base)' }}>
                           {index + 1}
                         </div>
@@ -109,14 +110,14 @@ export function ReportsPage({ user, initialData }: ReportsPageProps) {
                           <p className="text-foreground font-semibold truncate" style={{ fontSize: 'var(--text-base)' }} title={contact.name}>
                             {contact.name}
                           </p>
-                          <p className="text-muted-foreground md:hidden" style={{ fontSize: 'var(--text-small)' }}>
+                          <p className="text-muted-foreground 2xl:hidden" style={{ fontSize: 'var(--text-small)' }}>
                             {contact.phone}
                           </p>
                         </div>
                       </div>
 
-                      {/* Phone Number (Hidden on mobile as it's under Name) */}
-                      <div className="hidden md:block col-span-1 text-muted-foreground truncate" style={{ fontSize: 'var(--text-small)' }}>
+                      {/* Phone Number (Separate column on very large screens) */}
+                      <div className="hidden 2xl:block col-span-1 text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
                         {contact.phone}
                       </div>
 

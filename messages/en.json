@@ -587,7 +587,9 @@
         "view": "View"
       },
       "quickActions": "Quick Actions",
-      "assignUser": "Assignees",
+      "addAssignee": "Add Assignee",
+      "changeAssignee": "Change Assignee",
+      "assignees": "Assignees",
       "assigned": "Assigned",
       "assignedTo": "Assigned To"
     },
@@ -598,7 +600,7 @@
       "phoneNumber": "Phone Number",
       "salesPrice": "Sales Price",
       "internalCost": "Internal Cost",
-      "profit": "Profit",
+      "profit": "Margin",
       "avgRevenue": "Avg: CHF {amount}",
       "totalRevenueAmount": "Total: CHF {amount}",
       "bookings": "{count} bookings",
@@ -718,7 +720,7 @@
         "uploading": "Uploading...",
         "uploadImageDesc": "Click to browse or drag and drop",
         "addSchedule": "Add Schedule",
-        "configureVisibility": "Configure Visibility"
+        "configureVisibility": "Add Visibility"
       },
       "messages": {
         "categoryHidden": "Category hidden",

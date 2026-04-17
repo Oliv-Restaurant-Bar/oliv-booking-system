@@ -3076,7 +3076,7 @@ export function BookingDetailPage({
                                         style={{ fontWeight: 'var(--font-weight-medium)' }}
                                     >
                                         <UserPlus className="w-4 h-4" />
-                                        <span>{t('assignUser')}</span>
+                                        <span>{assignedTo ? t('changeAssignee') : t('addAssignee')}</span>
                                     </button>
                                 </Tooltip>
                             )}

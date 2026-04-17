@@ -587,7 +587,9 @@
         "view": "Ansehen"
       },
       "quickActions": "Schnellaktionen",
-      "assignUser": "Benutzer zuweisen",
+      "addAssignee": "Zuständigen hinzufügen",
+      "changeAssignee": "Bevollmächtigter ändern",
+      "assignees": "Benutzer zuweisen",
       "assigned": "Zugewiesen",
       "assignedTo": "Zugewiesen an"
     },
@@ -598,7 +600,7 @@
       "phoneNumber": "Telefonnummer",
       "salesPrice": "Verkaufspreis",
       "internalCost": "Interne Kosten",
-      "profit": "Profit",
+      "profit": "Marge",
       "avgRevenue": "Durchschn: CHF {amount}",
       "totalRevenueAmount": "Gesamt: CHF {amount}",
       "bookings": "{count} Buchungen",
@@ -718,7 +720,7 @@
         "uploading": "Wird hochgeladen...",
         "uploadImageDesc": "Klicken zum Durchsuchen oder Drag & Drop",
         "addSchedule": "Sichtbarkeit hinzufügen",
-        "configureVisibility": "Sichtbarkeit konfigurieren"
+        "configureVisibility": "Sichtbarkeiten hinzufügen"
       },
       "messages": {
         "categoryHidden": "Kategorie ausgeblendet",
