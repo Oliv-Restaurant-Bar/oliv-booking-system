@@ -152,7 +152,7 @@
     "deleteItem": "Artikel löschen",
     "itemName": "Artikelname",
     "description": "Beschreibung",
-    "price": "Preis",
+    "price": "Verkaufspreis",
     "category": "Kategorie",
     "dietaryLabel": "Ernährung",
     "available": "Verfügbar",
@@ -307,7 +307,7 @@
     "contact": "Kontaktieren",
     "confirm": "Bestätigen",
     "close": "Schliessen",
-    "price": "Preis"
+    "price": "Verkaufspreis"
   },
   "message": {
     "noDataFound": "Keine Daten gefunden",
@@ -713,14 +713,14 @@
         "changeImage": "Bild ändern",
         "removeImage": "Bild entfernen",
         "saveChanges": "Änderungen speichern",
-        "price": "Preis",
+        "price": "Verkaufspreis",
         "addSettings": "Einstellungen hinzufügen",
         "addAddons": "Extras hinzufügen",
         "addVariant": "Variante hinzufügen",
         "uploading": "Wird hochgeladen...",
         "uploadImageDesc": "Klicken zum Durchsuchen oder Drag & Drop",
         "addSchedule": "Sichtbarkeit hinzufügen",
-        "configureVisibility": "Sichtbarkeiten hinzufügen"
+        "configureVisibility": "Sichtbarkeit konfigurieren"
       },
       "messages": {
         "categoryHidden": "Kategorie ausgeblendet",
@@ -755,7 +755,7 @@
         "description": "Beschreibung",
         "categoryImage": "Kategoriebild",
         "itemName": "Artikelname",
-        "price": "Preis",
+        "price": "Verkaufspreis",
         "internalCost": "Interne Kosten",
         "pricingType": "Preistyp",
         "averageConsumption": "Durchschnittlicher Verbrauch",
@@ -782,7 +782,7 @@
         "selectCategory": "Kategorie wählen",
         "chooseCategory": "Kategorie auswählen",
         "pricingMode": "Preismodus",
-        "pricingModePrice": "Preis",
+        "pricingModePrice": "Verkaufspreis",
         "pricingModeVariants": "Varianten",
         "itemSettingsOpt": "Artikeleinstellungen (Optional)",
         "addonsOpt": "Auswahlmöglichkeiten & Extras (Optional)",
@@ -861,7 +861,7 @@
       "addChoice": "Auswahlmöglichkeit hinzufügen",
       "pricing": {
         "perPerson": "Pro Person",
-        "perPersonDesc": "Preis pro Gast",
+        "perPersonDesc": "Verkaufspreis pro Gast",
         "flatRate": "Pauschale",
         "flatRateDesc": "Einmalige Gebühr unabhängig von der Gästezahl",
         "consumption": "Nach Konsumation",
@@ -962,7 +962,7 @@
       "email": "E-Mail",
       "password": "Passwort",
       "emailPlaceholder": "admin@oliv-restaurant.com",
-      "passwordPlaceholder": "",
+      "passwordPlaceholder": "••••••••",
       "signingIn": "Anmelden...",
       "signInBtn": "Anmelden",
       "protectedAccess": "Geschützter Zugang nur für Mitarbeiter von OLIV Restaurant & Bar"
@@ -1245,7 +1245,7 @@
       "available": "Verfügbar",
       "forEvent": "für Ihr Event",
       "billedByConsumption": "nach Konsumation abgerechnet",
-      "priceOnConsumption": "Preis nach Konsumation",
+      "priceOnConsumption": "Verkaufspreis nach Konsumation",
       "flatFee": "Pauschalpreis",
       "perPerson": "pro Person",
       "perBottle": "/Flasche",

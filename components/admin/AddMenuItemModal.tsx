@@ -316,7 +316,7 @@ export function AddMenuItemModal({
 
         <div className="flex items-center justify-between">
           <label className="block text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-            {t('labels.pricingMode')}
+            {pricingMode === 'variants' ? t('labels.pricingModeVariants') : t('labels.pricingMode')}
           </label>
           <div className="flex items-center justify-between p-3 rounded-lg gap-2" >
             <span
