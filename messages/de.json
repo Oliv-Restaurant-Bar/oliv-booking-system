@@ -60,8 +60,7 @@
       "desserts": "Dessert",
       "starters": "Vorspeise"
     },
-    "currencySymbol": "CHF",
-    "to": "bis"
+    "currencySymbol": "CHF"
   },
   "nav": {
     "home": "Startseite",
@@ -74,7 +73,7 @@
     "profile": "Profil",
     "logout": "Abmelden",
     "login": "Anmelden",
-    "dashboard": "Armaturenbrett",
+    "dashboard": "Dashboard",
     "signIn": "Anmelden",
     "signOut": "Abmelden"
   },
@@ -116,7 +115,7 @@
     "new": "Neu",
     "pending": "Ausstehend",
     "confirmed": "Bestätigt",
-    "touchbase": "Touch-Basis",
+    "touchbase": "Kontaktaufnahme",
     "declined": "Abgelehnt",
     "cancelled": "Storniert",
     "completed": "Abgeschlossen",
@@ -152,7 +151,7 @@
     "deleteItem": "Artikel löschen",
     "itemName": "Artikelname",
     "description": "Beschreibung",
-    "price": "Verkaufspreis",
+    "price": "Preis",
     "category": "Kategorie",
     "dietaryLabel": "Ernährung",
     "available": "Verfügbar",
@@ -307,7 +306,7 @@
     "contact": "Kontaktieren",
     "confirm": "Bestätigen",
     "close": "Schliessen",
-    "price": "Verkaufspreis"
+    "price": "Preis"
   },
   "message": {
     "noDataFound": "Keine Daten gefunden",
@@ -378,15 +377,12 @@
       "selectStatus": "Status auswählen"
     },
     "dashboard": {
-      "title": "Armaturenbrett",
+      "title": "Dashboard",
       "welcome": "Willkommen zurück",
       "kpis": {
         "bookings": "Anzahl Buchungen",
         "revenue": "Gesamtumsatz",
         "items": "Gesamtzahl der Artikel",
-        "profit": "Gesamtmarge",
-        "margin": "Marge",
-        "internalCost": "Interne Kosten",
         "vsLastMonth": "vs letzten Monat"
       },
       "charts": {
@@ -415,13 +411,12 @@
       "noBookings": "Keine Buchungen gefunden",
       "tryAdjustFilters": "Versuchen Sie, Ihre Filter oder Suchanfrage anzupassen",
       "guests": "Gäste",
-      "internalCost": "Interne Kosten",
       "statuses": {
         "all": "Alle Status",
         "new": "Neu",
         "pending": "Ausstehend",
         "confirmed": "Bestätigt",
-        "touchbase": "Touch-Basis",
+        "touchbase": "Kontaktaufnahme",
         "declined": "Abgelehnt",
         "completed": "Abgeschlossen",
         "no_show": "Nicht erschienen",
@@ -508,7 +503,6 @@
       "auditHistory": "Audit-Verlauf",
       "auditLog": "Detailliertes Verlaufsprotokoll",
       "quantity": "Anzahl",
-      "profit": "Marge",
       "manualComments": "Manuelle Kommentare",
       "activityLog": "Aktivitätsprotokoll",
       "dietarySelection": "Menüauswahl-Übersicht",
@@ -537,7 +531,7 @@
         "pdfSentSuccess": "PDF erfolgreich gesendet",
         "statusUpdated": "Status erfolgreich aktualisiert",
         "statusUpdateFailed": "Status konnte nicht aktualisiert werden",
-        "venueUpdated": "Venue erfolgreich aktualisiert",
+        "venueUpdated": "Veranstaltungsort erfolgreich aktualisiert",
         "copyLinkSuccess": "Bearbeitungslink in Zwischenablage kopiert!",
         "copyLinkFailed": "Bearbeitungslink konnte nicht kopiert werden",
         "generateLinkSuccess": "Bearbeitungslink generiert und kopiert!",
@@ -560,7 +554,7 @@
       "tooltips": {
         "amount": "Gesamtbetrag für diese Buchung",
         "notAssignedYet": "Dieser Buchung wurde noch kein Teammitglied zugewiesen",
-        "notAssigned": "Kein Venue zugewiesen"
+        "notAssigned": "Kein Veranstaltungsort zugewiesen"
       },
       "tabs": {
         "eventDetails": "Event-Details",
@@ -587,28 +581,17 @@
         "view": "Ansehen"
       },
       "quickActions": "Schnellaktionen",
-      "assignUser": "Zuständige",
+      "assignUser": "Benutzer zuweisen",
       "assigned": "Zugewiesen",
       "assignedTo": "Zugewiesen an"
     },
     "reports": {
       "title": "Berichte",
       "topCustomers": "Top-Kunden nach Umsatz",
-      "customerName": "Kundenname",
-      "phoneNumber": "Telefonnummer",
-      "salesPrice": "Verkaufspreis",
-      "internalCost": "Interne Kosten",
-      "profit": "Profit",
-      "avgRevenue": "Durchschn: CHF {amount}",
-      "totalRevenueAmount": "Gesamt: CHF {amount}",
+      "avgRevenue": "Ø CHF {amount}",
       "bookings": "{count} Buchungen",
       "bookingsLabel": "Buchungen",
-      "guestsLabel": "Personen",
       "guests": "{count} Personen",
-      "salesLabel": "Verkäufe",
-      "salesCount": "{count} Artikel",
-      "profitMargin": "Marge",
-      "marginCalcLabel": "Marge Logik:",
       "trendingItems": "Beliebte Artikel",
       "noTrendingItems": "Keine beliebten Artikel gefunden",
       "allCategories": "Alle Kategorien",
@@ -651,11 +634,11 @@
         "paris": "Europa/Paris (GMT+1)"
       },
       "dateFormats": {
-        "mdy": "MM/TT/JJJJ (z.B., {date})",
-        "dmy": "TT/MM/JJJJ (z.B., {date})",
-        "ymd": "JJJJ-MM-TT (z.B., {date})",
-        "dmyShort": "TT MMM JJJJ (z.B., {date})",
-        "mdyShort": "MMM TT, JJJJ (z.B., {date})"
+        "mdy": "MM/TT/JJJJ (z.B., 02/05/2026)",
+        "dmy": "TT/MM/JJJJ (z.B., 05/02/2026)",
+        "ymd": "JJJJ-MM-TT (z.B., 2026-02-05)",
+        "dmyShort": "TT MMM JJJJ (z.B., 05 Feb 2026)",
+        "mdyShort": "MMM TT, JJJJ (z.B., Feb 05, 2026)"
       },
       "currencies": {
         "chf": "CHF - Schweizer Franken",
@@ -693,7 +676,6 @@
       "tabs": {
         "items": "Menükategorien",
         "addons": "Auswahlmöglichkeiten & Extras",
-        "visibilities": "Sichtbarkeiten",
         "menuItems": "Menükategorien",
         "choices": "Auswahlmöglichkeiten & Extras"
       },
@@ -711,14 +693,12 @@
         "changeImage": "Bild ändern",
         "removeImage": "Bild entfernen",
         "saveChanges": "Änderungen speichern",
-        "price": "Verkaufspreis",
+        "price": "Preis",
         "addSettings": "Einstellungen hinzufügen",
         "addAddons": "Extras hinzufügen",
         "addVariant": "Variante hinzufügen",
         "uploading": "Wird hochgeladen...",
-        "uploadImageDesc": "Klicken zum Durchsuchen oder Drag & Drop",
-        "addSchedule": "Sichtbarkeit hinzufügen",
-        "configureVisibility": "Sichtbarkeit konfigurieren"
+        "uploadImageDesc": "Klicken zum Durchsuchen oder Drag & Drop"
       },
       "messages": {
         "categoryHidden": "Kategorie ausgeblendet",
@@ -744,17 +724,14 @@
         "groupUpdated": "Gruppe aktualisiert",
         "groupCreated": "Gruppe erstellt",
         "orderUpdated": "Reihenfolge erfolgreich aktualisiert",
-        "updateOrderFailed": "Reihenfolge konnte nicht aktualisiert werden",
-        "noSchedulesFound": "Noch keine Sichtbarkeiten vorhanden.",
-        "createScheduleDesc": "Erstellen Sie eine Sichtbarkeit, um zu steuern, wann Artikel oder Kategorien im Menü erscheinen."
+        "updateOrderFailed": "Reihenfolge konnte nicht aktualisiert werden"
       },
       "labels": {
         "categoryName": "Kategoriename",
         "description": "Beschreibung",
         "categoryImage": "Kategoriebild",
         "itemName": "Artikelname",
-        "price": "Verkaufspreis",
-        "internalCost": "Interne Kosten",
+        "price": "Preis",
         "pricingType": "Preistyp",
         "averageConsumption": "Durchschnittlicher Verbrauch",
         "itemImage": "Artikelbild",
@@ -780,7 +757,7 @@
         "selectCategory": "Kategorie wählen",
         "chooseCategory": "Kategorie auswählen",
         "pricingMode": "Preismodus",
-        "pricingModePrice": "Verkaufspreis",
+        "pricingModePrice": "Preis",
         "pricingModeVariants": "Varianten",
         "itemSettingsOpt": "Artikeleinstellungen (Optional)",
         "addonsOpt": "Auswahlmöglichkeiten & Extras (Optional)",
@@ -802,8 +779,7 @@
         "priceHint": "0 für kostenlos",
         "dietaryType": "Ernährungsweise",
         "available": "Verfügbar",
-        "useSpecialCalculation": "Spezielle Berechnung",
-        "visibilityOptions": "Sichtbarkeitseinstellungen"
+        "useSpecialCalculation": "Spezielle Berechnung"
       },
       "nutrition": {
         "servingSize": "Portionsgröße",
@@ -816,7 +792,6 @@
         "sodium": "Natrium"
       },
       "placeholders": {
-        "searchSchedules": "Sichtbarkeiten suchen...",
         "searchCategories": "Menüartikel nach Name, Beschreibung suchen...",
         "searchGroups": "Auswahlmöglichkeiten & Extras nach Namen suchen...",
         "categoryName": "z.B. Vorspeisen, Hauptgerichte",
@@ -826,7 +801,6 @@
         "averageConsumption": "z.B. 3 (1 Flasche für 3 Personen)",
         "averageConsumptionShort": "z.B. 3",
         "price": "0.00",
-        "internalCost": "0.00",
         "variantName": "Variantenname (z.B. Klein, Mittel)",
         "groupName": "z.B. Grösse, Beläge, Extras",
         "addonName": "z.B. Extra Käse",
@@ -859,7 +833,7 @@
       "addChoice": "Auswahlmöglichkeit hinzufügen",
       "pricing": {
         "perPerson": "Pro Person",
-        "perPersonDesc": "Verkaufspreis pro Gast",
+        "perPersonDesc": "Preis pro Gast",
         "flatRate": "Pauschale",
         "flatRateDesc": "Einmalige Gebühr unabhängig von der Gästezahl",
         "consumption": "Nach Konsumation",
@@ -883,9 +857,7 @@
         "selectionFixed": "Auswahl ist auf {count} Artikel festgelegt",
         "selectionMax": "Bis zu {count} Artikel können ausgewählt werden",
         "selectionRange": "Zwischen {min} und {max} Artikel können ausgewählt werden",
-        "nutritionServingSize": "Alle Werte basieren auf einer Portionsgrösse von {size}.",
-        "visibility": "Wählen Sie bestimmte Zeiträume aus, in denen dieser Artikel auf der Speisekarte sichtbar sein soll. Wenn kein Zeitplan ausgewählt ist, ist er jederzeit sichtbar.",
-        "noVisibilitySchedules": "Noch keine Sichtbarkeitspläne erstellt."
+        "nutritionServingSize": "Alle Werte basieren auf einer Portionsgrösse von {size}."
       },
       "dietary": {
         "none": "Keine",
@@ -947,7 +919,7 @@
       }
     },
     "sidebar": {
-      "dashboard": "Armaturenbrett",
+      "dashboard": "Dashboard",
       "bookings": "Buchungen",
       "reports": "Berichte",
       "menuConfig": "Menü-Konfiguration",
@@ -960,7 +932,7 @@
       "email": "E-Mail",
       "password": "Passwort",
       "emailPlaceholder": "admin@oliv-restaurant.com",
-      "passwordPlaceholder": "••••••••",
+      "passwordPlaceholder": "",
       "signingIn": "Anmelden...",
       "signInBtn": "Anmelden",
       "protectedAccess": "Geschützter Zugang nur für Mitarbeiter von OLIV Restaurant & Bar"
@@ -975,17 +947,17 @@
       "diningExperiences": "Dining-Erlebnisse",
       "title": "Schaffen Sie unvergessliche Dining-Momente",
       "description": "Erstellen Sie benutzerdefinierte Catering-Menüs in Minuten mit unserem intuitiven Wizard. Perfekt für Hochzeiten, Firmenevents und besondere Feiern.",
-      "heroDescription": "Von intimen privaten Abendessen bis hin zu grossen Feiern – Oliv bringt gehobene Küche, makellose Präsentation und persönlichen Service zu jedem Anlass.",
+      "heroDescription": "Von intimen privaten Abendessen bis hin zu grossen Feiern  Oliv bringt gehobene Küche, makellose Präsentation und persönlichen Service zu jedem Anlass.",
       "getStarted": "Kostenlos starten",
       "planEvent": "Planen Sie Ihr Event",
-      "seeHowItWorks": "Siehe, wie es funktioniert",
-      "eventsCatered": "Events betreut",
+      "seeHowItWorks": "So funktioniert es",
+      "eventsCatered": "Betreute Events",
       "menuOptions": "Menüoptionen",
       "clientRating": "Kundenbewertung",
       "stats": {
         "events": "500+",
         "menus": "50+",
-        "rating": "4.9★"
+        "rating": "4.9★ "
       },
       "eventTypes": {
         "weddings": "Hochzeiten",
@@ -1007,7 +979,7 @@
       },
       "step2": {
         "title": "Menü wählen",
-        "description": "Wählen Sie aus unseren kuratierten Bookings - von Vorspeisen bis Desserts."
+        "description": "Wählen Sie aus unseren kuratierten Gerichten - von Vorspeisen bis Desserts."
       },
       "step3": {
         "title": "Überprüfen & Absenden",
@@ -1029,7 +1001,7 @@
       },
       "care": {
         "title": "Persönliche Betreuung",
-        "description": "Individuell zugeschnittener Service – von der Planung bis zur Durchführung."
+        "description": "Individuell zugeschnittener Service  von der Planung bis zur Durchführung."
       }
     },
     "gallery": {
@@ -1045,8 +1017,8 @@
       "readyToBegin": "Bereit zu beginnen?",
       "minutes": "Minuten",
       "viewGallery": "Galerie ansehen",
-      "description": "In Nur Wenigen Minuten",
-      "body": "Schließen Sie sich Hunderten zufriedener Kunden an, die Oliv für ihre Catering-Bedürfnisse vertrauen. Beginnen Sie noch heute mit der Erstellung Ihres individuellen Menüs – keine Kreditkarte erforderlich.",
+      "description": "In nur wenigen Minuten",
+      "body": "Schliessen Sie sich Hunderten von zufriedenen Kunden an, die Oliv für ihre Catering-Bedürfnisse vertrauen. Beginnen Sie noch heute mit der Erstellung Ihres individuellen Menüs  keine Kreditkarte erforderlich.",
       "button": "Jetzt Menü erstellen"
     },
     "footer": {
@@ -1202,8 +1174,8 @@
       "clear": "Filter löschen"
     },
     "dietaryBreakdown": "Ernährungsspezifische Aufschlüsselung",
-    "meatFish": "🍖 Fleisch/Fisch Auswahl",
-    "veggieVegan": "🥗 Veggie/Vegan Auswahl",
+    "meatFish": "\ud83c \udf56  Fleisch-/Fischauswahl",
+    "veggieVegan": "\ud83e \udd57  Vegetarische/Vegane Auswahl",
     "portions": "Portionen",
     "orderOverview": "Bestellübersicht",
     "proPerson": "Pro Person",
@@ -1212,7 +1184,7 @@
     "mealsSubtotal": "Teilbetrag für Mahlzeiten:",
     "consumptionSubtotal": "Teilbetrag (Konsumation):",
     "includeDrinksEstimate": "Konsumationsbasierte Preise in den Kostenvoranschlag einbeziehen",
-    "drinksExcludedWarning": "⚠️ Konsumationsbasierte Preise sind derzeit vom Gesamtkostenvoranschlag ausgeschlossen.",
+    "drinksExcludedWarning": "⚠ ️  Konsumationsbasierte Preise sind derzeit vom Gesamtkostenvoranschlag ausgeschlossen.",
     "totalEstimate": "GESAMTKOSTENVORANSCHLAG",
     "guestsCountCalculation": "Für {count} {count, plural, one {Gast} other {Gäste}}",
     "perPersonTotal": "Pro Person Total",
@@ -1243,7 +1215,7 @@
       "available": "Verfügbar",
       "forEvent": "für Ihr Event",
       "billedByConsumption": "nach Konsumation abgerechnet",
-      "priceOnConsumption": "Verkaufspreis nach Konsumation",
+      "priceOnConsumption": "Preis nach Konsumation",
       "flatFee": "Pauschalpreis",
       "perPerson": "pro Person",
       "perBottle": "/Flasche",
