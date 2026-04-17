@@ -74,7 +74,7 @@
     "profile": "Profil",
     "logout": "Abmelden",
     "login": "Anmelden",
-    "dashboard": "Armaturenbrett",
+    "dashboard": "Dashboard",
     "signIn": "Anmelden",
     "signOut": "Abmelden"
   },
@@ -116,7 +116,7 @@
     "new": "Neu",
     "pending": "Ausstehend",
     "confirmed": "Bestätigt",
-    "touchbase": "Touch-Basis",
+    "touchbase": "Kontaktaufnahme",
     "declined": "Abgelehnt",
     "cancelled": "Storniert",
     "completed": "Abgeschlossen",
@@ -152,7 +152,7 @@
     "deleteItem": "Artikel löschen",
     "itemName": "Artikelname",
     "description": "Beschreibung",
-    "price": "Verkaufspreis",
+    "price": "Preis",
     "category": "Kategorie",
     "dietaryLabel": "Ernährung",
     "available": "Verfügbar",
@@ -307,7 +307,7 @@
     "contact": "Kontaktieren",
     "confirm": "Bestätigen",
     "close": "Schliessen",
-    "price": "Verkaufspreis"
+    "price": "Preis"
   },
   "message": {
     "noDataFound": "Keine Daten gefunden",
@@ -378,7 +378,7 @@
       "selectStatus": "Status auswählen"
     },
     "dashboard": {
-      "title": "Armaturenbrett",
+      "title": "Dashboard",
       "welcome": "Willkommen zurück",
       "kpis": {
         "bookings": "Anzahl Buchungen",
@@ -421,7 +421,7 @@
         "new": "Neu",
         "pending": "Ausstehend",
         "confirmed": "Bestätigt",
-        "touchbase": "Touch-Basis",
+        "touchbase": "Kontaktaufnahme",
         "declined": "Abgelehnt",
         "completed": "Abgeschlossen",
         "no_show": "Nicht erschienen",
@@ -537,7 +537,7 @@
         "pdfSentSuccess": "PDF erfolgreich gesendet",
         "statusUpdated": "Status erfolgreich aktualisiert",
         "statusUpdateFailed": "Status konnte nicht aktualisiert werden",
-        "venueUpdated": "Venue erfolgreich aktualisiert",
+        "venueUpdated": "Veranstaltungsort erfolgreich aktualisiert",
         "copyLinkSuccess": "Bearbeitungslink in Zwischenablage kopiert!",
         "copyLinkFailed": "Bearbeitungslink konnte nicht kopiert werden",
         "generateLinkSuccess": "Bearbeitungslink generiert und kopiert!",
@@ -560,7 +560,7 @@
       "tooltips": {
         "amount": "Gesamtbetrag für diese Buchung",
         "notAssignedYet": "Dieser Buchung wurde noch kein Teammitglied zugewiesen",
-        "notAssigned": "Kein Venue zugewiesen"
+        "notAssigned": "Kein Veranstaltungsort zugewiesen"
       },
       "tabs": {
         "eventDetails": "Event-Details",
@@ -587,7 +587,7 @@
         "view": "Ansehen"
       },
       "quickActions": "Schnellaktionen",
-      "assignUser": "Zuständige",
+      "assignUser": "Benutzer zuweisen",
       "assigned": "Zugewiesen",
       "assignedTo": "Zugewiesen an"
     },
@@ -711,7 +711,7 @@
         "changeImage": "Bild ändern",
         "removeImage": "Bild entfernen",
         "saveChanges": "Änderungen speichern",
-        "price": "Verkaufspreis",
+        "price": "Preis",
         "addSettings": "Einstellungen hinzufügen",
         "addAddons": "Extras hinzufügen",
         "addVariant": "Variante hinzufügen",
@@ -753,7 +753,7 @@
         "description": "Beschreibung",
         "categoryImage": "Kategoriebild",
         "itemName": "Artikelname",
-        "price": "Verkaufspreis",
+        "price": "Preis",
         "internalCost": "Interne Kosten",
         "pricingType": "Preistyp",
         "averageConsumption": "Durchschnittlicher Verbrauch",
@@ -780,7 +780,7 @@
         "selectCategory": "Kategorie wählen",
         "chooseCategory": "Kategorie auswählen",
         "pricingMode": "Preismodus",
-        "pricingModePrice": "Verkaufspreis",
+        "pricingModePrice": "Preis",
         "pricingModeVariants": "Varianten",
         "itemSettingsOpt": "Artikeleinstellungen (Optional)",
         "addonsOpt": "Auswahlmöglichkeiten & Extras (Optional)",
@@ -859,7 +859,7 @@
       "addChoice": "Auswahlmöglichkeit hinzufügen",
       "pricing": {
         "perPerson": "Pro Person",
-        "perPersonDesc": "Verkaufspreis pro Gast",
+        "perPersonDesc": "Preis pro Gast",
         "flatRate": "Pauschale",
         "flatRateDesc": "Einmalige Gebühr unabhängig von der Gästezahl",
         "consumption": "Nach Konsumation",
@@ -947,7 +947,7 @@
       }
     },
     "sidebar": {
-      "dashboard": "Armaturenbrett",
+      "dashboard": "Dashboard",
       "bookings": "Buchungen",
       "reports": "Berichte",
       "menuConfig": "Menü-Konfiguration",
@@ -960,7 +960,7 @@
       "email": "E-Mail",
       "password": "Passwort",
       "emailPlaceholder": "admin@oliv-restaurant.com",
-      "passwordPlaceholder": "••••••••",
+      "passwordPlaceholder": "",
       "signingIn": "Anmelden...",
       "signInBtn": "Anmelden",
       "protectedAccess": "Geschützter Zugang nur für Mitarbeiter von OLIV Restaurant & Bar"
@@ -975,17 +975,17 @@
       "diningExperiences": "Dining-Erlebnisse",
       "title": "Schaffen Sie unvergessliche Dining-Momente",
       "description": "Erstellen Sie benutzerdefinierte Catering-Menüs in Minuten mit unserem intuitiven Wizard. Perfekt für Hochzeiten, Firmenevents und besondere Feiern.",
-      "heroDescription": "Von intimen privaten Abendessen bis hin zu grossen Feiern – Oliv bringt gehobene Küche, makellose Präsentation und persönlichen Service zu jedem Anlass.",
+      "heroDescription": "Von intimen privaten Abendessen bis hin zu grossen Feiern  Oliv bringt gehobene Küche, makellose Präsentation und persönlichen Service zu jedem Anlass.",
       "getStarted": "Kostenlos starten",
       "planEvent": "Planen Sie Ihr Event",
-      "seeHowItWorks": "Siehe, wie es funktioniert",
-      "eventsCatered": "Events betreut",
+      "seeHowItWorks": "So funktioniert es",
+      "eventsCatered": "Betreute Events",
       "menuOptions": "Menüoptionen",
       "clientRating": "Kundenbewertung",
       "stats": {
         "events": "500+",
         "menus": "50+",
-        "rating": "4.9★"
+        "rating": "4.9★ "
       },
       "eventTypes": {
         "weddings": "Hochzeiten",
@@ -1007,7 +1007,7 @@
       },
       "step2": {
         "title": "Menü wählen",
-        "description": "Wählen Sie aus unseren kuratierten Bookings - von Vorspeisen bis Desserts."
+        "description": "Wählen Sie aus unseren kuratierten Gerichten - von Vorspeisen bis Desserts."
       },
       "step3": {
         "title": "Überprüfen & Absenden",
@@ -1029,7 +1029,7 @@
       },
       "care": {
         "title": "Persönliche Betreuung",
-        "description": "Individuell zugeschnittener Service – von der Planung bis zur Durchführung."
+        "description": "Individuell zugeschnittener Service  von der Planung bis zur Durchführung."
       }
     },
     "gallery": {
@@ -1045,8 +1045,8 @@
       "readyToBegin": "Bereit zu beginnen?",
       "minutes": "Minuten",
       "viewGallery": "Galerie ansehen",
-      "description": "In Nur Wenigen Minuten",
-      "body": "Schließen Sie sich Hunderten zufriedener Kunden an, die Oliv für ihre Catering-Bedürfnisse vertrauen. Beginnen Sie noch heute mit der Erstellung Ihres individuellen Menüs – keine Kreditkarte erforderlich.",
+      "description": "In nur wenigen Minuten",
+      "body": "Schliessen Sie sich Hunderten von zufriedenen Kunden an, die Oliv für ihre Catering-Bedürfnisse vertrauen. Beginnen Sie noch heute mit der Erstellung Ihres individuellen Menüs  keine Kreditkarte erforderlich.",
       "button": "Jetzt Menü erstellen"
     },
     "footer": {
@@ -1202,8 +1202,8 @@
       "clear": "Filter löschen"
     },
     "dietaryBreakdown": "Ernährungsspezifische Aufschlüsselung",
-    "meatFish": "🍖 Fleisch/Fisch Auswahl",
-    "veggieVegan": "🥗 Veggie/Vegan Auswahl",
+    "meatFish": "Fleisch-/Fischauswahl",
+    "veggieVegan": "Vegetarische/Vegane Auswahl",
     "portions": "Portionen",
     "orderOverview": "Bestellübersicht",
     "proPerson": "Pro Person",
@@ -1212,7 +1212,7 @@
     "mealsSubtotal": "Teilbetrag für Mahlzeiten:",
     "consumptionSubtotal": "Teilbetrag (Konsumation):",
     "includeDrinksEstimate": "Konsumationsbasierte Preise in den Kostenvoranschlag einbeziehen",
-    "drinksExcludedWarning": "⚠️ Konsumationsbasierte Preise sind derzeit vom Gesamtkostenvoranschlag ausgeschlossen.",
+    "drinksExcludedWarning": "Konsumationsbasierte Preise sind derzeit vom Gesamtkostenvoranschlag ausgeschlossen.",
     "totalEstimate": "GESAMTKOSTENVORANSCHLAG",
     "guestsCountCalculation": "Für {count} {count, plural, one {Gast} other {Gäste}}",
     "perPersonTotal": "Pro Person Total",
@@ -1243,7 +1243,7 @@
       "available": "Verfügbar",
       "forEvent": "für Ihr Event",
       "billedByConsumption": "nach Konsumation abgerechnet",
-      "priceOnConsumption": "Verkaufspreis nach Konsumation",
+      "priceOnConsumption": "Preis nach Konsumation",
       "flatFee": "Pauschalpreis",
       "perPerson": "pro Person",
       "perBottle": "/Flasche",
