@@ -1392,7 +1392,7 @@ export function BookingDetailPage({
                     internalNotes: newInternalNotes,
                     allergyDetails: allergies,
                     specialRequests: notes,
-                    location: tempEvent.location
+                    room: selectedRoom
                 }),
             });
 
