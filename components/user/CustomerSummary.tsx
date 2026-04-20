@@ -26,12 +26,13 @@ export function CustomerSummary({
     isEditMode, setCurrentStep, setActiveTab,
     cart, menuItems, getVisibleCategories,
     collapsedCategories, setCollapsedCategory,
-    getItemPerPersonPrice, getItemTotalPrice, getPerPersonSubtotal,
+    getItemPerPersonPrice, getItemTotalPrice, getDietaryPerPersonTotals, getPerPersonSubtotal,
     summaryViewMode, setSummaryViewMode,
     includeBeveragePrices, setIncludeBeveragePrices,
     isConsumption, isPerPerson, isFlatFee,
     getFlatRateSubtotal, getConsumptionSubtotal,
-    termsAccepted, setTermsAccepted
+    termsAccepted, setTermsAccepted,
+    isAdminEdit
   } = useWizardStore();
 
   const selectedItems = Object.keys(cart);
@@ -57,6 +58,7 @@ export function CustomerSummary({
     return Math.max(...ppItems.map(item => cart[item.id].guestCount || parseInt(eventDetails.guestCount) || 1), parseInt(eventDetails.guestCount) || 0);
   }, [selectedItems, menuItems, cart, eventDetails.guestCount, isPerPerson]);
 
+  const dietaryTotals = getDietaryPerPersonTotals();
   const perPersonTotalValue = getPerPersonSubtotal();
   const absoluteFoodTotal = useMemo(() => {
     return Object.entries(cart).reduce((total, [itemId, cartItem]) => {
@@ -494,13 +496,15 @@ export function CustomerSummary({
                                     : `CHF ${(getItemPerPersonPrice(item) * (isPerPerson(item) ? (cart[itemId].guestCount || parseInt(eventDetails.guestCount) || 1) : quantity)).toFixed(2)}`}
 
                                 </p>
-                                <p className="text-muted-foreground text-xs">
-                                  {isConsumption(item)
-                                    ? t('status.billedByConsumption')
-                                    : (isPerPerson(item) && !isFlatFee(item) && item.category !== 'Beverages')
-                                      ? t('status.guestsCalculation', { count: cart[itemId].guestCount || parseInt(eventDetails.guestCount) || 1, price: getItemPerPersonPrice(item).toFixed(2) })
-                                      : t('status.qtyCalculation', { qty: quantity, price: getItemPerPersonPrice(item).toFixed(2) })}
-                                </p>
+                                {isAdminEdit && (
+                                  <p className="text-muted-foreground text-xs">
+                                    {isConsumption(item)
+                                      ? t('status.billedByConsumption')
+                                      : (isPerPerson(item) && !isFlatFee(item) && item.category !== 'Beverages')
+                                        ? t('status.guestsCalculation', { count: cart[itemId].guestCount || parseInt(eventDetails.guestCount) || 1, price: getItemPerPersonPrice(item).toFixed(2) })
+                                        : t('status.qtyCalculation', { qty: quantity, price: getItemPerPersonPrice(item).toFixed(2) })}
+                                  </p>
+                                )}
                               </div>
                             </div>
                           );
@@ -512,21 +516,46 @@ export function CustomerSummary({
               })}
 
               {/* Per-Person Total */}
-              <div className="border-t border-border pt-4 mt-4">
+              <div className="border-t border-border pt-6 mt-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-foreground mb-1" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      {t('labels.perPersonTotal')}
-                    </p>
-                    <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                      {t('labels.selectedMenu', { count: selectedItems.length })} {t('status.forEvent')} {guestCountValue || '0'}{' '}
-                      {guestCountValue === 1 ? t('labels.guest') : t('labels.guests_plural')}
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <DietaryIcon type="veg" size="sm" />
+                    <div>
+                      <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                        {t('labels.vegTrackTotal')}
+                      </p>
+                      <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                        {t('status.perPerson')}
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-primary" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                    CHF {perPersonTotalValue.toFixed(2)}
+                  <p className="text-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                    CHF {dietaryTotals.veg.toFixed(2)}
                   </p>
+                </div>
 
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <DietaryIcon type="non-veg" size="sm" />
+                    <div>
+                      <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                        {t('labels.nonVegTrackTotal')}
+                      </p>
+                      <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                        {t('status.perPerson')}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                    CHF {dietaryTotals.nonVeg.toFixed(2)}
+                  </p>
+                </div>
+                <div className="mt-4 flex items-center gap-2 text-muted-foreground bg-muted/20 p-2 rounded" style={{ fontSize: 'var(--text-small)' }}>
+                  <ShoppingCart className="w-4 h-4" />
+                  <span>
+                    {t('labels.selectedMenu', { count: selectedItems.length })} {t('status.forEvent')} {guestCountValue || '0'}{' '}
+                    {guestCountValue === 1 ? t('labels.guest') : t('labels.guests_plural')}
+                  </span>
                 </div>
               </div>
             </div>
@@ -559,7 +588,7 @@ export function CustomerSummary({
                   }).length}{' '}
                   {t('labels.items')}
                 </p>
-                {eventDetails.guestCount && (
+                {eventDetails.guestCount && isAdminEdit && (
                   <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
                     {t('labels.portionsCalculation', {
                       count: selectedItems
@@ -574,7 +603,7 @@ export function CustomerSummary({
                 )}
               </div>
 
-              {/* Veggie/Vegan Summary */}
+              {/* Veggie Summary */}
               <div className="bg-card border border-border rounded-lg p-4" style={{ borderRadius: 'var(--radius)' }}>
                 <p className="text-muted-foreground mb-2" style={{ fontSize: 'var(--text-small)' }}>
                   {t('labels.veggieVegan')}
@@ -586,7 +615,7 @@ export function CustomerSummary({
                   }).length}{' '}
                   {t('labels.items')}
                 </p>
-                {eventDetails.guestCount && (
+                {eventDetails.guestCount && isAdminEdit && (
                   <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
                     {t('labels.portionsCalculation', {
                       count: selectedItems
@@ -701,19 +730,31 @@ export function CustomerSummary({
 
                 {/* Per-Person Total */}
                 <div className="bg-primary/5 border border-primary/30 rounded-lg p-4" style={{ borderRadius: 'var(--radius)' }}>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="text-foreground font-semibold" style={{ fontSize: 'var(--text-base)' }}>
-                        {t('labels.perPersonTotal')}
-                      </p>
-                      <p className="text-muted-foreground text-sm mt-1">
-                        × {guestCountValue || '0'} {guestCountValue === 1 ? t('labels.guest') : t('labels.guests_plural')}
-                      </p>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center pb-3 border-b border-primary/10">
+                      <div>
+                        <p className="text-foreground font-semibold" style={{ fontSize: 'var(--text-small)' }}>
+                          {t('labels.vegTrackTotal')}
+                        </p>
+                        <p className="text-muted-foreground text-xs">{t('status.perPerson')}</p>
+                      </div>
+                      <p className="text-emerald-600 font-bold">CHF {dietaryTotals.veg.toFixed(2)}</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-primary" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-bold)' }}>
-                        CHF {perPersonTotalValue.toFixed(2)}
-
+                    <div className="flex justify-between items-center pb-3 border-b border-primary/10">
+                      <div>
+                        <p className="text-foreground font-semibold" style={{ fontSize: 'var(--text-small)' }}>
+                          {t('labels.nonVegTrackTotal')}
+                        </p>
+                        <p className="text-muted-foreground text-xs">{t('status.perPerson')}</p>
+                      </div>
+                      <p className="text-rose-600 font-bold">CHF {dietaryTotals.nonVeg.toFixed(2)}</p>
+                    </div>
+                    <div className="flex justify-between items-center pt-1">
+                      <p className="text-muted-foreground text-xs">
+                        {t('labels.guestCount')}: {guestCountValue || '0'}
+                      </p>
+                      <p className="text-primary font-bold">
+                        ~ CHF {(Math.max(dietaryTotals.veg, dietaryTotals.nonVeg) * guestCountValue).toFixed(2)}
                       </p>
                     </div>
                   </div>

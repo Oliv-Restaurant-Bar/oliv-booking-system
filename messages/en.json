@@ -450,7 +450,6 @@
         "billingPlz": "Billing PLZ",
         "billingLocation": "Billing Location",
         "billingReference": "Billing Reference",
-        "billingCustomerReference": "Customer Billing Ref",
         "assignedTo": "Assigned To",
         "contactedBy": "Contacted By",
         "contactedWhen": "Contacted When"
@@ -869,7 +868,7 @@
         "consumptionDesc": "Billed based on actual usage"
       },
       "descriptions": {
-        "addDietaryInfo": "Add dietary information like vegetarian, vegan, or non-vegetarian labels to this item.",
+        "addDietaryInfo": "Add dietary information like veggie or non-vegetarian labels to this item.",
         "selectAddonGroups": "Choose which {type} this extras group belongs to",
         "optionalGroup": "Customers can choose any number of items",
         "mandatoryGroup": "Customers must choose exactly one item",
@@ -1131,6 +1130,8 @@
     },
     "labels": {
       "filter": "Filter",
+      "vegTrackTotal": "Veg track total",
+      "nonVegTrackTotal": "Non-veg / Meat track total",
       "billingDetails": "Billing Details",
       "address": "Address",
       "eventDetails": "Event Details",
@@ -1167,10 +1168,11 @@
       "useSameAddress": "Same as customer address",
       "invoiceTarget": "Specify where the invoice should be sent",
       "billingStreet": "Billing Street & Nr.",
+      "billingBusiness": "Billing Company",
+      "billingEmail": "Billing Email",
       "billingPlz": "Billing PLZ",
       "billingLocation": "Billing Location",
       "reference": "Reference information",
-      "customerReference": "Customer Reference",
       "optional": "Optional",
       "guest": "guest",
       "guests_plural": "guests",
@@ -1198,7 +1200,7 @@
     },
     "dietaryBreakdown": "Dietary Breakdown",
     "meatFish": "🍖 Meat/Fish Selections",
-    "veggieVegan": "🥗 Veggie/Vegan Selections",
+    "veggieVegan": "🥗 Veggie Selections",
     "portions": "portions",
     "orderOverview": "Order overview",
     "proPerson": "Pro Person",
@@ -1227,11 +1229,13 @@
       "name": "First and Last Name",
       "searchDishes": "Search for dishes...",
       "billingAddress": "Street, House Number, ZIP, City",
-      "billingReference": "e.g. Cost Center or Reference",
-      "customerReference": "e.g. Customer number or PO number"
+      "billingBusiness": "Company Name",
+      "billingEmail": "billing@company.com",
+      "billingReference": "e.g. Cost Center or Reference"
     },
     "status": {
       "loading": "Loading menu...",
+      "selected": "Selected",
       "noItems": "No menu items available. Please contact us directly.",
       "notSelected": "No items selected yet",
       "browseToAdd": "Browse categories and add dishes",
@@ -1269,6 +1273,7 @@
       "show": "Show",
       "hide": "Hide",
       "addToCart": "Add to Cart",
+      "updateCart": "Update Cart",
       "continueToReview": "Continue to Review"
     },
     "warnings": {

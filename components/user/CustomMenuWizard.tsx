@@ -11,7 +11,6 @@ import { useWizardTranslation } from '@/lib/i18n/client';
 import { DateTimePickerModal } from './DateTimePickerModal';
 import { submitWizardForm, requestBookingUnlock } from '@/lib/actions/wizard';
 import { SkeletonKPI, SkeletonPage, SkeletonMenuSelection } from '@/components/ui/skeleton-loaders';
-import { customerNameSchema, customerBusinessSchema, customerPhoneSchema, customerStreetSchema, customerPlzSchema, customerLocationSchema, customerOccasionSchema, customerSpecialRequestsSchema, userEmailSchema } from '@/lib/validation/schemas';
 import { EventDetails, VisibilitySchedule } from '@/lib/types';
 import { CustomerDetailsForm } from './CustomerDetailsForm';
 import { CustomerMenuSelection } from './CustomerMenuSelection';
@@ -20,6 +19,16 @@ import { ItemDetailsModal } from './ItemDetailsModal';
 import { MenuCart } from './MenuCart';
 import { toast } from 'sonner';
 import { useWizardStore } from '@/lib/store/useWizardStore';
+import { 
+  customerNameSchema, 
+  customerPhoneSchema, 
+  customerStreetSchema, 
+  customerPlzSchema, 
+  customerLocationSchema, 
+  customerOccasionSchema, 
+  customerSpecialRequestsSchema, 
+  userEmailSchema 
+} from '@/lib/validation/schemas';
 
 
 export function CustomMenuWizard({ 
@@ -73,7 +82,8 @@ export function CustomMenuWizard({
     isLoadingEdit, setIsLoadingEdit,
     setIsSubmitting,
     activeCategory, setActiveCategory,
-    detailsModalItem, setDetailsModalItem
+    detailsModalItem, setDetailsModalItem,
+    getRealtimeErrors
   } = useWizardStore();
 
   const selectedItemIds = useMemo(() => Object.keys(cart), [cart]);
@@ -451,75 +461,7 @@ export function CustomMenuWizard({
   ];
 
   // Real-time validation errors for touched fields
-  const realtimeErrors = useMemo(() => {
-    const newErrors: Partial<EventDetails> = {};
-
-    if (touchedFields.name) {
-      const nameResult = customerNameSchema.safeParse(eventDetails.name);
-      if (!nameResult.success) newErrors.name = nameResult.error.errors[0].message;
-    }
-
-    if (touchedFields.email) {
-      const emailResult = userEmailSchema.safeParse(eventDetails.email);
-      if (!emailResult.success) newErrors.email = emailResult.error.errors[0].message;
-    }
-
-    if (touchedFields.telephone) {
-      const phoneResult = customerPhoneSchema.safeParse(eventDetails.telephone);
-      if (!phoneResult.success) newErrors.telephone = phoneResult.error.errors[0].message;
-    }
-
-    if (touchedFields.street) {
-      const streetResult = customerStreetSchema.safeParse(eventDetails.street);
-      if (!streetResult.success) newErrors.street = streetResult.error.errors[0].message;
-    }
-
-    if (touchedFields.plz) {
-      const plzResult = customerPlzSchema.safeParse(eventDetails.plz);
-      if (!plzResult.success) newErrors.plz = plzResult.error.errors[0].message;
-    }
-
-    if (touchedFields.location) {
-      const locationResult = customerLocationSchema.safeParse(eventDetails.location);
-      if (!locationResult.success) newErrors.location = locationResult.error.errors[0].message;
-    }
-
-    if (touchedFields.eventDate && !eventDetails.eventDate) {
-      newErrors.eventDate = 'Event date is required';
-    } else if (touchedFields.eventDate && eventDetails.eventDate) {
-      const selectedDateTime = new Date(`${eventDetails.eventDate}T${eventDetails.eventTime || '00:00'}`);
-      const twentyFourHoursFromNow = new Date(Date.now() + 24 * 60 * 60 * 1000);
-      if (selectedDateTime < twentyFourHoursFromNow) {
-        newErrors.eventDate = 'Booking must be at least 24 hours in advance';
-      }
-    }
-
-    if (touchedFields.eventTime && !eventDetails.eventTime) {
-      newErrors.eventTime = 'Event time is required';
-    }
-
-    if (touchedFields.guestCount) {
-      if (!eventDetails.guestCount) {
-        newErrors.guestCount = 'Number of guests is required';
-      } else if (parseInt(eventDetails.guestCount) < 1) {
-        newErrors.guestCount = 'Must have at least 1 guest';
-      } else if (parseInt(eventDetails.guestCount) > 10000) {
-        newErrors.guestCount = 'Number of guests cannot exceed 10,000';
-      }
-    }
-
-    if (touchedFields.occasion && eventDetails.occasion) {
-      const occasionResult = customerOccasionSchema.safeParse(eventDetails.occasion);
-      if (!occasionResult.success) newErrors.occasion = occasionResult.error.errors[0].message;
-    }
-
-    if (touchedFields.specialRequests && eventDetails.specialRequests) {
-      const specialRequestsResult = customerSpecialRequestsSchema.safeParse(eventDetails.specialRequests);
-      if (!specialRequestsResult.success) newErrors.specialRequests = specialRequestsResult.error.errors[0].message;
-    }
-
-    return newErrors;
-  }, [touchedFields, eventDetails]);
+  const realtimeErrors = getRealtimeErrors();
 
   // Merge real-time errors with partial state validation
   const displayErrors = useMemo(() => {
@@ -604,10 +546,6 @@ export function CustomMenuWizard({
       }
     }
 
-    // Validate room selection
-    if (!eventDetails.room) {
-      newErrors.room = 'Room selection is required';
-    }
 
     // Validate billing address if 'On Invoice' is selected and not using same address
     if (eventDetails.paymentMethod === 'on_bill' && !eventDetails.useSameAddressForBilling) {
@@ -628,6 +566,31 @@ export function CustomMenuWizard({
     }
 
     setValidationErrors(newErrors);
+
+    // If there are errors, mark all fields as touched to show them
+    if (Object.keys(newErrors).length > 0) {
+      const allTouched = {
+        name: true,
+        email: true,
+        telephone: true,
+        street: true,
+        plz: true,
+        location: true,
+        eventDate: true,
+        eventTime: true,
+        guestCount: true,
+        occasion: true,
+        specialRequests: true,
+        billingStreet: true,
+        billingPlz: true,
+        billingLocation: true,
+      };
+      setTouchedFields(allTouched);
+      
+      // Toast to inform user
+      toast.error('Bitte füllen Sie alle erforderlichen Felder aus.');
+    }
+
     return Object.keys(newErrors).length === 0;
   };
 
@@ -713,8 +676,7 @@ export function CustomMenuWizard({
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(eventDetails.email) &&
       eventDetails.guestCount !== '' &&
       parseInt(eventDetails.guestCount) >= 1 &&
-      parseInt(eventDetails.guestCount) <= 10000 &&
-      eventDetails.room !== ''
+      parseInt(eventDetails.guestCount) <= 10000
     );
   }, [eventDetails.eventDate, eventDetails.eventTime, eventDetails.telephone, eventDetails.street, eventDetails.plz, eventDetails.location, eventDetails.name, eventDetails.email, eventDetails.guestCount, eventDetails.room, eventDetails.paymentMethod, eventDetails.useSameAddressForBilling, eventDetails.billingStreet, eventDetails.billingPlz, eventDetails.billingLocation]);
 
@@ -1100,7 +1062,7 @@ export function CustomMenuWizard({
                           onClick={handleStep1Navigation}
                           icon={ChevronRight}
                           iconPosition="right"
-                          disabled={!isStep1Valid}
+                          disabled={isSubmitting}
                           size="sm"
                         >
                           {t('actions.proceedToMenu')}

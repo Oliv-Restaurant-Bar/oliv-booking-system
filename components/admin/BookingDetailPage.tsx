@@ -113,8 +113,9 @@ export interface Booking {
     billingStreet?: string;
     billingPlz?: string;
     billingLocation?: string;
+    billingBusiness?: string;
+    billingEmail?: string;
     billingReference?: string;
-    billingCustomerReference?: string;
     paymentMethod?: string;
     status: string;
     notes?: string;
@@ -270,8 +271,9 @@ export function BookingDetailPage({
         billingStreet: '',
         billingPlz: '',
         billingLocation: '',
+        billingBusiness: '',
+        billingEmail: '',
         billingReference: '',
-        billingCustomerReference: '',
         paymentMethod: ''
     });
 
@@ -311,16 +313,13 @@ export function BookingDetailPage({
             item.category !== 'Zusatzleistungen'
         );
 
-        const isVegActivated = foodItems.some(i => i.dietaryType === 'veg' || i.notes?.includes('(Veg)'));
+        const isVegActivated = foodItems.some(i => i.dietaryType === 'veg' || i.dietaryType === 'vegan' || i.notes?.includes('(Veg)') || i.notes?.includes('(Vegan)'));
         const isNonVegActivated = foodItems.some(i => i.dietaryType === 'non-veg' || i.notes?.includes('(Non-Veg)'));
-        const isVeganActivated = foodItems.some(i => i.dietaryType === 'vegan' || i.notes?.includes('(Vegan)'));
 
         let vegSubtotal = 0;
         let nonVegSubtotal = 0;
-        let veganSubtotal = 0;
         let vegCount = 0;
         let nonVegCount = 0;
-        let veganCount = 0;
 
         const itemsByCategory = (foodItems || []).reduce((acc: Record<string, { items: any[], useSpecialCalculation: boolean }>, item) => {
             const catName = item.category || 'Uncategorized';
@@ -340,14 +339,12 @@ export function BookingDetailPage({
                     category.toLowerCase().includes('hauptgänge') ||
                     category.toLowerCase().includes('mains'));
 
-            const vegItems = (catItems as any[]).filter(i => i.dietaryType === 'veg');
+            const vegItems = (catItems as any[]).filter(i => i.dietaryType === 'veg' || i.dietaryType === 'vegan');
             const nonVegItems = (catItems as any[]).filter(i => i.dietaryType === 'non-veg');
-            const veganItems = (catItems as any[]).filter(i => i.dietaryType === 'vegan');
             const noneItems = (catItems as any[]).filter(i => !i.dietaryType || i.dietaryType === 'none');
 
             const maxVeg = vegItems.length > 0 ? Math.max(...vegItems.map((i: any) => i.unitPrice || 0)) : 0;
             const maxNonVeg = nonVegItems.length > 0 ? Math.max(...nonVegItems.map((i: any) => i.unitPrice || 0)) : 0;
-            const maxVegan = veganItems.length > 0 ? Math.max(...veganItems.map((i: any) => i.unitPrice || 0)) : 0;
 
             // For None items, we check if they have any dietary markers in notes
             const noneSplits = noneItems.map(i => {
@@ -361,14 +358,13 @@ export function BookingDetailPage({
 
             const maxNoneVeg = maxNoneSplitCombined;
             const maxNoneNonVeg = maxNoneSplitCombined;
-            const maxNoneVegan = maxNoneSplitCombined;
 
-            const groupsPresentCount = [maxVeg > 0, maxNonVeg > 0, maxVegan > 0].filter(Boolean).length;
+            const groupsPresentCount = [maxVeg > 0, maxNonVeg > 0].filter(Boolean).length;
             const hasNoneSplit = maxNoneSplitCombined > 0;
             const hasNoneShared = maxNoneShared > 0;
             const totalGroupings = groupsPresentCount + (hasNoneSplit || hasNoneShared ? 1 : 0);
 
-            const sharedPrice = Math.max(maxVeg, maxNonVeg, maxVegan, maxNoneVeg, maxNoneNonVeg, maxNoneVegan, maxNoneShared);
+            const sharedPrice = Math.max(maxVeg, maxNonVeg, maxNoneVeg, maxNoneNonVeg, maxNoneShared);
             const sharedCount = (catItems as any[]).length;
 
             if (totalGroupings === 1) {
@@ -376,17 +372,14 @@ export function BookingDetailPage({
                     // Rule: Use specific price for None splits, even if only 1 grouping
                     if (isVegActivated) { vegSubtotal += Math.max(maxVeg, maxNoneVeg, maxNoneShared); vegCount += sharedCount; }
                     if (isNonVegActivated) { nonVegSubtotal += Math.max(maxNonVeg, maxNoneNonVeg, maxNoneShared); nonVegCount += sharedCount; }
-                    if (isVeganActivated) { veganSubtotal += Math.max(maxVegan, maxNoneVegan, maxNoneShared); veganCount += sharedCount; }
                 } else {
                     // Rule: Shared for Restricted, Separate for General (Mains)
                     if (isRestricted) {
                         vegSubtotal += sharedPrice; vegCount += sharedCount;
                         nonVegSubtotal += sharedPrice; nonVegCount += sharedCount;
-                        veganSubtotal += sharedPrice; veganCount += sharedCount;
                     } else {
                         if (maxVeg > 0) { vegSubtotal += maxVeg; vegCount += sharedCount; }
                         if (maxNonVeg > 0) { nonVegSubtotal += maxNonVeg; nonVegCount += sharedCount; }
-                        if (maxVegan > 0) { veganSubtotal += maxVegan; veganCount += sharedCount; }
                     }
                 }
             } else {
@@ -394,22 +387,18 @@ export function BookingDetailPage({
                 // Rule: Activation-Only for "None" globally
                 const vegNoneAdd = isVegActivated ? Math.max(maxNoneVeg, maxNoneShared) : 0;
                 const nvNoneAdd = isNonVegActivated ? Math.max(maxNoneNonVeg, maxNoneShared) : 0;
-                const veganNoneAdd = isVeganActivated ? Math.max(maxNoneVegan, maxNoneShared) : 0;
 
                 vegSubtotal += maxVeg + vegNoneAdd;
                 nonVegSubtotal += maxNonVeg + nvNoneAdd;
-                veganSubtotal += maxVegan + veganNoneAdd;
 
                 vegCount += vegItems.length + (isVegActivated ? noneItems.length : 0);
                 nonVegCount += nonVegItems.length + (isNonVegActivated ? noneItems.length : 0);
-                veganCount += veganItems.length + (isVeganActivated ? noneItems.length : 0);
             }
         });
 
         return {
             veg: { count: vegCount, subtotal: vegSubtotal },
-            nonVeg: { count: nonVegCount, subtotal: nonVegSubtotal },
-            vegan: { count: veganCount, subtotal: veganSubtotal }
+            nonVeg: { count: nonVegCount, subtotal: nonVegSubtotal }
         };
     }, [isEditingMenu, tempMenuItems, booking?.menuItems]);
     const canViewAudit = hasPermission(userRole, Permission.VIEW_BOOKING_DETAILS);
@@ -458,6 +447,8 @@ export function BookingDetailPage({
         billingStreet?: string;
         billingPlz?: string;
         billingLocation?: string;
+        billingBusiness?: string;
+        billingEmail?: string;
         billingReference?: string;
         paymentMethod?: string;
     }>({});
@@ -1031,7 +1022,7 @@ export function BookingDetailPage({
         return Object.keys(newErrors).length === 0;
     };
 
-    const validatePaymentField = (field: 'paymentMethod' | 'billingReference' | 'billingStreet' | 'billingPlz' | 'billingLocation', value: string) => {
+    const validatePaymentField = (field: 'paymentMethod' | 'billingReference' | 'billingStreet' | 'billingPlz' | 'billingLocation' | 'billingBusiness' | 'billingEmail', value: string) => {
         let error = '';
 
         switch (field) {
@@ -1069,6 +1060,16 @@ export function BookingDetailPage({
                     error = 'Billing reference cannot exceed 100 characters';
                 }
                 break;
+            case 'billingBusiness':
+                // Optional, but can add max length check
+                if (value && value.length > 100) error = 'Business name too long';
+                break;
+            case 'billingEmail':
+                if (value && value.trim()) {
+                    const emailResult = userEmailSchema.safeParse(value);
+                    if (!emailResult.success) error = emailResult.error.errors[0].message;
+                }
+                break;
         }
 
         setErrors(prev => ({ ...prev, [field]: error || undefined }));
@@ -1086,11 +1087,12 @@ export function BookingDetailPage({
             plz: booking.customer.plz || '',
             location: booking.customer.location || '',
             reference: booking.customer.reference || '',
-            billingStreet: '',
-            billingPlz: '',
-            billingLocation: '',
+            billingStreet: booking.billingStreet || '',
+            billingPlz: booking.billingPlz || '',
+            billingLocation: booking.billingLocation || '',
+            billingBusiness: (booking as any).billingBusiness || '',
+            billingEmail: (booking as any).billingEmail || '',
             billingReference: booking.billingReference || '',
-            billingCustomerReference: (booking as any).billingCustomerReference || '',
             paymentMethod: booking.paymentMethod || ''
         });
         setIsEditingCustomer(true);
@@ -1111,11 +1113,12 @@ export function BookingDetailPage({
             plz: booking.customer.plz || '',
             location: booking.customer.location || '',
             reference: booking.customer.reference || '',
-            billingStreet: '',
-            billingPlz: '',
-            billingLocation: '',
+            billingStreet: booking.billingStreet || '',
+            billingPlz: booking.billingPlz || '',
+            billingLocation: booking.billingLocation || '',
+            billingBusiness: (booking as any).billingBusiness || '',
+            billingEmail: (booking as any).billingEmail || '',
             billingReference: booking.billingReference || '',
-            billingCustomerReference: (booking as any).billingCustomerReference || '',
             paymentMethod: booking.paymentMethod || ''
         });
         setIsEditingAddress(true);
@@ -1136,11 +1139,12 @@ export function BookingDetailPage({
             plz: booking.customer.plz || '',
             location: booking.customer.location || '',
             reference: booking.customer.reference || '',
-            billingStreet: '',
-            billingPlz: '',
-            billingLocation: '',
+            billingStreet: booking.billingStreet || '',
+            billingPlz: booking.billingPlz || '',
+            billingLocation: booking.billingLocation || '',
+            billingBusiness: (booking as any).billingBusiness || '',
+            billingEmail: (booking as any).billingEmail || '',
             billingReference: booking.billingReference || '',
-            billingCustomerReference: (booking as any).billingCustomerReference || '',
             paymentMethod: booking.paymentMethod || ''
         });
         setIsEditingPayment(true);
@@ -1198,6 +1202,8 @@ export function BookingDetailPage({
                     billingStreet: tempCustomer.billingStreet,
                     billingPlz: tempCustomer.billingPlz,
                     billingLocation: tempCustomer.billingLocation,
+                    billingBusiness: tempCustomer.billingBusiness,
+                    billingEmail: tempCustomer.billingEmail,
                     billingReference: tempCustomer.billingReference,
                     paymentMethod: tempCustomer.paymentMethod
                 }),
@@ -1729,8 +1735,12 @@ export function BookingDetailPage({
                                                         type="text"
                                                         value={tempCustomer.business}
                                                         onChange={(e) => {
-                                                            setTempCustomer({ ...tempCustomer, business: e.target.value });
-                                                            // Business is optional, no validation
+                                                            const val = e.target.value;
+                                                            if (useSameAddressForBilling) {
+                                                                setTempCustomer({ ...tempCustomer, business: val, billingBusiness: val });
+                                                            } else {
+                                                                setTempCustomer({ ...tempCustomer, business: val });
+                                                            }
                                                         }}
                                                         className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
                                                         style={{ fontSize: 'var(--text-base)' }}
@@ -1749,8 +1759,13 @@ export function BookingDetailPage({
                                                             type="email"
                                                             value={tempCustomer.email}
                                                             onChange={(e) => {
-                                                                setTempCustomer({ ...tempCustomer, email: e.target.value });
-                                                                if (errors.customerEmail) validateCustomerField('email', e.target.value);
+                                                                const val = e.target.value;
+                                                                if (useSameAddressForBilling) {
+                                                                    setTempCustomer({ ...tempCustomer, email: val, billingEmail: val });
+                                                                } else {
+                                                                    setTempCustomer({ ...tempCustomer, email: val });
+                                                                }
+                                                                if (errors.customerEmail) validateCustomerField('email', val);
                                                             }}
                                                             onBlur={() => validateCustomerField('email', tempCustomer.email)}
                                                             className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.customerEmail ? 'border-red-500' : 'border-border'}`}
@@ -1851,8 +1866,13 @@ export function BookingDetailPage({
                                                             type="text"
                                                             value={tempCustomer.street}
                                                             onChange={(e) => {
-                                                                setTempCustomer({ ...tempCustomer, street: e.target.value });
-                                                                if (errors.street) validateCustomerField('street', e.target.value);
+                                                                const val = e.target.value;
+                                                                if (useSameAddressForBilling) {
+                                                                    setTempCustomer({ ...tempCustomer, street: val, billingStreet: val });
+                                                                } else {
+                                                                    setTempCustomer({ ...tempCustomer, street: val });
+                                                                }
+                                                                if (errors.street) validateCustomerField('street', val);
                                                             }}
                                                             onBlur={() => validateCustomerField('street', tempCustomer.street)}
                                                             className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.street ? 'border-red-500' : 'border-border'}`}
@@ -1876,8 +1896,13 @@ export function BookingDetailPage({
                                                             type="text"
                                                             value={tempCustomer.plz}
                                                             onChange={(e) => {
-                                                                setTempCustomer({ ...tempCustomer, plz: e.target.value });
-                                                                if (errors.plz) validateCustomerField('plz', e.target.value);
+                                                                const val = e.target.value;
+                                                                if (useSameAddressForBilling) {
+                                                                    setTempCustomer({ ...tempCustomer, plz: val, billingPlz: val });
+                                                                } else {
+                                                                    setTempCustomer({ ...tempCustomer, plz: val });
+                                                                }
+                                                                if (errors.plz) validateCustomerField('plz', val);
                                                             }}
                                                             onBlur={() => validateCustomerField('plz', tempCustomer.plz)}
                                                             className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.plz ? 'border-red-500' : 'border-border'}`}
@@ -1901,8 +1926,13 @@ export function BookingDetailPage({
                                                             type="text"
                                                             value={tempCustomer.location}
                                                             onChange={(e) => {
-                                                                setTempCustomer({ ...tempCustomer, location: e.target.value });
-                                                                if (errors.location) validateCustomerField('location', e.target.value);
+                                                                const val = e.target.value;
+                                                                if (useSameAddressForBilling) {
+                                                                    setTempCustomer({ ...tempCustomer, location: val, billingLocation: val });
+                                                                } else {
+                                                                    setTempCustomer({ ...tempCustomer, location: val });
+                                                                }
+                                                                if (errors.location) validateCustomerField('location', val);
                                                             }}
                                                             onBlur={() => validateCustomerField('location', tempCustomer.location)}
                                                             className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.location ? 'border-red-500' : 'border-border'}`}
@@ -2350,21 +2380,27 @@ export function BookingDetailPage({
                                                                                 ...tempCustomer,
                                                                                 billingStreet: tempCustomer.street,
                                                                                 billingPlz: tempCustomer.plz,
-                                                                                billingLocation: tempCustomer.location
+                                                                                billingLocation: tempCustomer.location,
+                                                                                billingBusiness: tempCustomer.business,
+                                                                                billingEmail: tempCustomer.email
                                                                             });
                                                                             // Clear validation errors for billing fields
                                                                             setErrors(prev => ({
                                                                                 ...prev,
                                                                                 billingStreet: undefined,
                                                                                 billingPlz: undefined,
-                                                                                billingLocation: undefined
+                                                                                billingLocation: undefined,
+                                                                                billingBusiness: undefined,
+                                                                                billingEmail: undefined
                                                                             }));
                                                                         } else {
                                                                             setTempCustomer({
                                                                                 ...tempCustomer,
                                                                                 billingStreet: '',
                                                                                 billingPlz: '',
-                                                                                billingLocation: ''
+                                                                                billingLocation: '',
+                                                                                billingBusiness: '',
+                                                                                billingEmail: ''
                                                                             });
                                                                         }
                                                                     }}
@@ -2406,6 +2442,60 @@ export function BookingDetailPage({
                                                                     />
                                                                     {errors.billingStreet && (
                                                                         <p className="text-red-500 text-xs mt-1">{errors.billingStreet}</p>
+                                                                    )}
+                                                                </div>
+                                                                <div className="space-y-1">
+                                                                    <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                                                        {wizardT('labels.billingBusiness')}
+                                                                    </label>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={tempCustomer.billingBusiness}
+                                                                        onChange={(e) => {
+                                                                            setTempCustomer({ ...tempCustomer, billingBusiness: e.target.value });
+                                                                            if (useSameAddressForBilling) {
+                                                                                setTempCustomer(prev => ({ ...prev, business: e.target.value }));
+                                                                            }
+                                                                        }}
+                                                                        onBlur={() => {
+                                                                            if (!useSameAddressForBilling) {
+                                                                                validatePaymentField('billingBusiness', tempCustomer.billingBusiness);
+                                                                            }
+                                                                        }}
+                                                                        disabled={useSameAddressForBilling}
+                                                                        className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.billingBusiness ? 'border-red-500' : 'border-border'} ${useSameAddressForBilling ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                        style={{ fontSize: 'var(--text-base)' }}
+                                                                        placeholder={wizardT('placeholders.billingBusiness') || 'Company Name'}
+                                                                    />
+                                                                    {errors.billingBusiness && (
+                                                                        <p className="text-red-500 text-xs mt-1">{errors.billingBusiness}</p>
+                                                                    )}
+                                                                </div>
+                                                                <div className="space-y-1">
+                                                                    <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>
+                                                                        {wizardT('labels.billingEmail')}
+                                                                    </label>
+                                                                    <input
+                                                                        type="email"
+                                                                        value={tempCustomer.billingEmail}
+                                                                        onChange={(e) => {
+                                                                            setTempCustomer({ ...tempCustomer, billingEmail: e.target.value });
+                                                                            if (useSameAddressForBilling) {
+                                                                                setTempCustomer(prev => ({ ...prev, email: e.target.value }));
+                                                                            }
+                                                                        }}
+                                                                        onBlur={() => {
+                                                                            if (!useSameAddressForBilling) {
+                                                                                validatePaymentField('billingEmail', tempCustomer.billingEmail);
+                                                                            }
+                                                                        }}
+                                                                        disabled={useSameAddressForBilling}
+                                                                        className={`w-full px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground ${errors.billingEmail ? 'border-red-500' : 'border-border'} ${useSameAddressForBilling ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                        style={{ fontSize: 'var(--text-base)' }}
+                                                                        placeholder={wizardT('placeholders.billingEmail') || 'billing@company.com'}
+                                                                    />
+                                                                    {errors.billingEmail && (
+                                                                        <p className="text-red-500 text-xs mt-1">{errors.billingEmail}</p>
                                                                     )}
                                                                 </div>
                                                                 <div className="space-y-1">
@@ -2482,19 +2572,6 @@ export function BookingDetailPage({
                                                                         <p className="text-red-500 text-xs mt-1">{errors.billingReference}</p>
                                                                     )}
                                                                 </div>
-                                                                <div className="space-y-1">
-                                                                    <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.customerReference') || 'Customer Reference'}</label>
-                                                                    <input
-                                                                        type="text"
-                                                                        value={tempCustomer.billingCustomerReference}
-                                                                        onChange={(e) => {
-                                                                            setTempCustomer({ ...tempCustomer, billingCustomerReference: e.target.value });
-                                                                        }}
-                                                                        className="w-full px-3 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
-                                                                        style={{ fontSize: 'var(--text-base)' }}
-                                                                        placeholder={wizardT('placeholders.customerReference') || 'Kundenreferenz hinzufügen'}
-                                                                    />
-                                                                </div>
                                                             </div>
                                                         </div>
                                                     )}
@@ -2535,6 +2612,22 @@ export function BookingDetailPage({
                                                                 <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
                                                                     <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
                                                                         {(booking as any).billingLocation || '-'}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.billingBusiness')}</label>
+                                                                <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
+                                                                    <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                                                        {(booking as any).billingBusiness || '-'}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                                <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.billingEmail')}</label>
+                                                                <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
+                                                                    <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                                                        {(booking as any).billingEmail || '-'}
                                                                     </p>
                                                                 </div>
                                                             </div>
@@ -2792,7 +2885,7 @@ export function BookingDetailPage({
                                     </div>
 
                                     {/* Dietary Summary Section */}
-                                    {(dietarySummary.veg.count > 0 || dietarySummary.vegan.count > 0 || dietarySummary.nonVeg.count > 0) && (
+                                    {(dietarySummary.veg.count > 0 || dietarySummary.nonVeg.count > 0) && (
                                         <div className="bg-card border border-border rounded-xl p-4 sm:p-6 mt-6 animate-in fade-in slide-in-from-top-4 duration-300">
                                             <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
                                                 <UtensilsCrossed className="w-5 h-5 text-primary" /> {t('dietarySelection')}
@@ -2807,17 +2900,6 @@ export function BookingDetailPage({
                                                             </span>
                                                         </div>
                                                         <span className="text-foreground font-bold">CHF {dietarySummary.veg.subtotal.toFixed(2)}</span>
-                                                    </div>
-                                                )}
-                                                {dietarySummary.vegan.count > 0 && (
-                                                    <div className="flex justify-between items-center text-sm">
-                                                        <div className="flex items-center gap-3">
-                                                            <DietaryIcon type="vegan" size="sm" />
-                                                            <span className="text-muted-foreground font-medium flex items-center gap-1.5">
-                                                                Vegan Selection ({dietarySummary.vegan.count} {dietarySummary.vegan.count > 1 ? 'items' : 'item'})
-                                                            </span>
-                                                        </div>
-                                                        <span className="text-foreground font-bold">CHF {dietarySummary.vegan.subtotal.toFixed(2)}</span>
                                                     </div>
                                                 )}
                                                 {dietarySummary.nonVeg.count > 0 && (
@@ -2983,7 +3065,7 @@ export function BookingDetailPage({
                                                                         <p className="text-[10px] uppercase text-muted-foreground font-bold">Guest Split</p>
                                                                         <p className="text-sm">
                                                                             Total: <span className="font-semibold">{latestCheckin.newGuestCount}</span>
-                                                                            <span className="text-muted-foreground ml-2">({latestCheckin.vegetarianCount} Veg / {latestCheckin.veganCount} Vegan / {latestCheckin.nonVegetarianCount} Non-Veg)</span>
+                                                                            <span className="text-muted-foreground ml-2">({(latestCheckin.vegetarianCount || 0) + (latestCheckin.veganCount || 0)} Veg / {latestCheckin.nonVegetarianCount} Non-Veg)</span>
                                                                         </p>
                                                                     </div>
                                                                     {latestCheckin.guestCountChanged && (

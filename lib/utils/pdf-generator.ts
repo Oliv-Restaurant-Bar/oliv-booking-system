@@ -47,7 +47,7 @@ export interface PdfBookingData {
   room?: string;
 }
 
-export type PdfGenerationMode = 'offer' | 'kitchen';
+export type PdfGenerationMode = 'offer' | 'kitchen' | 'inquiry';
 
 /**
  * Unified PDF Generation for both Customer Offers and Internal Kitchen Sheets.
@@ -161,6 +161,9 @@ export async function generateBookingPdf(
       doc.text("ITEM NAME", margin + 3, yPos);
       doc.text("GUEST / QUANTITY", margin + 130, yPos, { align: 'center' });
       doc.text("DONE", margin + 160, yPos, { align: 'center' });
+    } else if (mode === 'inquiry') {
+      doc.text("ARTIKEL", margin + 3, yPos);
+      doc.text("PREIS", pageWidth - margin - 3, yPos, { align: 'right' });
     } else {
       doc.text("ARTIKEL", margin + 3, yPos);
       // Removed Kategorie - now handled by category headers
@@ -278,7 +281,7 @@ export async function generateBookingPdf(
     // Switch to graphic mode
     doc.setLineWidth(0.3);
 
-    if (type === 'veg') {
+    if (type === 'veg' || type === 'vegan') {
       doc.setDrawColor(22, 163, 74); // green-600 border
       doc.rect(x, y - 2.5, 3.5, 3.5, 'S');
       doc.setFillColor(22, 163, 74); // green-600 dot
@@ -288,22 +291,6 @@ export async function generateBookingPdf(
       doc.rect(x, y - 2.5, 3.5, 3.5, 'S');
       doc.setFillColor(220, 38, 38); // red-600 dot
       doc.circle(x + 1.75, y - 0.75, 1, 'F');
-    } else if (type === 'vegan') {
-      // Draw a vector leaf outline matching the Lucide 'Leaf' reference in the UI
-      doc.setDrawColor(5, 150, 105); // emerald-600
-      doc.setLineWidth(0.35);
-
-      // Draw bezier leaf
-      doc.lines(
-        [
-          [1.5, -1.2, 1.2, -2.7, 0, -3.4],
-          [-1.2, 1.5, -1.5, 2.7, 0, 3.4]
-        ],
-        x + 1.75, y + 0.6, [1, 1], 'S', true
-      );
-
-      // Draw inner leaf vein
-      doc.line(x + 1.75, y + 0.6, x + 1.75, y - 1.6);
     }
 
     // Reset colors
@@ -466,109 +453,33 @@ export async function generateBookingPdf(
 
   // Calculate dietary breakdown (only for food items, not beverages or addons)
   const calculateDietaryBreakdown = () => {
-    // Only include per-person food items
     const foodItems = finalFoodItems.filter(item => item.pricingType === 'per_person');
 
-    const isVegActivated = foodItems.some(i => i.dietaryType === 'veg' || i.notes?.includes('(Veg)'));
-    const isNonVegActivated = foodItems.some(i => i.dietaryType === 'non-veg' || i.notes?.includes('(Non-Veg)'));
-    const isVeganActivated = foodItems.some(i => i.dietaryType === 'vegan' || i.notes?.includes('(Vegan)'));
-
-    const breakdown: Record<string, { total: number; perPerson: number }> = {
-      veg: { total: 0, perPerson: 0 },
-      'non-veg': { total: 0, perPerson: 0 },
-      vegan: { total: 0, perPerson: 0 }
+    const getHighestPrice = (categoryNames: string[], dietaryFilter?: (d: string) => boolean) => {
+      const filtered = foodItems.filter(i => {
+        const matchesCategory = categoryNames.some(cn => (i.category || '').toLowerCase() === cn.toLowerCase());
+        const matchesDietary = dietaryFilter ? dietaryFilter(i.dietaryType || 'none') : true;
+        return matchesCategory && matchesDietary;
+      });
+      return filtered.length > 0 ? Math.max(...filtered.map(i => i.unitPrice || 0)) : 0;
     };
 
-    const itemsByCategory = foodItems.reduce((acc, item) => {
-      const catName = item.category || 'Uncategorized';
-      if (!acc[catName]) acc[catName] = { items: [], useSpecialCalculation: !!item.useSpecialCalculation };
-      acc[catName].items.push(item);
-      return acc;
-    }, {} as Record<string, { items: PdfBookingItem[], useSpecialCalculation: boolean }>);
+    const maxStarter = getHighestPrice(['Starters', 'Vorspeisen']);
+    const maxVegMain = getHighestPrice(['Main Courses', 'Hauptgänge', 'Menü'], (d) => d === 'veg' || d === 'vegan');
+    const maxNonVegMain = getHighestPrice(['Main Courses', 'Hauptgänge', 'Menü'], (d) => d === 'non-veg');
+    const maxDessert = getHighestPrice(['Desserts']);
 
-    let vegPP = 0;
-    let nvPP = 0;
-    let veganPP = 0;
+    const otherPPPrice = foodItems
+      .filter(i => !['Starters', 'Vorspeisen', 'Main Courses', 'Hauptgänge', 'Menü', 'Desserts'].includes(i.category))
+      .reduce((sum, i) => sum + (i.unitPrice || 0), 0);
 
-    Object.entries(itemsByCategory).forEach(([category, catData]) => {
-      const { items: catItems, useSpecialCalculation } = catData;
-      
-      // Mirror MenuCart's restricted logic: use the database flag if present, 
-      // but fallback to known restricted categories since the snapshot might miss the flag.
-      const isRestricted = useSpecialCalculation || 
-                           (category.toLowerCase().includes('dessert') || 
-                            category.toLowerCase().includes('menu') || 
-                            category.toLowerCase().includes('hauptgänge') || 
-                            category.toLowerCase().includes('mains'));
-
-      const vegItems = (catItems as any[]).filter(i => i.dietaryType === 'veg');
-      const nonVegItems = (catItems as any[]).filter(i => i.dietaryType === 'non-veg');
-      const veganItems = (catItems as any[]).filter(i => i.dietaryType === 'vegan');
-      const noneItems = (catItems as any[]).filter(i => !i.dietaryType || i.dietaryType === 'none');
-
-      const maxVeg = vegItems.length > 0 ? Math.max(...vegItems.map(i => i.unitPrice || 0)) : 0;
-      const maxNV = nonVegItems.length > 0 ? Math.max(...nonVegItems.map(i => i.unitPrice || 0)) : 0;
-      const maxVegan = veganItems.length > 0 ? Math.max(...veganItems.map(i => i.unitPrice || 0)) : 0;
-      
-      // For None items, we check if they have any dietary markers in notes
-      const noneSplits = noneItems.map(i => {
-        const notes = i.notes || '';
-        const hasAnyDietary = notes.includes('(Veg)') || notes.includes('(Non-Veg)') || notes.includes('(Vegan)');
-        return { unitPrice: i.unitPrice || 0, hasAnyDietary };
-      });
-
-      const maxNoneSplitCombined = noneSplits.length > 0 ? Math.max(...noneSplits.map(s => s.hasAnyDietary ? s.unitPrice : 0)) : 0;
-      const maxNoneShared = noneSplits.length > 0 ? Math.max(...noneSplits.map(s => !s.hasAnyDietary ? s.unitPrice : 0)) : 0;
-
-      const maxNoneVeg = maxNoneSplitCombined;
-      const maxNoneNV = maxNoneSplitCombined;
-      const maxNoneVegan = maxNoneSplitCombined;
-
-      const groupsPresent = [maxVeg > 0, maxNV > 0, maxVegan > 0].filter(Boolean).length;
-      const hasNoneSplit = maxNoneSplitCombined > 0;
-      const hasNoneShared = maxNoneShared > 0;
-      const totalGroups = groupsPresent + (hasNoneSplit || hasNoneShared ? 1 : 0);
-
-      const shared = Math.max(maxVeg, maxNV, maxVegan, maxNoneVeg, maxNoneNV, maxNoneVegan, maxNoneShared);
-
-      if (totalGroups === 1) {
-        if (hasNoneSplit || hasNoneShared) {
-          // Rule: Use specific price for None splits, even if only 1 grouping
-          if (isVegActivated) vegPP += Math.max(maxVeg, maxNoneVeg, maxNoneShared);
-          if (isNonVegActivated) nvPP += Math.max(maxNV, maxNoneNV, maxNoneShared);
-          if (isVeganActivated) veganPP += Math.max(maxVegan, maxNoneVegan, maxNoneShared);
-        } else {
-          // Rule: Shared for Restricted, Separate for General (Mains)
-          if (isRestricted) {
-            vegPP += shared;
-            nvPP += shared;
-            veganPP += shared;
-          } else {
-            if (maxVeg > 0) vegPP += maxVeg;
-            if (maxNV > 0) nvPP += maxNV;
-            if (maxVegan > 0) veganPP += maxVegan;
-          }
-        }
-      } else {
-        // Separate rule: Multiple dietary groups or Dietary + None
-        // Rule: Activation-Only for "None" globally
-        const vegNoneAdd = isVegActivated ? Math.max(maxNoneVeg, maxNoneShared) : 0;
-        const nvNoneAdd = isNonVegActivated ? Math.max(maxNoneNV, maxNoneShared) : 0;
-        const veganNoneAdd = isVeganActivated ? Math.max(maxNoneVegan, maxNoneShared) : 0;
-
-        vegPP += maxVeg + vegNoneAdd;
-        nvPP += maxNV + nvNoneAdd;
-        veganPP += maxVegan + veganNoneAdd;
-      }
-    });
-
-    breakdown.veg.perPerson = vegPP;
-    breakdown['non-veg'].perPerson = nvPP;
-    breakdown.vegan.perPerson = veganPP;
-    return breakdown;
+    return {
+      veg: maxStarter + maxVegMain + maxDessert + otherPPPrice,
+      nonVeg: maxStarter + maxNonVegMain + maxDessert + otherPPPrice
+    };
   };
 
-  const dietaryBreakdown = calculateDietaryBreakdown();
+  const dietaryTotals = calculateDietaryBreakdown();
 
   const mainGroups = [
     { name: "Food Items", items: finalFoodItems },
@@ -606,11 +517,6 @@ export async function generateBookingPdf(
       const itemMaxWidth = mode === 'kitchen' ? 120 : 95;
       const textX = margin + 12;
       const iconX = margin + 6.5;
-
-      // we remove the hardcoded text since we will draw it instead
-      // if (item.dietaryType === 'veg') displayName += ' (Veg)';
-      // else if (item.dietaryType === 'vegan') displayName += ' (Vegan)';
-      // else if (item.dietaryType === 'non-veg') displayName += ' (Non-Veg)';
 
       const nameLines = doc.splitTextToSize(displayName, itemMaxWidth);
       const rowH = Math.max(nameLines.length * 5, 8);
@@ -665,31 +571,35 @@ export async function generateBookingPdf(
         doc.text(nameLines, textX, yPos + 4);
         doc.setTextColor(...COLORS.text);
 
-        // const qtyLabel = item.pricingType === 'per_person' ? 'guests' : '';
-        const qtyVal = String(item.quantity);
-        const unitPriceTxt = ` x ${Number(item.unitPrice).toFixed(0)} CHF`;
-        // const baseTxt = (qtyVal + " " + qtyLabel).trim();
-        const baseTxt = (qtyVal + " ").trim();
-
-        const iconW = 3.5;
-        const gap = 1.5;
-        const currentX = margin + 105;
-
-        if (item.pricingType === 'per_person') {
-          drawUsersIcon(currentX, yPos + 4);
-        } else if (item.category === 'Beverages' || item.pricingType === 'consumption') {
-          drawWineIcon(currentX, yPos + 4);
+        if (mode === 'inquiry') {
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(...COLORS.title);
+          doc.text(`CHF ${Number(item.unitPrice).toFixed(2)}`, pageWidth - margin - 3, yPos + 4, { align: 'right' });
         } else {
-          drawPackageIcon(currentX, yPos + 4);
+          const qtyVal = String(item.quantity);
+          const unitPriceTxt = ` x ${Number(item.unitPrice).toFixed(0)} CHF`;
+          const baseTxt = (qtyVal + " ").trim();
+
+          const iconW = 3.5;
+          const gap = 1.5;
+          const currentX = margin + 105;
+
+          if (item.pricingType === 'per_person') {
+            drawUsersIcon(currentX, yPos + 4);
+          } else if (item.category === 'Beverages' || item.pricingType === 'consumption') {
+            drawWineIcon(currentX, yPos + 4);
+          } else {
+            drawPackageIcon(currentX, yPos + 4);
+          }
+
+          doc.text(baseTxt, currentX + iconW + gap, yPos + 4);
+          const baseWidth = doc.getTextWidth(baseTxt);
+          doc.text(unitPriceTxt, currentX + iconW + gap + baseWidth, yPos + 4);
+
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(...COLORS.title);
+          doc.text(`CHF ${item.totalPrice?.toFixed(2)}`, pageWidth - margin - 3, yPos + 4, { align: 'right' });
         }
-
-        doc.text(baseTxt, currentX + iconW + gap, yPos + 4);
-        const baseWidth = doc.getTextWidth(baseTxt);
-        doc.text(unitPriceTxt, currentX + iconW + gap + baseWidth, yPos + 4);
-
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(...COLORS.title);
-        doc.text(`CHF ${item.totalPrice?.toFixed(2)}`, pageWidth - margin - 3, yPos + 4, { align: 'right' });
       }
 
       yPos += rowH + (mode === 'kitchen' ? 4 : 2);
@@ -751,7 +661,7 @@ export async function generateBookingPdf(
   const requests = data.specialRequests ? String(data.specialRequests) : undefined;
   const kitchen = data.kitchenNotes ? String(data.kitchenNotes) : undefined;
 
-  if (mode === 'offer') {
+  if (mode === 'offer' || mode === 'inquiry') {
     renderNoteSection("Allergien & Diätetisch", allergies, true);
     renderNoteSection("Besondere Wünsche", requests);
   } else {
@@ -762,7 +672,7 @@ export async function generateBookingPdf(
   }
 
   // Footer / Totals (Final piece for Customer)
-  if (mode === 'offer') {
+  if (mode === 'offer' || mode === 'inquiry') {
     // Check for 80mm available to prevent footer / total overlap with bottom of page
     checkPageBreak(80);
     yPos += 10;
@@ -772,9 +682,7 @@ export async function generateBookingPdf(
     yPos += 10;
 
     // Dietary Breakdown Section
-    const hasDietaryData = dietaryBreakdown.veg.perPerson > 0 ||
-      dietaryBreakdown['non-veg'].perPerson > 0 ||
-      dietaryBreakdown.vegan.perPerson > 0;
+    const hasDietaryData = dietaryTotals.veg > 0 || dietaryTotals.nonVeg > 0;
 
     if (hasDietaryData) {
       doc.setFont("helvetica", "bold");
@@ -783,36 +691,25 @@ export async function generateBookingPdf(
       doc.text("Preis pro Person (nach Diät)", margin, yPos);
       yPos += 10;
 
-      const breakdownStartY = yPos;
       const lineHeight = 8;
 
-      // Veg
-      if (dietaryBreakdown.veg.perPerson > 0) {
+      // Veg Track
+      if (dietaryTotals.veg > 0) {
         doc.setFont("helvetica", "normal");
         doc.setFontSize(11);
         doc.setTextColor(...COLORS.text);
-        doc.text("Vegetarisch:", margin, yPos);
-        doc.text(`CHF ${dietaryBreakdown.veg.perPerson.toFixed(2)}`, pageWidth - margin - 60, yPos, { align: 'right' });
+        doc.text("Vegetarisch Track:", margin, yPos);
+        doc.text(`CHF ${dietaryTotals.veg.toFixed(2)}`, pageWidth - margin - 60, yPos, { align: 'right' });
         yPos += lineHeight;
       }
 
-      // Non-Veg
-      if (dietaryBreakdown['non-veg'].perPerson > 0) {
+      // Non-Veg Track
+      if (dietaryTotals.nonVeg > 0) {
         doc.setFont("helvetica", "normal");
         doc.setFontSize(11);
         doc.setTextColor(...COLORS.text);
-        doc.text("Nicht-Vegetarisch:", margin, yPos);
-        doc.text(`CHF ${dietaryBreakdown['non-veg'].perPerson.toFixed(2)}`, pageWidth - margin - 60, yPos, { align: 'right' });
-        yPos += lineHeight;
-      }
-
-      // Vegan
-      if (dietaryBreakdown.vegan.perPerson > 0) {
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(11);
-        doc.setTextColor(...COLORS.text);
-        doc.text("Vegan:", margin, yPos);
-        doc.text(`CHF ${dietaryBreakdown.vegan.perPerson.toFixed(2)}`, pageWidth - margin - 60, yPos, { align: 'right' });
+        doc.text("Fleisch/Fisch Track:", margin, yPos);
+        doc.text(`CHF ${dietaryTotals.nonVeg.toFixed(2)}`, pageWidth - margin - 60, yPos, { align: 'right' });
         yPos += lineHeight;
       }
 
@@ -823,12 +720,31 @@ export async function generateBookingPdf(
       yPos += 10;
     }
 
+    let displayTotal = data.estimatedTotal;
+
+    // Re-calculate the grand total in inquiry mode using the highest-per-category tracking to match cart ui
+    if (mode === 'inquiry') {
+      const maxTotalPP = Math.max(dietaryTotals.veg, dietaryTotals.nonVeg);
+      const foodTotal = maxTotalPP * (data.guestCount || 1);
+      
+      const otherItemsTotal = data.items.filter(item => item.category === 'Beverages' || item.category === 'Drink' || item.category === 'Drinks' || item.category === 'Softdrinks' || item.category === 'Wein' || item.category === 'Bier' || item.category === 'Kaffee' || item.category === 'Wine' || item.category === 'Beer' || item.category === 'Add-ons' || item.pricingType === 'flat-rate' || item.pricingType === 'flat_fee')
+        .reduce((sum, item) => sum + (item.totalPrice || 0), 0);
+      
+      displayTotal = foodTotal + otherItemsTotal;
+      
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "italic");
+      doc.setTextColor(180, 83, 9); // amber-700
+      doc.text("Die abgebildeten Kosten wurden auf Basis der jeweils teuersten Auswahl pro Kategorie berechnet.", margin, yPos);
+      yPos += 8;
+    }
+
     // Total
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
     doc.setTextColor(...COLORS.secondary);
     doc.text("Gesamtbetrag", margin, yPos);
-    doc.text(`CHF ${data.estimatedTotal?.toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
+    doc.text(`CHF ${displayTotal?.toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
 
     yPos += 10;
     doc.setFontSize(9);

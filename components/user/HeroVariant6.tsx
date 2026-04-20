@@ -71,7 +71,7 @@ export function HeroVariant6() {
             className="w-full h-full object-cover"
             priority={i === 0}
             fetchPriority={i === 0 ? "high" : "low"}
-            loading={i === 0 ? undefined : "lazy"}
+            loading={i === 0 ? "eager" : "lazy"}
             sizes="(max-width: 768px) 100vw, 100vw"
           />
         </div>
@@ -137,7 +137,7 @@ export function HeroVariant6() {
                     letterSpacing: "-0.02em",
                   }}
                 >
-                  {t('hero.craft')}{" "}
+                  {/* {t('hero.craft')}{" "} */}
                   <span style={{ color: GOLD }}>{t('hero.unforgettable')}</span>
                   <br />
                   {t('hero.diningExperiences')}

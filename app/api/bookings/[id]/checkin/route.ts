@@ -112,7 +112,6 @@ export async function POST(
               guestCountChanged: validatedData.guest_count_changed,
               newGuestCount: validatedData.new_guest_count ?? undefined,
               vegetarianCount: validatedData.vegetarian_count ?? undefined,
-              veganCount: validatedData.vegan_count ?? undefined,
               nonVegetarianCount: validatedData.non_vegetarian_count ?? undefined,
               menuChanges: validatedData.menu_changes ?? undefined,
               additionalDetails: validatedData.additional_details ?? undefined,

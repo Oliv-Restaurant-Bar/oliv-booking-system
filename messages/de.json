@@ -24,7 +24,7 @@
     "or": "oder",
     "and": "und",
     "name": "Name",
-    "email": "E-Mail",
+    "email": "Email",
     "phone": "Telefon",
     "business": "Unternehmen",
     "date": "Datum",
@@ -81,21 +81,21 @@
   "auth": {
     "signIn": "Anmelden",
     "signOut": "Abmelden",
-    "email": "E-Mail",
+    "email": "Email",
     "password": "Passwort",
     "forgotPassword": "Passwort vergessen?",
     "rememberMe": "Angemeldet bleiben",
     "loginSuccess": "Erfolgreich angemeldet",
     "loginError": "Anmeldung fehlgeschlagen",
     "logoutSuccess": "Erfolgreich abgemeldet",
-    "invalidCredentials": "Ungültige E-Mail oder Passwort"
+    "invalidCredentials": "Ungültige Email oder Passwort"
   },
   "booking": {
     "title": "Buchungen",
     "newBooking": "Neue Buchung",
     "bookingDetails": "Buchungsdetails",
     "customerName": "Kundenname",
-    "customerEmail": "Kunden-E-Mail",
+    "customerEmail": "Kunden-Email",
     "customerPhone": "Kundentelefon",
     "eventDate": "Eventdatum",
     "eventTime": "Eventzeit",
@@ -177,7 +177,7 @@
     "editProfile": "Profil bearbeiten",
     "firstName": "Vorname",
     "lastName": "Nachname",
-    "email": "E-Mail",
+    "email": "Email",
     "phone": "Telefon",
     "role": "Rolle",
     "changePassword": "Passwort ändern",
@@ -194,13 +194,13 @@
     "characterLimits": {
       "firstName": "2-20 Zeichen",
       "lastName": "2-20 Zeichen",
-      "email": "Muss eine gültige E-Mail-Adresse sein (max 255 Zeichen)",
+      "email": "Muss eine gültige Email-Adresse sein (max 255 Zeichen)",
       "phone": "Optional - Nur Zahlen und + erlaubt (max 20 Zeichen)"
     },
     "placeholders": {
       "firstName": "Vornamen eingeben",
       "lastName": "Nachnamen eingeben",
-      "email": "E-Mail-Adresse eingeben",
+      "email": "Email-Adresse eingeben",
       "phone": "Telefonnummer eingeben"
     },
     "passwordHelp": "Min. 8 Zeichen, muss sich vom aktuellen Passwort unterscheiden"
@@ -213,12 +213,12 @@
     "editMyProfile": "Mein Profil bearbeiten",
     "deleteUser": "Benutzer löschen",
     "userName": "Benutzername",
-    "userEmail": "Benutzer-E-Mail",
+    "userEmail": "Benutzer-Email",
     "userRole": "Benutzerrolle",
     "userStatus": "Benutzerstatus",
     "firstName": "Vorname",
     "lastName": "Nachname",
-    "email": "E-Mail",
+    "email": "Email",
     "phone": "Telefon",
     "password": "Passwort",
     "passwordOptional": "Passwort (optional - Standard wird verwendet, wenn leer)",
@@ -226,14 +226,14 @@
     "adding": "Hinzufügen...",
     "saving": "Speichern...",
     "saveChanges": "Änderungen speichern",
-    "searchPlaceholder": "Nach Name, E-Mail oder Rolle suchen...",
+    "searchPlaceholder": "Nach Name, Email oder Rolle suchen...",
     "noUsersFound": "Keine Benutzer gefunden",
     "lastLogin": "Letzte Anmeldung",
     "createdAt": "Erstellt am",
     "characterLimits": {
       "firstName": "2-20 Zeichen",
       "lastName": "2-20 Zeichen",
-      "email": "Muss eine gültige E-Mail-Adresse sein (max 255 Zeichen)",
+      "email": "Muss eine gültige Email-Adresse sein (max 255 Zeichen)",
       "password": "Mindestens 12 Zeichen, muss Großbuchstaben, Kleinbuchstaben, Zahl und Sonderzeichen enthalten"
     },
     "placeholders": {
@@ -269,7 +269,7 @@
   },
   "validation": {
     "required": "Dieses Feld ist erforderlich",
-    "invalidEmail": "Bitte geben Sie eine gültige E-Mail-Adresse ein (z.B. user@example.com)",
+    "invalidEmail": "Bitte geben Sie eine gültige Email-Adresse ein (z.B. user@example.com)",
     "invalidPhone": "Ungültige Telefonnummer",
     "minLength": "Mindestens {min} Zeichen",
     "maxLength": "Maximal {max} Zeichen",
@@ -406,7 +406,7 @@
     },
     "bookings": {
       "title": "Buchungen",
-      "search": "Suche nach Name, E-Mail oder Telefon...",
+      "search": "Suche nach Name, Email oder Telefon...",
       "export": "Exportieren",
       "refresh": "Aktualisieren",
       "filtersApplied": "Filter angewendet",
@@ -430,7 +430,7 @@
       "exportColumns": {
         "customerName": "Kundenname",
         "business": "Unternehmen",
-        "email": "E-Mail",
+        "email": "Email",
         "phone": "Telefon",
         "street": "Strasse",
         "plz": "PLZ",
@@ -451,7 +451,6 @@
         "billingPlz": "Rechnungs-PLZ",
         "billingLocation": "Rechnungsort",
         "billingReference": "Rechnungsreferenz",
-        "billingCustomerReference": "Kunden-Rechnungsreferenz",
         "assignedTo": "Zugewiesen an",
         "contactedBy": "Kontaktiert von",
         "contactedWhen": "Kontaktiert am"
@@ -548,7 +547,7 @@
         "unlockFailed": "Buchung konnte nicht entsperrt werden",
         "assignmentSuccess": "Zuweisung erfolgreich aktualisiert",
         "assignmentFailed": "Zuweisung konnte nicht aktualisiert werden",
-        "reminderSent": "Erinnerungs-E-Mail erfolgreich gesendet",
+        "reminderSent": "Erinnerungs-Email erfolgreich gesendet",
         "checkinSent": "Check-in-Einladung erfolgreich gesendet",
         "updateSent": "Buchungsaktualisierung erfolgreich gesendet",
         "failedToSendReminder": "Erinnerung konnte nicht gesendet werden",
@@ -868,7 +867,7 @@
         "consumptionDesc": "Abrechnung nach tatsächlichem Verbrauch"
       },
       "descriptions": {
-        "addDietaryInfo": "Fügen Sie diesem Artikel Informationen zur Ernährungsweise wie vegetarisch, vegan oder nicht-vegetarisch hinzu.",
+        "addDietaryInfo": "Fügen Sie diesem Artikel Informationen zur Ernährungsweise wie Veggie oder nicht-vegetarisch hinzu.",
         "selectAddonGroups": "Wählen Sie aus, zu welchem {type} diese Extrasgruppe gehört",
         "optionalGroup": "Kunden können eine beliebige Anzahl von Artikeln wählen",
         "mandatoryGroup": "Kunden müssen genau einen Artikel wählen",
@@ -959,7 +958,7 @@
     "login": {
       "title": "Admin-Panel",
       "signIn": "Anmelden für Zugriff auf das Admin-Panel",
-      "email": "E-Mail",
+      "email": "Email",
       "password": "Passwort",
       "emailPlaceholder": "admin@oliv-restaurant.com",
       "passwordPlaceholder": "••••••••",
@@ -977,7 +976,7 @@
       "diningExperiences": "Dining-Erlebnisse",
       "title": "Schaffen Sie unvergessliche Dining-Momente",
       "description": "Erstellen Sie benutzerdefinierte Catering-Menüs in Minuten mit unserem intuitiven Wizard. Perfekt für Hochzeiten, Firmenevents und besondere Feiern.",
-      "heroDescription": "Von intimen privaten Abendessen bis hin zu grossen Feiern  Oliv bringt gehobene Küche, makellose Präsentation und persönlichen Service zu jedem Anlass.",
+      "heroDescription": "Von intimen privaten Abendessen bis hin zu grossen Feiern – Oliv bringt gehobene Küche, makellose Präsentation und persönlichen Service zu jedem Anlass.",
       "getStarted": "Kostenlos starten",
       "planEvent": "Planen Sie Ihr Event",
       "seeHowItWorks": "So funktioniert es",
@@ -1031,7 +1030,7 @@
       },
       "care": {
         "title": "Persönliche Betreuung",
-        "description": "Individuell zugeschnittener Service  von der Planung bis zur Durchführung."
+        "description": "Individuell zugeschnittener Service – von der Planung bis zur Durchführung."
       }
     },
     "gallery": {
@@ -1048,7 +1047,7 @@
       "minutes": "Minuten",
       "viewGallery": "Galerie ansehen",
       "description": "In nur wenigen Minuten",
-      "body": "Schliessen Sie sich Hunderten von zufriedenen Kunden an, die Oliv für ihre Catering-Bedürfnisse vertrauen. Beginnen Sie noch heute mit der Erstellung Ihres individuellen Menüs  keine Kreditkarte erforderlich.",
+      "body": "Schliessen Sie sich Hunderten von zufriedenen Kunden an, die Oliv für ihre Catering-Bedürfnisse vertrauen. Beginnen Sie noch heute mit der Erstellung Ihres individuellen Menüs – keine Kreditkarte erforderlich.",
       "button": "Jetzt Menü erstellen"
     },
     "footer": {
@@ -1134,6 +1133,8 @@
     },
     "labels": {
       "filter": "Filter",
+      "vegTrackTotal": "Vegetarisch Track Gesamt",
+      "nonVegTrackTotal": "Fleisch/Fisch Track Gesamt",
       "billingDetails": "Rechnungsdetails",
       "address": "Adresse",
       "eventDetails": "Event-Details",
@@ -1142,8 +1143,8 @@
       "menu": "Menü",
       "name": "Vor- und Nachname",
       "business": "Firma",
-      "email": "E-Mail",
-      "confirmEmail": "E-Mail bestätigen",
+      "email": "Email",
+      "confirmEmail": "Email bestätigen",
       "phone": "Telefon",
       "telephone": "Telefon",
       "street": "Strasse & Nr.",
@@ -1174,10 +1175,11 @@
       "useSameAddress": "Gleich wie Kundenadresse",
       "invoiceTarget": "Geben Sie an, wohin die Rechnung gesendet werden soll",
       "billingStreet": "Rechnungsstrasse & Nr.",
+      "billingBusiness": "Rechnungs-Firma",
+      "billingEmail": "Rechnungs-Email",
       "billingPlz": "Rechnungs-PLZ",
       "billingLocation": "Rechnungsort",
       "reference": "Referenzinformationen",
-      "customerReference": "Kundenreferenz",
       "optional": "Optional",
       "guest": "Gast",
       "guests_plural": "Gäste",
@@ -1205,7 +1207,7 @@
     },
     "dietaryBreakdown": "Ernährungsspezifische Aufschlüsselung",
     "meatFish": "Fleisch-/Fischauswahl",
-    "veggieVegan": "Vegetarische/Vegane Auswahl",
+    "veggieVegan": "Vegetarische Auswahl",
     "portions": "Portionen",
     "orderOverview": "Bestellübersicht",
     "proPerson": "Pro Person",
@@ -1234,11 +1236,13 @@
       "name": "Vor- und Nachname",
       "searchDishes": "Nach Gerichten suchen...",
       "billingAddress": "Strasse, Hausnummer, PLZ, Ort",
-      "billingReference": "z.B. Kostenstelle oder Referenz",
-      "customerReference": "z.B. Kundennummer oder Bestellnummer"
+      "billingBusiness": "Firmenname",
+      "billingEmail": "rechnung@firma.ch",
+      "billingReference": "z.B. Kostenstelle oder Referenz"
     },
     "status": {
       "loading": "Menü wird geladen...",
+      "selected": "Ausgewählt",
       "noItems": "Keine Menüpunkte verfügbar. Bitte kontaktieren Sie uns direkt.",
       "notSelected": "Noch keine Artikel ausgewählt",
       "browseToAdd": "Kategorien durchsuchen und Gerichte hinzufügen",
@@ -1276,6 +1280,7 @@
       "show": "Anzeigen",
       "hide": "Ausblenden",
       "addToCart": "In den Warenkorb",
+      "updateCart": "Warenkorb aktualisieren",
       "continueToReview": "Weiter zur Überprüfung"
     },
     "warnings": {

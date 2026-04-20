@@ -32,7 +32,6 @@ export async function sendBookingEmail(params: {
   guestCountChanged?: boolean;
   newGuestCount?: number;
   vegetarianCount?: number;
-  veganCount?: number;
   nonVegetarianCount?: number;
   menuChanges?: string;
   additionalDetails?: string;
@@ -75,7 +74,6 @@ export async function sendBookingEmail(params: {
         guestCountChanged: params.guestCountChanged,
         newGuestCount: params.newGuestCount,
         vegetarianCount: params.vegetarianCount,
-        veganCount: params.veganCount,
         nonVegetarianCount: params.nonVegetarianCount,
         menuChanges: params.menuChanges,
         additionalDetails: params.additionalDetails,
@@ -620,7 +618,6 @@ export async function sendCheckinSubmittedNotification(params: {
   guestCountChanged: boolean;
   newGuestCount?: number;
   vegetarianCount?: number;
-  veganCount?: number;
   nonVegetarianCount?: number;
   menuChanges?: string;
   additionalDetails?: string;
@@ -634,7 +631,6 @@ export async function sendCheckinSubmittedNotification(params: {
     guestCountChanged: params.guestCountChanged,
     newGuestCount: params.newGuestCount,
     vegetarianCount: params.vegetarianCount,
-    veganCount: params.veganCount,
     nonVegetarianCount: params.nonVegetarianCount,
     menuChanges: params.menuChanges,
     additionalDetails: params.additionalDetails,

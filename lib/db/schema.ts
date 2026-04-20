@@ -199,6 +199,8 @@ export const bookings = pgTable(
     billingStreet: text("billing_street"),
     billingPlz: text("billing_plz"),
     billingLocation: text("billing_location"),
+    billingBusiness: text("billing_business"),
+    billingEmail: text("billing_email"),
     billingReference: text("billing_reference"),
     internalNotes: text("internal_notes"),
     kitchenNotes: text("kitchen_notes"),

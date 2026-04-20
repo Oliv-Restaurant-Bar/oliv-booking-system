@@ -133,6 +133,8 @@ async function testBookingEmail() {
     billingPlz: "8001",
     billingLocation: "Zürich",
     billingReference: null,
+    billingEmail: null,
+    billingBusiness: null,
     lead: {
       id: "test-lead-id",
       contactName: "Max Mustermann",

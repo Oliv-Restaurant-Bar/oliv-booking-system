@@ -54,6 +54,8 @@ export interface CreateBookingInput {
   billingStreet?: string;
   billingPlz?: string;
   billingLocation?: string;
+  billingBusiness?: string;
+  billingEmail?: string;
   billingReference?: string;
 }
 
@@ -68,6 +70,8 @@ function parseInternalNotes(notes: string | null) {
   let location = '';
   let reference = '';
   let billingReference = '';
+  let billingBusiness = '';
+  let billingEmail = '';
   let useSameAddressForBilling = true;
   let paymentMethod = 'ec_card';
 
@@ -84,6 +88,10 @@ function parseInternalNotes(notes: string | null) {
         reference = trimmedLine.replace('Reference: ', '').replace('N/A', '').trim();
       } else if (trimmedLine.startsWith('Billing Reference: ')) {
         billingReference = trimmedLine.replace('Billing Reference: ', '').replace('N/A', '').trim();
+      } else if (trimmedLine.startsWith('Billing Company: ')) {
+        billingBusiness = trimmedLine.replace('Billing Company: ', '').replace('N/A', '').trim();
+      } else if (trimmedLine.startsWith('Billing Email: ')) {
+        billingEmail = trimmedLine.replace('Billing Email: ', '').replace('N/A', '').trim();
       } else if (trimmedLine.startsWith('Payment Method: ')) {
         paymentMethod = trimmedLine.replace('Payment Method: ', '').replace('N/A', '').trim();
       } else if (trimmedLine.startsWith('Street: ')) {
@@ -137,7 +145,7 @@ function parseInternalNotes(notes: string | null) {
     }
   }
 
-  return { businessName, occasion, street, plz, location, reference, billingReference, useSameAddressForBilling, paymentMethod };
+  return { businessName, occasion, street, plz, location, reference, billingReference, billingBusiness, billingEmail, useSameAddressForBilling, paymentMethod };
 }
 
 export async function createBooking(input: CreateBookingInput & { leadEmail?: string; leadName?: string }) {
@@ -491,6 +499,8 @@ export async function updateBooking(
     if (updates.billingStreet !== undefined) updateData.billingStreet = updates.billingStreet;
     if (updates.billingPlz !== undefined) updateData.billingPlz = updates.billingPlz;
     if (updates.billingLocation !== undefined) updateData.billingLocation = updates.billingLocation;
+    if (updates.billingBusiness !== undefined) updateData.billingBusiness = updates.billingBusiness;
+    if (updates.billingEmail !== undefined) updateData.billingEmail = updates.billingEmail;
     if (updates.billingReference !== undefined) updateData.billingReference = updates.billingReference;
 
 
@@ -745,6 +755,8 @@ export async function getBookingWithDetails(id: string) {
         location: booking.location || parsed.location || '',
         reference: booking.reference || parsed.reference || '',
         billingReference: booking.billingReference || parsed.billingReference || '',
+        billingBusiness: booking.billingBusiness || parsed.billingBusiness || '',
+        billingEmail: booking.billingEmail || parsed.billingEmail || '',
         useSameAddressForBilling: booking.useSameAddressForBilling ?? parsed.useSameAddressForBilling,
         paymentMethod: booking.paymentMethod || parsed.paymentMethod || 'ec_card',
         lead: lead && lead[0] ? lead[0] : null,

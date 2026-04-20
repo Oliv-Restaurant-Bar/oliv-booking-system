@@ -47,6 +47,8 @@ export async function GET(
         b.billing_street,
         b.billing_plz,
         b.billing_location,
+        b.billing_business,
+        b.billing_email,
         b.billing_reference,
         b.created_at,
         b.is_locked,
@@ -191,6 +193,8 @@ export async function GET(
     const billingStreet = booking.billing_street || '';
     const billingPlz = booking.billing_plz || '';
     const billingLocation = booking.billing_location || '';
+    const billingBusiness = booking.billing_business || '';
+    const billingEmail = booking.billing_email || '';
     const billingReference = booking.billing_reference || '';
 
     // Extract menu selection from internal notes for display in notes (legacy fallback)
@@ -267,6 +271,8 @@ export async function GET(
       billingStreet: billingStreet,
       billingPlz: billingPlz,
       billingLocation: billingLocation,
+      billingBusiness: billingBusiness,
+      billingEmail: billingEmail,
       billingReference: billingReference,
       paymentMethod: paymentMethod,
       event: {

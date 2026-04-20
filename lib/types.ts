@@ -111,9 +111,11 @@ export interface EventDetails {
   billingStreet: string;
   billingPlz: string;
   billingLocation: string;
-  billingStreetError?: string;
-  billingPlzError?: string;
   billingLocationError?: string;
+  billingBusiness: string;
+  billingBusinessError?: string;
+  billingEmail: string;
+  billingEmailError?: string;
   billingReference: string;
   billingReferenceError?: string;
   room: string;

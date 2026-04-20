@@ -117,12 +117,12 @@ export function AddAddonItemModal({
           <label className="block text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
             {t('labels.dietaryType')}
           </label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
               { id: 'none', label: t('dietary.none'), desc: t('dietary.noneDesc'), color: 'slate' },
               { id: 'veg', label: t('dietary.veg'), desc: t('dietary.vegDesc'), color: 'green' },
               { id: 'non-veg', label: t('dietary.nonVeg'), desc: t('dietary.nonVegDesc'), color: 'red' },
-              { id: 'vegan', label: t('dietary.vegan'), desc: t('dietary.veganDesc'), color: 'green' },
+              // { id: 'vegan', label: t('dietary.vegan'), desc: t('dietary.veganDesc'), color: 'green' },
             ].map((type) => (
               <button
                 key={type.id}

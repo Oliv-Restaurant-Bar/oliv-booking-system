@@ -11,7 +11,7 @@ import { logBookingChange } from "@/lib/booking-audit";
 import { sendEmail } from "@/lib/email/zeptomail";
 import { wizardEventDetailsSchema } from "@/lib/validation/schemas";
 import { ZodError } from "zod";
-import { generateCustomerOfferPdf } from "@/lib/utils/pdf-generator";
+import { generateBookingPdf } from "@/lib/utils/pdf-generator";
 
 export interface WizardFormData {
   contactName: string;
@@ -32,6 +32,8 @@ export interface WizardFormData {
   billingStreet?: string;
   billingPlz?: string;
   billingLocation?: string;
+  billingBusiness?: string;
+  billingEmail?: string;
   billingReference?: string;
   selectedItems: string[];
   itemQuantities: Record<string, number>;
@@ -259,6 +261,8 @@ export async function submitWizardForm(data: WizardFormData) {
         `Occasion: ${data.occasion || 'N/A'}`,
         `Reference: ${data.reference || 'N/A'}`,
         `Billing Reference: ${data.billingReference || 'N/A'}`,
+        `Billing Company: ${data.useSameAddressForBilling ? (data.business || 'N/A') : (data.billingBusiness || 'N/A')}`,
+        `Billing Email: ${data.useSameAddressForBilling ? (data.contactEmail || 'N/A') : (data.billingEmail || 'N/A')}`,
         `Payment Method: ${data.paymentMethod || 'N/A'}`,
         `Use Same Address: ${data.useSameAddressForBilling ?? true}`,
         `Street: ${data.street || 'N/A'}`,
@@ -287,9 +291,11 @@ export async function submitWizardForm(data: WizardFormData) {
         reference: data.reference || null,
         paymentMethod: data.paymentMethod || 'ec_card',
         useSameAddressForBilling: data.useSameAddressForBilling ?? true,
-        billingStreet: data.billingStreet || null,
-        billingPlz: data.billingPlz || null,
-        billingLocation: data.billingLocation || null,
+        billingStreet: data.useSameAddressForBilling ? (data.street || null) : (data.billingStreet || null),
+        billingPlz: data.useSameAddressForBilling ? (data.plz || null) : (data.billingPlz || null),
+        billingLocation: data.useSameAddressForBilling ? (data.location || null) : (data.billingLocation || null),
+        billingBusiness: data.useSameAddressForBilling ? (data.business || null) : (data.billingBusiness || null),
+        billingEmail: data.useSameAddressForBilling ? (data.contactEmail || null) : (data.billingEmail || null),
         billingReference: data.billingReference || null,
 
         internalNotes: internalNotesParts.join('\n'),
@@ -421,9 +427,11 @@ export async function submitWizardForm(data: WizardFormData) {
       reference: data.reference || null,
       paymentMethod: data.paymentMethod || 'ec_card',
       useSameAddressForBilling: data.useSameAddressForBilling ?? true,
-      billingStreet: data.billingStreet || null,
-      billingPlz: data.billingPlz || null,
-      billingLocation: data.billingLocation || null,
+      billingStreet: data.useSameAddressForBilling ? (data.street || null) : (data.billingStreet || null),
+      billingPlz: data.useSameAddressForBilling ? (data.plz || null) : (data.billingPlz || null),
+      billingLocation: data.useSameAddressForBilling ? (data.location || null) : (data.billingLocation || null),
+      billingBusiness: data.useSameAddressForBilling ? (data.business || null) : (data.billingBusiness || null),
+      billingEmail: data.useSameAddressForBilling ? (data.contactEmail || null) : (data.billingEmail || null),
       billingReference: data.billingReference || null,
 
       internalNotes: internalNotesParts.join('\n'),
@@ -524,7 +532,7 @@ export async function submitWizardForm(data: WizardFormData) {
       };
 
       console.log('📧 Generating PDF for record...');
-      const doc = await generateCustomerOfferPdf(pdfData as any);
+      const doc = await generateBookingPdf(pdfData as any, 'inquiry');
       const pdfBase64Raw = doc.output('datauristring').split(',')[1];
 
       // Clean base64 (remove any potential whitespaces/newlines)

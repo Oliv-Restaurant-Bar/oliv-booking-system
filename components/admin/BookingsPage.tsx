@@ -257,7 +257,6 @@ export function BookingsPage({ user, translations, initialBookings, initialDeepL
       [t('exportColumns.billingPlz')]: booking.billingPlz || '',
       [t('exportColumns.billingLocation')]: booking.billingLocation || '',
       [t('exportColumns.billingReference')]: booking.billingReference || '',
-      [t('exportColumns.billingCustomerReference')]: booking.billingCustomerReference || '',
       [t('exportColumns.assignedTo')]: booking.assignedTo?.name || '',
       [t('exportColumns.contactedBy')]: booking.contactHistory?.[0]?.by || '',
       [t('exportColumns.contactedWhen')]: booking.contactHistory?.[0]?.date || '',

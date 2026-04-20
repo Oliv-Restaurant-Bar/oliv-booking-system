@@ -1,5 +1,15 @@
 import { create } from 'zustand';
 import { EventDetails, MenuItemData, VisibilitySchedule, Category } from '@/lib/types';
+import { 
+  customerNameSchema, 
+  customerPhoneSchema, 
+  customerStreetSchema, 
+  customerPlzSchema, 
+  customerLocationSchema, 
+  customerOccasionSchema, 
+  customerSpecialRequestsSchema, 
+  userEmailSchema 
+} from '@/lib/validation/schemas';
 
 export interface CartItem {
   id: string;
@@ -121,12 +131,14 @@ interface WizardState {
   getVisibleMenuItems: () => any[];
   getItemPerPersonPrice: (item: any) => number;
   getItemTotalPrice: (item: any) => number;
+  getDietaryPerPersonTotals: () => { veg: number; nonVeg: number };
   getPerPersonSubtotal: () => number;
   getFlatRateSubtotal: () => number;
   getConsumptionSubtotal: () => number;
   getTotalPrice: () => number;
   getSelectedItemsByCategory: (category: string) => any[];
   calculateRecommendedQuantity: (item: any, variantIdOverride?: string) => number | null;
+  getRealtimeErrors: () => Record<string, string | undefined>;
 }
 
 const initialEventDetails: EventDetails = {
@@ -148,6 +160,8 @@ const initialEventDetails: EventDetails = {
   billingStreet: '',
   billingPlz: '',
   billingLocation: '',
+  billingBusiness: '',
+  billingEmail: '',
   billingReference: '',
   room: '',
 };
@@ -401,14 +415,49 @@ export const useWizardStore = create<WizardState>((set, get) => ({
     return unitPrice * cartItem.quantity;
   },
 
-  getPerPersonSubtotal: () => {
+  getDietaryPerPersonTotals: () => {
     const { cart } = get();
     const visibleItems = get().getVisibleMenuItems();
-    return Object.keys(cart).reduce((total, itemId) => {
-      const item = visibleItems.find(i => i.id === itemId);
-      if (!item || (item.pricingType !== 'per_person' && item.pricingType !== 'per-person')) return total;
-      return total + get().getItemPerPersonPrice(item);
-    }, 0);
+    
+    const ppItems = Object.keys(cart)
+      .map(itemId => {
+        const item = visibleItems.find(i => i.id === itemId);
+        if (!item || (item.pricingType !== 'per-person' && item.pricingType !== 'per_person')) return null;
+        return { ...item, price: get().getItemPerPersonPrice(item) };
+      })
+      .filter((i): i is any => i !== null);
+
+    const getHighestPrice = (category: string, dietaryFilter?: (d: string) => boolean) => {
+      const filtered = ppItems.filter(i => {
+        const matchesCategory = i.category === 'Starters' || i.category === 'Main Courses' || i.category === 'Desserts' 
+          ? i.category === category 
+          : false;
+        const matchesDietary = dietaryFilter ? dietaryFilter(i.dietaryType) : true;
+        return matchesCategory && matchesDietary;
+      });
+      return filtered.length > 0 ? Math.max(...filtered.map(i => i.price)) : 0;
+    };
+
+    const maxStarter = getHighestPrice('Starters');
+    const maxVegMain = getHighestPrice('Main Courses', (d) => d === 'veg' || d === 'vegan');
+    const maxNonVegMain = getHighestPrice('Main Courses', (d) => d === 'non-veg');
+    const maxDessert = getHighestPrice('Desserts');
+
+    // Any other per-person items that are NOT in the special categories
+    const otherPPPrice = ppItems
+      .filter(i => !['Starters', 'Main Courses', 'Desserts'].includes(i.category))
+      .reduce((sum, i) => sum + i.price, 0);
+
+    return {
+      veg: maxStarter + maxVegMain + maxDessert + otherPPPrice,
+      nonVeg: maxStarter + maxNonVegMain + maxDessert + otherPPPrice
+    };
+  },
+
+  getPerPersonSubtotal: () => {
+    const totals = get().getDietaryPerPersonTotals();
+    // Use the max as the base subtotal for any component that only expects one number
+    return Math.max(totals.veg, totals.nonVeg);
   },
 
   getFlatRateSubtotal: () => {
@@ -492,6 +541,8 @@ export const useWizardStore = create<WizardState>((set, get) => ({
         billingStreet: booking.billingStreet || '',
         billingPlz: booking.billingPlz || '',
         billingLocation: booking.billingLocation || '',
+        billingBusiness: booking.billingBusiness || '',
+        billingEmail: booking.billingEmail || '',
         billingReference: booking.billingReference || '',
         room: (booking.room || '').toLowerCase(),
       }
@@ -550,6 +601,95 @@ export const useWizardStore = create<WizardState>((set, get) => ({
       });
       set({ cart: newCart });
     }
+  },
+  getRealtimeErrors: () => {
+    const { eventDetails, touchedFields } = get();
+    const errors: Record<string, string | undefined> = {};
+
+    if (touchedFields.name) {
+      const result = customerNameSchema.safeParse(eventDetails.name);
+      if (!result.success) errors.name = result.error.errors[0].message;
+    }
+
+    if (touchedFields.email) {
+      const result = userEmailSchema.safeParse(eventDetails.email);
+      if (!result.success) errors.email = result.error.errors[0].message;
+    }
+
+    if (touchedFields.telephone) {
+      const result = customerPhoneSchema.safeParse(eventDetails.telephone);
+      if (!result.success) errors.telephone = result.error.errors[0].message;
+    }
+
+    if (touchedFields.street) {
+      const result = customerStreetSchema.safeParse(eventDetails.street);
+      if (!result.success) errors.street = result.error.errors[0].message;
+    }
+
+    if (touchedFields.plz) {
+      const result = customerPlzSchema.safeParse(eventDetails.plz);
+      if (!result.success) errors.plz = result.error.errors[0].message;
+    }
+
+    if (touchedFields.location) {
+      const result = customerLocationSchema.safeParse(eventDetails.location);
+      if (!result.success) errors.location = result.error.errors[0].message;
+    }
+
+    if (touchedFields.eventDate && !eventDetails.eventDate) {
+      errors.eventDate = 'Event date is required';
+    } else if (touchedFields.eventDate && eventDetails.eventDate) {
+      const selectedDateTime = new Date(`${eventDetails.eventDate}T${eventDetails.eventTime || '00:00'}`);
+      const twentyFourHoursFromNow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      if (selectedDateTime < twentyFourHoursFromNow) {
+        errors.eventDate = 'Booking must be at least 24 hours in advance';
+      }
+    }
+
+    if (touchedFields.eventTime && !eventDetails.eventTime) {
+      errors.eventTime = 'Event time is required';
+    }
+
+    if (touchedFields.guestCount) {
+      if (!eventDetails.guestCount) {
+        errors.guestCount = 'Number of guests is required';
+      } else {
+        const count = parseInt(eventDetails.guestCount);
+        if (isNaN(count) || count < 1) {
+          errors.guestCount = 'Must have at least 1 guest';
+        } else if (count > 10000) {
+          errors.guestCount = 'Number of guests cannot exceed 10,000';
+        }
+      }
+    }
+
+    if (touchedFields.occasion && eventDetails.occasion) {
+      const result = customerOccasionSchema.safeParse(eventDetails.occasion);
+      if (!result.success) errors.occasion = result.error.errors[0].message;
+    }
+
+    if (touchedFields.specialRequests && eventDetails.specialRequests) {
+      const result = customerSpecialRequestsSchema.safeParse(eventDetails.specialRequests);
+      if (!result.success) errors.specialRequests = result.error.errors[0].message;
+    }
+
+    // Billing address validation if applicable
+    if (eventDetails.paymentMethod === 'on_bill' && !eventDetails.useSameAddressForBilling) {
+      if (touchedFields.billingStreet) {
+        const result = customerStreetSchema.safeParse(eventDetails.billingStreet);
+        if (!result.success) errors.billingStreet = result.error.errors[0].message;
+      }
+      if (touchedFields.billingPlz) {
+        const result = customerPlzSchema.safeParse(eventDetails.billingPlz);
+        if (!result.success) errors.billingPlz = result.error.errors[0].message;
+      }
+      if (touchedFields.billingLocation) {
+        const result = customerLocationSchema.safeParse(eventDetails.billingLocation);
+        if (!result.success) errors.billingLocation = result.error.errors[0].message;
+      }
+    }
+
+    return errors;
   },
 }));
 

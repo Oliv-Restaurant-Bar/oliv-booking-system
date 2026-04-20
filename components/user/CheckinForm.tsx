@@ -40,7 +40,6 @@ export function CheckinForm({ bookingId, initialBooking }: { bookingId: string, 
     guest_count_changed: boolean;
     new_guest_count: number | '';
     vegetarian_count: number | '';
-    vegan_count: number | '';
     non_vegetarian_count: number | '';
     menu_changes: string;
     additional_details: string;
@@ -49,7 +48,6 @@ export function CheckinForm({ bookingId, initialBooking }: { bookingId: string, 
     guest_count_changed: false,
     new_guest_count: initialBooking.guests,
     vegetarian_count: 0,
-    vegan_count: 0,
     non_vegetarian_count: initialBooking.guests,
     menu_changes: '',
     additional_details: '',
@@ -79,7 +77,7 @@ export function CheckinForm({ bookingId, initialBooking }: { bookingId: string, 
   // Validation helper to treat empty string as zero
   const getNum = (val: number | '') => (val === '' ? 0 : val);
 
-  const isSplitValid = getNum(formData.vegetarian_count) + getNum(formData.vegan_count) + getNum(formData.non_vegetarian_count) === (formData.has_changes ? getNum(formData.new_guest_count) : initialBooking.guests);
+  const isSplitValid = getNum(formData.vegetarian_count) + getNum(formData.non_vegetarian_count) === (formData.has_changes ? getNum(formData.new_guest_count) : initialBooking.guests);
 
   // Branching Logic for "Has Changes"
   const getNextChangeStep = (current: Step) => {
@@ -100,7 +98,7 @@ export function CheckinForm({ bookingId, initialBooking }: { bookingId: string, 
         guest_count_changed: formData.has_changes,
         new_guest_count: formData.has_changes ? getNum(formData.new_guest_count) : initialBooking.guests,
         vegetarian_count: getNum(formData.vegetarian_count),
-        vegan_count: getNum(formData.vegan_count),
+        vegan_count: 0,
         non_vegetarian_count: getNum(formData.non_vegetarian_count),
         menu_changes: formData.menu_changes.trim() || null,
         additional_details: formData.additional_details.trim() || null,
@@ -193,7 +191,6 @@ export function CheckinForm({ bookingId, initialBooking }: { bookingId: string, 
               <div className="space-y-5">
                 {[
                   { label: 'Vegetarian guests', key: 'vegetarian_count' as const },
-                  { label: 'Vegan guests', key: 'vegan_count' as const },
                   { label: 'Non-vegetarian guests', key: 'non_vegetarian_count' as const }
                 ].map((input) => (
                   <div key={input.key} className="space-y-2">
@@ -213,7 +210,7 @@ export function CheckinForm({ bookingId, initialBooking }: { bookingId: string, 
 
                 <div className={`p-4 rounded-lg flex items-center justify-between border ${isSplitValid ? 'bg-primary/5 border-primary/20 text-primary-foreground' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
                   <span className="text-sm font-medium">Total guests: {initialBooking.guests}</span>
-                  <span className="text-sm font-bold">Sum: {getNum(formData.vegetarian_count) + getNum(formData.vegan_count) + getNum(formData.non_vegetarian_count)}</span>
+                  <span className="text-sm font-bold">Sum: {getNum(formData.vegetarian_count) + getNum(formData.non_vegetarian_count)}</span>
                 </div>
 
                 {!isSplitValid && (
@@ -260,7 +257,6 @@ export function CheckinForm({ bookingId, initialBooking }: { bookingId: string, 
                 <div className="grid grid-cols-3 gap-3">
                   {[
                     { label: 'Veg', key: 'vegetarian_count' as const },
-                    { label: 'Vegan', key: 'vegan_count' as const },
                     { label: 'Non-Veg', key: 'non_vegetarian_count' as const }
                   ].map((input) => (
                     <div key={input.key} className="space-y-2">
@@ -281,7 +277,7 @@ export function CheckinForm({ bookingId, initialBooking }: { bookingId: string, 
 
                 <div className={`p-4 rounded-lg flex items-center justify-between border ${isSplitValid ? 'bg-primary/5 border-primary/20 text-primary-foreground' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
                   <span className="text-sm font-medium">New Total: {formData.new_guest_count}</span>
-                  <span className="text-sm font-bold">Sum: {getNum(formData.vegetarian_count) + getNum(formData.vegan_count) + getNum(formData.non_vegetarian_count)}</span>
+                  <span className="text-sm font-bold">Sum: {getNum(formData.vegetarian_count) + getNum(formData.non_vegetarian_count)}</span>
                 </div>
 
                 <div className="flex gap-3 pt-2">
@@ -386,8 +382,7 @@ export function CheckinForm({ bookingId, initialBooking }: { bookingId: string, 
                     <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Guest Split</span>
                     <div className="flex flex-wrap gap-2 mt-1">
                       {[
-                        { label: 'Veg', val: getNum(formData.vegetarian_count), color: 'bg-green-100 text-green-700' },
-                        { label: 'Vegan', val: getNum(formData.vegan_count), color: 'bg-emerald-100 text-emerald-700' },
+                        { label: 'Veggie', val: getNum(formData.vegetarian_count), color: 'bg-green-100 text-green-700' },
                         { label: 'Non-Veg', val: getNum(formData.non_vegetarian_count), color: 'bg-blue-100 text-blue-700' }
                       ].filter(x => x.val > 0 || !formData.has_changes).map(item => (
                         <span key={item.label} className={`px-2.5 py-1 rounded-md text-xs font-semibold ${item.color}`}>

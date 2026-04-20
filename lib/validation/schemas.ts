@@ -216,9 +216,11 @@ export const wizardEventDetailsSchema = z.object({
   billingStreet: customerStreetSchema.optional(),
   billingPlz: customerPlzSchema.optional(),
   billingLocation: customerLocationSchema.optional(),
+  billingBusiness: customerBusinessSchema.optional(),
+  billingEmail: userEmailSchema.optional().or(z.literal('')),
   reference: z.string().max(100, 'Reference cannot exceed 100 characters').optional(),
   billingReference: z.string().max(100, 'Billing reference cannot exceed 100 characters').optional(),
-  room: z.string().min(1, 'Please select a room'),
+  room: z.string().optional(),
 });
 
 export type WizardEventDetails = z.infer<typeof wizardEventDetailsSchema>;

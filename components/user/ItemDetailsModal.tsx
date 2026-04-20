@@ -28,7 +28,7 @@ export function ItemDetailsModal({
     cart, eventDetails, 
     isPerPerson, isConsumption, isFlatFee, 
     calculateRecommendedQuantity, addItem,
-    isSubmitting
+    isSubmitting, isAdminEdit
   } = useWizardStore();
 
   const selectedItems = Object.keys(cart);
@@ -655,98 +655,100 @@ export function ItemDetailsModal({
 
         {/* Modal Footer */}
         <div className="sticky bottom-0 bg-card border-t border-border px-6 py-4">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+          <div className="flex flex-col items-stretch gap-4">
             {/* Left: Quantity and Guest Count Selectors - Full width on mobile */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full sm:w-auto">
-              {isPerPerson(item) ? (
-                <div className="flex flex-col gap-2 w-full sm:w-auto">
-                  <div className="flex items-center justify-between sm:justify-start gap-3 flex-wrap sm:flex-nowrap">
+            {isAdminEdit && (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full sm:w-auto">
+                {isPerPerson(item) ? (
+                  <div className="flex flex-col gap-2 w-full sm:w-auto">
+                    <div className="flex items-center justify-between sm:justify-start gap-3 flex-wrap sm:flex-nowrap">
+                      <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                        {(item.category === 'Beverages' || isFlatFee?.(item)) ? 'Qty:' : 'Guests:'}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            const currentVal = tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1);
+                            setTempGuestCount(Math.max(1, currentVal - 1));
+                          }}
+                          className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-foreground bg-card"
+                          style={{ borderRadius: 'var(--radius)' }}
+                          disabled={(tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1)) <= 1}
+                        >
+                          <Minus className="w-5 h-5" />
+                        </button>
+                        <Input
+                          type="number"
+                          min={1}
+                          value={tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1)}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value);
+                            if (!isNaN(val) && val >= 1) {
+                              setTempGuestCount(val);
+                            }
+                          }}
+                          className="w-16 sm:w-20 h-10 text-center border-2 border-border text-foreground rounded-lg focus:border-primary focus:outline-none transition-colors bg-card"
+                          style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+                        />
+                        <button
+                          onClick={() => {
+                            const currentVal = tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1);
+                            setTempGuestCount(currentVal + 1);
+                          }}
+                          className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors bg-card"
+                          style={{ borderRadius: 'var(--radius)' }}
+                        >
+                          <Plus className="w-5 h-5" />
+                        </button>
+                      </div>
+                      <span className="text-muted-foreground whitespace-nowrap" style={{ fontSize: 'var(--text-small)' }}>
+                        / {parseInt(eventDetails.guestCount) || 1}
+                      </span>
+                    </div>
+                    {(tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1)) > (parseInt(eventDetails.guestCount) || 1) && (
+                      <div className="flex items-center gap-2 text-destructive">
+                        <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                        <span style={{ fontSize: 'var(--text-small)' }}>
+                          {(item.category === 'Beverages' || isFlatFee?.(item)) ? 'Quantity' : 'Guests'} exceed total event guests ({parseInt(eventDetails.guestCount) || 1})
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto">
                     <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                      {(item.category === 'Beverages' || isFlatFee?.(item)) ? 'Qty:' : 'Guests:'}
+                      Qty:
                     </span>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => {
-                          const currentVal = tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1);
-                          setTempGuestCount(Math.max(1, currentVal - 1));
-                        }}
+                        onClick={() => setTempQuantity(Math.max(1, tempQuantity - 1))}
                         className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-foreground bg-card"
                         style={{ borderRadius: 'var(--radius)' }}
-                        disabled={(tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1)) <= 1}
+                        disabled={tempQuantity <= 1}
                       >
                         <Minus className="w-5 h-5" />
                       </button>
-                      <Input
-                        type="number"
-                        min={1}
-                        value={tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1)}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value);
-                          if (!isNaN(val) && val >= 1) {
-                            setTempGuestCount(val);
-                          }
-                        }}
-                        className="w-16 sm:w-20 h-10 text-center border-2 border-border text-foreground rounded-lg focus:border-primary focus:outline-none transition-colors bg-card"
-                        style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
-                      />
+                      <span className="text-foreground min-w-[2rem] text-center" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                        {tempQuantity}
+                      </span>
                       <button
-                        onClick={() => {
-                          const currentVal = tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1);
-                          setTempGuestCount(currentVal + 1);
-                        }}
+                        onClick={() => setTempQuantity(tempQuantity + 1)}
                         className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors bg-card"
                         style={{ borderRadius: 'var(--radius)' }}
                       >
                         <Plus className="w-5 h-5" />
                       </button>
                     </div>
-                    <span className="text-muted-foreground whitespace-nowrap" style={{ fontSize: 'var(--text-small)' }}>
-                      / {parseInt(eventDetails.guestCount) || 1}
-                    </span>
                   </div>
-                  {(tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1)) > (parseInt(eventDetails.guestCount) || 1) && (
-                    <div className="flex items-center gap-2 text-destructive">
-                      <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                      <span style={{ fontSize: 'var(--text-small)' }}>
-                        {(item.category === 'Beverages' || isFlatFee?.(item)) ? 'Quantity' : 'Guests'} exceed total event guests ({parseInt(eventDetails.guestCount) || 1})
-                      </span>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto">
-                  <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                    Qty:
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setTempQuantity(Math.max(1, tempQuantity - 1))}
-                      className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-foreground bg-card"
-                      style={{ borderRadius: 'var(--radius)' }}
-                      disabled={tempQuantity <= 1}
-                    >
-                      <Minus className="w-5 h-5" />
-                    </button>
-                    <span className="text-foreground min-w-[2rem] text-center" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                      {tempQuantity}
-                    </span>
-                    <button
-                      onClick={() => setTempQuantity(tempQuantity + 1)}
-                      className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors bg-card"
-                      style={{ borderRadius: 'var(--radius)' }}
-                    >
-                      <Plus className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
 
             {/* Right: Add to Cart Button with Total - Full width on mobile */}
             <button
               onClick={handleAddToCart}
               disabled={isSubmitting}
-              className={`flex-shrink-0 w-full sm:w-auto flex items-center justify-center gap-3 px-6 py-3 rounded-lg transition-all ${isSubmitting ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}
+              className={`w-full flex items-center justify-center gap-3 px-6 py-3 rounded-lg transition-all ${isSubmitting ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}
               style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
             >
               <ShoppingCart className="w-5 h-5" />

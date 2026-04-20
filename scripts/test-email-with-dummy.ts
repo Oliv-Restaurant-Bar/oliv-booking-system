@@ -120,6 +120,8 @@ async function generateTestEmails() {
       billingPlz: "8001",
       billingLocation: "Zürich",
       billingReference: null,
+      billingEmail: null,
+      billingBusiness: null,
       lead: {
         id: "test-lead-id",
         contactName: "Max Mustermann",
@@ -194,6 +196,8 @@ async function generateTestEmails() {
       billingPlz: "8001",
       billingLocation: "Zürich",
       billingReference: "RECHNUNG-2024-002",
+      billingEmail: null,
+      billingBusiness: null,
       lead: {
         id: "test-lead-id-2",
         contactName: "Sarah Schweizer",
@@ -268,6 +272,8 @@ async function generateTestEmails() {
       billingPlz: null,
       billingLocation: null,
       billingReference: null,
+      billingEmail: null,
+      billingBusiness: null,
       lead: {
         id: "test-lead-id-3",
         contactName: "Peter Müller",
@@ -341,6 +347,8 @@ async function generateTestEmails() {
       billingPlz: null,
       billingLocation: null,
       billingReference: null,
+      billingEmail: null,
+      billingBusiness: null,
       lead: {
         id: "test-lead-id-4",
         contactName: "Anna Andrea",
@@ -414,6 +422,8 @@ async function generateTestEmails() {
       billingPlz: null,
       billingLocation: null,
       billingReference: null,
+      billingEmail: null,
+      billingBusiness: null,
       lead: {
         id: "test-lead-id-5",
         contactName: "Thomas Weber",
@@ -488,6 +498,8 @@ async function generateTestEmails() {
       billingPlz: null,
       billingLocation: null,
       billingReference: null,
+      billingEmail: null,
+      billingBusiness: null,
       lead: {
         id: "test-lead-id-6",
         contactName: "Julia Jenkins",
@@ -560,6 +572,8 @@ async function generateTestEmails() {
       billingPlz: null,
       billingLocation: null,
       billingReference: null,
+      billingEmail: null,
+      billingBusiness: null,
       lead: {
         id: "test-lead-id-7",
         contactName: "Marco Marco",

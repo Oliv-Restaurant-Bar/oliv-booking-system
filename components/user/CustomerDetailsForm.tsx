@@ -22,15 +22,11 @@ export function CustomerDetailsForm({}: CustomerDetailsFormProps) {
         eventDetails, setEventDetails,
         validationErrors, setValidationErrors,
         touchedFields, setTouchedFields,
-        setIsDateTimePickerOpen
+        setIsDateTimePickerOpen,
+        getRealtimeErrors
     } = useWizardStore();
 
-    const displayErrors = Object.keys(validationErrors).reduce((acc, key) => {
-        if (touchedFields[key]) {
-            acc[key] = validationErrors[key];
-        }
-        return acc;
-    }, {} as Record<string, string | undefined>);
+    const displayErrors = { ...getRealtimeErrors(), ...validationErrors };
 
 
     return (
@@ -64,11 +60,9 @@ export function CustomerDetailsForm({}: CustomerDetailsFormProps) {
                             value={eventDetails.name}
                             onChange={(e) => {
                                 setEventDetails({ ...eventDetails, name: e.target.value });
-                                if (validationErrors.name) setValidationErrors({ ...validationErrors, name: undefined });
                             }}
                             onBlur={() => {
                                 setTouchedFields({ ...touchedFields, name: true });
-                                if (validationErrors.name) setValidationErrors({ ...validationErrors, name: undefined });
                             }}
                             placeholder={t('placeholders.name')}
                             maxLength={100}
@@ -84,11 +78,9 @@ export function CustomerDetailsForm({}: CustomerDetailsFormProps) {
                             value={eventDetails.business}
                             onChange={(e) => {
                                 setEventDetails({ ...eventDetails, business: e.target.value });
-                                if (validationErrors.business) setValidationErrors({ ...validationErrors, business: undefined });
                             }}
                             onBlur={() => {
                                 setTouchedFields({ ...touchedFields, business: true });
-                                if (validationErrors.business) setValidationErrors({ ...validationErrors, business: undefined });
                             }}
                             placeholder="Musterfirma AG"
                             maxLength={100}
@@ -103,11 +95,9 @@ export function CustomerDetailsForm({}: CustomerDetailsFormProps) {
                             value={eventDetails.email}
                             onChange={(e) => {
                                 setEventDetails({ ...eventDetails, email: e.target.value });
-                                if (validationErrors.email) setValidationErrors({ ...validationErrors, email: undefined });
                             }}
                             onBlur={() => {
                                 setTouchedFields({ ...touchedFields, email: true });
-                                if (validationErrors.email) setValidationErrors({ ...validationErrors, email: undefined });
                             }}
                             placeholder="max@firma.ch"
                             maxLength={255}
@@ -124,11 +114,9 @@ export function CustomerDetailsForm({}: CustomerDetailsFormProps) {
                             onChange={(e) => {
                                 const value = e.target.value.replace(/[^0-9+\s]/g, '');
                                 setEventDetails({ ...eventDetails, telephone: value });
-                                if (validationErrors.telephone) setValidationErrors({ ...validationErrors, telephone: undefined });
                             }}
                             onBlur={() => {
                                 setTouchedFields({ ...touchedFields, telephone: true });
-                                if (validationErrors.telephone) setValidationErrors({ ...validationErrors, telephone: undefined });
                             }}
                             placeholder="07XXXXXXXX"
                             maxLength={20}
@@ -153,11 +141,9 @@ export function CustomerDetailsForm({}: CustomerDetailsFormProps) {
                             value={eventDetails.street}
                             onChange={(e) => {
                                 setEventDetails({ ...eventDetails, street: e.target.value });
-                                if (validationErrors.street) setValidationErrors({ ...validationErrors, street: undefined });
                             }}
                             onBlur={() => {
                                 setTouchedFields({ ...touchedFields, street: true });
-                                if (validationErrors.street) setValidationErrors({ ...validationErrors, street: undefined });
                             }}
                             placeholder={t('placeholders.street')}
                             maxLength={100}
@@ -174,11 +160,9 @@ export function CustomerDetailsForm({}: CustomerDetailsFormProps) {
                             onChange={(e) => {
                                 const value = e.target.value.replace(/[^0-9]/g, '');
                                 setEventDetails({ ...eventDetails, plz: value });
-                                if (validationErrors.plz) setValidationErrors({ ...validationErrors, plz: undefined });
                             }}
                             onBlur={() => {
                                 setTouchedFields({ ...touchedFields, plz: true });
-                                if (validationErrors.plz) setValidationErrors({ ...validationErrors, plz: undefined });
                             }}
                             placeholder={t('placeholders.plz')}
                             maxLength={10}
@@ -194,11 +178,9 @@ export function CustomerDetailsForm({}: CustomerDetailsFormProps) {
                             value={eventDetails.location}
                             onChange={(e) => {
                                 setEventDetails({ ...eventDetails, location: e.target.value });
-                                if (validationErrors.location) setValidationErrors({ ...validationErrors, location: undefined });
                             }}
                             onBlur={() => {
                                 setTouchedFields({ ...touchedFields, location: true });
-                                if (validationErrors.location) setValidationErrors({ ...validationErrors, location: undefined });
                             }}
                             placeholder={t('placeholders.location')}
                             maxLength={50}
@@ -214,11 +196,9 @@ export function CustomerDetailsForm({}: CustomerDetailsFormProps) {
                             value={eventDetails.reference}
                             onChange={(e) => {
                                 setEventDetails({ ...eventDetails, reference: e.target.value });
-                                if (validationErrors.reference) setValidationErrors({ ...validationErrors, reference: undefined });
                             }}
                             onBlur={() => {
                                 setTouchedFields({ ...touchedFields, reference: true as any });
-                                if (validationErrors.reference) setValidationErrors({ ...validationErrors, reference: undefined });
                             }}
                             placeholder={t('placeholders.occasion')}
                             maxLength={100}
@@ -287,26 +267,13 @@ export function CustomerDetailsForm({}: CustomerDetailsFormProps) {
                                 type="number"
                                 value={eventDetails.guestCount}
                                 onChange={(e) => {
-                                    const guests = parseInt(e.target.value) || 1;
-                                    let newRoom = eventDetails.room;
-                                    
-                                    // Room reset logic based on guest count
-                                    if (guests < 30 && (newRoom === 'ug1' || newRoom === 'ug1_exklusiv')) {
-                                        newRoom = '';
-                                    } else if (guests < 50 && newRoom === 'ug1_exklusiv') {
-                                        newRoom = 'ug1';
-                                    }
-
                                     setEventDetails({ 
                                         ...eventDetails, 
-                                        guestCount: e.target.value,
-                                        room: newRoom
+                                        guestCount: e.target.value
                                     });
-                                    if (validationErrors.guestCount) setValidationErrors({ ...validationErrors, guestCount: undefined });
                                 }}
                                 onBlur={() => {
                                     setTouchedFields({ ...touchedFields, guestCount: true });
-                                    if (validationErrors.guestCount) setValidationErrors({ ...validationErrors, guestCount: undefined });
                                 }}
                                 className={`w-full px-4 py-2.5 bg-background border rounded-lg transition-colors ${displayErrors.guestCount ? 'border-destructive' : 'border-border focus:border-primary'
                                     }`}
@@ -322,56 +289,6 @@ export function CustomerDetailsForm({}: CustomerDetailsFormProps) {
                             )}
                         </div>
 
-                        {/* Room Selection Dropdown */}
-                        <div>
-                            <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
-                                {t('labels.room')}
-                                <span className="text-destructive ml-1">*</span>
-                            </label>
-                            <select
-                                value={eventDetails.room}
-                                onChange={(e) => {
-                                    setEventDetails({ ...eventDetails, room: e.target.value });
-                                    if (validationErrors.room) setValidationErrors({ ...validationErrors, room: undefined });
-                                }}
-                                onBlur={() => {
-                                    setTouchedFields({ ...touchedFields, room: true });
-                                }}
-                                className={`w-full px-4 py-2.5 bg-background border rounded-lg transition-colors focus:outline-none ${
-                                    displayErrors.room ? 'border-destructive' : 'border-border focus:border-primary'
-                                }`}
-                                style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)', appearance: 'none', backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'currentColor\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'currentColor\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.5em' }}
-                            >
-                                <option value="">{locale === 'de' ? 'Bitte wählen...' : 'Please select...'}</option>
-                                {(parseInt(eventDetails.guestCount.toString()) < 50) && (
-                                    <option value="eg">{t('labels.rooms.eg')}</option>
-                                )}
-                                
-                                {(parseInt(eventDetails.guestCount.toString()) >= 30) && (
-                                    <option value="ug1">{t('labels.rooms.ug1')}</option>
-                                )}
-                                
-                                {(parseInt(eventDetails.guestCount.toString()) >= 50) && (
-                                    <option value="ug1_exklusiv">{t('labels.rooms.ug1_exklusiv')}</option>
-                                )}
-                            </select>
-
-                            {/* Minimum Spend Info for UG1 Exklusiv */}
-                            {eventDetails.room === 'ug1_exklusiv' && (
-                                <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 text-amber-800 animate-in fade-in slide-in-from-top-1 duration-200">
-                                    <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                                    <p style={{ fontSize: 'var(--text-small)' }}>
-                                        {t('labels.minSpendInfo')}
-                                    </p>
-                                </div>
-                            )}
-
-                            {displayErrors.room && (
-                                <p className="text-destructive mt-1" style={{ fontSize: 'var(--text-small)' }}>
-                                    {displayErrors.room}
-                                </p>
-                            )}
-                        </div>
 
                         <ValidatedInput
                             label={t('labels.occasion')}
@@ -379,11 +296,9 @@ export function CustomerDetailsForm({}: CustomerDetailsFormProps) {
                             value={eventDetails.occasion}
                             onChange={(e) => {
                                 setEventDetails({ ...eventDetails, occasion: e.target.value });
-                                if (validationErrors.occasion) setValidationErrors({ ...validationErrors, occasion: undefined });
                             }}
                             onBlur={() => {
                                 setTouchedFields({ ...touchedFields, occasion: true });
-                                if (validationErrors.occasion) setValidationErrors({ ...validationErrors, occasion: undefined });
                             }}
                             placeholder={t('placeholders.occasion')}
                             maxLength={100}
@@ -406,11 +321,9 @@ export function CustomerDetailsForm({}: CustomerDetailsFormProps) {
                         value={eventDetails.specialRequests}
                         onChange={(e) => {
                             setEventDetails({ ...eventDetails, specialRequests: e.target.value });
-                            if (validationErrors.specialRequests) setValidationErrors({ ...validationErrors, specialRequests: undefined });
                         }}
                         onBlur={() => {
                             setTouchedFields({ ...touchedFields, specialRequests: true });
-                            if (validationErrors.specialRequests) setValidationErrors({ ...validationErrors, specialRequests: undefined });
                         }}
                         placeholder={t('placeholders.specialRequests')}
                         rows={4}
@@ -525,6 +438,18 @@ export function CustomerDetailsForm({}: CustomerDetailsFormProps) {
                                             </div>
                                         </div>
                                         <div>
+                                            <label className="text-sm text-muted-foreground mb-1 block">{t('labels.business')}</label>
+                                            <div className="px-3 py-2 bg-muted/50 rounded-md text-foreground border border-border">
+                                                {eventDetails.business || t('status.editMode')}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-sm text-muted-foreground mb-1 block">{t('labels.email')}</label>
+                                            <div className="px-3 py-2 bg-muted/50 rounded-md text-foreground border border-border">
+                                                {eventDetails.email || t('status.editMode')}
+                                            </div>
+                                        </div>
+                                        <div>
                                             <label className="text-sm text-muted-foreground mb-1 block">{t('labels.reference')}</label>
                                             <div className="px-3 py-2 bg-muted/50 rounded-md text-foreground border border-border">
                                                 {eventDetails.reference || t('status.editMode')}
@@ -538,20 +463,53 @@ export function CustomerDetailsForm({}: CustomerDetailsFormProps) {
                                             type="text"
                                             value={eventDetails.billingStreet}
                                             onChange={(e) => {
-                                                setEventDetails({ ...eventDetails, billingStreet: e.target.value, billingStreetError: undefined });
+                                                setEventDetails({ ...eventDetails, billingStreet: e.target.value });
                                                 if (validationErrors.billingStreet) setValidationErrors({ ...validationErrors, billingStreet: undefined });
                                             }}
                                             onBlur={() => {
                                                 // Validate billing street on blur if filled
                                                 if (eventDetails.billingStreet.trim().length > 0 && eventDetails.billingStreet.trim().length < 5) {
-                                                    setEventDetails({ ...eventDetails, billingStreetError: 'Street address must be at least 5 characters' });
+                                                    setValidationErrors({ ...validationErrors, billingStreet: 'Street address must be at least 5 characters' });
                                                 }
                                             }}
                                             placeholder={t('placeholders.street')}
                                             maxLength={100}
                                             showCharacterCount
-                                            error={displayErrors.billingStreet || eventDetails.billingStreetError}
+                                            error={displayErrors.billingStreet}
                                             required
+                                        />
+
+                                        <ValidatedInput
+                                            label={t('labels.billingBusiness')}
+                                            type="text"
+                                            value={eventDetails.billingBusiness}
+                                            onChange={(e) => {
+                                                setEventDetails({ ...eventDetails, billingBusiness: e.target.value });
+                                                if (validationErrors.billingBusiness) setValidationErrors({ ...validationErrors, billingBusiness: undefined });
+                                            }}
+                                            placeholder={t('placeholders.billingBusiness')}
+                                            maxLength={100}
+                                            showCharacterCount
+                                            error={displayErrors.billingBusiness}
+                                        />
+
+                                        <ValidatedInput
+                                            label={t('labels.billingEmail')}
+                                            type="email"
+                                            value={eventDetails.billingEmail}
+                                            onChange={(e) => {
+                                                setEventDetails({ ...eventDetails, billingEmail: e.target.value });
+                                                if (validationErrors.billingEmail) setValidationErrors({ ...validationErrors, billingEmail: undefined });
+                                            }}
+                                            onBlur={() => {
+                                                if (eventDetails.billingEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(eventDetails.billingEmail)) {
+                                                    setValidationErrors({ ...validationErrors, billingEmail: 'Please enter a valid email address' });
+                                                }
+                                            }}
+                                            placeholder={t('placeholders.billingEmail')}
+                                            maxLength={255}
+                                            showCharacterCount
+                                            error={displayErrors.billingEmail}
                                         />
 
                                         <ValidatedInput
@@ -560,19 +518,19 @@ export function CustomerDetailsForm({}: CustomerDetailsFormProps) {
                                             value={eventDetails.billingPlz}
                                             onChange={(e) => {
                                                 const value = e.target.value.replace(/[^0-9]/g, '');
-                                                setEventDetails({ ...eventDetails, billingPlz: value, billingPlzError: undefined });
+                                                setEventDetails({ ...eventDetails, billingPlz: value });
                                                 if (validationErrors.billingPlz) setValidationErrors({ ...validationErrors, billingPlz: undefined });
                                             }}
                                             onBlur={() => {
                                                 // Validate billing PLZ on blur if filled
                                                 if (eventDetails.billingPlz.length > 0 && eventDetails.billingPlz.length < 4) {
-                                                    setEventDetails({ ...eventDetails, billingPlzError: 'Postal code must be at least 4 characters' });
+                                                    setValidationErrors({ ...validationErrors, billingPlz: 'Postal code must be at least 4 characters' });
                                                 }
                                             }}
                                             placeholder={t('placeholders.plz')}
                                             maxLength={10}
                                             showCharacterCount
-                                            error={displayErrors.billingPlz || eventDetails.billingPlzError}
+                                            error={displayErrors.billingPlz}
                                             required
                                         />
 
@@ -581,19 +539,19 @@ export function CustomerDetailsForm({}: CustomerDetailsFormProps) {
                                             type="text"
                                             value={eventDetails.billingLocation}
                                             onChange={(e) => {
-                                                setEventDetails({ ...eventDetails, billingLocation: e.target.value, billingLocationError: undefined });
+                                                setEventDetails({ ...eventDetails, billingLocation: e.target.value });
                                                 if (validationErrors.billingLocation) setValidationErrors({ ...validationErrors, billingLocation: undefined });
                                             }}
                                             onBlur={() => {
                                                 // Validate billing location on blur if filled
                                                 if (eventDetails.billingLocation.trim().length > 0 && eventDetails.billingLocation.trim().length < 2) {
-                                                    setEventDetails({ ...eventDetails, billingLocationError: 'Location must be at least 2 characters' });
+                                                    setValidationErrors({ ...validationErrors, billingLocation: 'Location must be at least 2 characters' });
                                                 }
                                             }}
                                             placeholder={t('placeholders.location')}
                                             maxLength={50}
                                             showCharacterCount
-                                            error={displayErrors.billingLocation || eventDetails.billingLocationError}
+                                            error={displayErrors.billingLocation}
                                             required
                                         />
 
@@ -602,17 +560,18 @@ export function CustomerDetailsForm({}: CustomerDetailsFormProps) {
                                             type="text"
                                             value={eventDetails.billingReference || ''}
                                             onChange={(e) => {
-                                                setEventDetails({ ...eventDetails, billingReference: e.target.value, billingReferenceError: undefined });
+                                                setEventDetails({ ...eventDetails, billingReference: e.target.value });
+                                                if (validationErrors.billingReference) setValidationErrors({ ...validationErrors, billingReference: undefined });
                                             }}
                                             onBlur={() => {
-                                                if (eventDetails.billingReference?.trim().length > 100) {
-                                                    setEventDetails({ ...eventDetails, billingReferenceError: 'Billing reference must not exceed 100 characters' });
+                                                if (eventDetails.billingReference && eventDetails.billingReference.trim().length > 100) {
+                                                    setValidationErrors({ ...validationErrors, billingReference: 'Billing reference must not exceed 100 characters' });
                                                 }
                                             }}
                                             placeholder="e.g. INV-98765"
                                             maxLength={100}
                                             showCharacterCount
-                                            error={eventDetails.billingReferenceError}
+                                            error={displayErrors.billingReference}
                                         />
                                     </div>
                                 )}

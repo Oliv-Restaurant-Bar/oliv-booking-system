@@ -6,7 +6,7 @@ import { Button } from './Button';
 import confetti from 'canvas-confetti';
 import { motion } from 'motion/react';
 import { useWizardTranslation } from '@/lib/i18n/client';
-import { generateCustomerOfferPdf } from '@/lib/utils/pdf-generator';
+import { generateBookingPdf } from '@/lib/utils/pdf-generator';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import Image from 'next/image';
@@ -38,7 +38,7 @@ export function ThankYouScreen({
 
     setIsGenerating(true);
     try {
-      const doc = await generateCustomerOfferPdf(bookingData);
+      const doc = await generateBookingPdf(bookingData, 'inquiry');
       const filename = `Booking_${bookingData.customerName.replace(/\s+/g, '_')}.pdf`;
       doc.save(filename);
       toast.success('PDF downloaded successfully');

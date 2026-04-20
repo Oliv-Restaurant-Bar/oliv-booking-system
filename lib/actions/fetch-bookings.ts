@@ -180,7 +180,6 @@ export async function fetchBookings(options: {
       const billingPlz = extractField('Billing PLZ');
       const billingLocation = extractField('Billing Location');
       const billingReference = extractField('Billing Reference');
-      const billingCustomerReference = extractField('Billing Customer Reference');
 
       // Extract menu selection from internal notes for display in notes
       const menuMatch = internalNotes.match(/Menu Selection: ([^\n]+)/);
@@ -211,7 +210,6 @@ export async function fetchBookings(options: {
         billingPlz: billingPlz,
         billingLocation: billingLocation,
         billingReference: billingReference,
-        billingCustomerReference: billingCustomerReference,
         paymentMethod: paymentMethod,
         room: booking.room || '',
         event: {

@@ -202,7 +202,7 @@ export function CustomerMenuSelection({
                         </div>
                       </div>
                       <div className="p-1.5">
-                        {(['veg', 'non-veg', 'vegan'] as const).map((type) => (
+                        {(['veg', 'non-veg'] as const).map((type) => (
                           <button
                             key={type}
                             onClick={() => {

@@ -313,7 +313,6 @@ export function getCheckinSubmittedTemplateData(
     guestCountChanged?: boolean;
     newGuestCount?: number;
     vegetarianCount?: number;
-    veganCount?: number;
     nonVegetarianCount?: number;
     menuChanges?: string;
     additionalDetails?: string;
@@ -324,11 +323,11 @@ export function getCheckinSubmittedTemplateData(
   const customerName = lead?.contactName || "Gast";
 
   // Generate dietary breakdown HTML if any counts are provided
-  const dietaryBreakdownHtml = (params.vegetarianCount || params.veganCount || params.nonVegetarianCount)
+  const combinedVegCount = params.vegetarianCount || 0;
+  const dietaryBreakdownHtml = (combinedVegCount || params.nonVegetarianCount)
     ? `
     <div class="dietary-breakdown">
-      ${params.vegetarianCount ? `<div class="dietary-item">• Vegetarisch: ${params.vegetarianCount}</div>` : ""}
-      ${params.veganCount ? `<div class="dietary-item">• Vegan: ${params.veganCount}</div>` : ""}
+      ${combinedVegCount ? `<div class="dietary-item">• Vegetarisch: ${combinedVegCount}</div>` : ""}
       ${params.nonVegetarianCount ? `<div class="dietary-item">• Non-Veg: ${params.nonVegetarianCount}</div>` : ""}
     </div>
     `
@@ -341,8 +340,7 @@ export function getCheckinSubmittedTemplateData(
     has_changes: params.hasChanges ? "Ja" : "Nein",
     guest_count_changed: params.guestCountChanged ? "Ja" : "Nein",
     new_guest_count: params.newGuestCount || booking.guestCount,
-    vegetarian_count: params.vegetarianCount || 0,
-    vegan_count: params.veganCount || 0,
+    vegetarian_count: combinedVegCount,
     non_vegetarian_count: params.nonVegetarianCount || 0,
     dietary_breakdown_html: dietaryBreakdownHtml,
     menu_changes: params.menuChanges || "Keine",
@@ -470,7 +468,6 @@ export function getTemplateData(
     guestCountChanged?: boolean;
     newGuestCount?: number;
     vegetarianCount?: number;
-    veganCount?: number;
     nonVegetarianCount?: number;
     menuChanges?: string;
     additionalDetails?: string;
@@ -574,7 +571,6 @@ export function getTemplateData(
         guestCountChanged: params.guestCountChanged,
         newGuestCount: params.newGuestCount,
         vegetarianCount: params.vegetarianCount,
-        veganCount: params.veganCount,
         nonVegetarianCount: params.nonVegetarianCount,
         menuChanges: params.menuChanges,
         additionalDetails: params.additionalDetails,

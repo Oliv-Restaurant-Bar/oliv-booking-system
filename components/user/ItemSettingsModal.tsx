@@ -161,7 +161,7 @@ export function ItemSettingsModal({
                 <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                   {t('labels.dietaryType')} <span className="text-destructive">*</span>
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <button
                     type="button"
                     onClick={() => setItemSettings({ ...itemSettings, dietaryType: 'none' })}
@@ -246,7 +246,7 @@ export function ItemSettingsModal({
                       )}
                     </div>
                   </button>
-                  <button
+{/* <button
                     type="button"
                     onClick={() => setItemSettings({ ...itemSettings, dietaryType: 'vegan' })}
                     className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left cursor-pointer ${itemSettings.dietaryType === 'vegan'
@@ -273,7 +273,7 @@ export function ItemSettingsModal({
                         <div className="w-3 h-3 rounded-full bg-primary" />
                       )}
                     </div>
-                  </button>
+                  </button> */}
                 </div>
               </div>
 
