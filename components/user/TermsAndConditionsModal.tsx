@@ -122,6 +122,9 @@ export function TermsAndConditionsModal({ isOpen, onClose }: TermsAndConditionsM
                 <p>
                   Alle Preise verstehen sich in <span className="font-bold text-[#2c2f34]">CHF</span> und enthalten die gesetzliche Mehrwertsteuer (MwSt.), sofern nicht anders angegeben.
                 </p>
+                <p>
+                  Die abgebildeten Kosten wurden auf Basis der jeweils teuersten Auswahl pro Kategorie berechnet.
+                </p>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center py-2 border-b border-[#f3f4f6] text-[14px]">
                     <span>Zahlungsmethoden</span>
