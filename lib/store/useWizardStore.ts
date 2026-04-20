@@ -139,6 +139,7 @@ interface WizardState {
   getSelectedItemsByCategory: (category: string) => any[];
   calculateRecommendedQuantity: (item: any, variantIdOverride?: string) => number | null;
   getRealtimeErrors: () => Record<string, string | undefined>;
+  resetSession: () => void;
 }
 
 const initialEventDetails: EventDetails = {
@@ -296,6 +297,38 @@ export const useWizardStore = create<WizardState>((set, get) => ({
   }),
 
   clearCart: () => set({ cart: {} }),
+
+  // Reset all user-specific session state (cart, step, form, flags)
+  // Call on component mount to prevent state bleeding across users on Vercel
+  resetSession: () => set({
+    cart: {},
+    currentStep: 1,
+    activeTab: 'contact',
+    isEditMode: false,
+    isAdminEdit: false,
+    editBookingData: null,
+    bookingId: null,
+    editSecret: null,
+    isSubmitting: false,
+    isSubmitted: false,
+    inquiryNumber: '',
+    bookingPdfData: null,
+    isLocked: false,
+    isUnlockRequested: false,
+    isRequestingUnlock: false,
+    termsAccepted: false,
+    signature: '',
+    step2Error: '',
+    detailsModalItem: null,
+    isLoadingEdit: false,
+    includeBeveragePrices: false,
+    validationErrors: {},
+    touchedFields: {},
+    isMobileDrawerOpen: false,
+    isCartCollapsed: true,
+    activeCategory: '',
+    eventDetails: initialEventDetails,
+  }),
 
   // Helpers for pricing types
   isPerPerson: (item: any) => item.pricingType === 'per-person' || item.pricingType === 'per_person',

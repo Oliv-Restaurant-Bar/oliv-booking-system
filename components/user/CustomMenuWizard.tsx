@@ -83,7 +83,8 @@ export function CustomMenuWizard({
     setIsSubmitting,
     activeCategory, setActiveCategory,
     detailsModalItem, setDetailsModalItem,
-    getRealtimeErrors
+    getRealtimeErrors,
+    resetSession,
   } = useWizardStore();
 
   const selectedItemIds = useMemo(() => Object.keys(cart), [cart]);
@@ -100,11 +101,26 @@ export function CustomMenuWizard({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentStep]);
 
+  // resetSession is now called at the top of loadEverything() below,
+  // guaranteeing it always runs before processMenuData or restoreBooking.
+  // This prevents stale Zustand state from bleeding across visitors on
+  // warm Vercel serverless instances (the module-singleton problem).
+
   // Main loader: Fetch menu data AND handle edit mode initialization
   useEffect(() => {
     const loadEverything = async () => {
-      // 1. Load Menu (if not SSR)
-      if (!initialMenuData && menuItems.length === 0) {
+      // 0. Always reset session-specific state first so that stale Zustand
+      //    state from a previous visitor (on the same warm Vercel serverless
+      //    instance) is cleared before anything else runs.
+      //    Edit mode will repopulate the store via restoreBooking() below.
+      const editMode = searchParams.get('edit') === 'true';
+      if (!editMode) {
+        resetSession();
+      }
+
+      // 1. Load Menu (always call processMenuData when SSR data is available
+      //    to ensure fresh data on every navigation, regardless of prior state)
+      if (!initialMenuData) {
         setLoadingMenu(true);
         try {
           const response = await fetch('/api/menu');
@@ -117,12 +133,12 @@ export function CustomMenuWizard({
         } finally {
           setLoadingMenu(false);
         }
-      } else if (initialMenuData && menuItems.length === 0) {
+      } else {
+        // SSR-provided data — always process so the store reflects server data
         processMenuData(initialMenuData);
       }
 
       // 2. Handle Edit Mode
-      const editMode = searchParams.get('edit') === 'true';
       if (editMode) {
         const bookingIdParam = searchParams.get('id');
         const secretParam = searchParams.get('secret');
@@ -177,16 +193,7 @@ export function CustomMenuWizard({
       }
     };
     loadEverything();
-  }, [initialMenuData, searchParams, setBookingInfo, setEditMode, restoreBooking, setCurrentStep]);
-
-
-  // Initialize menu data if provided via props (SSR)
-  useEffect(() => {
-    if (initialMenuData) {
-      console.log('[SSR] Initializing menu data from props');
-      processMenuData(initialMenuData);
-    }
-  }, [initialMenuData]);
+  }, [initialMenuData, searchParams, setBookingInfo, setEditMode, restoreBooking, setCurrentStep, resetSession]);
 
 
   // Shared function to process menu data (from props or fetch)
