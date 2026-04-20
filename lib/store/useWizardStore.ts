@@ -427,25 +427,23 @@ export const useWizardStore = create<WizardState>((set, get) => ({
       })
       .filter((i): i is any => i !== null);
 
-    const getHighestPrice = (category: string, dietaryFilter?: (d: string) => boolean) => {
+    const getHighestPrice = (categoryNames: string[], dietaryFilter?: (d: string) => boolean) => {
       const filtered = ppItems.filter(i => {
-        const matchesCategory = i.category === 'Starters' || i.category === 'Main Courses' || i.category === 'Desserts' 
-          ? i.category === category 
-          : false;
-        const matchesDietary = dietaryFilter ? dietaryFilter(i.dietaryType) : true;
+        const matchesCategory = categoryNames.some(cn => (i.category || '').toLowerCase() === cn.toLowerCase());
+        const matchesDietary = dietaryFilter ? dietaryFilter(i.dietaryType || 'none') : true;
         return matchesCategory && matchesDietary;
       });
       return filtered.length > 0 ? Math.max(...filtered.map(i => i.price)) : 0;
     };
 
-    const maxStarter = getHighestPrice('Starters');
-    const maxVegMain = getHighestPrice('Main Courses', (d) => d === 'veg' || d === 'vegan');
-    const maxNonVegMain = getHighestPrice('Main Courses', (d) => d === 'non-veg');
-    const maxDessert = getHighestPrice('Desserts');
+    const maxStarter = getHighestPrice(['Starters', 'Vorspeisen']);
+    const maxVegMain = getHighestPrice(['Main Courses', 'Hauptgänge', 'Menü'], (d) => d === 'veg' || d === 'vegan');
+    const maxNonVegMain = getHighestPrice(['Main Courses', 'Hauptgänge', 'Menü'], (d) => d === 'non-veg');
+    const maxDessert = getHighestPrice(['Desserts']);
 
     // Any other per-person items that are NOT in the special categories
     const otherPPPrice = ppItems
-      .filter(i => !['Starters', 'Main Courses', 'Desserts'].includes(i.category))
+      .filter(i => !['Starters', 'Vorspeisen', 'Main Courses', 'Hauptgänge', 'Menü', 'Desserts'].includes(i.category))
       .reduce((sum, i) => sum + i.price, 0);
 
     return {

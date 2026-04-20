@@ -143,6 +143,14 @@ export interface Booking {
     }>;
 }
 
+const CATEGORY_ORDER = [
+    'Starters', 'Vorspeisen', 'Apéro', 'Snacks',
+    'Main Courses', 'Hauptgänge', 'Menü',
+    'Desserts',
+    'Add-ons', 'Extras', 'Zusatzleistungen', 'Choices',
+    'Beverages', 'Drinks', 'Getränke', 'Softdrinks', 'Wein', 'Wine', 'Bier', 'Beer', 'Kaffee', 'Coffee'
+];
+
 interface BookingComment {
     by: string;
     time: string;
@@ -304,101 +312,54 @@ export function BookingDetailPage({
 
     const dietarySummary = useMemo(() => {
         const items = isEditingMenu ? tempMenuItems : (booking?.menuItems || []);
-
-        const foodItems = items.filter(item =>
+        
+        // Filter food items that are priced per person
+        const ppFoodItems = (items || []).filter(item =>
             item.pricingType === 'per_person' &&
             item.category !== 'Beverages' &&
             item.category !== 'Add-ons' &&
             item.category !== 'Getränke' &&
-            item.category !== 'Zusatzleistungen'
+            item.category !== 'Zusatzleistungen' &&
+            item.category !== 'Drinks' &&
+            item.category !== 'Wein' &&
+            item.category !== 'Bier' &&
+            item.category !== 'Coffee' &&
+            item.category !== 'Kaffee'
         );
 
-        const isVegActivated = foodItems.some(i => i.dietaryType === 'veg' || i.dietaryType === 'vegan' || i.notes?.includes('(Veg)') || i.notes?.includes('(Vegan)'));
-        const isNonVegActivated = foodItems.some(i => i.dietaryType === 'non-veg' || i.notes?.includes('(Non-Veg)'));
-
-        let vegSubtotal = 0;
-        let nonVegSubtotal = 0;
-        let vegCount = 0;
-        let nonVegCount = 0;
-
-        const itemsByCategory = (foodItems || []).reduce((acc: Record<string, { items: any[], useSpecialCalculation: boolean }>, item) => {
-            const catName = item.category || 'Uncategorized';
-            if (!acc[catName]) acc[catName] = { items: [], useSpecialCalculation: !!item.useSpecialCalculation };
-            acc[catName].items.push(item);
-            return acc;
-        }, {});
-
-        Object.entries(itemsByCategory).forEach(([category, catData]) => {
-            const { items: catItems, useSpecialCalculation } = catData;
-
-            // Mirror MenuCart's restricted logic: use the database flag if present, 
-            // but fallback to known restricted categories since the snapshot might miss the flag.
-            const isRestricted = useSpecialCalculation ||
-                (category.toLowerCase().includes('dessert') ||
-                    category.toLowerCase().includes('menu') ||
-                    category.toLowerCase().includes('hauptgänge') ||
-                    category.toLowerCase().includes('mains'));
-
-            const vegItems = (catItems as any[]).filter(i => i.dietaryType === 'veg' || i.dietaryType === 'vegan');
-            const nonVegItems = (catItems as any[]).filter(i => i.dietaryType === 'non-veg');
-            const noneItems = (catItems as any[]).filter(i => !i.dietaryType || i.dietaryType === 'none');
-
-            const maxVeg = vegItems.length > 0 ? Math.max(...vegItems.map((i: any) => i.unitPrice || 0)) : 0;
-            const maxNonVeg = nonVegItems.length > 0 ? Math.max(...nonVegItems.map((i: any) => i.unitPrice || 0)) : 0;
-
-            // For None items, we check if they have any dietary markers in notes
-            const noneSplits = noneItems.map(i => {
-                const notes = i.notes || '';
-                const hasAnyDietary = notes.includes('(Veg)') || notes.includes('(Non-Veg)') || notes.includes('(Vegan)');
-                return { unitPrice: i.unitPrice || 0, hasAnyDietary };
+        const getHighestPrice = (categoryNames: string[], dietaryFilter?: (d: string) => boolean) => {
+            const filtered = ppFoodItems.filter(i => {
+                const matchesCategory = categoryNames.some(cn => (i.category || '').toLowerCase() === cn.toLowerCase());
+                const matchesDietary = dietaryFilter ? dietaryFilter(i.dietaryType || 'none') : true;
+                return matchesCategory && matchesDietary;
             });
+            return filtered.length > 0 ? Math.max(...filtered.map(i => i.unitPrice || 0)) : 0;
+        };
 
-            const maxNoneSplitCombined = noneSplits.length > 0 ? Math.max(...noneSplits.map(s => s.hasAnyDietary ? s.unitPrice : 0)) : 0;
-            const maxNoneShared = noneSplits.length > 0 ? Math.max(...noneSplits.map(s => !s.hasAnyDietary ? s.unitPrice : 0)) : 0;
+        const maxStarter = getHighestPrice(['Starters', 'Vorspeisen']);
+        const maxVegMain = getHighestPrice(['Main Courses', 'Hauptgänge', 'Menü'], (d) => d === 'veg' || d === 'vegan');
+        const maxNonVegMain = getHighestPrice(['Main Courses', 'Hauptgänge', 'Menü'], (d) => d === 'non-veg');
+        const maxDessert = getHighestPrice(['Desserts']);
 
-            const maxNoneVeg = maxNoneSplitCombined;
-            const maxNoneNonVeg = maxNoneSplitCombined;
+        // Sum up other per-person food items
+        const otherPPPrice = ppFoodItems
+            .filter(i => !['Starters', 'Vorspeisen', 'Main Courses', 'Hauptgänge', 'Menü', 'Desserts'].includes(i.category))
+            .reduce((sum, i) => sum + (i.unitPrice || 0), 0);
 
-            const groupsPresentCount = [maxVeg > 0, maxNonVeg > 0].filter(Boolean).length;
-            const hasNoneSplit = maxNoneSplitCombined > 0;
-            const hasNoneShared = maxNoneShared > 0;
-            const totalGroupings = groupsPresentCount + (hasNoneSplit || hasNoneShared ? 1 : 0);
-
-            const sharedPrice = Math.max(maxVeg, maxNonVeg, maxNoneVeg, maxNoneNonVeg, maxNoneShared);
-            const sharedCount = (catItems as any[]).length;
-
-            if (totalGroupings === 1) {
-                if (hasNoneSplit || hasNoneShared) {
-                    // Rule: Use specific price for None splits, even if only 1 grouping
-                    if (isVegActivated) { vegSubtotal += Math.max(maxVeg, maxNoneVeg, maxNoneShared); vegCount += sharedCount; }
-                    if (isNonVegActivated) { nonVegSubtotal += Math.max(maxNonVeg, maxNoneNonVeg, maxNoneShared); nonVegCount += sharedCount; }
-                } else {
-                    // Rule: Shared for Restricted, Separate for General (Mains)
-                    if (isRestricted) {
-                        vegSubtotal += sharedPrice; vegCount += sharedCount;
-                        nonVegSubtotal += sharedPrice; nonVegCount += sharedCount;
-                    } else {
-                        if (maxVeg > 0) { vegSubtotal += maxVeg; vegCount += sharedCount; }
-                        if (maxNonVeg > 0) { nonVegSubtotal += maxNonVeg; nonVegCount += sharedCount; }
-                    }
-                }
-            } else {
-                // Separate rule: Multiple dietary groups or Dietary + None
-                // Rule: Activation-Only for "None" globally
-                const vegNoneAdd = isVegActivated ? Math.max(maxNoneVeg, maxNoneShared) : 0;
-                const nvNoneAdd = isNonVegActivated ? Math.max(maxNoneNonVeg, maxNoneShared) : 0;
-
-                vegSubtotal += maxVeg + vegNoneAdd;
-                nonVegSubtotal += maxNonVeg + nvNoneAdd;
-
-                vegCount += vegItems.length + (isVegActivated ? noneItems.length : 0);
-                nonVegCount += nonVegItems.length + (isNonVegActivated ? noneItems.length : 0);
-            }
-        });
+        const vegSubtotal = maxStarter + maxVegMain + maxDessert + otherPPPrice;
+        const nonVegSubtotal = maxStarter + maxNonVegMain + maxDessert + otherPPPrice;
 
         return {
-            veg: { count: vegCount, subtotal: vegSubtotal },
-            nonVeg: { count: nonVegCount, subtotal: nonVegSubtotal }
+            veg: { 
+                subtotal: vegSubtotal, 
+                count: ppFoodItems.filter(i => i.dietaryType === 'veg' || i.dietaryType === 'vegan').length,
+                isActivated: ppFoodItems.some(i => i.dietaryType === 'veg' || i.dietaryType === 'vegan')
+            },
+            nonVeg: { 
+                subtotal: nonVegSubtotal, 
+                count: ppFoodItems.filter(i => i.dietaryType === 'non-veg').length,
+                isActivated: ppFoodItems.some(i => i.dietaryType === 'non-veg')
+            }
         };
     }, [isEditingMenu, tempMenuItems, booking?.menuItems]);
     const canViewAudit = hasPermission(userRole, Permission.VIEW_BOOKING_DETAILS);
@@ -2735,8 +2696,24 @@ export function BookingDetailPage({
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {(isEditingMenu ? tempMenuItems : booking.menuItems) && (isEditingMenu ? tempMenuItems : booking.menuItems)!.length > 0 ? (
-                                                        (isEditingMenu ? tempMenuItems : booking.menuItems)!.map((item: any, index: number) => (
+                                                    {(() => {
+                                                        const items = (isEditingMenu ? tempMenuItems : booking.menuItems) || [];
+                                                        const sortedItems = [...items].sort((a, b) => {
+                                                            const catA = (a.category || '').toLowerCase();
+                                                            const catB = (b.category || '').toLowerCase();
+                                                            
+                                                            const idxA = CATEGORY_ORDER.findIndex(c => c.toLowerCase() === catA);
+                                                            const idxB = CATEGORY_ORDER.findIndex(c => c.toLowerCase() === catB);
+                                                            
+                                                            if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+                                                            if (idxA !== -1) return -1;
+                                                            if (idxB !== -1) return 1;
+                                                            
+                                                            return catA.localeCompare(catB);
+                                                        });
+                                                        
+                                                        return sortedItems.length > 0 ? (
+                                                            sortedItems.map((item: any, index: number) => (
                                                             <tr key={item.id || item.itemId || `row-${index}`} className="border-t border-border">
                                                                 <td className="px-3 py-3 text-foreground text-xs sm:text-sm">
                                                                     <div className="flex flex-col gap-1.5 py-1">
@@ -2855,7 +2832,8 @@ export function BookingDetailPage({
                                                         ))
                                                     ) : (
                                                         <tr><td colSpan={6} className="px-3 py-6 sm:py-8 text-center text-muted-foreground text-xs sm:text-sm">{t('noItemsSelected')}</td></tr>
-                                                    )}
+                                                    );
+                                                })()}
                                                     {booking.menuItems && booking.menuItems.length > 0 && (
                                                         <tr className="border-t-2 border-border bg-muted">
                                                             <td colSpan={2} className="px-3 py-3 text-foreground text-xs sm:text-sm sm:hidden" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{t('totalAmount')}</td>

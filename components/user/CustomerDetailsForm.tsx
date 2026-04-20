@@ -15,7 +15,7 @@ interface CustomerDetailsFormProps {
 }
 
 
-export function CustomerDetailsForm({}: CustomerDetailsFormProps) {
+export function CustomerDetailsForm({ }: CustomerDetailsFormProps) {
     const t = useWizardTranslation();
     const locale = useLocale();
     const {
@@ -235,7 +235,7 @@ export function CustomerDetailsForm({}: CustomerDetailsFormProps) {
                                 <span className={(eventDetails.eventDate || eventDetails.eventTime) ? 'text-foreground' : 'text-muted-foreground'}>
                                     {(() => {
                                         if (!eventDetails.eventDate && !eventDetails.eventTime) return t('labels.eventDate');
-                                        
+
                                         let dateStr = '';
                                         if (eventDetails.eventDate) {
                                             const [y, m, d] = eventDetails.eventDate.split('-').map(Number);
@@ -267,8 +267,8 @@ export function CustomerDetailsForm({}: CustomerDetailsFormProps) {
                                 type="number"
                                 value={eventDetails.guestCount}
                                 onChange={(e) => {
-                                    setEventDetails({ 
-                                        ...eventDetails, 
+                                    setEventDetails({
+                                        ...eventDetails,
                                         guestCount: e.target.value
                                     });
                                 }}
@@ -480,39 +480,6 @@ export function CustomerDetailsForm({}: CustomerDetailsFormProps) {
                                         />
 
                                         <ValidatedInput
-                                            label={t('labels.billingBusiness')}
-                                            type="text"
-                                            value={eventDetails.billingBusiness}
-                                            onChange={(e) => {
-                                                setEventDetails({ ...eventDetails, billingBusiness: e.target.value });
-                                                if (validationErrors.billingBusiness) setValidationErrors({ ...validationErrors, billingBusiness: undefined });
-                                            }}
-                                            placeholder={t('placeholders.billingBusiness')}
-                                            maxLength={100}
-                                            showCharacterCount
-                                            error={displayErrors.billingBusiness}
-                                        />
-
-                                        <ValidatedInput
-                                            label={t('labels.billingEmail')}
-                                            type="email"
-                                            value={eventDetails.billingEmail}
-                                            onChange={(e) => {
-                                                setEventDetails({ ...eventDetails, billingEmail: e.target.value });
-                                                if (validationErrors.billingEmail) setValidationErrors({ ...validationErrors, billingEmail: undefined });
-                                            }}
-                                            onBlur={() => {
-                                                if (eventDetails.billingEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(eventDetails.billingEmail)) {
-                                                    setValidationErrors({ ...validationErrors, billingEmail: 'Please enter a valid email address' });
-                                                }
-                                            }}
-                                            placeholder={t('placeholders.billingEmail')}
-                                            maxLength={255}
-                                            showCharacterCount
-                                            error={displayErrors.billingEmail}
-                                        />
-
-                                        <ValidatedInput
                                             label={t('labels.billingPlz')}
                                             type="text"
                                             value={eventDetails.billingPlz}
@@ -553,6 +520,41 @@ export function CustomerDetailsForm({}: CustomerDetailsFormProps) {
                                             showCharacterCount
                                             error={displayErrors.billingLocation}
                                             required
+                                        />
+
+
+
+                                        <ValidatedInput
+                                            label={t('labels.billingBusiness')}
+                                            type="text"
+                                            value={eventDetails.billingBusiness}
+                                            onChange={(e) => {
+                                                setEventDetails({ ...eventDetails, billingBusiness: e.target.value });
+                                                if (validationErrors.billingBusiness) setValidationErrors({ ...validationErrors, billingBusiness: undefined });
+                                            }}
+                                            placeholder={t('placeholders.billingBusiness')}
+                                            maxLength={100}
+                                            showCharacterCount
+                                            error={displayErrors.billingBusiness}
+                                        />
+
+                                        <ValidatedInput
+                                            label={t('labels.billingEmail')}
+                                            type="email"
+                                            value={eventDetails.billingEmail}
+                                            onChange={(e) => {
+                                                setEventDetails({ ...eventDetails, billingEmail: e.target.value });
+                                                if (validationErrors.billingEmail) setValidationErrors({ ...validationErrors, billingEmail: undefined });
+                                            }}
+                                            onBlur={() => {
+                                                if (eventDetails.billingEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(eventDetails.billingEmail)) {
+                                                    setValidationErrors({ ...validationErrors, billingEmail: 'Please enter a valid email address' });
+                                                }
+                                            }}
+                                            placeholder={t('placeholders.billingEmail')}
+                                            maxLength={255}
+                                            showCharacterCount
+                                            error={displayErrors.billingEmail}
                                         />
 
                                         <ValidatedInput
