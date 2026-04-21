@@ -11,6 +11,15 @@ import {
   userEmailSchema 
 } from '@/lib/validation/schemas';
 
+const CATEGORY_ORDER = [
+  'Apéro', 'Snacks',
+  'Starter', 'Starters', 'Vorspeise', 'Vorspeisen', 
+  'Main Course', 'Main Courses', 'Hauptgang', 'Hauptgänge', 'Hauptgericht', 'Hauptgerichte', 'Menü',
+  'Dessert', 'Desserts', 'Nachspeise', 'Nachspeisen',
+  'Add-on', 'Add-ons', 'Extra', 'Extras', 'Zusatzleistung', 'Zusatzleistungen', 'Choices',
+  'Beverage', 'Beverages', 'Drink', 'Drinks', 'Getränk', 'Getränke', 'Softdrinks', 'Wein', 'Wine', 'Bier', 'Beer', 'Kaffee', 'Coffee'
+];
+
 export interface CartItem {
   id: string;
   quantity: number;
@@ -356,6 +365,18 @@ export const useWizardStore = create<WizardState>((set, get) => ({
       const data = categoryData[catName];
       if (!data) return true;
       return isVisible(data.assignedVisibilitySchedules);
+    }).sort((a, b) => {
+      const catA = a.trim();
+      const catB = b.trim();
+      
+      const idxA = CATEGORY_ORDER.findIndex(c => c.toLowerCase() === catA.toLowerCase());
+      const idxB = CATEGORY_ORDER.findIndex(c => c.toLowerCase() === catB.toLowerCase());
+      
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      
+      return catA.localeCompare(catB);
     });
   },
 

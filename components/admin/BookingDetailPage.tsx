@@ -144,11 +144,12 @@ export interface Booking {
 }
 
 const CATEGORY_ORDER = [
-    'Starters', 'Vorspeisen', 'Apéro', 'Snacks',
-    'Main Courses', 'Hauptgänge', 'Menü',
-    'Desserts',
-    'Add-ons', 'Extras', 'Zusatzleistungen', 'Choices',
-    'Beverages', 'Drinks', 'Getränke', 'Softdrinks', 'Wein', 'Wine', 'Bier', 'Beer', 'Kaffee', 'Coffee'
+    'Apéro', 'Snacks',
+    'Starter', 'Starters', 'Vorspeise', 'Vorspeisen', 
+    'Main Course', 'Main Courses', 'Hauptgang', 'Hauptgänge', 'Hauptgericht', 'Hauptgerichte', 'Menü',
+    'Dessert', 'Desserts', 'Nachspeise', 'Nachspeisen',
+    'Add-on', 'Add-ons', 'Extra', 'Extras', 'Zusatzleistung', 'Zusatzleistungen', 'Choices',
+    'Beverage', 'Beverages', 'Drink', 'Drinks', 'Getränk', 'Getränke', 'Softdrinks', 'Wein', 'Wine', 'Bier', 'Beer', 'Kaffee', 'Coffee'
 ];
 
 interface BookingComment {
@@ -2699,11 +2700,11 @@ export function BookingDetailPage({
                                                     {(() => {
                                                         const items = (isEditingMenu ? tempMenuItems : booking.menuItems) || [];
                                                         const sortedItems = [...items].sort((a, b) => {
-                                                            const catA = (a.category || '').toLowerCase();
-                                                            const catB = (b.category || '').toLowerCase();
+                                                            const catA = (a.category || '').trim();
+                                                            const catB = (b.category || '').trim();
                                                             
-                                                            const idxA = CATEGORY_ORDER.findIndex(c => c.toLowerCase() === catA);
-                                                            const idxB = CATEGORY_ORDER.findIndex(c => c.toLowerCase() === catB);
+                                                            const idxA = CATEGORY_ORDER.findIndex(c => c.toLowerCase() === catA.toLowerCase());
+                                                            const idxB = CATEGORY_ORDER.findIndex(c => c.toLowerCase() === catB.toLowerCase());
                                                             
                                                             if (idxA !== -1 && idxB !== -1) return idxA - idxB;
                                                             if (idxA !== -1) return -1;

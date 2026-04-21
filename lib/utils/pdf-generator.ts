@@ -487,7 +487,14 @@ export async function generateBookingPdf(
     { name: "Add-ons", items: finalAddons }
   ].filter(g => g.items.length > 0);
 
-  const categoryOrder = ["Vorspeisen", "Hauptgänge", "Desserts", "Snacks", "Apéro", "Menü"];
+  const categoryOrder = [
+    'Apéro', 'Snacks',
+    'Starter', 'Starters', 'Vorspeise', 'Vorspeisen', 
+    'Main Course', 'Main Courses', 'Hauptgang', 'Hauptgänge', 'Hauptgericht', 'Hauptgerichte', 'Menü',
+    'Dessert', 'Desserts', 'Nachspeise', 'Nachspeisen',
+    'Add-on', 'Add-ons', 'Extra', 'Extras', 'Zusatzleistung', 'Zusatzleistungen', 'Choices',
+    'Beverage', 'Beverages', 'Drink', 'Drinks', 'Getränk', 'Getränke', 'Softdrinks', 'Wein', 'Wine', 'Bier', 'Beer', 'Kaffee', 'Coffee'
+  ];
 
   mainGroups.forEach(group => {
     checkPageBreak(20, true);
@@ -503,10 +510,17 @@ export async function generateBookingPdf(
     yPos += 8;
 
     const sortedItemsInGroup = [...group.items].sort((a, b) => {
-      const idxA = categoryOrder.indexOf(a.category);
-      const idxB = categoryOrder.indexOf(b.category);
+      const catA = (a.category || '').trim();
+      const catB = (b.category || '').trim();
+      
+      const idxA = categoryOrder.findIndex(c => c.toLowerCase() === catA.toLowerCase());
+      const idxB = categoryOrder.findIndex(c => c.toLowerCase() === catB.toLowerCase());
+      
       if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-      return a.category.localeCompare(b.category);
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      
+      return catA.localeCompare(catB);
     });
 
     let lastCategory = "";
@@ -693,25 +707,25 @@ export async function generateBookingPdf(
 
       const lineHeight = 8;
 
-      // Veg Track
-      if (dietaryTotals.veg > 0) {
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(11);
-        doc.setTextColor(...COLORS.text);
-        doc.text("Vegetarisch Track:", margin, yPos);
-        doc.text(`CHF ${dietaryTotals.veg.toFixed(2)}`, pageWidth - margin - 60, yPos, { align: 'right' });
-        yPos += lineHeight;
-      }
-
-      // Non-Veg Track
-      if (dietaryTotals.nonVeg > 0) {
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(11);
-        doc.setTextColor(...COLORS.text);
-        doc.text("Fleisch/Fisch Track:", margin, yPos);
-        doc.text(`CHF ${dietaryTotals.nonVeg.toFixed(2)}`, pageWidth - margin - 60, yPos, { align: 'right' });
-        yPos += lineHeight;
-      }
+        // Veg Track
+        if (dietaryTotals.veg > 0) {
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(11);
+          doc.setTextColor(...COLORS.text);
+          doc.text("Vegetarische Variante:", margin, yPos);
+          doc.text(`CHF ${dietaryTotals.veg.toFixed(2)}`, pageWidth - margin - 60, yPos, { align: 'right' });
+          yPos += lineHeight;
+        }
+  
+        // Non-Veg Track
+        if (dietaryTotals.nonVeg > 0) {
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(11);
+          doc.setTextColor(...COLORS.text);
+          doc.text("Fleischvariante:", margin, yPos);
+          doc.text(`CHF ${dietaryTotals.nonVeg.toFixed(2)}`, pageWidth - margin - 60, yPos, { align: 'right' });
+          yPos += lineHeight;
+        }
 
       yPos += 2;
       doc.setDrawColor(...COLORS.border);

@@ -165,7 +165,7 @@
       "sides": "Beilagen"
     },
     "dietaryOptions": {
-      "vegetarian": "Vegetarisch",
+      "vegetarian": "Vegetarische Variante",
       "vegan": "Vegan",
       "glutenFree": "Glutenfrei",
       "nutFree": "Nussfrei",
@@ -891,9 +891,9 @@
       "dietary": {
         "none": "Keine",
         "noneDesc": "Keine spezifische Ernährungsweise",
-        "veg": "Vegetarisch",
+        "veg": "Vegetarische Variante",
         "vegDesc": "Enthält kein Fleisch",
-        "nonVeg": "Nicht-vegetarisch",
+        "nonVeg": "Fleischvariante",
         "nonVegDesc": "Enthält Fleisch oder Fisch",
         "vegan": "Vegan",
         "veganDesc": "Enthält keine tierischen Produkte",
@@ -909,8 +909,8 @@
           "local": "Lokal",
           "seasonal": "Saisonal",
           "vegan": "Vegan",
-          "veg": "Vegetarisch",
-          "nonVeg": "Nicht-vegetarisch"
+          "veg": "Vegetarische Variante",
+          "nonVeg": "Fleischvariante"
         },
         "allergens": {
           "gluten": "Gluten",
@@ -1133,8 +1133,8 @@
     },
     "labels": {
       "filter": "Filter",
-      "vegTrackTotal": "Vegetarisch Track Gesamt",
-      "nonVegTrackTotal": "Fleisch/Fisch Track Gesamt",
+      "vegTrackTotal": "Vegetarische Variante",
+      "nonVegTrackTotal": "Fleischvariante",
       "billingDetails": "Rechnungsdetails",
       "address": "Adresse",
       "eventDetails": "Event-Details",
@@ -1200,8 +1200,8 @@
       "items": "Artikel"
     },
     "dietary": {
-      "veg": "Vegetarisch",
-      "nonVeg": "Nicht vegetarisch",
+      "veg": "Vegetarische Variante",
+      "nonVeg": "Fleischvariante",
       "vegan": "Vegan",
       "clear": "Filter löschen"
     },
