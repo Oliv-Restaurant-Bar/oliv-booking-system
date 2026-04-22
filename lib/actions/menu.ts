@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { menuCategories, menuItems, menuItemDependencies, addons, addonGroups, addonItems, categoryAddonGroups, itemAddonGroups, visibilitySchedules, categoryVisibilitySchedules, itemVisibilitySchedules } from "@/lib/db/schema";
-import { eq, asc, and, isNull } from "drizzle-orm";
+import { eq, asc, desc, and, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
 import { requireAuth, requirePermissionWrapper } from "@/lib/auth/rbac-middleware";
@@ -210,7 +210,8 @@ export async function createMenuItem(input: {
       'additives',
       'nutritionalInfo',
       'sortOrder',
-      'internalCost'
+      'internalCost',
+      'isRecommended'
     ];
 
     const sanitizedInput: any = {};
@@ -273,7 +274,8 @@ export async function updateMenuItem(id: string, updates: Partial<typeof menuIte
       'additives',
       'nutritionalInfo',
       'sortOrder',
-      'internalCost'
+      'internalCost',
+      'isRecommended'
     ];
 
     const sanitizedUpdates: any = {};
@@ -367,7 +369,7 @@ export async function getMenuItems(categoryId?: string) {
       .select()
       .from(menuItems)
       .where(and(...conditions))
-      .orderBy(asc(menuItems.sortOrder));
+      .orderBy(desc(menuItems.isRecommended), asc(menuItems.sortOrder));
 
     const mappedItems = items.map(item => ({
       ...item,

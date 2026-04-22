@@ -288,6 +288,7 @@ export const menuItems = pgTable(
       sodium: string;
     }>(),
     sortOrder: integer("sort_order").notNull().default(0),
+    isRecommended: boolean("is_recommended").notNull().default(false),
     deletedAt: timestamp("deleted_at"),  // Soft delete timestamp
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),

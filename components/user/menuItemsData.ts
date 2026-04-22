@@ -51,4 +51,5 @@ export interface MenuItem {
   };
   sortOrder?: number;
   assignedVisibilitySchedules?: string[];
+  isRecommended?: boolean;
 }

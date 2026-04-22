@@ -11,14 +11,7 @@ import {
   userEmailSchema 
 } from '@/lib/validation/schemas';
 
-const CATEGORY_ORDER = [
-  'Apéro', 'Snacks',
-  'Starter', 'Starters', 'Vorspeise', 'Vorspeisen', 
-  'Main Course', 'Main Courses', 'Hauptgang', 'Hauptgänge', 'Hauptgericht', 'Hauptgerichte', 'Menü',
-  'Dessert', 'Desserts', 'Nachspeise', 'Nachspeisen',
-  'Add-on', 'Add-ons', 'Extra', 'Extras', 'Zusatzleistung', 'Zusatzleistungen', 'Choices',
-  'Beverage', 'Beverages', 'Drink', 'Drinks', 'Getränk', 'Getränke', 'Softdrinks', 'Wein', 'Wine', 'Bier', 'Beer', 'Kaffee', 'Coffee'
-];
+
 
 export interface CartItem {
   id: string;
@@ -63,7 +56,8 @@ interface WizardState {
   categoryData: Record<string, { 
     guestCount: boolean; 
     useSpecialCalculation: boolean; 
-    assignedVisibilitySchedules: string[] 
+    assignedVisibilitySchedules: string[];
+    sortOrder: number;
   }>;
   visibilitySchedules: VisibilitySchedule[];
   validationErrors: Record<string, string | undefined>;
@@ -338,6 +332,13 @@ export const useWizardStore = create<WizardState>((set, get) => ({
       const catData = categoryData[item.category];
       if (catData && !isVisible(catData.assignedVisibilitySchedules)) return false;
       return true;
+    }).sort((a, b) => {
+      // First sort by isRecommended (descending - true first)
+      if (a.isRecommended !== b.isRecommended) {
+        return a.isRecommended ? -1 : 1;
+      }
+      // Then sort by sortOrder (ascending)
+      return (a.sortOrder || 0) - (b.sortOrder || 0);
     });
   },
 
@@ -366,17 +367,9 @@ export const useWizardStore = create<WizardState>((set, get) => ({
       if (!data) return true;
       return isVisible(data.assignedVisibilitySchedules);
     }).sort((a, b) => {
-      const catA = a.trim();
-      const catB = b.trim();
-      
-      const idxA = CATEGORY_ORDER.findIndex(c => c.toLowerCase() === catA.toLowerCase());
-      const idxB = CATEGORY_ORDER.findIndex(c => c.toLowerCase() === catB.toLowerCase());
-      
-      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-      if (idxA !== -1) return -1;
-      if (idxB !== -1) return 1;
-      
-      return catA.localeCompare(catB);
+      const dataA = categoryData[a];
+      const dataB = categoryData[b];
+      return (dataA?.sortOrder || 0) - (dataB?.sortOrder || 0);
     });
   },
 
@@ -437,7 +430,7 @@ export const useWizardStore = create<WizardState>((set, get) => ({
   },
 
   getDietaryPerPersonTotals: () => {
-    const { cart } = get();
+    const { cart, categoryData } = get();
     const visibleItems = get().getVisibleMenuItems();
     
     const ppItems = Object.keys(cart)
@@ -448,28 +441,44 @@ export const useWizardStore = create<WizardState>((set, get) => ({
       })
       .filter((i): i is any => i !== null);
 
-    const getHighestPrice = (categoryNames: string[], dietaryFilter?: (d: string) => boolean) => {
-      const filtered = ppItems.filter(i => {
-        const matchesCategory = categoryNames.some(cn => (i.category || '').toLowerCase() === cn.toLowerCase());
-        const matchesDietary = dietaryFilter ? dietaryFilter(i.dietaryType || 'none') : true;
-        return matchesCategory && matchesDietary;
-      });
-      return filtered.length > 0 ? Math.max(...filtered.map(i => i.price)) : 0;
-    };
+    let vegTotal = 0;
+    let nonVegTotal = 0;
 
-    const maxStarter = getHighestPrice(['Starters', 'Vorspeisen']);
-    const maxVegMain = getHighestPrice(['Main Courses', 'Hauptgänge', 'Menü'], (d) => d === 'veg' || d === 'vegan');
-    const maxNonVegMain = getHighestPrice(['Main Courses', 'Hauptgänge', 'Menü'], (d) => d === 'non-veg');
-    const maxDessert = getHighestPrice(['Desserts']);
+    // Group items by category
+    const itemsByCat: Record<string, typeof ppItems> = {};
+    ppItems.forEach(item => {
+      const cat = item.category || 'Uncategorized';
+      if (!itemsByCat[cat]) itemsByCat[cat] = [];
+      itemsByCat[cat].push(item);
+    });
 
-    // Any other per-person items that are NOT in the special categories
-    const otherPPPrice = ppItems
-      .filter(i => !['Starters', 'Vorspeisen', 'Main Courses', 'Hauptgänge', 'Menü', 'Desserts'].includes(i.category))
-      .reduce((sum, i) => sum + i.price, 0);
+    Object.entries(itemsByCat).forEach(([catName, items]) => {
+      const isSpecial = categoryData[catName]?.useSpecialCalculation;
+
+      if (isSpecial) {
+        // Shared category (e.g. Starters, Desserts): take highest price and apply to all
+        const maxPrice = items.length > 0 ? Math.max(...items.map(i => i.price)) : 0;
+        vegTotal += maxPrice;
+        nonVegTotal += maxPrice;
+      } else {
+        // Normal category (e.g. Main Courses): sum prices by dietary track
+        // 'none' applies to both tracks
+        const vegSum = items
+          .filter(i => ['veg', 'vegan', 'none'].includes(i.dietaryType))
+          .reduce((sum, i) => sum + i.price, 0);
+          
+        const nonVegSum = items
+          .filter(i => ['non-veg', 'none'].includes(i.dietaryType))
+          .reduce((sum, i) => sum + i.price, 0);
+
+        vegTotal += vegSum;
+        nonVegTotal += nonVegSum;
+      }
+    });
 
     return {
-      veg: maxStarter + maxVegMain + maxDessert + otherPPPrice,
-      nonVeg: maxStarter + maxNonVegMain + maxDessert + otherPPPrice
+      veg: vegTotal,
+      nonVeg: nonVegTotal
     };
   },
 

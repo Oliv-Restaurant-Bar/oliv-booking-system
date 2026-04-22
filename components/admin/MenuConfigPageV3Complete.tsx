@@ -263,6 +263,7 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
     },
     assignedAddonGroups: [] as string[],
     assignedVisibilitySchedules: [] as string[],
+    isRecommended: false,
   });
   const [menuItemErrors, setMenuItemErrors] = useState<{ name?: string; description?: string }>({});
   const [menuItemTouched, setMenuItemTouched] = useState({ name: false, description: false });
@@ -450,6 +451,7 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
       assignedAddonGroups: newMenuItem.assignedAddonGroups,
       assignedVisibilitySchedules: newMenuItem.assignedVisibilitySchedules,
       variants: newMenuItem.variants,
+      isRecommended: newMenuItem.isRecommended,
     };
 
     if (editingMenuItemId) {
@@ -952,7 +954,7 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
                       setEditingMenuItemId(null);
                       setNewMenuItem({
                         name: '', description: '', price: '', internalCost: '', pricingType: 'per_person', averageConsumption: '',
-                        image: null, imageUrl: '', isActive: true, variants: [], assignedAddonGroups: [], assignedVisibilitySchedules: [],
+                        image: null, imageUrl: '', isActive: true, isRecommended: false, variants: [], assignedAddonGroups: [], assignedVisibilitySchedules: [],
                         dietaryType: 'veg', dietaryTags: [], ingredients: '', allergens: [], additives: [],
                         nutritionalInfo: { servingSize: '', calories: '', protein: '', carbs: '', fat: '', fiber: '', sugar: '', sodium: '' }
                       });
@@ -974,6 +976,7 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
                         variants: item.variants || [],
                         assignedAddonGroups: item.assignedAddonGroups || [],
                         assignedVisibilitySchedules: (item as any).assignedVisibilitySchedules || [],
+                        isRecommended: !!item.isRecommended,
                         nutritionalInfo: (item as any).nutritionalInfo || { servingSize: '', calories: '', protein: '', carbs: '', fat: '', fiber: '', sugar: '', sodium: '' }
                       });
                       setShowItemSettings(false);

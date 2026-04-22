@@ -26,6 +26,7 @@ export interface MenuItemData {
   };
   assignedAddonGroups?: string[];
   assignedVisibilitySchedules?: string[];
+  isRecommended: boolean;
 }
 
 export interface VariantOption {

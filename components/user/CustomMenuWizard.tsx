@@ -289,6 +289,7 @@ export function CustomMenuWizard({
             }).filter(Boolean);
           })(),
           sortOrder: item.sortOrder || 0,
+          isRecommended: !!item.isRecommended,
           assignedVisibilitySchedules: item.assignedVisibilitySchedules || [],
         };
       });
@@ -323,19 +324,21 @@ export function CustomMenuWizard({
     const categoryDataMap: Record<string, { 
       guestCount: boolean; 
       useSpecialCalculation: boolean; 
-      assignedVisibilitySchedules: string[] 
+      assignedVisibilitySchedules: string[];
+      sortOrder: number;
     }> = {};
     categoriesWithActiveItems.forEach((cat: any) => {
       categoryDataMap[cat.name] = {
         guestCount: cat.guestCount || false,
         useSpecialCalculation: !!cat.useSpecialCalculation,
         assignedVisibilitySchedules: cat.assignedVisibilitySchedules || [],
+        sortOrder: cat.sortOrder || 0,
       };
     });
     
     // Add default data for addon categories
     if (addonItems.length > 0 && !categoryDataMap['Add-ons']) {
-      categoryDataMap['Add-ons'] = { guestCount: false, useSpecialCalculation: false, assignedVisibilitySchedules: [] };
+      categoryDataMap['Add-ons'] = { guestCount: false, useSpecialCalculation: false, assignedVisibilitySchedules: [], sortOrder: 1000 };
     }
 
     setMenuData({

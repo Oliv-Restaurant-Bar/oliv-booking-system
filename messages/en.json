@@ -804,7 +804,8 @@
         "dietaryType": "Dietary Type",
         "available": "Available",
         "useSpecialCalculation": "Special Calculation",
-        "visibilityOptions": "Visibility Options"
+        "visibilityOptions": "Visibility Options",
+        "recommended": "Recommended"
       },
       "nutrition": {
         "servingSize": "Serving Size",
@@ -1190,7 +1191,8 @@
       "comboPack": "Combo Pack",
       "singleItems": "Single Items",
       "selectMany": "Select as many items as you like from each category",
-      "items": "items"
+      "items": "items",
+      "recommended": "Recommended"
     },
     "dietary": {
       "veg": "Vegetarian",

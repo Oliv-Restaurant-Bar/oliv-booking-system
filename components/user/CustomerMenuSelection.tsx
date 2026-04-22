@@ -1,7 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingCart, Users, Lock, Check, Plus, X, AlertTriangle, ChevronLeft, ChevronRight, Search, Edit2, Filter } from 'lucide-react';
+import { ShoppingCart, Users, Lock, Check, Plus, X, AlertTriangle, ChevronLeft, ChevronRight, Search, Edit2, Filter, Star } from 'lucide-react';
 import { MenuItem } from './menuItemsData';
 import { EventDetails } from '@/lib/types';
 import { DietaryIcon } from './DietaryIcon';
@@ -180,8 +180,8 @@ export function CustomerMenuSelection({
                   <button
                     onClick={() => setIsFilterOpen(!isFilterOpen)}
                     className={`h-[42px] px-4 flex items-center gap-2 rounded-full border transition-all cursor-pointer ${selectedDietary
-                        ? "bg-[#9dae91]/10 border-[#9dae91] text-[#2c2f34]"
-                        : "bg-white border-[#e5e7eb] text-[#6b7280] hover:border-[#9ca3af]"
+                      ? "bg-[#9dae91]/10 border-[#9dae91] text-[#2c2f34]"
+                      : "bg-white border-[#e5e7eb] text-[#6b7280] hover:border-[#9ca3af]"
                       }`}
                   >
                     <Filter className={`w-4 h-4 ${selectedDietary ? "text-[#9dae91]" : "text-[#9ca3af]"}`} />
@@ -357,6 +357,12 @@ export function CustomerMenuSelection({
                                       </div>
                                     )}
                                     <h3 className="font-semibold text-[14px] text-[#2c2f34] truncate">{item.name}</h3>
+                                    {item.isRecommended && (
+                                      <span className="px-1.5 py-0.5 bg-primary text-primary-foreground rounded flex items-center gap-1 border border-primary" style={{ fontSize: '10px', fontWeight: 'var(--font-weight-bold)' }}>
+                                        <Star className="w-2.5 h-2.5 fill-current" />
+                                        {t('labels.recommended').toUpperCase()}
+                                      </span>
+                                    )}
                                     {isSelected && (
                                       <div className="shrink-0 size-[18px] rounded-full bg-[#9dae91] flex items-center justify-center">
                                         <Check className="w-2.5 h-2.5 text-white" />

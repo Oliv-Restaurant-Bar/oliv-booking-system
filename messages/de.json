@@ -804,7 +804,8 @@
         "dietaryType": "Ernährungsweise",
         "available": "Verfügbar",
         "useSpecialCalculation": "Spezielle Berechnung",
-        "visibilityOptions": "Sichtbarkeitseinstellungen"
+        "visibilityOptions": "Sichtbarkeitseinstellungen",
+        "recommended": "Empfohlen"
       },
       "nutrition": {
         "servingSize": "Portionsgröße",
@@ -1197,7 +1198,8 @@
       "comboPack": "Kombipaket",
       "singleItems": "Einzelne Artikel",
       "selectMany": "Wählen Sie so viele Artikel aus jeder Kategorie, wie Sie möchten",
-      "items": "Artikel"
+      "items": "Artikel",
+      "recommended": "Empfohlen"
     },
     "dietary": {
       "veg": "Vegetarische Variante",

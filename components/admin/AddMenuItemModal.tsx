@@ -9,6 +9,7 @@ import { useMenuConfigTranslation, useCommonTranslation } from '@/lib/i18n/clien
 import { useDateFormat } from '@/lib/contexts/SystemSettingsContext';
 import { Category, AddonGroup, VisibilitySchedule } from '@/lib/types';
 import { dietaryTagOptions, allergenOptions, additiveOptions } from '@/lib/constants';
+import { NativeCheckbox } from '@/components/ui/NativeCheckbox';
 
 interface AddMenuItemModalProps {
   isOpen: boolean;
@@ -45,6 +46,7 @@ interface AddMenuItemModalProps {
     };
     assignedAddonGroups: string[];
     assignedVisibilitySchedules: string[];
+    isRecommended: boolean;
   };
   setNewMenuItem: (item: any) => void;
   pricingMode: 'price' | 'variants';
@@ -402,6 +404,18 @@ export function AddMenuItemModal({
             </div>
           </div>
         )}
+
+        <div className="flex items-center gap-2 mt-4">
+          <NativeCheckbox
+            id="itemRecommended"
+            checked={newMenuItem.isRecommended}
+            onChange={(e) => setNewMenuItem({ ...newMenuItem, isRecommended: e.target.checked })}
+            className="cursor-pointer"
+          />
+          <label htmlFor="itemRecommended" className="text-foreground cursor-pointer" style={{ fontSize: 'var(--text-base)' }}>
+            Ich habe dem Kunden diesen Artikel empfohlen.
+          </label>
+        </div>
 
         {pricingMode === 'variants' && (
           <div>
@@ -1052,12 +1066,11 @@ export function AddMenuItemModal({
         </div>
 
         <div className="flex items-center gap-2 pt-2 border-t border-border mt-2">
-          <input
-            type="checkbox"
+          <NativeCheckbox
             id="itemActive"
             checked={newMenuItem.isActive}
             onChange={(e) => setNewMenuItem({ ...newMenuItem, isActive: e.target.checked })}
-            className="w-4 h-4 rounded border-border"
+            className="cursor-pointer"
           />
           <label htmlFor="itemActive" className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
             {t('labels.itemIsActive')}

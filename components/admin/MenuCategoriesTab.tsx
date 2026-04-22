@@ -1,6 +1,6 @@
 'use client';
 
-import { Search, Plus, GripVertical, ChevronDown, ChevronRight, Edit2, ListPlus, MoreVertical, Copy, EyeOff, Eye, Trash2, Settings, Calendar } from 'lucide-react';
+import { Search, Plus, GripVertical, ChevronDown, ChevronRight, Edit2, ListPlus, MoreVertical, Copy, EyeOff, Eye, Trash2, Settings, Calendar, Star } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
@@ -438,6 +438,12 @@ export function MenuCategoriesTab({
                                           <DietaryIcon type={item.dietaryType as any} size="sm" />
                                         )}
                                         <span className="text-ellipsis overflow-hidden whitespace-nowrap">{item.name.slice(0, 25)} {item.name.length > 25 ? '...' : ''}</span>
+                                        {item.isRecommended && (
+                                          <span className="px-1.5 py-0.5 bg-primary text-primary-foreground rounded flex items-center gap-1 border border-primary" style={{ fontSize: '10px', fontWeight: 'var(--font-weight-bold)' }}>
+                                            <Star className="w-2.5 h-2.5 fill-current" />
+                                            {t('labels.recommended').toUpperCase()}
+                                          </span>
+                                        )}
                                       </h5>
                                       <p className="text-muted-foreground line-clamp-1" style={{ fontSize: 'var(--text-small)' }} title={item.description}>
                                         {item.description}
