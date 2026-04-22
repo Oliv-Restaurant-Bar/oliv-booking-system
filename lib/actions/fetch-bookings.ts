@@ -65,8 +65,19 @@ export async function fetchBookings(options: {
         b.internal_notes,
         b.estimated_total,
         b.status,
-        b.location,
-        b.room,
+        b.street,
+        b.plz,
+        b.business,
+        b.occasion,
+        b.reference,
+        b.payment_method,
+        b.use_same_address_for_billing,
+        b.billing_street,
+        b.billing_plz,
+        b.billing_location,
+        b.billing_business,
+        b.billing_email,
+        b.billing_reference,
         b.created_at,
         b.is_locked,
         b.assigned_to,
@@ -168,18 +179,20 @@ export async function fetchBookings(options: {
         return match ? match[1].replace('N/A', '').trim() : '';
       };
 
-      const business = extractField('Business');
-      const street = extractField('Street');
-      const plz = extractField('PLZ');
-      const location = extractField('Location');
-      const reference = extractField('Reference');
-      const occasion = extractField('Occasion');
-      const paymentMethod = extractField('Payment Method');
+      const business = booking.business || extractField('Business');
+      const street = booking.street || extractField('Street');
+      const plz = booking.plz || extractField('PLZ');
+      const location = booking.location || extractField('Location');
+      const reference = booking.reference || extractField('Reference');
+      const occasion = booking.occasion || extractField('Occasion');
+      const paymentMethod = booking.payment_method || extractField('Payment Method');
       const billingAddress = extractField('Billing Address');
-      const billingStreet = extractField('Billing Street');
-      const billingPlz = extractField('Billing PLZ');
-      const billingLocation = extractField('Billing Location');
-      const billingReference = extractField('Billing Reference');
+      const billingStreet = booking.billing_street || extractField('Billing Street');
+      const billingPlz = booking.billing_plz || extractField('Billing PLZ');
+      const billingLocation = booking.billing_location || extractField('Billing Location');
+      const billingBusiness = booking.billing_business || extractField('Billing Company') || extractField('Billing Business');
+      const billingEmail = booking.billing_email || extractField('Billing Email');
+      const billingReference = booking.billing_reference || extractField('Billing Reference');
 
       // Extract menu selection from internal notes for display in notes
       const menuMatch = internalNotes.match(/Menu Selection: ([^\n]+)/);
@@ -209,6 +222,8 @@ export async function fetchBookings(options: {
         billingStreet: billingStreet,
         billingPlz: billingPlz,
         billingLocation: billingLocation,
+        billingBusiness: billingBusiness,
+        billingEmail: billingEmail,
         billingReference: billingReference,
         paymentMethod: paymentMethod,
         room: booking.room || '',

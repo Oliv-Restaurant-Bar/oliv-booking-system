@@ -1052,8 +1052,8 @@ export function BookingDetailPage({
             billingStreet: booking.billingStreet || '',
             billingPlz: booking.billingPlz || '',
             billingLocation: booking.billingLocation || '',
-            billingBusiness: (booking as any).billingBusiness || '',
-            billingEmail: (booking as any).billingEmail || '',
+            billingBusiness: booking.billingBusiness || '',
+            billingEmail: booking.billingEmail || '',
             billingReference: booking.billingReference || '',
             paymentMethod: booking.paymentMethod || ''
         });
@@ -1078,8 +1078,8 @@ export function BookingDetailPage({
             billingStreet: booking.billingStreet || '',
             billingPlz: booking.billingPlz || '',
             billingLocation: booking.billingLocation || '',
-            billingBusiness: (booking as any).billingBusiness || '',
-            billingEmail: (booking as any).billingEmail || '',
+            billingBusiness: booking.billingBusiness || '',
+            billingEmail: booking.billingEmail || '',
             billingReference: booking.billingReference || '',
             paymentMethod: booking.paymentMethod || ''
         });
@@ -1104,8 +1104,8 @@ export function BookingDetailPage({
             billingStreet: booking.billingStreet || '',
             billingPlz: booking.billingPlz || '',
             billingLocation: booking.billingLocation || '',
-            billingBusiness: (booking as any).billingBusiness || '',
-            billingEmail: (booking as any).billingEmail || '',
+            billingBusiness: booking.billingBusiness || '',
+            billingEmail: booking.billingEmail || '',
             billingReference: booking.billingReference || '',
             paymentMethod: booking.paymentMethod || ''
         });
@@ -1130,6 +1130,8 @@ export function BookingDetailPage({
             newInternalNotes = updateFieldInNotes(newInternalNotes, 'PLZ', tempCustomer.plz);
             newInternalNotes = updateFieldInNotes(newInternalNotes, 'Location', tempCustomer.location);
             newInternalNotes = updateFieldInNotes(newInternalNotes, 'Reference', tempCustomer.reference);
+            newInternalNotes = updateFieldInNotes(newInternalNotes, 'Billing Company', tempCustomer.billingBusiness);
+            newInternalNotes = updateFieldInNotes(newInternalNotes, 'Billing Email', tempCustomer.billingEmail);
             newInternalNotes = updateFieldInNotes(newInternalNotes, 'Billing Reference', tempCustomer.billingReference);
             newInternalNotes = updateFieldInNotes(newInternalNotes, 'Payment Method', tempCustomer.paymentMethod);
 
@@ -2539,11 +2541,11 @@ export function BookingDetailPage({
                                                     )}
                                                 </div>
                                             ) : (
-                                                <div className="grid grid-cols-1 gap-6">
-                                                    <div className="space-y-1">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    <div className="sm:col-span-2 space-y-1">
                                                         <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.paymentOption')}</label>
-                                                        <div className="flex items-center gap-3 p-3 bg-muted/20 border border-border rounded-lg">
-                                                            <div className={`w-3 h-3 rounded-full bg-primary`} />
+                                                        <div className="flex items-center gap-2 py-1.5">
+                                                            <div className={`w-2 h-2 rounded-full bg-primary`} />
                                                             <span className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>
                                                                 {booking.paymentMethod === 'on_bill' ? (wizardT('labels.onInvoice')) :
                                                                     (wizardT('labels.ecCard') || 'EC-Karte / Karte vor Ort')}
@@ -2552,56 +2554,44 @@ export function BookingDetailPage({
                                                     </div>
 
                                                     {booking.paymentMethod === 'on_bill' && (
-                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                            <div className="sm:col-span-2 space-y-2">
+                                                        <>
+                                                            <div className="sm:col-span-2 space-y-1">
                                                                 <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.street')}</label>
-                                                                <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
-                                                                    <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                                                        {(booking as any).billingStreet || '-'}
-                                                                    </p>
-                                                                </div>
+                                                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>
+                                                                    {(booking as any).billingStreet || '-'}
+                                                                </p>
                                                             </div>
-                                                            <div className="space-y-2">
+                                                            <div className="space-y-1">
                                                                 <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.plz')}</label>
-                                                                <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
-                                                                    <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                                                        {(booking as any).billingPlz || '-'}
-                                                                    </p>
-                                                                </div>
+                                                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>
+                                                                    {(booking as any).billingPlz || '-'}
+                                                                </p>
                                                             </div>
-                                                            <div className="space-y-2">
+                                                            <div className="space-y-1">
                                                                 <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.location')}</label>
-                                                                <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
-                                                                    <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                                                        {(booking as any).billingLocation || '-'}
-                                                                    </p>
-                                                                </div>
+                                                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>
+                                                                    {booking.billingLocation || '-'}
+                                                                </p>
                                                             </div>
-                                                            <div className="space-y-2">
+                                                            <div className="space-y-1">
                                                                 <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.billingBusiness')}</label>
-                                                                <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
-                                                                    <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                                                        {(booking as any).billingBusiness || '-'}
-                                                                    </p>
-                                                                </div>
+                                                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>
+                                                                    {booking.billingBusiness || '-'}
+                                                                </p>
                                                             </div>
-                                                            <div className="space-y-2">
+                                                            <div className="space-y-1">
                                                                 <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.billingEmail')}</label>
-                                                                <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
-                                                                    <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                                                        {(booking as any).billingEmail || '-'}
-                                                                    </p>
-                                                                </div>
+                                                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>
+                                                                    {booking.billingEmail || '-'}
+                                                                </p>
                                                             </div>
-                                                            <div className="space-y-2 sm:col-span-2">
+                                                            <div className="space-y-1 sm:col-span-2">
                                                                 <label className="text-muted-foreground block" style={{ fontSize: 'var(--text-small)' }}>{wizardT('labels.reference')}</label>
-                                                                <div className="p-3 bg-background border border-border rounded-lg min-h-[45px]">
-                                                                    <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
-                                                                        {booking.billingReference || '-'}
-                                                                    </p>
-                                                                </div>
+                                                                <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>
+                                                                    {booking.billingReference || '-'}
+                                                                </p>
                                                             </div>
-                                                        </div>
+                                                        </>
                                                     )}
                                                 </div>
                                             )}

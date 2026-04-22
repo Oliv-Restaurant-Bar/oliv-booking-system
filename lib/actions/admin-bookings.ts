@@ -24,7 +24,8 @@ export async function getBookingDetailAction(id: string) {
         b.estimated_total, b.status, b.location, b.street, b.plz,
         b.business, b.occasion, b.reference, b.payment_method,
         b.use_same_address_for_billing, b.billing_street, b.billing_plz,
-        b.billing_location, b.billing_reference, b.created_at,
+        b.billing_location, b.billing_business, b.billing_email, 
+        b.billing_reference, b.created_at,
         b.is_locked, b.assigned_to, b.kitchen_notes, b.edit_secret,
         b.room, l.contact_name, l.contact_email, l.contact_phone,
         a.name as assigned_to_name, a.email as assigned_to_email
@@ -158,6 +159,8 @@ export async function getBookingDetailAction(id: string) {
       billingStreet: booking.billing_street || '',
       billingPlz: booking.billing_plz || '',
       billingLocation: booking.billing_location || '',
+      billingBusiness: booking.billing_business || '',
+      billingEmail: booking.billing_email || '',
       billingReference: booking.billing_reference || '',
       paymentMethod: booking.payment_method || 'ec_card',
       event: {

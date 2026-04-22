@@ -26,9 +26,10 @@ import {
 interface DietaryIconProps {
   type: string;
   size?: 'xs' | 'sm' | 'md';
+  className?: string;
 }
 
-export function DietaryIcon({ type, size = 'md' }: DietaryIconProps) {
+export function DietaryIcon({ type, size = 'md', className }: DietaryIconProps) {
   // Normalize types from various potential sources
   const normalizedType = type.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
 
@@ -38,7 +39,7 @@ export function DietaryIcon({ type, size = 'md' }: DietaryIconProps) {
   // Neutral type for "None"
   if (normalizedType === 'none') {
     return (
-      <div className="flex items-center gap-1">
+      <div className={`flex items-center gap-1 ${className || ''}`}>
         <div className={`${sizeClass} rounded-sm border-[1.5px] border-slate-300 flex items-center justify-center flex-shrink-0`}>
           <div className={`${dotClass} rounded-full bg-slate-100`}></div>
         </div>
@@ -49,7 +50,7 @@ export function DietaryIcon({ type, size = 'md' }: DietaryIconProps) {
   // Primary types with circular shapes (Standard food labels)
   if (normalizedType === 'vegetarian' || normalizedType === 'veg') {
     return (
-      <div className="flex items-center gap-1">
+      <div className={`flex items-center gap-1 ${className || ''}`}>
         <div className={`${sizeClass} rounded-sm border-[1.5px] border-green-600 flex items-center justify-center flex-shrink-0`}>
           <div className={`${dotClass} rounded-full bg-green-600`}></div>
         </div>
@@ -59,7 +60,7 @@ export function DietaryIcon({ type, size = 'md' }: DietaryIconProps) {
 
   if (normalizedType === 'nonvegetarian' || normalizedType === 'nonveg') {
     return (
-      <div className="flex items-center gap-1">
+      <div className={`flex items-center gap-1 ${className || ''}`}>
         <div className={`${sizeClass} rounded-sm border-[1.5px] border-red-600 flex items-center justify-center flex-shrink-0`}>
           <div className={`${dotClass} rounded-full bg-red-600`}></div>
         </div>
@@ -114,7 +115,7 @@ export function DietaryIcon({ type, size = 'md' }: DietaryIconProps) {
 
   const Icon = IconConfig.icon;
   return (
-    <div className="flex items-center gap-1">
+    <div className={`flex items-center gap-1 ${className || ''}`}>
       <Icon className={`${sizeClass} ${IconConfig.color} flex-shrink-0`} />
     </div>
   );

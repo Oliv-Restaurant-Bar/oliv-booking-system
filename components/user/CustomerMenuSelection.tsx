@@ -261,7 +261,7 @@ export function CustomerMenuSelection({
                         key={category}
                         ref={(el) => { categoryRefs.current[category] = el; }}
                         onClick={() => handleTabClick(category)}
-                        className={`h-[36px] px-4 rounded-[10px] flex items-center shrink-0 transition-all cursor-pointer ${isActive
+                        className={`h-[36px] px-4 rounded-lg flex items-center shrink-0 transition-all cursor-pointer ${isActive
                           ? "bg-[#9dae91] text-[#2c2f34]"
                           : "bg-transparent text-[#9ca3af] hover:text-[#2c2f34]"
                           }`}
@@ -334,10 +334,16 @@ export function CustomerMenuSelection({
                           return (
                             <div
                               key={item.id}
-                              className={`bg-white rounded-[16px] border overflow-hidden flex flex-row h-[140px] transition-all hover:shadow-md cursor-pointer group ${isSelected ? "border-[#9dae91] shadow-[0_0_0_1px_#9dae91]" : "border-[#e5e7eb]"
+                              className={`bg-white rounded-[16px] border overflow-hidden flex flex-row h-[155px] transition-all hover:shadow-md cursor-pointer group relative ${isSelected ? "border-[#9dae91] shadow-[0_0_0_1px_#9dae91]" : "border-[#e5e7eb]"
                                 }`}
                               onClick={() => setDetailsModalItem(item)}
                             >
+                              {item.isRecommended && (
+                                <div className="absolute top-0 right-0 z-[5] px-2 py-1 bg-[#9dae91] text-[#2c2f34] text-sm font-medium tracking-wider rounded-bl-[12px] flex items-center gap-1 shadow-sm">
+                                  <Star className="w-2.5 h-2.5 fill-[#2c2f34]" />
+                                  {t('labels.recommended')}
+                                </div>
+                              )}
                               {item.image && (
                                 <div className="w-[140px] shrink-0 bg-[#f3f4f6] overflow-hidden relative">
                                   <Image
@@ -348,28 +354,24 @@ export function CustomerMenuSelection({
                                   />
                                 </div>
                               )}
-                              <div className="flex-1 flex flex-col justify-between min-w-0 px-[16px] py-[16px]">
-                                <div>
-                                  <div className="flex items-center gap-2 mb-1">
-                                    {item.dietaryType !== 'none' && (
-                                      <div className="shrink-0">
-                                        <DietaryIcon type={item.dietaryType} size="sm" />
-                                      </div>
-                                    )}
-                                    <h3 className="font-semibold text-[14px] text-[#2c2f34] truncate">{item.name}</h3>
-                                    {item.isRecommended && (
-                                      <span className="px-1.5 py-0.5 bg-primary text-primary-foreground rounded flex items-center gap-1 border border-primary" style={{ fontSize: '10px', fontWeight: 'var(--font-weight-bold)' }}>
-                                        <Star className="w-2.5 h-2.5 fill-current" />
-                                        {t('labels.recommended').toUpperCase()}
-                                      </span>
-                                    )}
-                                    {isSelected && (
-                                      <div className="shrink-0 size-[18px] rounded-full bg-[#9dae91] flex items-center justify-center">
-                                        <Check className="w-2.5 h-2.5 text-white" />
-                                      </div>
-                                    )}
+                              <div className="flex-1 flex flex-col justify-between min-w-0 px-5 py-5">
+                                <div className="pr-[90px]">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      {item.dietaryType !== 'none' && (
+                                        <div className="shrink-0">
+                                          <DietaryIcon type={item.dietaryType} size="sm" />
+                                        </div>
+                                      )}
+                                      <h3 className="font-semibold text-base text-[#2c2f34] truncate leading-tight">{item.name}</h3>
+                                      {isSelected && (
+                                        <div className="shrink-0 size-[18px] rounded-full bg-[#9dae91] flex items-center justify-center">
+                                          <Check className="w-2.5 h-2.5 text-white" />
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                                  <p className="font-normal text-[12px] text-[#6b7280] line-clamp-2 leading-[1.3]">{item.description}</p>
+                                  <p className="font-normal mt-1.5 text-xs text-[#6b7280] line-clamp-2 leading-relaxed">{item.description}</p>
                                 </div>
                                 <div className="flex items-center justify-between">
                                   <div className="flex flex-col">
@@ -385,14 +387,14 @@ export function CustomerMenuSelection({
                                     <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                                       <button
                                         onClick={() => setDetailsModalItem(item)}
-                                        className="size-[32px] rounded-[10px] border border-[#e5e7eb] flex items-center justify-center cursor-pointer hover:bg-[#f9fafb] transition-colors"
+                                        className="size-[32px] rounded-lg border border-[#e5e7eb] flex items-center justify-center cursor-pointer hover:bg-[#f9fafb] transition-colors"
                                         title={t('actions.edit')}
                                       >
                                         <Edit2 className="w-3.5 h-3.5 text-[#6b7280]" />
                                       </button>
                                       <button
                                         onClick={() => removeItem(item.id)}
-                                        className="size-[32px] rounded-[10px] border border-[#e5e7eb] flex items-center justify-center cursor-pointer hover:bg-[#fef2f2] hover:border-[#fecaca] transition-colors text-[#9ca3af] hover:text-[#ef4444]"
+                                        className="size-[32px] rounded-lg border border-[#e5e7eb] flex items-center justify-center cursor-pointer hover:bg-[#fef2f2] hover:border-[#fecaca] transition-colors text-[#9ca3af] hover:text-[#ef4444]"
                                         title={t('actions.remove')}
                                       >
                                         <X className="w-3.5 h-3.5" />
@@ -405,7 +407,7 @@ export function CustomerMenuSelection({
                                         e.stopPropagation();
                                         setDetailsModalItem(item);
                                       }}
-                                      className="bg-[#9dae91] h-[34px] px-4 rounded-[10px] flex items-center gap-1.5 cursor-pointer hover:opacity-90 transition-opacity"
+                                      className="bg-[#9dae91] h-[34px] px-4 rounded-lg flex items-center gap-1.5 cursor-pointer hover:opacity-90 transition-opacity"
                                     >
                                       <Plus className="w-3.5 h-3.5 text-[#262D39]" />
                                       <span className="font-medium text-[13px] text-[#262d39]">{t('actions.add')}</span>
@@ -431,12 +433,11 @@ export function CustomerMenuSelection({
       </div>
 
       {/* Right Column: Sidebar Cart */}
-      <div className="hidden lg:flex w-[380px] shrink-0 border-l border-[#e5e7eb] bg-white h-screen overflow-hidden flex-col z-[50]">
+      <div className="hidden lg:flex w-[30%] shrink-0 border-l border-[#e5e7eb] bg-white h-screen overflow-hidden flex-col z-[50]">
         <MenuCart
           onContinue={handleStep2Navigation}
           continueButtonText={t('actions.continueToReview')}
           onEditDateTime={() => setIsDateTimePickerOpen(true)}
-          isDrawer={true}
         />
       </div>
 

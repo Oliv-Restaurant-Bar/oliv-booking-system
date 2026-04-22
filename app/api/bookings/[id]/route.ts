@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { updateBooking, deleteBooking } from "@/lib/actions/bookings";
 import { db } from "@/lib/db";
 import { sql, eq, desc } from "drizzle-orm";
-import { bookingCheckins } from "@/lib/db/schema";
+import { bookings, leads, adminUser, bookingCheckins } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/server";
 import type { AuditContext } from "@/lib/booking-audit";
 import { z } from "zod";
@@ -22,67 +22,77 @@ export async function GET(
     // Validate UUID format to prevent injection
     const validatedId = uuidSchema.parse(id);
 
-    // Fetch booking with lead information using parameterized SQL
-    // The ${id} syntax is automatically parameterized by Drizzle - safe from SQL injection
-    const bookingResult = await db.execute(sql`
-      SELECT
-        b.id,
-        b.lead_id,
-        b.event_date,
-        b.event_time,
-        b.guest_count,
-        b.allergy_details,
-        b.special_requests,
-        b.internal_notes,
-        b.estimated_total,
-        b.status,
-        b.location,
-        b.street,
-        b.plz,
-        b.business,
-        b.occasion,
-        b.reference,
-        b.payment_method,
-        b.use_same_address_for_billing,
-        b.billing_street,
-        b.billing_plz,
-        b.billing_location,
-        b.billing_business,
-        b.billing_email,
-        b.billing_reference,
-        b.created_at,
-        b.is_locked,
-        b.assigned_to,
-        b.kitchen_notes,
-        b.edit_secret,
-        b.room,
-        l.contact_name,
-        l.contact_email,
-        l.contact_phone,
-        a.name as assigned_to_name,
-        a.email as assigned_to_email
-      FROM bookings b
-      LEFT JOIN leads l ON b.lead_id = l.id
-      LEFT JOIN admin_user a ON b.assigned_to = a.id
-      WHERE b.id = ${validatedId} AND b.deleted_at IS NULL
-      LIMIT 1
-    `);
+    // Fetch booking using Drizzle select for automatic field mapping
+    const [booking] = await db
+      .select({
+        id: bookings.id,
+        leadId: bookings.leadId,
+        eventDate: bookings.eventDate,
+        eventTime: bookings.eventTime,
+        guestCount: bookings.guestCount,
+        allergyDetails: bookings.allergyDetails,
+        specialRequests: bookings.specialRequests,
+        internalNotes: bookings.internalNotes,
+        estimatedTotal: bookings.estimatedTotal,
+        status: bookings.status,
+        location: bookings.location,
+        street: bookings.street,
+        plz: bookings.plz,
+        business: bookings.business,
+        occasion: bookings.occasion,
+        reference: bookings.reference,
+        paymentMethod: bookings.paymentMethod,
+        useSameAddressForBilling: bookings.useSameAddressForBilling,
+        billingStreet: bookings.billingStreet,
+        billingPlz: bookings.billingPlz,
+        billingLocation: bookings.billingLocation,
+        billingBusiness: bookings.billingBusiness,
+        billingEmail: bookings.billingEmail,
+        billingReference: bookings.billingReference,
+        createdAt: bookings.createdAt,
+        isLocked: bookings.isLocked,
+        assignedTo: bookings.assignedTo,
+        kitchenNotes: bookings.kitchenNotes,
+        editSecret: bookings.editSecret,
+        room: bookings.room,
+      })
+      .from(bookings)
+      .where(eq(bookings.id, validatedId))
+      .limit(1);
 
-    const rows = 'rows' in bookingResult ? bookingResult.rows : bookingResult;
-
-    if (!rows || (rows as any[]).length === 0) {
+    if (!booking) {
       return NextResponse.json(
         { success: false, error: "Booking not found" },
         { status: 404 }
       );
     }
 
-    const booking = (rows as any[])[0];
+    // Fetch lead separately
+    let lead: any = null;
+    if (booking.leadId) {
+      const [leadResult] = await db
+        .select()
+        .from(leads)
+        .where(eq(leads.id, booking.leadId))
+        .limit(1);
+      lead = leadResult;
+    }
 
-    // Fetch booking items from booking_items table
+    // Fetch assigned user separately
+    let assignedUser: any = null;
+    if (booking.assignedTo) {
+      const [userResult] = await db
+        .select()
+        .from(adminUser)
+        .where(eq(adminUser.id, booking.assignedTo))
+        .limit(1);
+      assignedUser = userResult;
+    }
+
+    // Fetch booking items
     let menuItems: any[] = [];
     try {
-      const bookingItemsResult = await db.execute(sql`
+      const itemsRows = await db.execute(sql`
         SELECT
           bi.booking_id,
           bi.item_id,
@@ -106,42 +116,31 @@ export async function GET(
         WHERE bi.booking_id = ${validatedId}
       `);
 
-      const itemsRows = 'rows' in bookingItemsResult ? bookingItemsResult.rows : bookingItemsResult;
-      menuItems = (itemsRows as any[]).map((item: any) => {
+      const rows = 'rows' in itemsRows ? itemsRows.rows : itemsRows;
+      menuItems = (rows as any[]).map((item: any) => {
         const isPerPerson = item.pricing_type === 'per_person' || item.category_guest_count === true;
         const unitPrice = Number(item.unit_price);
         const totalPrice = unitPrice * item.quantity;
         const internalCost = item.internal_cost ? Number(item.internal_cost) : 0;
 
-        // Parse notes to extract variant, choices, and customer comment
-        let variant = '';
-        let choices = '';
-        let customerComment = '';
+        let variant = '', choices = '', customerComment = '';
         if (item.notes) {
-          const variantMatch = item.notes.match(/Variant: ([^|]+)/);
-          const selectionsMatch = item.notes.match(/((?:Add-ons|Choices): [^|]+)/);
-          const commentMatch = item.notes.match(/Comment: ([^|]+)/);
-          
-          if (variantMatch) variant = variantMatch[1].trim();
-          if (selectionsMatch) choices = selectionsMatch[1].trim();
-          if (commentMatch) customerComment = commentMatch[1].trim();
+          const vMatch = item.notes.match(/Variant: ([^|]+)/);
+          const sMatch = item.notes.match(/((?:Add-ons|Choices): [^|]+)/);
+          const cMatch = item.notes.match(/Comment: ([^|]+)/);
+          if (vMatch) variant = vMatch[1].trim();
+          if (sMatch) choices = sMatch[1].trim();
+          if (cMatch) customerComment = cMatch[1].trim();
         }
 
-        // Build display name with variant info only
-        let displayName = item.item_name;
-        if (variant) {
-          displayName += ` (${variant})`;
-        }
-
-        // Determine category name - for addons use the addon group or 'Add-on'
         let categoryName = item.category_name;
         if (item.item_type === 'addon') {
           categoryName = item.addon_group_name || 'Add-on';
         }
 
         return {
-          id: `${item.item_type}-${item.item_id}`, // Add unique ID for React keys
-          itemId: item.item_id, // IMPORTANT: This is needed for updates
+          id: `${item.item_type}-${item.item_id}`,
+          itemId: item.item_id,
           item: item.item_name || 'Unknown Item',
           itemType: item.item_type,
           variant: variant || '',
@@ -151,7 +150,7 @@ export async function GET(
             : `${item.quantity} x ${Math.round(unitPrice)} CHF`,
           rawQuantity: item.quantity,
           unitPrice: unitPrice,
-          internalCost: internalCost, // Unit internal cost
+          internalCost: internalCost,
           price: `CHF ${totalPrice.toFixed(2)}`,
           pricingType: item.pricing_type || 'fixed',
           dietaryType: item.dietary_type || 'none',
@@ -162,64 +161,26 @@ export async function GET(
       });
     } catch (e) {
       console.error('Error fetching booking items:', e);
-      // Continue without menu items
     }
 
-    // Format booking data
-    const contactName = booking.contact_name || 'Unknown';
-    const firstName = contactName.split(' ')[0] || 'Guest';
-    const lastName = contactName.split(' ').slice(1).join(' ') || '';
-    const daysAgo = booking.created_at
-      ? Math.floor((Date.now() - new Date(booking.created_at).getTime()) / (1000 * 60 * 60 * 24))
+    // Format final response
+    const contactName = lead?.contact_name || 'Unknown';
+    const daysAgo = booking.createdAt
+      ? Math.floor((Date.now() - new Date(booking.createdAt).getTime()) / (1000 * 60 * 60 * 24))
       : 0;
 
-    // Parse allergy details
-    const allergies = booking.allergy_details
-      ? Array.isArray(booking.allergy_details)
-        ? booking.allergy_details.join(', ')
-        : booking.allergy_details
-      : '';
-
-    // Extract granular address fields from internal notes - using case-insensitive regex for robustness
-    const business = booking.business || '';
-    const occasion = booking.occasion || '';
-    const reference = booking.reference || '';
-    const paymentMethod = booking.payment_method || 'ec_card';
-    const street = booking.street || '';
-    const plz = booking.plz || '';
-    const city = booking.location || '';
-    const address = [street, plz, city].filter(Boolean).join(', ');
-
-    const billingStreet = booking.billing_street || '';
-    const billingPlz = booking.billing_plz || '';
-    const billingLocation = booking.billing_location || '';
-    const billingBusiness = booking.billing_business || '';
-    const billingEmail = booking.billing_email || '';
-    const billingReference = booking.billing_reference || '';
-
-    // Extract menu selection from internal notes for display in notes (legacy fallback)
-    const menuMatch = booking.internal_notes?.match(/Menu Selection: ([^\n]+)/);
-    const menuSelectionStr = menuMatch ? menuMatch[1] : '';
-
-    // Combine notes with menu selection for display
-    const displayNotes = [booking.special_requests || '', menuSelectionStr].filter(Boolean).join('\n');
+    const displayNotes = [booking.specialRequests || '', booking.internalNotes?.match(/Menu Selection: ([^\n]+)/)?.[1] || ''].filter(Boolean).join('\n');
 
     // Fetch contact history
     let contactHistory: any[] = [];
     try {
       const historyResult = await db.execute(sql`
-        SELECT
-          h.admin_user_id,
-          h.subject,
-          h.content,
-          h.created_at,
-          a.name as admin_name
+        SELECT h.admin_user_id, h.subject, h.content, h.created_at, a.name as admin_name
         FROM booking_contact_history h
         LEFT JOIN admin_user a ON h.admin_user_id = a.id
         WHERE h.booking_id = ${validatedId}
         ORDER BY h.created_at ASC
       `);
-
       const historyRows = 'rows' in historyResult ? historyResult.rows : historyResult;
       contactHistory = (historyRows as any[]).map((log: any) => ({
         by: log.admin_name || (log.subject.includes("Manual Comment") ? "Admin" : "System"),
@@ -228,83 +189,60 @@ export async function GET(
         action: log.content,
         type: log.subject.includes("Manual Comment") ? "manual" : "system"
       }));
-    } catch (e) {
-      console.error('Error fetching contact history:', e);
-    }
+    } catch (e) {}
 
     // Fetch check-ins
-    let checkins: any[] = [];
-    try {
-      checkins = await db
-        .select()
-        .from(bookingCheckins)
-        .where(eq(bookingCheckins.bookingId, validatedId))
-        .orderBy(desc(bookingCheckins.submittedAt));
-    } catch (e) {
-      console.error('Error fetching check-ins:', e);
-    }
-
-
+    let checkins = await db.select().from(bookingCheckins)
+      .where(eq(bookingCheckins.bookingId, validatedId))
+      .orderBy(desc(bookingCheckins.submittedAt));
 
     return NextResponse.json({
       id: booking.id,
-      assignedTo: booking.assigned_to ? {
-        id: booking.assigned_to,
-        name: booking.assigned_to_name || 'Unknown',
-        email: booking.assigned_to_email || '',
+      assignedTo: assignedUser ? {
+        id: assignedUser.id,
+        name: assignedUser.name || 'Unknown',
+        email: assignedUser.email || '',
       } : null,
       customer: {
         name: contactName,
-        firstName,
-        lastName,
-        email: booking.contact_email || '',
-        phone: booking.contact_phone || '',
+        firstName: contactName.split(' ')[0] || 'Guest',
+        lastName: contactName.split(' ').slice(1).join(' ') || '',
+        email: lead?.contact_email || '',
+        phone: lead?.contact_phone || '',
         avatar: contactName.charAt(0).toUpperCase() || 'G',
         avatarColor: '#9DAE91',
-        address: address,
-        street: street,
-        plz: plz,
-        location: city,
-        business: business,
-        reference: reference,
+        street: booking.street || '',
+        plz: booking.plz || '',
+        location: booking.location || '',
+        business: booking.business || '',
+        reference: booking.reference || '',
       },
-      billingStreet: billingStreet,
-      billingPlz: billingPlz,
-      billingLocation: billingLocation,
-      billingBusiness: billingBusiness,
-      billingEmail: billingEmail,
-      billingReference: billingReference,
-      paymentMethod: paymentMethod,
+      billingStreet: booking.billingStreet || '',
+      billingPlz: booking.billingPlz || '',
+      billingLocation: booking.billingLocation || '',
+      billingBusiness: booking.billingBusiness || '',
+      billingEmail: booking.billingEmail || '',
+      billingReference: booking.billingReference || '',
+      paymentMethod: booking.paymentMethod || 'ec_card',
       event: {
-        date: booking.event_date ? (typeof booking.event_date === 'string' ? booking.event_date : new Date(booking.event_date).toISOString().split('T')[0]) : '',
-        time: booking.event_time ? (typeof booking.event_time === 'string' ? booking.event_time.split('.')[0] : booking.event_time) : '',
-        rawDate: booking.event_date ? (typeof booking.event_date === 'string' ? booking.event_date : new Date(booking.event_date).toISOString().split('T')[0]) : '',
-        rawTime: booking.event_time ? (typeof booking.event_time === 'string' ? booking.event_time.split('.')[0] : booking.event_time) : '',
-        occasion: occasion || 'Event',
+        date: booking.eventDate ? (typeof booking.eventDate === 'string' ? booking.eventDate : new Date(booking.eventDate as any).toISOString().split('T')[0]) : '',
+        time: booking.eventTime ? (typeof booking.eventTime === 'string' ? booking.eventTime.split('.')[0] : booking.eventTime) : '',
+        occasion: booking.occasion || 'Event',
         location: booking.location || undefined,
-        reference: reference, // Include in event as well if needed for UI mapping
       },
       location: booking.location || '',
-      guests: booking.guest_count || 0,
-      amount: booking.estimated_total
-        ? `CHF ${Number(booking.estimated_total).toLocaleString('en-US')}`
-        : 'CHF 0',
-      rawAmount: booking.estimated_total ? Number(booking.estimated_total) : 0,
+      guests: booking.guestCount || 0,
+      amount: booking.estimatedTotal ? `CHF ${Number(booking.estimatedTotal).toLocaleString('en-US')}` : 'CHF 0',
+      rawAmount: booking.estimatedTotal ? Number(booking.estimatedTotal) : 0,
       status: booking.status || 'pending',
-      contacted: {
-        by: 'Admin',
-        when: `${daysAgo}d ago`,
-      },
-      booking: `${daysAgo}d ago`,
-      allergies: allergies || '',
-      notes: displayNotes || '',
-      kitchenNotes: booking.kitchen_notes || '',
-      isLocked: booking.is_locked || false,
-      menuItems: menuItems,
-      contactHistory: contactHistory,
-      editSecret: booking.edit_secret,
+      notes: displayNotes,
+      kitchenNotes: booking.kitchenNotes || '',
+      isLocked: booking.isLocked || false,
+      menuItems,
+      contactHistory,
+      editSecret: booking.editSecret,
       room: booking.room || '',
-      checkins: checkins,
+      checkins,
     });
   } catch (error) {
     console.error("Error in GET /api/bookings/[id]:", error);

@@ -461,18 +461,16 @@ export const useWizardStore = create<WizardState>((set, get) => ({
         vegTotal += maxPrice;
         nonVegTotal += maxPrice;
       } else {
-        // Normal category (e.g. Main Courses): sum prices by dietary track
+        // Normal category (e.g. Main Courses): take highest price by dietary track
         // 'none' applies to both tracks
-        const vegSum = items
-          .filter(i => ['veg', 'vegan', 'none'].includes(i.dietaryType))
-          .reduce((sum, i) => sum + i.price, 0);
-          
-        const nonVegSum = items
-          .filter(i => ['non-veg', 'none'].includes(i.dietaryType))
-          .reduce((sum, i) => sum + i.price, 0);
+        const vegItems = items.filter(i => ['veg', 'vegan', 'none'].includes(i.dietaryType));
+        const nonVegItems = items.filter(i => ['non-veg', 'none'].includes(i.dietaryType));
 
-        vegTotal += vegSum;
-        nonVegTotal += nonVegSum;
+        const vegMax = vegItems.length > 0 ? Math.max(...vegItems.map(i => i.price)) : 0;
+        const nonVegMax = nonVegItems.length > 0 ? Math.max(...nonVegItems.map(i => i.price)) : 0;
+
+        vegTotal += vegMax;
+        nonVegTotal += nonVegMax;
       }
     });
 
