@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from "@/lib/db";
-import { leads, bookings, bookingItems, menuItems, menuCategories, addonItems } from "@/lib/db/schema";
+import { leads, bookings, bookingItems, menuItems, menuCategories, addonItems, addons } from "@/lib/db/schema";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
 import { eq, sql } from "drizzle-orm";
@@ -131,7 +131,14 @@ export async function submitWizardForm(data: WizardFormData) {
       dietaryType: addonItems.dietaryType,
     }).from(addonItems);
 
-    const addonMap = new Map(allAddonItems.map(a => [a.id, a]));
+    const legacyAddons = await db.select({
+      id: addons.id,
+      name: addons.name,
+      price: addons.price,
+      dietaryType: sql<string>`'none'`,
+    }).from(addons);
+
+    const addonMap = new Map([...allAddonItems, ...legacyAddons].map(a => [a.id, a]));
 
     const menuItemMap = new Map(allMenuItems.map(item => [item.id, item]));
     const categoryMap = new Map(allCategories.map(cat => [cat.id, cat.guestCount]));
@@ -210,7 +217,7 @@ export async function submitWizardForm(data: WizardFormData) {
         // Build notes for booking_item (variant, addons, comments)
         const notesParts = [];
         if (variantName) notesParts.push(`Variant: ${variantName}`);
-        if (addonsNames.length > 0) notesParts.push(`Add-ons: ${addonsNames.join(', ')}`);
+        if (addonsNames.length > 0) notesParts.push(`Choices: ${addonsNames.join(', ')}`);
 
         const comment = data.itemComments?.[itemId];
         if (comment) notesParts.push(`Comment: ${comment}`);
@@ -510,10 +517,29 @@ export async function submitWizardForm(data: WizardFormData) {
 
           const variantId = data.itemVariants?.[itemId];
           const variant = variantId && Array.isArray(dbItem?.variants)
-            ? (dbItem?.variants as any[]).find(v => v.id === variantId)
+            ? (dbItem?.variants as any[]).find(v => v.id === (variantId as any) || v.name === (variantId as any))
             : null;
 
           const unitPrice = variant ? Number(variant.price) : Number(dbItem?.pricePerPerson || 0);
+
+          // Resolve Add-on names
+          const selectedAddOnIds = data.itemAddOns?.[itemId] || [];
+          const addonNames: string[] = [];
+          for (const addonId of selectedAddOnIds) {
+            const addon = addonMap.get(addonId);
+            if (addon) {
+              let addonLabel = addon.name;
+              if (addon.dietaryType === 'veg') addonLabel += ' (Veg)';
+              else if (addon.dietaryType === 'vegan') addonLabel += ' (Vegan)';
+              else if (addon.dietaryType === 'non-veg') addonLabel += ' (Non-Veg)';
+              addonNames.push(addonLabel);
+            }
+          }
+
+          const notesParts = [];
+          if (variant) notesParts.push(`Variant: ${variant.name}`);
+          if (addonNames.length > 0) notesParts.push(`Choices: ${addonNames.join(', ')}`);
+          if (data.itemComments?.[itemId]) notesParts.push(`Note: ${data.itemComments[itemId]}`);
 
           return {
             id: itemId,
@@ -522,7 +548,8 @@ export async function submitWizardForm(data: WizardFormData) {
             quantity: quantity,
             unitPrice: unitPrice,
             totalPrice: unitPrice * quantity,
-            notes: data.itemComments?.[itemId],
+            notes: notesParts.join(' | '),
+            customerComment: data.itemComments?.[itemId],
             pricingType: dbItem?.pricingType || 'per_person',
             dietaryType: dbItem?.dietaryType || 'none',
           };

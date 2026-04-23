@@ -843,6 +843,47 @@ export function CustomMenuWizard({
             const quantity = (isPerPerson(item) ? (cartItem.guestCount || parseInt(eventDetails.guestCount) || 1) : cartItem.quantity || 1);
             const unitPrice = getItemPerPersonPrice(item);
             
+            const variantName = cartItem.variantId && item.variants
+              ? item.variants.find((v: any) => v.id === cartItem.variantId)?.name
+              : '';
+              
+            const resolveAddonNames = (ids: string[]) => {
+              if (!ids || ids.length === 0) return [];
+              return ids.map(id => {
+                // 1. Try finding in current item's groups
+                if (item.addonGroups) {
+                  for (const group of item.addonGroups) {
+                    const ao = group.items.find((i: any) => i.id === id);
+                    if (ao) return ao.name;
+                  }
+                }
+                // 2. Try finding in current item's legacy addons
+                const legacyAo = item.addOns?.find((ao: any) => ao.id === id);
+                if (legacyAo) return legacyAo.name;
+                
+                // 3. Global fallback: search ALL menu items for this addon ID
+                for (const otherItem of menuItems) {
+                  if (otherItem.addonGroups) {
+                    for (const group of otherItem.addonGroups) {
+                      const ao = group.items.find((i: any) => i.id === id);
+                      if (ao) return ao.name;
+                    }
+                  }
+                  const otherLegacyAo = otherItem.addOns?.find((ao: any) => ao.id === id);
+                  if (otherLegacyAo) return otherLegacyAo.name;
+                }
+                
+                return id; // Final fallback to ID
+              });
+            };
+
+            const addonNames = resolveAddonNames(cartItem.addOnIds);
+              
+            const itemNotes = [
+              variantName ? `Variant: ${variantName}` : '',
+              addonNames.length > 0 ? `Choices: ${addonNames.join(', ')}` : ''
+            ].filter(Boolean).join(' | ');
+
             return {
               id: itemId,
               name: item.name,
@@ -850,7 +891,7 @@ export function CustomMenuWizard({
               quantity: quantity,
               unitPrice: unitPrice,
               totalPrice: unitPrice * quantity,
-              notes: (cartItem.variantId ? `Variant: ${cartItem.variantId} | ` : '') + (cartItem.addOnIds.length > 0 ? `Choices: ${cartItem.addOnIds.join(', ')}` : ''),
+              notes: itemNotes,
               customerComment: cartItem.comment || '',
               pricingType: item.pricingType,
               dietaryType: item.dietaryType || 'none',

@@ -59,258 +59,389 @@ export async function generateBookingPdf(
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 20;
-  const contentWidth = pageWidth - (margin * 2);
+
+  const contentMaxWidth = 160;
+  const margin = (pageWidth - contentMaxWidth) / 2;
+  const contentWidth = contentMaxWidth;
   let yPos = 0;
 
-  // --- Helper Functions ---
+  // ─── Column positions for kitchen item rows ─────────────────────────────────
+  // Name area:  margin+6  …  margin+115
+  // Qty centre: margin+130 (same as before)
+  // Done box:   margin+157  (right-aligned, 6×6 box)
+  const KITCHEN_NAME_MAX_W = 105;
+  const KITCHEN_QTY_CENTER = margin + 124;
+  const KITCHEN_DONE_X = margin + 151;
+
+  // ─── drawHeader ──────────────────────────────────────────────────────────────
   const drawHeader = (isContinuation = false) => {
     const isKitchen = mode === 'kitchen';
 
-    if (isContinuation && !isKitchen) {
-      // Minimal Continuation Header for Offers
-      doc.setDrawColor(...COLORS.primary);
-      doc.setLineWidth(0.5);
-      doc.line(margin, 15, pageWidth - margin, 15);
+    // ── Kitchen continuation page — minimal header only ───────────────────────
+    if (isContinuation && isKitchen) {
+      doc.setDrawColor(220, 220, 220);
+      doc.setLineWidth(0.4);
+      doc.rect(10, 10, pageWidth - 20, pageHeight - 20, 'S');
+      // Small centred label
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(160, 160, 160);
+      doc.setCharSpace(2.5);
+      doc.text('KÜCHENPAPIER (FORTS.)', pageWidth / 2, 18, { align: 'center' });
+      doc.setCharSpace(0);
+      // Thin rule below label
+      doc.setDrawColor(...COLORS.border);
+      doc.setLineWidth(0.2);
+      doc.line(margin, 21, margin + contentWidth, 21);
+      yPos = 28;
+      return;
+    }
 
+    // ── Offer / Inquiry continuation page ────────────────────────────────────
+    if (isContinuation && !isKitchen) {
+      doc.setDrawColor(220, 220, 220);
+      doc.setLineWidth(0.4);
+      doc.rect(10, 10, pageWidth - 20, pageHeight - 20, 'S');
+      doc.setDrawColor(...COLORS.border);
+      doc.setLineWidth(0.3);
+      doc.line(margin, 15, pageWidth - margin, 15);
       doc.setFontSize(8);
       doc.setTextColor(...COLORS.muted);
-      doc.text(`BOOKING (CONT.)`, margin, 12);
-      doc.text(`Datum: ${new Date().toLocaleDateString('de-CH')} ${new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })}`, pageWidth - margin, 12, { align: 'right' });
-
+      doc.text(mode === 'offer' ? 'ANGEBOT (FORTS.)' : 'ANFRAGE (FORTS.)', pageWidth / 2, 12, { align: 'center' });
       yPos = 25;
       return;
     }
 
-    // Primary Header Banner
-    doc.setFillColor(...COLORS.primary);
-    doc.rect(0, 0, pageWidth, 45, 'F');
+    // ── Kitchen first-page header ─────────────────────────────────────────────
+    if (isKitchen) {
+      // Outer page border — same as offer mode
+      doc.setDrawColor(220, 220, 220);
+      doc.setLineWidth(0.4);
+      doc.rect(10, 10, pageWidth - 20, pageHeight - 20, 'S');
 
-    // Logo
+      yPos = 22;
+
+      // Logo (centred, same as offer)
+      try {
+        const logoW = 38;
+        const logoH = 14;
+        const logoX = (pageWidth - logoW) / 2;
+        if (typeof window === 'undefined') {
+          const fs = require('fs');
+          const path = require('path');
+          const logoPath = path.join(process.cwd(), 'public', 'assets', 'oliv-logo.png');
+          if (fs.existsSync(logoPath)) {
+            doc.addImage(fs.readFileSync(logoPath), 'PNG', logoX, yPos, logoW, logoH);
+          }
+        } else {
+          doc.addImage('/assets/oliv-logo.png', 'PNG', logoX, yPos, logoW, logoH);
+        }
+      } catch {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(...COLORS.secondary);
+        doc.text('o l í v', pageWidth / 2, yPos + 8, { align: 'center' });
+      }
+      yPos += 22;
+
+      // "KÜCHENPAPIER" label
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(160, 160, 160);
+      doc.setCharSpace(3);
+      doc.text('KÜCHENPAPIER', margin, yPos);
+      doc.setCharSpace(0);
+
+      // Booking ID — small muted line top-right
+      const safeId = String(data.id || 'Unknown');
+      const shortId =
+        safeId.length > 8
+          ? safeId.substring(safeId.length - 8).toUpperCase()
+          : safeId.toUpperCase();
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(...COLORS.muted);
+      doc.text(`ID: ${shortId}  |  INTERNAL USE ONLY`, pageWidth - margin, yPos, {
+        align: 'right',
+      });
+      yPos += 12;
+
+      // Occasion title
+      const titleText = String(data.occasion || 'Event');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(22);
+      doc.setTextColor(...COLORS.title);
+      const titleLines = doc.splitTextToSize(titleText, contentMaxWidth - 10);
+      doc.text(titleLines, pageWidth / 2, yPos, { align: 'center' });
+      yPos += titleLines.length * 10;
+
+      // Customer sub-line
+      const subtitleParts: string[] = [];
+      if (data.customerName) subtitleParts.push(data.customerName);
+      if (data.business) subtitleParts.push(data.business);
+      if (subtitleParts.length > 0) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(130, 130, 130);
+        doc.text(`z.Hd. ${subtitleParts.join(', ')}`, pageWidth / 2, yPos, {
+          align: 'center',
+        });
+        yPos += 7;
+      }
+      yPos += 4;
+
+      // ── Event-info pill (date / time / guests / location) ───────────────────
+      const pillW = 160;
+      const pillX = (pageWidth - pillW) / 2;
+      const pillH = 14;
+      doc.setDrawColor(210, 210, 210);
+      doc.setLineWidth(0.3);
+      doc.setFillColor(250, 250, 250);
+      doc.roundedRect(pillX, yPos, pillW, pillH, 2, 2, 'FD');
+
+      const chips = [
+        `${data.eventDate}`,
+        `${data.eventTime}`,
+        `${data.guestCount} Personen`,
+        ...(data.location ? [data.location] : []),
+        ...(data.room ? [data.room] : []),
+      ];
+      const chipText = chips.join('   ·   ');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(...COLORS.title);
+      doc.text(chipText, pageWidth / 2, yPos + 9, { align: 'center' });
+      yPos += pillH + 10;
+
+      // ── Two-column info grid ─────────────────────────────────────────────────
+      const colW = (contentWidth / 2) - 4;
+      const leftX = margin;
+      const rightX = margin + contentWidth / 2 + 4;
+      const gridPad = 6;
+      const lineH = 5.5;
+
+      // drawInfoSection writes to yPos and returns the final yPos for that column
+      const drawInfoSection = (
+        title: string,
+        fields: { label: string; value: string | number | undefined }[],
+        x: number,
+        startY: number
+      ): number => {
+        let localY = startY;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(...COLORS.primary);
+        doc.setCharSpace(1.2);
+        doc.text(title.toUpperCase(), x + gridPad, localY);
+        doc.setCharSpace(0);
+        localY += 4;
+        doc.setDrawColor(...COLORS.border);
+        doc.setLineWidth(0.2);
+        doc.line(x + gridPad, localY, x + colW - gridPad, localY);
+        localY += 4;
+
+        fields.forEach(({ label, value }) => {
+          if (value === undefined || value === null || String(value).trim() === '') return;
+          const labelTxt = `${label}: `;
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(8.5);
+          doc.setTextColor(...COLORS.text);
+          doc.text(labelTxt, x + gridPad, localY);
+          const labelW = doc.getTextWidth(labelTxt);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(...COLORS.title);
+          const valueLines = doc.splitTextToSize(
+            String(value),
+            colW - gridPad - labelW - 2
+          );
+          doc.text(valueLines, x + gridPad + labelW, localY);
+          localY += valueLines.length * lineH;
+        });
+        return localY;
+      };
+
+      const gridTopY = yPos;
+
+      // Draw both columns independently, each returning their own bottom Y
+      const leftBottomY = drawInfoSection('Kundendaten', [
+        { label: 'Kunde', value: data.customerName || 'Gast' },
+        { label: 'Firma', value: data.business },
+        { label: 'Personen', value: data.guestCount },
+        {
+          label: 'Adresse',
+          value:
+            [data.billingStreet, data.billingPlz, data.billingLocation]
+              .filter(Boolean)
+              .join(', ') || undefined,
+        },
+      ], leftX, gridTopY);
+
+      const rightBottomY = drawInfoSection('Eventdaten', [
+        { label: 'Datum', value: data.eventDate },
+        { label: 'Zeit', value: data.eventTime },
+        { label: 'Anlass', value: data.occasion || 'Event' },
+        { label: 'Ort', value: data.location || 'Restaurant Oliv' },
+        { label: 'Venue', value: data.room },
+        {
+          label: 'Erstellt',
+          value: `${new Date().toLocaleDateString('de-CH')} ${new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })}`,
+        },
+      ], rightX, gridTopY);
+
+      yPos = Math.max(leftBottomY, rightBottomY) + 12;
+
+      // Thin divider before items
+      doc.setDrawColor(...COLORS.border);
+      doc.setLineWidth(0.3);
+      doc.line(margin, yPos, margin + contentWidth, yPos);
+      yPos += 10;
+
+      return;
+    }
+
+    // ── Offer / Inquiry first page ────────────────────────────────────────────
+    doc.setDrawColor(220, 220, 220);
+    doc.setLineWidth(0.4);
+    doc.rect(10, 10, pageWidth - 20, pageHeight - 20, 'S');
+    yPos = 22;
+
     try {
-      const x = margin;
-      const y = 10;
+      const logoW = 38;
+      const logoH = 14;
+      const logoX = (pageWidth - logoW) / 2;
       if (typeof window === 'undefined') {
         const fs = require('fs');
         const path = require('path');
         const logoPath = path.join(process.cwd(), 'public', 'assets', 'oliv-logo.png');
         if (fs.existsSync(logoPath)) {
-          doc.addImage(fs.readFileSync(logoPath), 'PNG', x, y, 35, 12);
+          doc.addImage(fs.readFileSync(logoPath), 'PNG', logoX, yPos, logoW, logoH);
         }
       } else {
-        doc.addImage('/assets/oliv-logo.png', 'PNG', x, y, 35, 12);
+        doc.addImage('/assets/oliv-logo.png', 'PNG', logoX, yPos, logoW, logoH);
       }
-    } catch (e) {
-      // Fallback
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(14);
+    } catch {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
       doc.setTextColor(...COLORS.secondary);
-      doc.text("o l í v", margin, 20);
+      doc.text('o l í v', pageWidth / 2, yPos + 8, { align: 'center' });
     }
-
-    // Title
+    yPos += 22;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(160, 160, 160);
+    doc.setCharSpace(3);
+    doc.text(mode === 'offer' ? 'ANGEBOT' : 'ANFRAGE', pageWidth / 2, yPos, {
+      align: 'center',
+    });
+    doc.setCharSpace(0);
+    yPos += 10;
+    const titleText = String(data.occasion || 'Event');
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(22);
-    doc.setTextColor(...COLORS.secondary);
-    doc.setFont("helvetica", "bold");
-    const title = String(mode === 'kitchen' ? "KÜCHENPAPIER" : "");
-    doc.text(title + (isContinuation ? " (FORTS.)" : ""), margin, 34);
-
-    // Meta (Right side)
-    doc.setFontSize(10);
-    doc.setTextColor(...COLORS.secondary);
-    const safeId = String(data.id || 'Unknown');
-    const shortId = safeId.length > 8 ? safeId.substring(safeId.length - 8).toUpperCase() : safeId.toUpperCase();
-
-    if (mode === 'kitchen') {
-      doc.setFont("helvetica", "bold");
-      doc.text(`INTERNAL USE ONLY | ID: ${shortId}`, pageWidth - margin, 20, { align: 'right' });
-    } else {
-      // Inquiry ID removed at user request
+    doc.setTextColor(...COLORS.title);
+    const titleLines = doc.splitTextToSize(titleText, contentMaxWidth - 10);
+    doc.text(titleLines, pageWidth / 2, yPos, { align: 'center' });
+    yPos += titleLines.length * 9;
+    const subtitleParts: string[] = [];
+    if (data.customerName) subtitleParts.push(data.customerName);
+    if (data.business) subtitleParts.push(data.business);
+    if (subtitleParts.length > 0) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(130, 130, 130);
+      doc.text(`z.Hd. ${subtitleParts.join(', ')}`, pageWidth / 2, yPos, { align: 'center' });
+      yPos += 7;
     }
-
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    const dateStr = mode === 'kitchen'
-      ? `Generated: ${new Date().toLocaleDateString('de-CH')} ${new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })}`
-      : `Datum: ${new Date().toLocaleDateString('de-CH')} ${new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })}`;
-    doc.text(String(dateStr), pageWidth - margin, 34, { align: 'right' });
-
-    yPos = 60;
+    yPos += 6;
+    const boxW = 120;
+    const boxX = (pageWidth - boxW) / 2;
+    const boxH = data.location || data.room ? 22 : 16;
+    doc.setDrawColor(210, 210, 210);
+    doc.setLineWidth(0.3);
+    doc.setFillColor(250, 250, 250);
+    doc.roundedRect(boxX, yPos, boxW, boxH, 2, 2, 'FD');
+    const boxCenterY = yPos + 7;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...COLORS.title);
+    const dateTimeStr = `${data.eventDate}  —  ${data.eventTime}`;
+    doc.text(dateTimeStr, pageWidth / 2, boxCenterY, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(120, 120, 120);
+    doc.text(`ca. ${data.guestCount} Personen`, pageWidth / 2, boxCenterY + 6, {
+      align: 'center',
+    });
+    if ((data.location || data.room) && boxH > 16) {
+      const locStr = [data.location, data.room].filter(Boolean).join(', ');
+      doc.text(locStr, pageWidth / 2, boxCenterY + 12, { align: 'center' });
+    }
+    yPos += boxH + 14;
   };
 
+  // ─── checkPageBreak ───────────────────────────────────────────────────────
   const checkPageBreak = (neededHeight: number, showTableHeaders = false) => {
-    if (yPos + neededHeight > pageHeight - 20) {
+    if (yPos + neededHeight > pageHeight - 25) {
       doc.addPage();
       drawHeader(true);
-      if (showTableHeaders) {
-        renderTableHeaders();
-      }
+      if (showTableHeaders) renderTableHeaders();
       return true;
     }
     return false;
   };
 
+  // ─── renderTableHeaders (kitchen items header row) ────────────────────────
   const renderTableHeaders = () => {
-    doc.setFillColor(241, 245, 249); // slate-100
-    doc.rect(margin, yPos - 6, contentWidth, 10, 'F');
-    doc.setFontSize(9);
-    doc.setTextColor(71, 85, 105); // slate-600
-    doc.setFont("helvetica", "bold");
+    if (mode !== 'kitchen') return;
 
-    if (mode === 'kitchen') {
-      doc.text("ITEM NAME", margin + 3, yPos);
-      doc.text("GUEST / QUANTITY", margin + 130, yPos, { align: 'center' });
-      doc.text("DONE", margin + 160, yPos, { align: 'center' });
-    } else if (mode === 'inquiry') {
-      doc.text("ARTIKEL", margin + 3, yPos);
-      doc.text("PREIS", pageWidth - margin - 3, yPos, { align: 'right' });
-    } else {
-      doc.text("ARTIKEL", margin + 3, yPos);
-      // Removed Kategorie - now handled by category headers
-      doc.text("ANZAHL", margin + 105, yPos);
-      doc.text("PREIS", pageWidth - margin - 3, yPos, { align: 'right' });
-    }
-    yPos += 10;
+    doc.setFillColor(...COLORS.background);
+    doc.rect(margin, yPos - 5, contentWidth, 9, 'F');
+
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(100, 116, 139);
+    doc.setCharSpace(0.8);
+    doc.text('ITEM', margin + 12, yPos);
+    doc.text('QTY', KITCHEN_QTY_CENTER, yPos, { align: 'center' });
+    doc.text('DONE', KITCHEN_DONE_X + 3, yPos, { align: 'center' });
+    doc.setCharSpace(0);
+
+    doc.setDrawColor(...COLORS.border);
+    doc.setLineWidth(0.2);
+    doc.line(margin, yPos + 2, margin + contentWidth, yPos + 2);
+    yPos += 8;
   };
 
-  // --- Initial Render ---
-  drawHeader();
-
-  // Two Column Info Section
-  const colW = (contentWidth / 2) - 5;
-  const leftX = margin;
-  const rightX = pageWidth / 2 + 5;
-  const detailLineHeight = 5;
-
-  doc.setFontSize(14);
-  doc.setTextColor(...COLORS.title);
-  doc.setFont("helvetica", "bold");
-  doc.text("KUNDENDATEN", leftX, yPos);
-  doc.text("EVENTDATEN", rightX, yPos);
-
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  let leftY = yPos + 8;
-  let rightY = yPos + 8;
-
-  // Helper to render multi-line field and return new Y
-  const renderField = (label: string, value: string | number, x: number, y: number, width: number) => {
-    doc.setFont("helvetica", "bold");
-    const labelText = `${label}: `;
-    doc.text(labelText, x + 2, y);
-
-    const labelWidth = doc.getTextWidth(labelText);
-    doc.setFont("helvetica", "normal");
-
-    const valueText = String(value);
-    const availableWidth = width - labelWidth - 2;
-    const lines = doc.splitTextToSize(valueText, availableWidth);
-
-    // First line after the label
-    doc.text(lines[0], x + 2 + labelWidth, y);
-
-    // Subsequent lines (if any)
-    if (lines.length > 1) {
-      for (let i = 1; i < lines.length; i++) {
-        doc.text(lines[i], x + 2, y + (i * detailLineHeight));
-      }
-    }
-
-    return y + (lines.length * detailLineHeight) + 1;
-  };
-
-  // Customer Side
-  leftY = renderField('Kunde', String(data.customerName || 'Gast'), leftX, leftY, colW);
-  if (data.business) {
-    doc.setFont("helvetica", "bold");
-    const bizLines = doc.splitTextToSize(String(data.business), colW);
-    doc.text(bizLines, leftX + 2, leftY);
-    leftY += (bizLines.length * detailLineHeight) + 1;
-    doc.setFont("helvetica", "normal");
-  }
-  leftY = renderField('Personen', String(data.guestCount || 0), leftX, leftY, colW);
-  const billingParts = [data.billingStreet, data.billingPlz, data.billingLocation].filter(Boolean);
-  if (billingParts.length > 0) {
-    leftY = renderField('Adresse', billingParts.join(', '), leftX, leftY, colW);
-  }
-
-  // Event Side
-  rightY = renderField('Datum', String(data.eventDate || 'N/A'), rightX, rightY, colW);
-  rightY = renderField('Zeit', String(data.eventTime || 'N/A'), rightX, rightY, colW);
-  rightY = renderField('Anlass', String(data.occasion || 'Event'), rightX, rightY, colW);
-  rightY = renderField('Ort', String(data.location || 'Restaurant Oliv'), rightX, rightY, colW);
-  if (data.room) {
-    rightY = renderField(mode === 'kitchen' ? 'Venue' : 'Veranstaltungsort', String(data.room), rightX, rightY, colW);
-  }
-
-  yPos = Math.max(leftY, rightY) + 8;
-
-  // Table
-  doc.setFontSize(14);
-  doc.setFont("helvetica", "bold");
-  doc.text("IHRE AUSWAHL", margin, yPos);
-  yPos += 8;
-
-  renderTableHeaders();
-
-  // Helpers for grouping
-  const isFlatFee = (item: PdfBookingItem) => item.pricingType === 'flat-rate' || item.pricingType === 'flat_fee';
-
-  const foodItemsList = data.items.filter(item => item.category !== 'Beverages' && item.category !== 'Add-ons' && !isFlatFee(item) && item.category !== 'Drinks' && item.category !== 'Wine' && item.category !== 'Beer');
-  const beveragesList = data.items.filter(item => item.category === 'Beverages' || item.category === 'Drink' || item.category === 'Drinks' || item.category === 'Softdrinks' || item.category === 'Wein' || item.category === 'Bier' || item.category === 'Coffee' || item.category === 'Drinks' || item.category === 'Kaffee' || item.category === 'Drink' || item.category === 'Wein' || item.category === 'Beer' || item.category === 'Wine');
-  // Re-filtering as beveragesList might overlap if we are not careful
-  const finalFoodItems = data.items.filter(item => {
-    const isBev = item.category === 'Beverages' || item.category === 'Drink' || item.category === 'Drinks' || item.category === 'Softdrinks' || item.category === 'Wein' || item.category === 'Bier' || item.category === 'Kaffee' || item.category === 'Wine' || item.category === 'Beer';
-    const isAddon = item.category === 'Add-ons' || isFlatFee(item);
-    return !isBev && !isAddon;
-  });
-  const finalBeverages = data.items.filter(item => {
-    return item.category === 'Beverages' || item.category === 'Drink' || item.category === 'Drinks' || item.category === 'Softdrinks' || item.category === 'Wein' || item.category === 'Bier' || item.category === 'Kaffee' || item.category === 'Wine' || item.category === 'Beer';
-  });
-  const finalAddons = data.items.filter(item => {
-    const isBev = item.category === 'Beverages' || item.category === 'Drink' || item.category === 'Drinks' || item.category === 'Softdrinks' || item.category === 'Wein' || item.category === 'Bier' || item.category === 'Kaffee' || item.category === 'Wine' || item.category === 'Beer';
-    return (item.category === 'Add-ons' || isFlatFee(item)) && !isBev;
-  });
-  // Helper to draw dietary icon (geometric representation of the UI icons)
+  // ─── drawDietaryIcon ──────────────────────────────────────────────────────
   const drawDietaryIcon = (type: string, x: number, y: number) => {
     if (!type || type === 'none') return;
-
     const prevFill = doc.getFillColor();
     const prevDraw = doc.getDrawColor();
-
-    // Switch to graphic mode
     doc.setLineWidth(0.3);
-
     if (type === 'veg' || type === 'vegan') {
-      doc.setDrawColor(22, 163, 74); // green-600 border
+      doc.setDrawColor(22, 163, 74);
       doc.rect(x, y - 2.5, 3.5, 3.5, 'S');
-      doc.setFillColor(22, 163, 74); // green-600 dot
+      doc.setFillColor(22, 163, 74);
       doc.circle(x + 1.75, y - 0.75, 1, 'F');
     } else if (type === 'non-veg') {
-      doc.setDrawColor(220, 38, 38); // red-600 border
+      doc.setDrawColor(220, 38, 38);
       doc.rect(x, y - 2.5, 3.5, 3.5, 'S');
-      doc.setFillColor(220, 38, 38); // red-600 dot
+      doc.setFillColor(220, 38, 38);
       doc.circle(x + 1.75, y - 0.75, 1, 'F');
     }
-
-    // Reset colors
     doc.setFillColor(prevFill);
     doc.setDrawColor(prevDraw);
   };
 
+  // ─── Icon helpers ─────────────────────────────────────────────────────────
   const drawUsersIcon = (x: number, y: number) => {
     const prevFill = doc.getFillColor();
     const prevDraw = doc.getDrawColor();
-
-    doc.setFillColor(100, 116, 139); // slate-500
+    doc.setFillColor(100, 116, 139);
     doc.setDrawColor(100, 116, 139);
     doc.setLineWidth(0.1);
-
-    // Head - Solid
     doc.circle(x + 1.75, y - 1.8, 0.8, 'F');
-    // Body - Solid rounded
     doc.roundedRect(x + 0.5, y - 0.4, 2.5, 1.4, 0.5, 0.5, 'F');
-
     doc.setFillColor(prevFill);
     doc.setDrawColor(prevDraw);
   };
@@ -318,18 +449,13 @@ export async function generateBookingPdf(
   const drawPackageIcon = (x: number, y: number) => {
     const prevFill = doc.getFillColor();
     const prevDraw = doc.getDrawColor();
-
-    doc.setDrawColor(100, 116, 139); // slate-500
+    doc.setDrawColor(100, 116, 139);
     doc.setLineWidth(0.3);
-
-    // Box outline
     doc.rect(x, y - 2.5, 3.5, 3.5, 'S');
-    // Internal lines for box flap
     doc.setLineWidth(0.15);
     doc.line(x + 1.75, y - 2.5, x + 1.75, y - 1);
     doc.line(x + 0.5, y - 2.2, x + 1.75, y - 1.2);
     doc.line(x + 3, y - 2.2, x + 1.75, y - 1.2);
-
     doc.setFillColor(prevFill);
     doc.setDrawColor(prevDraw);
   };
@@ -337,108 +463,82 @@ export async function generateBookingPdf(
   const drawWineIcon = (x: number, y: number) => {
     const prevFill = doc.getFillColor();
     const prevDraw = doc.getDrawColor();
-
-    doc.setDrawColor(100, 116, 139); // slate-500
+    doc.setDrawColor(100, 116, 139);
     doc.setLineWidth(0.3);
-
-    // Bottom line (base)
     doc.line(x + 0.5, y + 1.2, x + 3, y + 1.2);
-    // Stem (vertical)
     doc.line(x + 1.75, y - 0.5, x + 1.75, y + 1.2);
-    // Bowl (U-shape)
     doc.setLineWidth(0.35);
-    // Top of bowl
     doc.line(x + 0.5, y - 3, x + 3, y - 3);
-    // Lower bowl curve (simplified)
     doc.lines(
-      [
-        [0, 1.2, 0.5, 2.5, 1.25, 2.5],
-        [0.75, 0, 1.25, -1.3, 1.25, -2.5]
-      ],
-      x + 0.5, y - 3, [1, 1], 'S', false
+      [[0, 1.2, 0.5, 2.5, 1.25, 2.5], [0.75, 0, 1.25, -1.3, 1.25, -2.5]],
+      x + 0.5,
+      y - 3,
+      [1, 1],
+      'S',
+      false
     );
-
     doc.setFillColor(prevFill);
     doc.setDrawColor(prevDraw);
   };
 
-
-  // Helper for multi-line item info (Add-ons/Notes)
-  const renderItemInfo = (label: string, text?: string, color: [number, number, number] = [180, 83, 9]) => {
+  // ─── renderItemInfo (choices / notes sub-line) ────────────────────────────
+  const renderItemInfo = (
+    label: string,
+    text?: string,
+    color: [number, number, number] = [180, 83, 9]
+  ) => {
     if (!text || !text.trim()) return;
-
     doc.setTextColor(...color);
-    doc.setFont("helvetica", "italic");
+    doc.setFont('helvetica', 'italic');
     doc.setFontSize(8.5);
-
-    const maxWidth = 105; // Reduced to avoid quantity column
+    const maxWidth = mode === 'kitchen' ? KITCHEN_NAME_MAX_W : contentWidth - 30;
     const lineH = 4.5;
-    const indentX = margin + 12;
-
-    // 1. Initial cleanup: normalize common formatting
-    let processedText = text
-      // Reorder dietary tags like "(Veg)" if they appear after a name
-      .replace(/([^,:]+?)\s*(\(Veg\)|\(Vegan\)|\(Non-Veg\))/gi, (match, name, tag) => `${tag} ${name.trim()}`);
-
-    // 2. Explode the text into parts containing the name, status dots, or dietary tags
-    // We recognize emojis, (Veg/Vegan/NV) tags, and delimiters
+    const indentX = mode === 'kitchen' ? margin + 12 : margin + 5;
+    let processedText = text.replace(
+      /([^,:]+?)\s*(\(Veg\)|\(Vegan\)|\(Non-Veg\))/gi,
+      (_match, name, tag) => `${tag} ${name.trim()}`
+    );
     const tagMatchRegex = /(\(Veg\)|\(Vegan\)|\(Non-Veg\)|[🟢🔴⚪⚫])/gi;
     const parts = (`${label}: ` + processedText).split(tagMatchRegex);
-
     let currentX = indentX;
     let currentY = yPos - 1;
-
-    checkPageBreak(lineH + 2);
-
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i];
       if (!part) continue;
-
       const lowerPart = part.trim().toLowerCase();
       let tagType: 'veg' | 'non-veg' | 'vegan' | null = null;
       if (lowerPart === '(veg)' || lowerPart === '🟢') tagType = 'veg';
       else if (lowerPart === '(vegan)' || lowerPart === '⚪') tagType = 'vegan';
       else if (lowerPart === '(non-veg)' || lowerPart === '🔴') tagType = 'non-veg';
-
       if (tagType) {
-        // Look ahead to next text segment to see if we should wrap together
-        const nextText = parts[i + 1] || "";
-        const nextWord = (nextText.match(/\S+/) || [""])[0];
+        const nextText = parts[i + 1] || '';
+        const nextWord = (nextText.match(/\S+/) || [''])[0];
         const nextWordWidth = doc.getTextWidth(nextWord);
-        
         if (currentX + 6 + nextWordWidth > indentX + maxWidth) {
           currentX = indentX;
           currentY += lineH;
           checkPageBreak(lineH + 2);
           doc.setTextColor(...color);
-          doc.setFont("helvetica", "italic");
+          doc.setFont('helvetica', 'italic');
           doc.setFontSize(8.5);
         }
-
         drawDietaryIcon(tagType, currentX + 0.5, currentY - 0.5);
         currentX += 5.5;
       } else {
-        // Handle regular text segments
-        // Tokenize by whitespace to handle proper wrapping within words
         const tokens = part.match(/\S+|\s+/g) || [];
-
         for (const token of tokens) {
           const tokenWidth = doc.getTextWidth(token);
-
           if (token.trim() === '') {
-            // Avoid starting new lines with whitespace
             if (currentX === indentX) continue;
           } else if (currentX + tokenWidth > indentX + maxWidth) {
             currentX = indentX;
             currentY += lineH;
             checkPageBreak(lineH + 2);
             doc.setTextColor(...color);
-            doc.setFont("helvetica", "italic");
+            doc.setFont('helvetica', 'italic');
             doc.setFontSize(8.5);
           }
-
-          // Print the token (strip leading spaces if it's the start of the line)
-          const printToken = (currentX === indentX) ? token.replace(/^\s+/, '') : token;
+          const printToken = currentX === indentX ? token.replace(/^\s+/, '') : token;
           if (printToken) {
             doc.text(printToken, currentX, currentY);
             currentX += doc.getTextWidth(printToken);
@@ -446,328 +546,524 @@ export async function generateBookingPdf(
         }
       }
     }
-
     yPos = currentY + lineH + 1.5;
     doc.setTextColor(...COLORS.title);
   };
 
-  // Calculate dietary breakdown (only for food items, not beverages or addons)
-  const calculateDietaryBreakdown = () => {
-    const foodItems = finalFoodItems.filter(item => item.pricingType === 'per_person');
+  // ─── Item grouping ────────────────────────────────────────────────────────
+  const isFlatFee = (item: PdfBookingItem) =>
+    item.pricingType === 'flat-rate' || item.pricingType === 'flat_fee';
 
-    const getHighestPrice = (categoryNames: string[], dietaryFilter?: (d: string) => boolean) => {
-      const filtered = foodItems.filter(i => {
-        const matchesCategory = categoryNames.some(cn => (i.category || '').toLowerCase() === cn.toLowerCase());
+  const finalFoodItems = data.items.filter((item) => {
+    const isBev = ['Beverages', 'Drink', 'Drinks', 'Softdrinks', 'Wein', 'Bier', 'Kaffee', 'Wine', 'Beer'].includes(item.category);
+    const isAddon = item.category === 'Add-ons' || isFlatFee(item);
+    return !isBev && !isAddon;
+  });
+  const finalBeverages = data.items.filter((item) =>
+    ['Beverages', 'Drink', 'Drinks', 'Softdrinks', 'Wein', 'Bier', 'Kaffee', 'Wine', 'Beer'].includes(item.category)
+  );
+  const finalAddons = data.items.filter((item) => {
+    const isBev = ['Beverages', 'Drink', 'Drinks', 'Softdrinks', 'Wein', 'Bier', 'Kaffee', 'Wine', 'Beer'].includes(item.category);
+    return (item.category === 'Add-ons' || isFlatFee(item)) && !isBev;
+  });
+
+  // ─── Dietary price breakdown (offer / inquiry only) ───────────────────────
+  const calculateDietaryBreakdown = () => {
+    const foodItems = finalFoodItems.filter((item) => item.pricingType === 'per_person');
+    const getHighestPrice = (
+      categoryNames: string[],
+      dietaryFilter?: (d: string) => boolean
+    ) => {
+      const filtered = foodItems.filter((i) => {
+        const matchesCategory = categoryNames.some(
+          (cn) => (i.category || '').toLowerCase() === cn.toLowerCase()
+        );
         const matchesDietary = dietaryFilter ? dietaryFilter(i.dietaryType || 'none') : true;
         return matchesCategory && matchesDietary;
       });
-      return filtered.length > 0 ? Math.max(...filtered.map(i => i.unitPrice || 0)) : 0;
+      return filtered.length > 0 ? Math.max(...filtered.map((i) => i.unitPrice || 0)) : 0;
     };
-
     const maxStarter = getHighestPrice(['Starters', 'Vorspeisen']);
-    const maxVegMain = getHighestPrice(['Main Courses', 'Hauptgänge', 'Menü'], (d) => d === 'veg' || d === 'vegan');
-    const maxNonVegMain = getHighestPrice(['Main Courses', 'Hauptgänge', 'Menü'], (d) => d === 'non-veg');
+    const maxVegMain = getHighestPrice(
+      ['Main Courses', 'Hauptgänge', 'Menü'],
+      (d) => d === 'veg' || d === 'vegan'
+    );
+    const maxNonVegMain = getHighestPrice(
+      ['Main Courses', 'Hauptgänge', 'Menü'],
+      (d) => d === 'non-veg'
+    );
     const maxDessert = getHighestPrice(['Desserts']);
-
     const otherPPPrice = foodItems
-      .filter(i => !['Starters', 'Vorspeisen', 'Main Courses', 'Hauptgänge', 'Menü', 'Desserts'].includes(i.category))
+      .filter(
+        (i) =>
+          !['Starters', 'Vorspeisen', 'Main Courses', 'Hauptgänge', 'Menü', 'Desserts'].includes(
+            i.category
+          )
+      )
       .reduce((sum, i) => sum + (i.unitPrice || 0), 0);
-
     return {
       veg: maxStarter + maxVegMain + maxDessert + otherPPPrice,
-      nonVeg: maxStarter + maxNonVegMain + maxDessert + otherPPPrice
+      nonVeg: maxStarter + maxNonVegMain + maxDessert + otherPPPrice,
     };
   };
 
   const dietaryTotals = calculateDietaryBreakdown();
 
-  const mainGroups = [
-    { name: "Food Items", items: finalFoodItems },
-    { name: "Beverages", items: finalBeverages },
-    { name: "Add-ons", items: finalAddons }
-  ].filter(g => g.items.length > 0);
-
   const categoryOrder = [
     'Apéro', 'Snacks',
-    'Starter', 'Starters', 'Vorspeise', 'Vorspeisen', 
+    'Starter', 'Starters', 'Vorspeise', 'Vorspeisen',
     'Main Course', 'Main Courses', 'Hauptgang', 'Hauptgänge', 'Hauptgericht', 'Hauptgerichte', 'Menü',
     'Dessert', 'Desserts', 'Nachspeise', 'Nachspeisen',
     'Add-on', 'Add-ons', 'Extra', 'Extras', 'Zusatzleistung', 'Zusatzleistungen', 'Choices',
-    'Beverage', 'Beverages', 'Drink', 'Drinks', 'Getränk', 'Getränke', 'Softdrinks', 'Wein', 'Wine', 'Bier', 'Beer', 'Kaffee', 'Coffee'
+    'Beverage', 'Beverages', 'Drink', 'Drinks', 'Getränk', 'Getränke', 'Softdrinks', 'Wein', 'Wine', 'Bier', 'Beer', 'Kaffee', 'Coffee',
   ];
 
-  mainGroups.forEach(group => {
-    checkPageBreak(20, true);
+  const mainGroups = [
+    { name: 'Food Items', items: finalFoodItems },
+    { name: 'Beverages', items: finalBeverages },
+    { name: 'Add-ons', items: finalAddons },
+  ].filter((g) => g.items.length > 0);
 
-    // Main Group Header
-    doc.setFillColor(248, 250, 252); // slate-50
-    doc.rect(margin, yPos, contentWidth, 10, 'F');
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.setTextColor(...COLORS.secondary);
-    yPos += 7;
-    doc.text(group.name.toUpperCase(), margin + 3, yPos);
-    yPos += 8;
+  // ─── Draw header ──────────────────────────────────────────────────────────
+  drawHeader();
 
-    const sortedItemsInGroup = [...group.items].sort((a, b) => {
-      const catA = (a.category || '').trim();
-      const catB = (b.category || '').trim();
-      
-      const idxA = categoryOrder.findIndex(c => c.toLowerCase() === catA.toLowerCase());
-      const idxB = categoryOrder.findIndex(c => c.toLowerCase() === catB.toLowerCase());
-      
-      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-      if (idxA !== -1) return -1;
-      if (idxB !== -1) return 1;
-      
-      return catA.localeCompare(catB);
-    });
+  // ═════════════════════════════════════════════════════════════════════════════
+  // KITCHEN MODE — item rendering
+  // ═════════════════════════════════════════════════════════════════════════════
+  if (mode === 'kitchen') {
+    mainGroups.forEach((group) => {
+      // Group header bar
+      checkPageBreak(18, false);
+      doc.setFillColor(...COLORS.background);
+      doc.rect(margin, yPos, contentWidth, 9, 'F');
+      doc.setDrawColor(...COLORS.border);
+      doc.setLineWidth(0.2);
+      doc.rect(margin, yPos, contentWidth, 9, 'S');
 
-    let lastCategory = "";
-    sortedItemsInGroup.forEach(item => {
-      let displayName = item.name;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(...COLORS.secondary);
+      doc.setCharSpace(1.2);
+      doc.text(group.name.toUpperCase(), margin + 5, yPos + 6);
+      doc.setCharSpace(0);
 
-      // Calculate layout before rendering
-      const itemMaxWidth = mode === 'kitchen' ? 120 : 95;
-      const textX = margin + 12;
-      const iconX = margin + 6.5;
+      // Column headers on the right side of the group bar
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text('QTY', KITCHEN_QTY_CENTER, yPos + 6, { align: 'center' });
+      doc.text('DONE', KITCHEN_DONE_X + 3, yPos + 6, { align: 'center' });
+      yPos += 14;
 
-      const nameLines = doc.splitTextToSize(displayName, itemMaxWidth);
-      const rowH = Math.max(nameLines.length * 5, 8);
+      // Sort items
+      const sortedItems = [...group.items].sort((a, b) => {
+        const catA = (a.category || '').trim();
+        const catB = (b.category || '').trim();
+        const idxA = categoryOrder.findIndex((c) => c.toLowerCase() === catA.toLowerCase());
+        const idxB = categoryOrder.findIndex((c) => c.toLowerCase() === catB.toLowerCase());
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return catA.localeCompare(catB);
+      });
 
-      // Check if sub-category changed
-      if (item.category !== lastCategory) {
-        checkPageBreak(15, true);
-        doc.setFont("helvetica", "bold");
+      let lastCategory = '';
+      sortedItems.forEach((item) => {
+        // Skip redundant category label if it matches group name (e.g. Beverages group -> Beverages category)
+        const gName = group.name.toLowerCase().replace(' items', '').trim();
+        const cName = (item.category || '').toLowerCase().trim();
+        const isRedundant = cName === gName || gName.startsWith(cName) || cName.startsWith(gName);
+
+        // Category sub-label
+        if (item.category !== lastCategory && !isRedundant) {
+          // Check if category label and at least one item line fit on page
+          checkPageBreak(18, false);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(7.5);
+          doc.setTextColor(...COLORS.primary);
+          doc.setCharSpace(1);
+          doc.text(item.category.toUpperCase(), margin + 3, yPos + 2);
+          doc.setCharSpace(0);
+          yPos += 5;
+          doc.setDrawColor(210, 210, 210);
+          doc.setLineWidth(0.15);
+          doc.line(margin, yPos, margin + contentWidth, yPos);
+          yPos += 6;
+          lastCategory = item.category;
+        } else if (item.category !== lastCategory) {
+          // Still update lastCategory even if we don't print it
+          lastCategory = item.category;
+        }
+
+        // Row height
+        const nameLines = doc.splitTextToSize(item.name, KITCHEN_NAME_MAX_W);
+        const rowH = Math.max(nameLines.length * 5, 8);
+        let estimatedH = rowH + 6;
+        if (item.notes) estimatedH += 6;
+        if (item.customerComment) estimatedH += 6;
+        checkPageBreak(estimatedH, false);
+
+        const rowTopY = yPos;
+        const iconX = margin + 3;
+        const textX = margin + (item.dietaryType && item.dietaryType !== 'none' ? 12 : 6);
+
+        // Dietary icon
+        if (item.dietaryType && item.dietaryType !== 'none') {
+          drawDietaryIcon(item.dietaryType, iconX, rowTopY + 4);
+        }
+
+        // Item name
+        doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
-        doc.setTextColor(...COLORS.primary);
-        yPos += 6;
-        doc.text(item.category.toUpperCase(), margin + 5, yPos);
-        yPos += 5;
-        lastCategory = item.category;
-      }
+        doc.setTextColor(...COLORS.title);
+        doc.text(nameLines, textX, rowTopY + 4);
 
-      checkPageBreak(rowH + 5, true);
+        yPos = rowTopY + nameLines.length * 5 + 1;
 
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.setTextColor(...COLORS.title);
+        // Sub-lines (choices / notes)
+        renderItemInfo('Choices', item.notes, [115, 128, 106]);
+        renderItemInfo('Note', item.customerComment, [180, 83, 9]);
 
-      // Draw dietary icon for main item
-      if (item.dietaryType && item.dietaryType !== 'none') {
-        drawDietaryIcon(item.dietaryType, iconX, yPos + 4);
-      }
-
-      if (mode === 'kitchen') {
-        doc.text(nameLines, textX, yPos + 4);
-
-        // Quantity with icon
+        // ── Quantity (centred in QTY column) ──────────────────────────────
         const qtyStr = String(item.quantity);
         const qtyW = doc.getTextWidth(qtyStr);
         const iconW = 3.5;
         const gap = 1.5;
         const totalW = iconW + gap + qtyW;
-        const centerOffset = margin + 130;
-        const startX = centerOffset - (totalW / 2);
+        const qtyStartX = KITCHEN_QTY_CENTER - totalW / 2;
 
-        if (item.pricingType === 'per_person') {
-          drawUsersIcon(startX, yPos + 4);
-        } else if (item.category === 'Beverages' || item.pricingType === 'consumption') {
-          drawWineIcon(startX, yPos + 4);
-        } else {
-          drawPackageIcon(startX, yPos + 4);
+        if (item.pricingType === 'per_person') drawUsersIcon(qtyStartX, rowTopY + 4);
+        else if (item.category === 'Beverages' || item.pricingType === 'consumption')
+          drawWineIcon(qtyStartX, rowTopY + 4);
+        else drawPackageIcon(qtyStartX, rowTopY + 4);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(...COLORS.title);
+        doc.text(qtyStr, qtyStartX + iconW + gap, rowTopY + 4);
+
+        // ── Done checkbox ─────────────────────────────────────────────────
+        doc.setDrawColor(...COLORS.primary);
+        doc.setLineWidth(0.5);
+        doc.roundedRect(KITCHEN_DONE_X, rowTopY + 0.5, 6, 6, 0.5, 0.5, 'S');
+
+        // Row separator
+        doc.setDrawColor(...COLORS.border);
+        doc.setLineWidth(0.1);
+        doc.line(margin + 6, yPos, margin + contentWidth, yPos);
+        yPos += 4;
+      });
+      yPos += 6;
+    });
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════════
+  // OFFER / INQUIRY MODE — item rendering (unchanged)
+  // ═════════════════════════════════════════════════════════════════════════════
+  if (mode === 'offer' || mode === 'inquiry') {
+    mainGroups.forEach((group) => {
+      checkPageBreak(30);
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(14);
+      doc.setTextColor(...COLORS.accent);
+      doc.text(group.name, pageWidth / 2, yPos, { align: 'center' });
+      yPos += 4;
+      const dividerY = yPos + 3;
+      const lineLen = 55;
+      const centerX = pageWidth / 2;
+      doc.setDrawColor(190, 190, 190);
+      doc.setLineWidth(0.3);
+      doc.line(centerX - lineLen - 4, dividerY, centerX - 5, dividerY);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(180, 180, 180);
+      doc.text('+', centerX, dividerY + 1, { align: 'center' });
+      doc.line(centerX + 5, dividerY, centerX + lineLen + 4, dividerY);
+      yPos += 10;
+
+      const sortedItems = [...group.items].sort((a, b) => {
+        const catA = (a.category || '').trim();
+        const catB = (b.category || '').trim();
+        const idxA = categoryOrder.findIndex((c) => c.toLowerCase() === catA.toLowerCase());
+        const idxB = categoryOrder.findIndex((c) => c.toLowerCase() === catB.toLowerCase());
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return catA.localeCompare(catB);
+      });
+
+      let lastCategory = '';
+      sortedItems.forEach((item) => {
+        if (item.category !== lastCategory) {
+          checkPageBreak(15);
+          yPos += 5;
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(8);
+          doc.setTextColor(140, 140, 140);
+          doc.setCharSpace(2);
+          doc.text(item.category.toUpperCase(), margin, yPos);
+          doc.setCharSpace(0);
+          yPos += 3;
+          doc.setDrawColor(215, 215, 215);
+          doc.setLineWidth(0.2);
+          doc.line(margin, yPos, margin + contentWidth, yPos);
+          yPos += 6;
+          lastCategory = item.category;
         }
-        doc.text(qtyStr, startX + iconW + gap, yPos + 4);
 
-        doc.setDrawColor(203, 213, 225);
-        doc.rect(margin + 160 - 3, yPos + 4 - 3.5, 6, 6);
-      } else {
-        doc.text(nameLines, textX, yPos + 4);
-        doc.setTextColor(...COLORS.text);
+        const itemMaxWidth = 95;
+        const nameLines = doc.splitTextToSize(item.name, itemMaxWidth);
+        const nameHeight = nameLines.length * 4.5;
+
+        let estimatedHeight = nameHeight + 10;
+        if (item.notes) estimatedHeight += 5;
+        if (item.customerComment) estimatedHeight += 5;
+        checkPageBreak(estimatedHeight);
+
+        const itemTextX = margin + (item.dietaryType && item.dietaryType !== 'none' ? 7 : 0);
+        if (item.dietaryType && item.dietaryType !== 'none') {
+          drawDietaryIcon(item.dietaryType, margin, yPos + 3);
+        }
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(...COLORS.title);
+        doc.text(nameLines, itemTextX, yPos + 4);
+
+        const priceY = yPos + 4;
+        yPos += nameHeight + 2;
+
+        // Inner renderItemInfo for offer/inquiry (strips label prefixes)
+        const renderOfferItemInfo = (
+          label: string,
+          text: string | undefined,
+          color: [number, number, number]
+        ) => {
+          if (!text || text.trim() === '') return;
+          let cleanText = text.trim();
+          const possibleLabels = ['Choices', 'Add-ons', 'Note', 'Variant'];
+          let changed = true;
+          while (changed) {
+            changed = false;
+            for (const l of possibleLabels) {
+              const prefix = `${l}: `;
+              if (cleanText.toLowerCase().startsWith(prefix.toLowerCase())) {
+                cleanText = cleanText.substring(prefix.length).trim();
+                changed = true;
+              }
+            }
+          }
+          if (!cleanText) return;
+          const fullText = `${label}: ${cleanText}`;
+          doc.setFont('helvetica', 'italic');
+          doc.setFontSize(8.5);
+          doc.setTextColor(...color);
+          const infoLines = doc.splitTextToSize(fullText, contentWidth - 15);
+          doc.text(infoLines, margin + 7, yPos + 2);
+          yPos += infoLines.length * 3.5 + 1;
+        };
+
+        renderOfferItemInfo('Choices', item.notes, [115, 128, 106]);
+        renderOfferItemInfo('Note', item.customerComment, [180, 83, 9]);
 
         if (mode === 'inquiry') {
-          doc.setFont("helvetica", "bold");
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(9.5);
           doc.setTextColor(...COLORS.title);
-          doc.text(`CHF ${Number(item.unitPrice).toFixed(2)}`, pageWidth - margin - 3, yPos + 4, { align: 'right' });
+          doc.text(
+            `CHF ${Number(item.unitPrice).toFixed(2)}`,
+            margin + contentWidth,
+            priceY,
+            { align: 'right' }
+          );
         } else {
           const qtyVal = String(item.quantity);
           const unitPriceTxt = ` x ${Number(item.unitPrice).toFixed(0)} CHF`;
-          const baseTxt = (qtyVal + " ").trim();
-
+          const baseTxt = (qtyVal + ' ').trim();
           const iconW = 3.5;
           const gap = 1.5;
-          const currentX = margin + 105;
+          const currentX = margin + 85;
 
-          if (item.pricingType === 'per_person') {
-            drawUsersIcon(currentX, yPos + 4);
-          } else if (item.category === 'Beverages' || item.pricingType === 'consumption') {
-            drawWineIcon(currentX, yPos + 4);
-          } else {
-            drawPackageIcon(currentX, yPos + 4);
-          }
+          if (item.pricingType === 'per_person') drawUsersIcon(currentX, priceY);
+          else if (item.category === 'Beverages' || item.pricingType === 'consumption')
+            drawWineIcon(currentX, priceY);
+          else drawPackageIcon(currentX, priceY);
 
-          doc.text(baseTxt, currentX + iconW + gap, yPos + 4);
-          const baseWidth = doc.getTextWidth(baseTxt);
-          doc.text(unitPriceTxt, currentX + iconW + gap + baseWidth, yPos + 4);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9.5);
+          doc.setTextColor(...COLORS.text);
+          doc.text(baseTxt, currentX + iconW + gap, priceY);
+          doc.text(
+            unitPriceTxt,
+            currentX + iconW + gap + doc.getTextWidth(baseTxt),
+            priceY
+          );
 
-          doc.setFont("helvetica", "bold");
+          doc.setFont('helvetica', 'bold');
           doc.setTextColor(...COLORS.title);
-          doc.text(`CHF ${item.totalPrice?.toFixed(2)}`, pageWidth - margin - 3, yPos + 4, { align: 'right' });
+          doc.text(
+            `CHF ${item.totalPrice?.toFixed(2)}`,
+            margin + contentWidth,
+            priceY,
+            { align: 'right' }
+          );
         }
-      }
 
-      yPos += rowH + (mode === 'kitchen' ? 4 : 2);
-
-      // 1. Add-ons (from item.notes) - ABOVE the line
-      renderItemInfo('Choices', item.notes, [115, 128, 106]); // darker primary
-
-      // 2. Customer Comment (from item.customerComment) - ABOVE the line
-      renderItemInfo('Note', item.customerComment, [180, 83, 9]); // amber-700
-
-      // Seprator line at the end of item block
-      doc.setDrawColor(...COLORS.border);
-      doc.setLineWidth(0.1);
-      doc.line(margin + 10, yPos, pageWidth - margin, yPos);
-      yPos += 3;
+        yPos += 3;
+        doc.setDrawColor(235, 235, 235);
+        doc.setLineWidth(0.15);
+        doc.line(margin, yPos, margin + contentWidth, yPos);
+        yPos += 5;
+      });
+      yPos += 8;
     });
-  });
+  }
 
-  // Helper for Notes Sections
+  // ─── Note sections ────────────────────────────────────────────────────────
   const renderNoteSection = (title: string, text?: string, isWarning = false) => {
     if (!text || !text.trim()) return;
     yPos += 10;
     const lines = doc.splitTextToSize(text, contentWidth - 10);
-    const boxH = (lines.length * 5) + 15;
+    const boxH = lines.length * 5 + 15;
     checkPageBreak(boxH + 5);
-
     if (isWarning) {
-      doc.setFillColor(254, 242, 242); // red-50
-      doc.setDrawColor(252, 165, 165); // red-300
+      doc.setFillColor(254, 242, 242);
+      doc.setDrawColor(252, 165, 165);
     } else {
-      doc.setFillColor(241, 245, 249); // slate-100
-      doc.setDrawColor(203, 213, 225); // slate-300
+      doc.setFillColor(241, 245, 249);
+      doc.setDrawColor(203, 213, 225);
     }
     doc.rect(margin, yPos, contentWidth, boxH, 'F');
     doc.rect(margin, yPos, contentWidth, boxH, 'S');
-
-    doc.setFont("helvetica", "bold");
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
-    if (isWarning) {
-      doc.setTextColor(185, 28, 28);
-    } else {
-      doc.setTextColor(...COLORS.title);
-    }
+    doc.setTextColor(
+      isWarning ? 185 : COLORS.title[0],
+      isWarning ? 28 : COLORS.title[1],
+      isWarning ? 28 : COLORS.title[2]
+    );
     doc.text(title.toUpperCase(), margin + 5, yPos + 7);
-
-    doc.setFont("helvetica", "normal");
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    if (isWarning) {
-      doc.setTextColor(153, 27, 27);
-    } else {
-      doc.setTextColor(...COLORS.text);
-    }
+    doc.setTextColor(
+      isWarning ? 153 : COLORS.text[0],
+      isWarning ? 27 : COLORS.text[1],
+      isWarning ? 27 : COLORS.text[2]
+    );
     doc.text(lines, margin + 5, yPos + 14);
     yPos += boxH;
   };
 
-  // Render Notes BEFORE Footer for Customer Offer
   const allergies = data.allergies ? String(data.allergies) : undefined;
   const requests = data.specialRequests ? String(data.specialRequests) : undefined;
   const kitchen = data.kitchenNotes ? String(data.kitchenNotes) : undefined;
 
   if (mode === 'offer' || mode === 'inquiry') {
-    renderNoteSection("Allergien & Diätetisch", allergies, true);
-    renderNoteSection("Besondere Wünsche", requests);
+    renderNoteSection('Allergien & Diätetisch', allergies, true);
+    renderNoteSection('Besondere Wünsche', requests);
   } else {
-    // For Kitchen, still at the end
-    renderNoteSection("Allergies & Dietary", allergies, true);
-    renderNoteSection("Special Requests", requests);
-    renderNoteSection("Staff Notes", kitchen);
+    renderNoteSection('Allergien & Diätetisch', allergies, true);
+    renderNoteSection('Besondere Wünsche', requests);
+    renderNoteSection('Staff Notes', kitchen);
   }
 
-  // Footer / Totals (Final piece for Customer)
+  // ─── Pricing summary (offer / inquiry only) ───────────────────────────────
   if (mode === 'offer' || mode === 'inquiry') {
-    // Check for 80mm available to prevent footer / total overlap with bottom of page
     checkPageBreak(80);
     yPos += 10;
     doc.setDrawColor(...COLORS.primary);
-    doc.setLineWidth(1);
-    doc.line(margin, yPos, pageWidth - margin, yPos);
+    doc.setLineWidth(0.8);
+    doc.line(margin, yPos, margin + contentWidth, yPos);
     yPos += 10;
-
-    // Dietary Breakdown Section
     const hasDietaryData = dietaryTotals.veg > 0 || dietaryTotals.nonVeg > 0;
-
     if (hasDietaryData) {
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
       doc.setTextColor(...COLORS.secondary);
-      doc.text("Preis pro Person (nach Diät)", margin, yPos);
-      yPos += 10;
-
-      const lineHeight = 8;
-
-        // Veg Track
-        if (dietaryTotals.veg > 0) {
-          doc.setFont("helvetica", "normal");
-          doc.setFontSize(11);
-          doc.setTextColor(...COLORS.text);
-          doc.text("Vegetarische Variante:", margin, yPos);
-          doc.text(`CHF ${dietaryTotals.veg.toFixed(2)}`, pageWidth - margin - 60, yPos, { align: 'right' });
-          yPos += lineHeight;
-        }
-  
-        // Non-Veg Track
-        if (dietaryTotals.nonVeg > 0) {
-          doc.setFont("helvetica", "normal");
-          doc.setFontSize(11);
-          doc.setTextColor(...COLORS.text);
-          doc.text("Fleischvariante:", margin, yPos);
-          doc.text(`CHF ${dietaryTotals.nonVeg.toFixed(2)}`, pageWidth - margin - 60, yPos, { align: 'right' });
-          yPos += lineHeight;
-        }
-
+      doc.text('Preis pro Person (nach Diät)', margin, yPos);
+      yPos += 9;
+      const lineHeight = 7;
+      if (dietaryTotals.veg > 0) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(...COLORS.text);
+        doc.text('Vegetarische Variante', margin, yPos);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`CHF ${dietaryTotals.veg.toFixed(2)}`, margin + contentWidth, yPos, {
+          align: 'right',
+        });
+        yPos += lineHeight;
+      }
+      if (dietaryTotals.nonVeg > 0) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(...COLORS.text);
+        doc.text('Fleischvariante', margin, yPos);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`CHF ${dietaryTotals.nonVeg.toFixed(2)}`, margin + contentWidth, yPos, {
+          align: 'right',
+        });
+        yPos += lineHeight;
+      }
       yPos += 2;
       doc.setDrawColor(...COLORS.border);
-      doc.setLineWidth(0.5);
-      doc.line(margin, yPos, pageWidth - margin, yPos);
+      doc.setLineWidth(0.3);
+      doc.line(margin, yPos, margin + contentWidth, yPos);
       yPos += 10;
     }
 
     let displayTotal = data.estimatedTotal;
-
-    // Re-calculate the grand total in inquiry mode using the highest-per-category tracking to match cart ui
     if (mode === 'inquiry') {
       const maxTotalPP = Math.max(dietaryTotals.veg, dietaryTotals.nonVeg);
       const foodTotal = maxTotalPP * (data.guestCount || 1);
-      
-      const otherItemsTotal = data.items.filter(item => item.category === 'Beverages' || item.category === 'Drink' || item.category === 'Drinks' || item.category === 'Softdrinks' || item.category === 'Wein' || item.category === 'Bier' || item.category === 'Kaffee' || item.category === 'Wine' || item.category === 'Beer' || item.category === 'Add-ons' || item.pricingType === 'flat-rate' || item.pricingType === 'flat_fee')
+      const otherItemsTotal = data.items
+        .filter(
+          (item) =>
+            ['Beverages', 'Drink', 'Drinks', 'Softdrinks', 'Wein', 'Bier', 'Kaffee', 'Wine', 'Beer'].includes(item.category) ||
+            item.category === 'Add-ons' ||
+            isFlatFee(item)
+        )
         .reduce((sum, item) => sum + (item.totalPrice || 0), 0);
-      
       displayTotal = foodTotal + otherItemsTotal;
-      
       doc.setFontSize(9);
-      doc.setFont("helvetica", "italic");
-      doc.setTextColor(180, 83, 9); // amber-700
-      doc.text("Die abgebildeten Kosten wurden auf Basis der jeweils teuersten Auswahl pro Kategorie berechnet.", margin, yPos);
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(180, 83, 9);
+      doc.text(
+        'Die abgebildeten Kosten wurden auf Basis der jeweils teuersten Auswahl pro Kategorie berechnet.',
+        margin,
+        yPos,
+        { maxWidth: contentWidth }
+      );
       yPos += 8;
     }
 
-    // Total
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(15);
     doc.setTextColor(...COLORS.secondary);
-    doc.text("Gesamtbetrag", margin, yPos);
-    doc.text(`CHF ${displayTotal?.toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
-
-    yPos += 10;
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "italic");
+    doc.text('Gesamtbetrag', margin, yPos);
+    doc.text(`CHF ${displayTotal?.toFixed(2)}`, margin + contentWidth, yPos, {
+      align: 'right',
+    });
+    yPos += 7;
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'normal');
     doc.setTextColor(...COLORS.muted);
-    doc.text(`Kalkulation for ${data.guestCount} Personen (exkl. Service & Getränke nach Aufwand)`, margin, yPos);
+    doc.text(
+      `Kalkulation für ${data.guestCount} Personen (exkl. Service & Getränke nach Aufwand)`,
+      margin,
+      yPos
+    );
+    yPos += 10;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(160, 160, 160);
+    const footerNote =
+      'Definitive Anzahl Menüs bitte mind. 4 Tage vor dem Event melden. Abrechnung nach bestätigter Anzahl.';
+    const footerLines = doc.splitTextToSize(footerNote, contentWidth);
+    doc.text(footerLines, pageWidth / 2, yPos, { align: 'center' });
   }
 
-  // Page Numbers
+  // ─── Page footer ──────────────────────────────────────────────────────────
   const total = (doc as any).internal.getNumberOfPages();
   for (let i = 1; i <= total; i++) {
     doc.setPage(i);
@@ -776,7 +1072,7 @@ export async function generateBookingPdf(
     doc.text(
       `Oliv Restaurant | Page ${i} of ${total} | Generated on ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
       pageWidth / 2,
-      pageHeight - 10,
+      pageHeight - 6,
       { align: 'center' }
     );
   }
@@ -784,7 +1080,6 @@ export async function generateBookingPdf(
   return doc;
 }
 
-// Backward compatibility (optional)
 export async function generateCustomerOfferPdf(data: PdfBookingData): Promise<jsPDF> {
   return generateBookingPdf(data, 'offer');
 }
