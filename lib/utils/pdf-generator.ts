@@ -499,9 +499,15 @@ export async function generateBookingPdf(
       (_match, name, tag) => `${tag} ${name.trim()}`
     );
     const tagMatchRegex = /(\(Veg\)|\(Vegan\)|\(Non-Veg\)|[🟢🔴⚪⚫])/gi;
-    const parts = (`${label}: ` + processedText).split(tagMatchRegex);
+    let cleanText = text.trim();
+    const prefix = `${label}: `;
+    if (cleanText.toLowerCase().startsWith(prefix.toLowerCase())) {
+      cleanText = cleanText.substring(prefix.length).trim();
+    }
+
+    const parts = (`${label}: ` + cleanText).split(tagMatchRegex);
     let currentX = indentX;
-    let currentY = yPos - 1;
+    let currentY = yPos + 1.5;
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i];
       if (!part) continue;
@@ -718,7 +724,7 @@ export async function generateBookingPdf(
         doc.setTextColor(...COLORS.title);
         doc.text(nameLines, textX, rowTopY + 4);
 
-        yPos = rowTopY + nameLines.length * 5 + 1;
+        yPos = rowTopY + nameLines.length * 5 + 2;
 
         // Sub-lines (choices / notes)
         renderItemInfo('Choices', item.notes, [115, 128, 106]);
