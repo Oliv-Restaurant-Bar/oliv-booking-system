@@ -73,6 +73,123 @@ export async function generateBookingPdf(
   const KITCHEN_QTY_CENTER = margin + 124;
   const KITCHEN_DONE_X = margin + 151;
 
+  // ─── drawInfoColumns — shared for all modes ───────────────────────────────
+  const drawInfoColumns = (startY: number): number => {
+    const colW = (contentWidth / 2) - 4;
+    const leftX = margin;
+    const rightX = margin + contentWidth / 2 + 4;
+    const gridPad = 3.5;
+    const lineH = 5.5;
+
+    const getSectionHeight = (fields: { label: string; value: string | number | undefined }[]): number => {
+      let h = 7; // header height
+      fields.forEach(({ value }) => {
+        const valStr = value !== undefined && value !== null ? String(value).trim() : '';
+        if (valStr === '') return;
+        const valueLines = doc.splitTextToSize(valStr, colW - gridPad - 20 - 2);
+        h += Math.max(valueLines.length * lineH, 6.5);
+      });
+      return h;
+    };
+
+    const drawInfoSection = (
+      title: string,
+      fields: { label: string; value: string | number | undefined }[],
+      x: number,
+      sY: number,
+      forcedHeight?: number
+    ): number => {
+      let localY = sY;
+      const headerH = 7;
+      
+      // Header background
+      doc.setFillColor(...COLORS.background);
+      doc.rect(x, localY, colW, headerH, 'F');
+      
+      // Header text
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(...COLORS.primary);
+      doc.setCharSpace(1.2);
+      doc.text(title.toUpperCase(), x + gridPad, localY + 4.8);
+      doc.setCharSpace(0);
+      
+      localY += headerH;
+
+      fields.forEach(({ label, value }) => {
+        const valStr = value !== undefined && value !== null ? String(value).trim() : '';
+        if (valStr === '') return;
+        
+        // Row line
+        doc.setDrawColor(...COLORS.border);
+        doc.setLineWidth(0.1);
+        doc.line(x, localY, x + colW, localY);
+        
+        // Label
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(...COLORS.text);
+        const labelColW = 20; 
+        doc.text(`${label}:`, x + gridPad, localY + 4.5);
+        
+        // Value
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...COLORS.title);
+        const valueLines = doc.splitTextToSize(
+          valStr,
+          colW - gridPad - labelColW - 2
+        );
+        doc.text(valueLines, x + gridPad + labelColW, localY + 4.5);
+        
+        const rowH = Math.max(valueLines.length * lineH, 6.5);
+        localY += rowH;
+      });
+
+      const finalHeight = forcedHeight ? Math.max(localY - sY, forcedHeight) : localY - sY;
+
+      // Outer border
+      doc.setDrawColor(...COLORS.border);
+      doc.setLineWidth(0.2);
+      doc.rect(x, sY, colW, finalHeight, 'S');
+
+      return sY + finalHeight;
+    };
+
+    const kundendatenFields = [
+      { label: 'Kunde', value: data.customerName || 'Gast' },
+      { label: 'Firma', value: data.business },
+      { label: 'Personen', value: data.guestCount },
+      {
+        label: 'Adresse',
+        value:
+          [data.billingStreet, data.billingPlz, data.billingLocation]
+            .filter(Boolean)
+            .join(', ') || undefined,
+      },
+    ];
+
+    const eventdatenFields = [
+      { label: 'Datum', value: data.eventDate },
+      { label: 'Zeit', value: data.eventTime },
+      { label: 'Anlass', value: data.occasion || 'Event' },
+      { label: 'Ort', value: data.location || 'Restaurant Oliv' },
+      { label: 'Venue', value: data.room },
+      {
+        label: 'Erstellt',
+        value: `${new Date().toLocaleDateString('de-CH')} ${new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })}`,
+      },
+    ];
+
+    const h1 = getSectionHeight(kundendatenFields);
+    const h2 = getSectionHeight(eventdatenFields);
+    const maxH = Math.max(h1, h2);
+
+    drawInfoSection('Kundendaten', kundendatenFields, leftX, startY, maxH);
+    drawInfoSection('Eventdaten', eventdatenFields, rightX, startY, maxH);
+
+    return startY + maxH + 12;
+  };
+
   // ─── drawHeader ──────────────────────────────────────────────────────────────
   const drawHeader = (isContinuation = false) => {
     const isKitchen = mode === 'kitchen';
@@ -82,14 +199,12 @@ export async function generateBookingPdf(
       doc.setDrawColor(220, 220, 220);
       doc.setLineWidth(0.4);
       doc.rect(10, 10, pageWidth - 20, pageHeight - 20, 'S');
-      // Small centred label
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(160, 160, 160);
       doc.setCharSpace(2.5);
       doc.text('KÜCHENPAPIER (FORTS.)', pageWidth / 2, 18, { align: 'center' });
       doc.setCharSpace(0);
-      // Thin rule below label
       doc.setDrawColor(...COLORS.border);
       doc.setLineWidth(0.2);
       doc.line(margin, 21, margin + contentWidth, 21);
@@ -112,199 +227,14 @@ export async function generateBookingPdf(
       return;
     }
 
-    // ── Kitchen first-page header ─────────────────────────────────────────────
-    if (isKitchen) {
-      // Outer page border — same as offer mode
-      doc.setDrawColor(220, 220, 220);
-      doc.setLineWidth(0.4);
-      doc.rect(10, 10, pageWidth - 20, pageHeight - 20, 'S');
-
-      yPos = 22;
-
-      // Logo (centred, same as offer)
-      try {
-        const logoW = 38;
-        const logoH = 14;
-        const logoX = (pageWidth - logoW) / 2;
-        if (typeof window === 'undefined') {
-          const fs = require('fs');
-          const path = require('path');
-          const logoPath = path.join(process.cwd(), 'public', 'assets', 'oliv-logo.png');
-          if (fs.existsSync(logoPath)) {
-            doc.addImage(fs.readFileSync(logoPath), 'PNG', logoX, yPos, logoW, logoH);
-          }
-        } else {
-          doc.addImage('/assets/oliv-logo.png', 'PNG', logoX, yPos, logoW, logoH);
-        }
-      } catch {
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(16);
-        doc.setTextColor(...COLORS.secondary);
-        doc.text('o l í v', pageWidth / 2, yPos + 8, { align: 'center' });
-      }
-      yPos += 22;
-
-      // "KÜCHENPAPIER" label
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(160, 160, 160);
-      doc.setCharSpace(3);
-      doc.text('KÜCHENPAPIER', margin, yPos);
-      doc.setCharSpace(0);
-
-      // Booking ID — small muted line top-right
-      const safeId = String(data.id || 'Unknown');
-      const shortId =
-        safeId.length > 8
-          ? safeId.substring(safeId.length - 8).toUpperCase()
-          : safeId.toUpperCase();
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.5);
-      doc.setTextColor(...COLORS.muted);
-      doc.text(`ID: ${shortId}  |  INTERNAL USE ONLY`, pageWidth - margin, yPos, {
-        align: 'right',
-      });
-      yPos += 12;
-
-      // Occasion title
-      const titleText = String(data.occasion || 'Event');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(22);
-      doc.setTextColor(...COLORS.title);
-      const titleLines = doc.splitTextToSize(titleText, contentMaxWidth - 10);
-      doc.text(titleLines, pageWidth / 2, yPos, { align: 'center' });
-      yPos += titleLines.length * 10;
-
-      // Customer sub-line
-      const subtitleParts: string[] = [];
-      if (data.customerName) subtitleParts.push(data.customerName);
-      if (data.business) subtitleParts.push(data.business);
-      if (subtitleParts.length > 0) {
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
-        doc.setTextColor(130, 130, 130);
-        doc.text(`z.Hd. ${subtitleParts.join(', ')}`, pageWidth / 2, yPos, {
-          align: 'center',
-        });
-        yPos += 7;
-      }
-      yPos += 4;
-
-      // ── Event-info pill (date / time / guests / location) ───────────────────
-      const pillW = 160;
-      const pillX = (pageWidth - pillW) / 2;
-      const pillH = 14;
-      doc.setDrawColor(210, 210, 210);
-      doc.setLineWidth(0.3);
-      doc.setFillColor(250, 250, 250);
-      doc.roundedRect(pillX, yPos, pillW, pillH, 2, 2, 'FD');
-
-      const chips = [
-        `${data.eventDate}`,
-        `${data.eventTime}`,
-        `${data.guestCount} Personen`,
-        ...(data.location ? [data.location] : []),
-        ...(data.room ? [data.room] : []),
-      ];
-      const chipText = chips.join('   ·   ');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.setTextColor(...COLORS.title);
-      doc.text(chipText, pageWidth / 2, yPos + 9, { align: 'center' });
-      yPos += pillH + 10;
-
-      // ── Two-column info grid ─────────────────────────────────────────────────
-      const colW = (contentWidth / 2) - 4;
-      const leftX = margin;
-      const rightX = margin + contentWidth / 2 + 4;
-      const gridPad = 6;
-      const lineH = 5.5;
-
-      // drawInfoSection writes to yPos and returns the final yPos for that column
-      const drawInfoSection = (
-        title: string,
-        fields: { label: string; value: string | number | undefined }[],
-        x: number,
-        startY: number
-      ): number => {
-        let localY = startY;
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7.5);
-        doc.setTextColor(...COLORS.primary);
-        doc.setCharSpace(1.2);
-        doc.text(title.toUpperCase(), x + gridPad, localY);
-        doc.setCharSpace(0);
-        localY += 4;
-        doc.setDrawColor(...COLORS.border);
-        doc.setLineWidth(0.2);
-        doc.line(x + gridPad, localY, x + colW - gridPad, localY);
-        localY += 4;
-
-        fields.forEach(({ label, value }) => {
-          if (value === undefined || value === null || String(value).trim() === '') return;
-          const labelTxt = `${label}: `;
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(8.5);
-          doc.setTextColor(...COLORS.text);
-          doc.text(labelTxt, x + gridPad, localY);
-          const labelW = doc.getTextWidth(labelTxt);
-          doc.setFont('helvetica', 'normal');
-          doc.setTextColor(...COLORS.title);
-          const valueLines = doc.splitTextToSize(
-            String(value),
-            colW - gridPad - labelW - 2
-          );
-          doc.text(valueLines, x + gridPad + labelW, localY);
-          localY += valueLines.length * lineH;
-        });
-        return localY;
-      };
-
-      const gridTopY = yPos;
-
-      // Draw both columns independently, each returning their own bottom Y
-      const leftBottomY = drawInfoSection('Kundendaten', [
-        { label: 'Kunde', value: data.customerName || 'Gast' },
-        { label: 'Firma', value: data.business },
-        { label: 'Personen', value: data.guestCount },
-        {
-          label: 'Adresse',
-          value:
-            [data.billingStreet, data.billingPlz, data.billingLocation]
-              .filter(Boolean)
-              .join(', ') || undefined,
-        },
-      ], leftX, gridTopY);
-
-      const rightBottomY = drawInfoSection('Eventdaten', [
-        { label: 'Datum', value: data.eventDate },
-        { label: 'Zeit', value: data.eventTime },
-        { label: 'Anlass', value: data.occasion || 'Event' },
-        { label: 'Ort', value: data.location || 'Restaurant Oliv' },
-        { label: 'Venue', value: data.room },
-        {
-          label: 'Erstellt',
-          value: `${new Date().toLocaleDateString('de-CH')} ${new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })}`,
-        },
-      ], rightX, gridTopY);
-
-      yPos = Math.max(leftBottomY, rightBottomY) + 12;
-
-      // Thin divider before items
-      doc.setDrawColor(...COLORS.border);
-      doc.setLineWidth(0.3);
-      doc.line(margin, yPos, margin + contentWidth, yPos);
-      yPos += 10;
-
-      return;
-    }
-
-    // ── Offer / Inquiry first page ────────────────────────────────────────────
+    // ── Shared first-page top section (logo + title + subtitle + event pill) ──
     doc.setDrawColor(220, 220, 220);
     doc.setLineWidth(0.4);
     doc.rect(10, 10, pageWidth - 20, pageHeight - 20, 'S');
+
     yPos = 22;
 
+    // Logo (centred)
     try {
       const logoW = 38;
       const logoH = 14;
@@ -325,58 +255,40 @@ export async function generateBookingPdf(
       doc.setTextColor(...COLORS.secondary);
       doc.text('o l í v', pageWidth / 2, yPos + 8, { align: 'center' });
     }
-    yPos += 22;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(160, 160, 160);
-    doc.setCharSpace(3);
-    doc.text(mode === 'offer' ? 'ANGEBOT' : 'ANFRAGE', pageWidth / 2, yPos, {
-      align: 'center',
-    });
+    yPos += 18;
+
+    // Mode label & ID row (Balanced header row for all modes)
+    const safeId = String(data.id || 'Unknown');
+    const shortId =
+      safeId.length > 8
+        ? safeId.substring(safeId.length - 8).toUpperCase()
+        : safeId.toUpperCase();
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...COLORS.primary);
+    doc.setCharSpace(1.2);
+    const modeLabel = isKitchen ? 'KÜCHENPAPIER' : mode === 'offer' ? 'ANGEBOT' : 'ANFRAGE';
+    doc.text(modeLabel, margin, yPos);
     doc.setCharSpace(0);
-    yPos += 10;
-    const titleText = String(data.occasion || 'Event');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(22);
-    doc.setTextColor(...COLORS.title);
-    const titleLines = doc.splitTextToSize(titleText, contentMaxWidth - 10);
-    doc.text(titleLines, pageWidth / 2, yPos, { align: 'center' });
-    yPos += titleLines.length * 9;
-    const subtitleParts: string[] = [];
-    if (data.customerName) subtitleParts.push(data.customerName);
-    if (data.business) subtitleParts.push(data.business);
-    if (subtitleParts.length > 0) {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.setTextColor(130, 130, 130);
-      doc.text(`z.Hd. ${subtitleParts.join(', ')}`, pageWidth / 2, yPos, { align: 'center' });
-      yPos += 7;
-    }
-    yPos += 6;
-    const boxW = 120;
-    const boxX = (pageWidth - boxW) / 2;
-    const boxH = data.location || data.room ? 22 : 16;
-    doc.setDrawColor(210, 210, 210);
-    doc.setLineWidth(0.3);
-    doc.setFillColor(250, 250, 250);
-    doc.roundedRect(boxX, yPos, boxW, boxH, 2, 2, 'FD');
-    const boxCenterY = yPos + 7;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(...COLORS.title);
-    const dateTimeStr = `${data.eventDate}  —  ${data.eventTime}`;
-    doc.text(dateTimeStr, pageWidth / 2, boxCenterY, { align: 'center' });
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.setTextColor(120, 120, 120);
-    doc.text(`ca. ${data.guestCount} Personen`, pageWidth / 2, boxCenterY + 6, {
-      align: 'center',
+
+    doc.setTextColor(...COLORS.muted);
+    const idSuffix = isKitchen ? '  |  INTERNAL USE ONLY' : '';
+    doc.text(`ID: ${shortId}${idSuffix}`, pageWidth - margin, yPos, {
+      align: 'right',
     });
-    if ((data.location || data.room) && boxH > 16) {
-      const locStr = [data.location, data.room].filter(Boolean).join(', ');
-      doc.text(locStr, pageWidth / 2, boxCenterY + 12, { align: 'center' });
-    }
-    yPos += boxH + 14;
+    yPos += 12;
+
+    yPos += 3;
+
+    // ── Two-column info grid (shared for ALL modes) ───────────────────────────
+    yPos = drawInfoColumns(yPos);
+
+    // Thin divider before items
+    doc.setDrawColor(...COLORS.border);
+    doc.setLineWidth(0.3);
+    doc.line(margin, yPos, margin + contentWidth, yPos);
+    yPos += 10;
   };
 
   // ─── checkPageBreak ───────────────────────────────────────────────────────
@@ -402,7 +314,8 @@ export async function generateBookingPdf(
     doc.setTextColor(100, 116, 139);
     doc.setCharSpace(0.8);
     doc.text('ITEM', margin + 12, yPos);
-    doc.text('QTY', KITCHEN_QTY_CENTER, yPos, { align: 'center' });
+    // CHANGE 1: "QTY" → "QTY/GUEST"
+    doc.text('QTY/GUEST', KITCHEN_QTY_CENTER, yPos, { align: 'center' });
     doc.text('DONE', KITCHEN_DONE_X + 3, yPos, { align: 'center' });
     doc.setCharSpace(0);
 
@@ -493,19 +406,30 @@ export async function generateBookingPdf(
     doc.setFontSize(8.5);
     const maxWidth = mode === 'kitchen' ? KITCHEN_NAME_MAX_W : contentWidth - 30;
     const lineH = 4.5;
-    const indentX = mode === 'kitchen' ? margin + 12 : margin + 5;
-    let processedText = text.replace(
+    const indentX = mode === 'kitchen' ? margin + 12 : margin + 7;
+    
+    let cleanText = text.trim();
+    const possibleLabels = [label, 'Choices', 'Add-ons', 'Note', 'Variant', 'Option'];
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const l of possibleLabels) {
+        const prefix = `${l}: `;
+        if (cleanText.toLowerCase().startsWith(prefix.toLowerCase())) {
+          cleanText = cleanText.substring(prefix.length).trim();
+          changed = true;
+        }
+      }
+    }
+    if (!cleanText) return;
+
+    let processedText = cleanText.replace(
       /([^,:]+?)\s*(\(Veg\)|\(Vegan\)|\(Non-Veg\))/gi,
       (_match, name, tag) => `${tag} ${name.trim()}`
     );
     const tagMatchRegex = /(\(Veg\)|\(Vegan\)|\(Non-Veg\)|[🟢🔴⚪⚫])/gi;
-    let cleanText = text.trim();
-    const prefix = `${label}: `;
-    if (cleanText.toLowerCase().startsWith(prefix.toLowerCase())) {
-      cleanText = cleanText.substring(prefix.length).trim();
-    }
 
-    const parts = (`${label}: ` + cleanText).split(tagMatchRegex);
+    const parts = (`${label}: ` + processedText).split(tagMatchRegex);
     let currentX = indentX;
     let currentY = yPos + 1.5;
     for (let i = 0; i < parts.length; i++) {
@@ -654,10 +578,11 @@ export async function generateBookingPdf(
       doc.setCharSpace(0);
 
       // Column headers on the right side of the group bar
+      // CHANGE 1: "QTY" → "QTY/GUEST" in group bar header too
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7.5);
       doc.setTextColor(100, 116, 139);
-      doc.text('QTY', KITCHEN_QTY_CENTER, yPos + 6, { align: 'center' });
+      doc.text('QTY/GUEST', KITCHEN_QTY_CENTER, yPos + 6, { align: 'center' });
       doc.text('DONE', KITCHEN_DONE_X + 3, yPos + 6, { align: 'center' });
       yPos += 14;
 
@@ -675,14 +600,11 @@ export async function generateBookingPdf(
 
       let lastCategory = '';
       sortedItems.forEach((item) => {
-        // Skip redundant category label if it matches group name (e.g. Beverages group -> Beverages category)
         const gName = group.name.toLowerCase().replace(' items', '').trim();
         const cName = (item.category || '').toLowerCase().trim();
         const isRedundant = cName === gName || gName.startsWith(cName) || cName.startsWith(gName);
 
-        // Category sub-label
         if (item.category !== lastCategory && !isRedundant) {
-          // Check if category label and at least one item line fit on page
           checkPageBreak(18, false);
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(7.5);
@@ -697,11 +619,9 @@ export async function generateBookingPdf(
           yPos += 6;
           lastCategory = item.category;
         } else if (item.category !== lastCategory) {
-          // Still update lastCategory even if we don't print it
           lastCategory = item.category;
         }
 
-        // Row height
         const nameLines = doc.splitTextToSize(item.name, KITCHEN_NAME_MAX_W);
         const rowH = Math.max(nameLines.length * 5, 8);
         let estimatedH = rowH + 6;
@@ -713,12 +633,10 @@ export async function generateBookingPdf(
         const iconX = margin + 3;
         const textX = margin + (item.dietaryType && item.dietaryType !== 'none' ? 12 : 6);
 
-        // Dietary icon
         if (item.dietaryType && item.dietaryType !== 'none') {
           drawDietaryIcon(item.dietaryType, iconX, rowTopY + 4);
         }
 
-        // Item name
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
         doc.setTextColor(...COLORS.title);
@@ -726,11 +644,10 @@ export async function generateBookingPdf(
 
         yPos = rowTopY + nameLines.length * 5 + 2;
 
-        // Sub-lines (choices / notes)
         renderItemInfo('Choices', item.notes, [115, 128, 106]);
         renderItemInfo('Note', item.customerComment, [180, 83, 9]);
 
-        // ── Quantity (centred in QTY column) ──────────────────────────────
+        // ── Quantity column ────────────────────────────────────────────────
         const qtyStr = String(item.quantity);
         const qtyW = doc.getTextWidth(qtyStr);
         const iconW = 3.5;
@@ -748,12 +665,17 @@ export async function generateBookingPdf(
         doc.setTextColor(...COLORS.title);
         doc.text(qtyStr, qtyStartX + iconW + gap, rowTopY + 4);
 
+        // CHANGE 3: Dietary icon after per-person count in kitchen mode
+        if (item.pricingType === 'per_person' && item.dietaryType && item.dietaryType !== 'none') {
+          const dietIconX = qtyStartX + iconW + gap + qtyW + 2;
+          drawDietaryIcon(item.dietaryType, dietIconX, rowTopY + 4);
+        }
+
         // ── Done checkbox ─────────────────────────────────────────────────
         doc.setDrawColor(...COLORS.primary);
         doc.setLineWidth(0.5);
         doc.roundedRect(KITCHEN_DONE_X, rowTopY + 0.5, 6, 6, 0.5, 0.5, 'S');
 
-        // Row separator
         doc.setDrawColor(...COLORS.border);
         doc.setLineWidth(0.1);
         doc.line(margin + 6, yPos, margin + contentWidth, yPos);
@@ -764,28 +686,32 @@ export async function generateBookingPdf(
   }
 
   // ═════════════════════════════════════════════════════════════════════════════
-  // OFFER / INQUIRY MODE — item rendering (unchanged)
+  // OFFER / INQUIRY MODE — item rendering
   // ═════════════════════════════════════════════════════════════════════════════
   if (mode === 'offer' || mode === 'inquiry') {
     mainGroups.forEach((group) => {
-      checkPageBreak(30);
-      doc.setFont('helvetica', 'italic');
-      doc.setFontSize(14);
-      doc.setTextColor(...COLORS.accent);
-      doc.text(group.name, pageWidth / 2, yPos, { align: 'center' });
-      yPos += 4;
-      const dividerY = yPos + 3;
-      const lineLen = 55;
-      const centerX = pageWidth / 2;
-      doc.setDrawColor(190, 190, 190);
-      doc.setLineWidth(0.3);
-      doc.line(centerX - lineLen - 4, dividerY, centerX - 5, dividerY);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.setTextColor(180, 180, 180);
-      doc.text('+', centerX, dividerY + 1, { align: 'center' });
-      doc.line(centerX + 5, dividerY, centerX + lineLen + 4, dividerY);
-      yPos += 10;
+      // Group header bar (Synchronized with kitchen style for a premium look)
+      checkPageBreak(18, false);
+      doc.setFillColor(...COLORS.background);
+      doc.rect(margin, yPos, contentWidth, 9, 'F');
+      doc.setDrawColor(...COLORS.border);
+      doc.setLineWidth(0.2);
+      doc.rect(margin, yPos, contentWidth, 9, 'S');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(...COLORS.secondary);
+      doc.setCharSpace(1.2);
+      doc.text(group.name.toUpperCase(), margin + 5, yPos + 6);
+      doc.setCharSpace(0);
+
+      // Column headers
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text('QTY x PRICE', margin + 85 + 2, yPos + 6);
+      doc.text('TOTAL', margin + contentWidth - 5, yPos + 6, { align: 'right' });
+      yPos += 14;
 
       const sortedItems = [...group.items].sort((a, b) => {
         const catA = (a.category || '').trim();
@@ -839,38 +765,8 @@ export async function generateBookingPdf(
         const priceY = yPos + 4;
         yPos += nameHeight + 2;
 
-        // Inner renderItemInfo for offer/inquiry (strips label prefixes)
-        const renderOfferItemInfo = (
-          label: string,
-          text: string | undefined,
-          color: [number, number, number]
-        ) => {
-          if (!text || text.trim() === '') return;
-          let cleanText = text.trim();
-          const possibleLabels = ['Choices', 'Add-ons', 'Note', 'Variant'];
-          let changed = true;
-          while (changed) {
-            changed = false;
-            for (const l of possibleLabels) {
-              const prefix = `${l}: `;
-              if (cleanText.toLowerCase().startsWith(prefix.toLowerCase())) {
-                cleanText = cleanText.substring(prefix.length).trim();
-                changed = true;
-              }
-            }
-          }
-          if (!cleanText) return;
-          const fullText = `${label}: ${cleanText}`;
-          doc.setFont('helvetica', 'italic');
-          doc.setFontSize(8.5);
-          doc.setTextColor(...color);
-          const infoLines = doc.splitTextToSize(fullText, contentWidth - 15);
-          doc.text(infoLines, margin + 7, yPos + 2);
-          yPos += infoLines.length * 3.5 + 1;
-        };
-
-        renderOfferItemInfo('Choices', item.notes, [115, 128, 106]);
-        renderOfferItemInfo('Note', item.customerComment, [180, 83, 9]);
+        renderItemInfo('Choices', item.notes, [115, 128, 106]);
+        renderItemInfo('Note', item.customerComment, [180, 83, 9]);
 
         if (mode === 'inquiry') {
           doc.setFont('helvetica', 'bold');
@@ -883,6 +779,7 @@ export async function generateBookingPdf(
             { align: 'right' }
           );
         } else {
+          // OFFER mode
           const qtyVal = String(item.quantity);
           const unitPriceTxt = ` x ${Number(item.unitPrice).toFixed(0)} CHF`;
           const baseTxt = (qtyVal + ' ').trim();
@@ -904,6 +801,8 @@ export async function generateBookingPdf(
             currentX + iconW + gap + doc.getTextWidth(baseTxt),
             priceY
           );
+
+
 
           doc.setFont('helvetica', 'bold');
           doc.setTextColor(...COLORS.title);
@@ -990,10 +889,11 @@ export async function generateBookingPdf(
       yPos += 9;
       const lineHeight = 7;
       if (dietaryTotals.veg > 0) {
+        drawDietaryIcon('veg', margin, yPos - 0.5);
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
         doc.setTextColor(...COLORS.text);
-        doc.text('Vegetarische Variante', margin, yPos);
+        doc.text('Vegetarische Variante', margin + 6, yPos);
         doc.setFont('helvetica', 'bold');
         doc.text(`CHF ${dietaryTotals.veg.toFixed(2)}`, margin + contentWidth, yPos, {
           align: 'right',
@@ -1001,10 +901,11 @@ export async function generateBookingPdf(
         yPos += lineHeight;
       }
       if (dietaryTotals.nonVeg > 0) {
+        drawDietaryIcon('non-veg', margin, yPos - 0.5);
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
         doc.setTextColor(...COLORS.text);
-        doc.text('Fleischvariante', margin, yPos);
+        doc.text('Fleischvariante', margin + 6, yPos);
         doc.setFont('helvetica', 'bold');
         doc.text(`CHF ${dietaryTotals.nonVeg.toFixed(2)}`, margin + contentWidth, yPos, {
           align: 'right',
