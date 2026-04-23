@@ -149,7 +149,7 @@ const CATEGORY_ORDER = [
     'Main Course', 'Main Courses', 'Hauptgang', 'Hauptgänge', 'Hauptgericht', 'Hauptgerichte', 'Menü',
     'Dessert', 'Desserts', 'Nachspeise', 'Nachspeisen',
     'Add-on', 'Add-ons', 'Extra', 'Extras', 'Zusatzleistung', 'Zusatzleistungen', 'Choices',
-    'Beverage', 'Beverages', 'Drink', 'Drinks', 'Getränk', 'Getränke', 'Softdrinks', 'Wein', 'Wine', 'Bier', 'Beer', 'Kaffee', 'Coffee'
+    'Beverage', 'Beverages', 'Drink', 'Drinks', 'Getränk', 'Getränke', 'Softdrinks', 'Wein', 'Wine', 'Bier', 'Beer', 'Kaffee', 'Coffee', 'Spirituosen', 'Spirits', 'Cocktails', 'Longdrinks', 'Digestif'
 ];
 
 interface BookingComment {
@@ -232,6 +232,22 @@ export function BookingDetailPage({
     const [loading, setLoading] = useState(!initialBooking);
     const [comments, setComments] = useState<BookingComment[]>(initialBooking?.contactHistory || []);
     const [checkins, setCheckins] = useState<Booking['checkins']>(initialBooking?.checkins || []);
+    const [allCategories, setAllCategories] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const response = await fetch('/api/menu');
+                const data = await response.json();
+                if (data && data.categories) {
+                    setAllCategories(data.categories);
+                }
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+            }
+        };
+        fetchCategories();
+    }, []);
 
     const [isReminding, setIsReminding] = useState(false);
     const [isSendingCheckin, setIsSendingCheckin] = useState(false);
@@ -315,18 +331,13 @@ export function BookingDetailPage({
         const items = isEditingMenu ? tempMenuItems : (booking?.menuItems || []);
         
         // Filter food items that are priced per person
-        const ppFoodItems = (items || []).filter(item =>
-            item.pricingType === 'per_person' &&
-            item.category !== 'Beverages' &&
-            item.category !== 'Add-ons' &&
-            item.category !== 'Getränke' &&
-            item.category !== 'Zusatzleistungen' &&
-            item.category !== 'Drinks' &&
-            item.category !== 'Wein' &&
-            item.category !== 'Bier' &&
-            item.category !== 'Coffee' &&
-            item.category !== 'Kaffee'
-        );
+        const ppFoodItems = (items || []).filter(item => {
+            if (item.pricingType !== 'per_person') return false;
+            const cat = (item.category || '').toLowerCase();
+            const isBev = ['beverages', 'drink', 'drinks', 'softdrinks', 'wein', 'bier', 'kaffee', 'wine', 'beer', 'getränk', 'getränke', 'spirituosen', 'spirits', 'cocktails', 'longdrinks', 'digestif'].includes(cat);
+            const isAddon = cat === 'add-ons' || cat === 'extra' || cat === 'extras' || item.pricingType === 'flat-rate' || item.pricingType === 'flat_fee';
+            return !isBev && !isAddon;
+        });
 
         const getHighestPrice = (categoryNames: string[], dietaryFilter?: (d: string) => boolean) => {
             const filtered = ppFoodItems.filter(i => {
@@ -2689,142 +2700,187 @@ export function BookingDetailPage({
                                                 <tbody>
                                                     {(() => {
                                                         const items = (isEditingMenu ? tempMenuItems : booking.menuItems) || [];
+                                                        const getSortIndex = (catName: string) => {
+                                                            if (!catName) return 999;
+                                                            if (!allCategories || allCategories.length === 0) {
+                                                                const idx = CATEGORY_ORDER.findIndex(c => c.toLowerCase() === catName.toLowerCase());
+                                                                return idx === -1 ? 998 : idx;
+                                                            }
+                                                            const cat = allCategories.find(c => 
+                                                                c.name?.toLowerCase() === catName.toLowerCase() || 
+                                                                c.nameDe?.toLowerCase() === catName.toLowerCase()
+                                                            );
+                                                            return cat ? (cat.sortOrder ?? 0) : 997;
+                                                        };
+
                                                         const sortedItems = [...items].sort((a, b) => {
-                                                            const catA = (a.category || '').trim();
-                                                            const catB = (b.category || '').trim();
-                                                            
-                                                            const idxA = CATEGORY_ORDER.findIndex(c => c.toLowerCase() === catA.toLowerCase());
-                                                            const idxB = CATEGORY_ORDER.findIndex(c => c.toLowerCase() === catB.toLowerCase());
-                                                            
-                                                            if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-                                                            if (idxA !== -1) return -1;
-                                                            if (idxB !== -1) return 1;
-                                                            
-                                                            return catA.localeCompare(catB);
+                                                            const idxA = getSortIndex(a.category);
+                                                            const idxB = getSortIndex(b.category);
+                                                            if (idxA !== idxB) return idxA - idxB;
+                                                            return (a.item || a.name || '').localeCompare(b.item || b.name || '');
                                                         });
                                                         
-                                                        return sortedItems.length > 0 ? (
-                                                            sortedItems.map((item: any, index: number) => (
-                                                            <tr key={item.id || item.itemId || `row-${index}`} className="border-t border-border">
-                                                                <td className="px-3 py-3 text-foreground text-xs sm:text-sm">
-                                                                    <div className="flex flex-col gap-1.5 py-1">
-                                                                        <div className="flex flex-wrap items-center gap-x-2 font-medium text-foreground" title={item.item || item.name}>
-                                                                            <div className="flex items-center gap-x-1">
-                                                                                {item.dietaryType && item.dietaryType !== 'none' && (
-                                                                                    <DietaryIcon type={item.dietaryType} size="sm" />
+                                                        // Helper to identify beverage categories
+                                                        const isBevCategory = (cat: string) => 
+                                                            ['Beverages', 'Drink', 'Drinks', 'Softdrinks', 'Wein', 'Bier', 'Kaffee', 'Wine', 'Beer', 'Getränk', 'Getränke', 'Spirituosen', 'Spirits', 'Cocktails', 'Longdrinks', 'Digestif'].some(c => c.toLowerCase() === (cat || '').toLowerCase());
+                                                        
+                                                        // Helper to identify flat fees
+                                                        const isFlatFee = (item: any) => 
+                                                            item.pricingType === 'flat-rate' || item.pricingType === 'flat_fee' || (item.category || '').toLowerCase() === 'add-ons' || (item.category || '').toLowerCase() === 'extra';
+
+                                                        const foodItems = sortedItems.filter(item => !isBevCategory(item.category) && !isFlatFee(item));
+                                                        const beverageItems = sortedItems.filter(item => isBevCategory(item.category));
+                                                        const addonItems = sortedItems.filter(item => isFlatFee(item) && !isBevCategory(item.category));
+
+                                                        const groups = [
+                                                            { name: 'Food Items', items: foodItems },
+                                                            { name: 'Beverages', items: beverageItems },
+                                                            { name: 'Add-ons', items: addonItems }
+                                                        ].filter(g => g.items.length > 0);
+
+                                                        if (groups.length === 0) {
+                                                            return <tr><td colSpan={6} className="px-3 py-6 sm:py-8 text-center text-muted-foreground text-xs sm:text-sm">{t('noItemsSelected')}</td></tr>;
+                                                        }
+
+                                                        return groups.map((group, groupIdx) => (
+                                                            <React.Fragment key={group.name}>
+                                                                <tr className="bg-muted/40 group-header">
+                                                                    <td colSpan={6} className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-t border-border bg-muted/20">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />
+                                                                            {group.name}
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                                {group.items.map((item: any, idx: number) => (
+                                                                    <tr key={item.id || item.itemId || `row-${groupIdx}-${idx}`} className="border-t border-border/50 hover:bg-muted/10 transition-colors">
+                                                                        <td className="px-3 py-3 text-foreground text-xs sm:text-sm">
+                                                                            <div className="flex flex-col gap-1.5 py-1">
+                                                                                <div className="flex flex-wrap items-center gap-x-2 font-medium text-foreground" title={item.item || item.name}>
+                                                                                    <div className="flex items-center gap-x-1">
+                                                                                        {item.dietaryType && item.dietaryType !== 'none' && (
+                                                                                            <DietaryIcon type={item.dietaryType} size="sm" />
+                                                                                        )}
+                                                                                        <span className="truncate max-w-[200px] sm:max-w-[300px] inline-block" title={item.item || item.name}>{item.item || item.name}</span>
+                                                                                        {item.variant && (
+                                                                                            <span className="ml-1.5 text-muted-foreground font-normal">
+                                                                                                ({item.variant})
+                                                                                            </span>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </div>
+                                                                                {item.notes && (
+                                                                                    <div className="flex items-start gap-1.5 text-primary/80">
+                                                                                        <UtensilsCrossed className="w-3 h-3 mt-1 flex-shrink-0" />
+                                                                                        <span className="text-[12px] leading-tight font-medium inline-flex items-center flex-wrap gap-x-0.5 line-clamp-2" title={item.notes}>
+                                                                                            {parseDietaryNotes(item.notes)}
+                                                                                        </span>
+                                                                                    </div>
                                                                                 )}
-                                                                                <span className="truncate max-w-[200px] sm:max-w-[300px] inline-block" title={item.item || item.name}>{item.item || item.name}</span>
-                                                                                {item.variant && (
-                                                                                    <span className="ml-1.5 text-muted-foreground font-normal">
-                                                                                        ({item.variant})
-                                                                                    </span>
+                                                                                {item.customerComment && (
+                                                                                    <div className="flex items-start gap-1.5 text-amber-600 dark:text-amber-500">
+                                                                                        <MessageSquare className="w-3 h-3 mt-1 flex-shrink-0" />
+                                                                                        <span className="text-[12px] italic leading-tight line-clamp-2" title={item.customerComment}>
+                                                                                            Note: {item.customerComment}
+                                                                                        </span>
+                                                                                    </div>
                                                                                 )}
                                                                             </div>
-                                                                        </div>
-                                                                        {item.notes && (
-                                                                            <div className="flex items-start gap-1.5 text-primary/80">
-                                                                                <UtensilsCrossed className="w-3 h-3 mt-1 flex-shrink-0" />
-                                                                                <span className="text-[12px] leading-tight font-medium inline-flex items-center flex-wrap gap-x-0.5 line-clamp-2" title={item.notes}>
-                                                                                    {parseDietaryNotes(item.notes)}
-                                                                                </span>
+                                                                        </td>
+                                                                        <td className="px-3 py-3 text-muted-foreground text-xs sm:text-sm hidden sm:table-cell" title={item.category}>{item.category}</td>
+                                                                        <td className="px-3 py-3 text-foreground text-xs sm:text-sm">
+                                                                            {isEditingMenu ? (
+                                                                                <div className="flex items-center gap-2" translate="no">
+                                                                                    <input
+                                                                                        type="number"
+                                                                                        value={item.rawQuantity}
+                                                                                        min="1"
+                                                                                        onChange={(e) => {
+                                                                                            const val = parseInt(e.target.value);
+                                                                                            const targetId = item.id || item.itemId;
+                                                                                            const newItems = tempMenuItems.map(ti => {
+                                                                                                if ((ti.id || ti.itemId) === targetId) {
+                                                                                                    return { ...ti, rawQuantity: isNaN(val) ? 0 : Math.max(0, val) };
+                                                                                                }
+                                                                                                return ti;
+                                                                                            });
+                                                                                            setTempMenuItems(newItems);
+                                                                                        }}
+                                                                                        onBlur={(e) => {
+                                                                                            const val = parseInt(e.target.value);
+                                                                                            if (isNaN(val) || val < 1) {
+                                                                                                const targetId = item.id || item.itemId;
+                                                                                                const newItems = tempMenuItems.map(ti => {
+                                                                                                    if ((ti.id || ti.itemId) === targetId) {
+                                                                                                        return { ...ti, rawQuantity: 1 };
+                                                                                                    }
+                                                                                                    return ti;
+                                                                                                });
+                                                                                                setTempMenuItems(newItems);
+                                                                                            }
+                                                                                        }}
+                                                                                        className="w-20 px-2 py-1 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
+                                                                                    />
+                                                                                    <Tooltip title={`${item.item || item.name}: ${item.rawQuantity} ${item.pricingType === 'per_person' ? t('guests') : t('quantity')}`}>
+                                                                                        <span className="text-muted-foreground">
+                                                                                            {item.pricingType === 'per_person' ? (
+                                                                                                <Users className="w-3.5 h-3.5" />
+                                                                                            ) : (
+                                                                                                <Package className="w-3.5 h-3.5" />
+                                                                                            )}
+                                                                                        </span>
+                                                                                    </Tooltip>
+                                                                                </div>
+                                                                            ) : (
+                                                                                <div className="flex flex-col gap-0.5" translate="no">
+                                                                                    <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                                                                        <span className="font-medium text-foreground">{item.rawQuantity}</span>
+                                                                                        <Tooltip title={`${item.item || item.name}: ${item.rawQuantity} ${item.pricingType === 'per_person' ? t('guests') : t('quantity')}`}>
+                                                                                            {item.pricingType === 'per_person' ? (
+                                                                                                <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                                                                                            ) : (
+                                                                                                <Package className="w-3.5 h-3.5 text-muted-foreground" />
+                                                                                            )}
+                                                                                        </Tooltip>
+                                                                                    </div>
+                                                                                    <div className="text-xs sm:text-xs text-muted-foreground whitespace-nowrap">
+                                                                                        x {Math.round(item.unitPrice || 0)} CHF
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
+                                                                        </td>
+                                                                        <td className="px-3 py-3 text-right text-foreground text-xs sm:text-sm whitespace-nowrap" style={{ fontWeight: 'var(--font-weight-semibold)' }} translate="no">
+                                                                            {isEditingMenu ? (
+                                                                                <span>CHF {((item.rawQuantity || 0) * (item.unitPrice || 0)).toFixed(2)}</span>
+                                                                            ) : (
+                                                                                <span>{item.price}</span>
+                                                                            )}
+                                                                        </td>
+                                                                        <td className="px-3 py-3 text-right text-foreground text-xs sm:text-sm whitespace-nowrap" translate="no">
+                                                                            <div className="flex flex-col gap-0.5">
+                                                                                <div className="font-medium text-foreground">
+                                                                                    CHF {((item.rawQuantity || 0) * (item.internalCost || 0)).toFixed(2)}
+                                                                                </div>
+                                                                                <div className="text-xs sm:text-xs text-muted-foreground whitespace-nowrap">
+                                                                                    x {item.internalCost || 0} CHF
+                                                                                </div>
                                                                             </div>
-                                                                        )}
-                                                                        {item.customerComment && (
-                                                                            <div className="flex items-start gap-1.5 text-amber-600 dark:text-amber-500">
-                                                                                <MessageSquare className="w-3 h-3 mt-1 flex-shrink-0" />
-                                                                                <span className="text-[12px] italic leading-tight line-clamp-2" title={item.customerComment}>
-                                                                                    Note: {item.customerComment}
-                                                                                </span>
+                                                                        </td>
+                                                                        <td className="px-3 py-3 text-right text-foreground text-xs sm:text-sm whitespace-nowrap" style={{ fontWeight: 'var(--font-weight-semibold)' }} translate="no">
+                                                                            <div className="flex flex-col gap-0.5">
+                                                                                <div className="font-bold text-primary text-xs sm:text-sm">
+                                                                                    CHF {((item.rawQuantity || 0) * ((item.unitPrice || 0) - (item.internalCost || 0))).toFixed(2)}
+                                                                                </div>
+                                                                                <div className="text-xs sm:text-xs text-muted-foreground whitespace-nowrap">
+                                                                                    x {((item.unitPrice || 0) - (item.internalCost || 0)).toFixed(2)} CHF
+                                                                                </div>
                                                                             </div>
-                                                                        )}
-                                                                    </div>
-                                                                </td>
-                                                                <td className="px-3 py-3 text-muted-foreground text-xs sm:text-sm hidden sm:table-cell" title={item.category}>{item.category}</td>
-                                                                <td className="px-3 py-3 text-foreground text-xs sm:text-sm">
-                                                                    {isEditingMenu ? (
-                                                                        <div className="flex items-center gap-2" translate="no">
-                                                                            <input
-                                                                                type="number"
-                                                                                value={item.rawQuantity}
-                                                                                min="1"
-                                                                                onChange={(e) => {
-                                                                                    const val = parseInt(e.target.value);
-                                                                                    const newItems = [...tempMenuItems];
-                                                                                    // Snap to 1 if user tries to enter a value < 1 or if it's invalid
-                                                                                    newItems[index] = { ...item, rawQuantity: isNaN(val) ? 0 : Math.max(0, val) };
-                                                                                    setTempMenuItems(newItems);
-                                                                                }}
-                                                                                onBlur={(e) => {
-                                                                                    const val = parseInt(e.target.value);
-                                                                                    if (isNaN(val) || val < 1) {
-                                                                                        const newItems = [...tempMenuItems];
-                                                                                        newItems[index] = { ...item, rawQuantity: 1 };
-                                                                                        setTempMenuItems(newItems);
-                                                                                    }
-                                                                                }}
-                                                                                className="w-20 px-2 py-1 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
-                                                                            />
-                                                                            <Tooltip title={`${item.item || item.name}: ${item.rawQuantity} ${item.pricingType === 'per_person' ? t('guests') : t('quantity')}`}>
-                                                                                <span className="text-muted-foreground">
-                                                                                    {item.pricingType === 'per_person' ? (
-                                                                                        <Users className="w-3.5 h-3.5" />
-                                                                                    ) : (
-                                                                                        <Package className="w-3.5 h-3.5" />
-                                                                                    )}
-                                                                                </span>
-                                                                            </Tooltip>
-                                                                        </div>
-                                                                    ) : (
-                                                                        <div className="flex flex-col gap-0.5" translate="no">
-                                                                            <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                                                                <span className="font-medium text-foreground">{item.rawQuantity}</span>
-                                                                                <Tooltip title={`${item.item || item.name}: ${item.rawQuantity} ${item.pricingType === 'per_person' ? t('guests') : t('quantity')}`}>
-                                                                                    {item.pricingType === 'per_person' ? (
-                                                                                        <Users className="w-3.5 h-3.5 text-muted-foreground" />
-                                                                                    ) : (
-                                                                                        <Package className="w-3.5 h-3.5 text-muted-foreground" />
-                                                                                    )}
-                                                                                </Tooltip>
-                                                                            </div>
-                                                                            <div className="text-xs sm:text-xs text-muted-foreground whitespace-nowrap">
-                                                                                x {Math.round(item.unitPrice || 0)} CHF
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-                                                                </td>
-                                                                <td className="px-3 py-3 text-right text-foreground text-xs sm:text-sm whitespace-nowrap" style={{ fontWeight: 'var(--font-weight-semibold)' }} translate="no">
-                                                                    {isEditingMenu ? (
-                                                                        <span>CHF {((item.rawQuantity || 0) * (item.unitPrice || 0)).toFixed(2)}</span>
-                                                                    ) : (
-                                                                        <span>{item.price}</span>
-                                                                    )}
-                                                                </td>
-                                                                <td className="px-3 py-3 text-right text-foreground text-xs sm:text-sm whitespace-nowrap" translate="no">
-                                                                    <div className="flex flex-col gap-0.5">
-                                                                        <div className="font-medium text-foreground">
-                                                                            CHF {((item.rawQuantity || 0) * (item.internalCost || 0)).toFixed(2)}
-                                                                        </div>
-                                                                        <div className="text-xs sm:text-xs text-muted-foreground whitespace-nowrap">
-                                                                            x {item.internalCost || 0} CHF
-                                                                        </div>
-                                                                    </div>
-                                                                </td>
-                                                                <td className="px-3 py-3 text-right text-foreground text-xs sm:text-sm whitespace-nowrap" style={{ fontWeight: 'var(--font-weight-semibold)' }} translate="no">
-                                                                    <div className="flex flex-col gap-0.5">
-                                                                        <div className="font-bold text-primary text-xs sm:text-sm">
-                                                                            CHF {((item.rawQuantity || 0) * ((item.unitPrice || 0) - (item.internalCost || 0))).toFixed(2)}
-                                                                        </div>
-                                                                        <div className="text-xs sm:text-xs text-muted-foreground whitespace-nowrap">
-                                                                            x {((item.unitPrice || 0) - (item.internalCost || 0)).toFixed(2)} CHF
-                                                                        </div>
-                                                                    </div>
-                                                                </td>
-                                                            </tr>
-                                                        ))
-                                                    ) : (
-                                                        <tr><td colSpan={6} className="px-3 py-6 sm:py-8 text-center text-muted-foreground text-xs sm:text-sm">{t('noItemsSelected')}</td></tr>
-                                                    );
-                                                })()}
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </React.Fragment>
+                                                        ));
+                                                    })()}
                                                     {booking.menuItems && booking.menuItems.length > 0 && (
                                                         <tr className="border-t-2 border-border bg-muted">
                                                             <td colSpan={2} className="px-3 py-3 text-foreground text-xs sm:text-sm sm:hidden" style={{ fontWeight: 'var(--font-weight-semibold)' }}>{t('totalAmount')}</td>
