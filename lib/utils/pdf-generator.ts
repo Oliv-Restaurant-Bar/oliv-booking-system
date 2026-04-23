@@ -665,11 +665,7 @@ export async function generateBookingPdf(
         doc.setTextColor(...COLORS.title);
         doc.text(qtyStr, qtyStartX + iconW + gap, rowTopY + 4);
 
-        // CHANGE 3: Dietary icon after per-person count in kitchen mode
-        if (item.pricingType === 'per_person' && item.dietaryType && item.dietaryType !== 'none') {
-          const dietIconX = qtyStartX + iconW + gap + qtyW + 2;
-          drawDietaryIcon(item.dietaryType, dietIconX, rowTopY + 4);
-        }
+
 
         // ── Done checkbox ─────────────────────────────────────────────────
         doc.setDrawColor(...COLORS.primary);
