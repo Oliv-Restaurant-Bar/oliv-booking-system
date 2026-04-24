@@ -48,6 +48,7 @@ export function MenuCart({
     menuItems,
     eventDetails,
     categories,
+    categoryData,
     isSubmitting,
     isEditMode,
     editBookingData,
@@ -235,20 +236,24 @@ export function MenuCart({
                     .filter(i => i.category === category)
                     .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
-                  const isMain = category.toLowerCase().includes('main');
+                  const perPersonItems = itemsInCategory.filter(i => isPerPerson(i));
+                  const listItems = itemsInCategory.filter(i => isFlatFee(i) || isConsumption(i));
+                  const isSpecial = categoryData[category]?.useSpecialCalculation;
 
-                  if (isMain) {
-                    return (
-                      <div key={category} className="pt-4 space-y-8">
-                        <div className="text-center">
-                          <h3 className="text-[12px] font-extrabold text-[#2c2f34] uppercase tracking-[0.25em] mb-2">
-                            {category}
-                          </h3>
-                          <div className="w-full h-px bg-[#9dae91]/20" />
-                        </div>
+                  return (
+                    <div key={category} className="space-y-6 pt-4">
+                      {/* Category Header */}
+                      <div className="text-center">
+                        <h3 className="text-[12px] font-extrabold text-[#2c2f34] uppercase tracking-[0.25em] mb-2">
+                          {category}
+                        </h3>
+                        <div className="w-full h-px bg-[#9dae91]/20" />
+                      </div>
 
+                      {/* 1. Per-Person Items (Card Layout) */}
+                      {perPersonItems.length > 0 && (
                         <div className="space-y-6">
-                          {itemsInCategory.map((item, idx, arr) => {
+                          {perPersonItems.map((item, idx, arr) => {
                             const cartItem = cart[item.id];
                             return (
                               <div key={item.id} className="text-center space-y-2 group relative">
@@ -256,7 +261,7 @@ export function MenuCart({
                                   {item.dietaryType !== 'none' && (
                                     <DietaryIcon type={item.dietaryType} size="xs" />
                                   )}
-                                  <h4 className="text-[15px] font-bold text-[#2c2f34]">{item.name}</h4>
+                                  <h4 className="text-[15px] font-bold text-[#2c2f34] truncate max-w-[220px]">{item.name}</h4>
 
                                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button
@@ -280,7 +285,7 @@ export function MenuCart({
                                   </p>
                                 )}
 
-                                {/* Collapsible details for Main Courses */}
+                                {/* Collapsible details */}
                                 {((cartItem.variantId && item.variants) || (cartItem.addOnIds && cartItem.addOnIds.length > 0)) && (
                                   <div className="flex flex-col items-center">
                                     <button
@@ -312,99 +317,88 @@ export function MenuCart({
                                   </div>
                                 )}
 
-                                {idx < arr.length - 1 && (
-                                  <p className="text-[11px] text-[#9ca3af] italic mt-4">or</p>
+                                {/* "OR" separator only if category is special */}
+                                {isSpecial && idx < arr.length - 1 && (
+                                  <p className="text-[11px] text-[#9ca3af] italic mt-4 uppercase tracking-widest">or</p>
                                 )}
                               </div>
                             );
                           })}
                         </div>
-                      </div>
-                    );
-                  }
+                      )}
 
-                  // Standard List Format for other categories
-                  return (
-                    <div key={category} className="space-y-6">
-                      <div className="text-center">
-                        <h3 className="text-[12px] font-extrabold text-[#2c2f34] uppercase tracking-[0.25em] mb-2">
-                          {category}
-                        </h3>
-                        <div className="w-full h-px bg-[#9dae91]/20" />
-                      </div>
+                      {/* 2. List Items (Standard List Layout) */}
+                      {listItems.length > 0 && (
+                        <div className="space-y-4">
+                          {listItems.map(item => {
+                            const cartItem = cart[item.id];
+                            return (
+                              <div key={item.id} className="group">
+                                <div className="flex items-start justify-between gap-4">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      {item.dietaryType !== 'none' && (
+                                        <div className="shrink-0">
+                                          <DietaryIcon type={item.dietaryType} size="xs" />
+                                        </div>
+                                      )}
+                                      <span className="text-[14px] font-bold text-[#2c2f34] leading-tight truncate">
+                                        {item.name}
+                                      </span>
+                                    </div>
 
-                      <div className="space-y-4">
-                        {itemsInCategory.map(item => {
-                          const isPP = isPerPerson(item);
-                          const cartItem = cart[item.id];
-                          const price = getItemPerPersonPrice(item);
+                                    {/* Collapsible details toggle */}
+                                    {((cartItem.variantId && item.variants) || (cartItem.addOnIds && cartItem.addOnIds.length > 0)) && (
+                                      <button
+                                        onClick={(e) => toggleExpand(item.id, e)}
+                                        className="mt-1 flex items-center gap-1 text-[10px] font-bold text-[#9dae91] hover:text-[#2c2f34] transition-colors uppercase tracking-wider"
+                                      >
+                                        {expandedItems[item.id] ? t('actions.hide') : t('actions.show')}
+                                        <ChevronRight className={`w-3 h-3 transition-transform ${expandedItems[item.id] ? 'rotate-90' : ''}`} />
+                                      </button>
+                                    )}
 
-                          return (
-                            <div key={item.id} className="group">
-                              <div className="flex items-start justify-between gap-4">
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 min-w-0">
-                                    {item.dietaryType !== 'none' && (
-                                      <div className="shrink-0">
-                                        <DietaryIcon type={item.dietaryType} size="xs" />
+                                    {/* Expanded Menu Options */}
+                                    {expandedItems[item.id] && ((cartItem.variantId && item.variants) || (cartItem.addOnIds && cartItem.addOnIds.length > 0)) && (
+                                      <div className="mt-2 pl-4 border-l border-[#f3f4f6] space-y-1.5 animate-in slide-in-from-top-1 duration-200">
+                                        {cartItem.variantId && item.variants && (
+                                          <p className="text-[11px] text-[#6b7280]">
+                                            {item.variants.find(v => v.id === cartItem.variantId)?.name}
+                                          </p>
+                                        )}
+                                        {item.addonGroups?.map(group => {
+                                          const selectedInGroup = group.items.filter(i => cartItem.addOnIds?.includes(i.id));
+                                          if (selectedInGroup.length === 0) return null;
+                                          return selectedInGroup.map(addon => (
+                                            <p key={addon.id} className="text-[11px] text-[#6b7280]">
+                                              + {addon.name}
+                                            </p>
+                                          ));
+                                        })}
                                       </div>
                                     )}
-                                    <span className="text-[14px] font-bold text-[#2c2f34] leading-tight truncate">
-                                      {item.name}
-                                    </span>
                                   </div>
 
-                                  {/* Collapsible details toggle */}
-                                  {((cartItem.variantId && item.variants) || (cartItem.addOnIds && cartItem.addOnIds.length > 0)) && (
+                                  <div className="flex items-center gap-1 shrink-0">
                                     <button
-                                      onClick={(e) => toggleExpand(item.id, e)}
-                                      className="mt-1 flex items-center gap-1 text-[10px] font-bold text-[#9dae91] hover:text-[#2c2f34] transition-colors uppercase tracking-wider"
+                                      onClick={() => setDetailsModalItem(item)}
+                                      className="p-1.5 hover:bg-[#f9fafb] rounded-full hover:text-[#9dae91] text-[#9ca3af] transition-all"
                                     >
-                                      {expandedItems[item.id] ? t('actions.hide') : t('actions.show')}
-                                      <ChevronRight className={`w-3 h-3 transition-transform ${expandedItems[item.id] ? 'rotate-90' : ''}`} />
+                                      <Edit2 className="w-3.5 h-3.5" />
                                     </button>
-                                  )}
-
-                                  {/* Expanded Menu Options (Dropdown) */}
-                                  {expandedItems[item.id] && ((cartItem.variantId && item.variants) || (cartItem.addOnIds && cartItem.addOnIds.length > 0)) && (
-                                    <div className="mt-2 pl-4 border-l border-[#f3f4f6] space-y-1.5 animate-in slide-in-from-top-1 duration-200">
-                                      {cartItem.variantId && item.variants && (
-                                        <p className="text-[11px] text-[#6b7280]">
-                                          {item.variants.find(v => v.id === cartItem.variantId)?.name}
-                                        </p>
-                                      )}
-                                      {item.addonGroups?.map(group => {
-                                        const selectedInGroup = group.items.filter(i => cartItem.addOnIds?.includes(i.id));
-                                        if (selectedInGroup.length === 0) return null;
-                                        return selectedInGroup.map(addon => (
-                                          <p key={addon.id} className="text-[11px] text-[#6b7280]">
-                                            + {addon.name}
-                                          </p>
-                                        ));
-                                      })}
-                                    </div>
-                                  )}
-                                </div>
-
-                                <div className="flex items-center gap-1 shrink-0">
-                                  <button
-                                    onClick={() => setDetailsModalItem(item)}
-                                    className="p-1.5 hover:bg-[#f9fafb] rounded-full hover:text-[#9dae91] text-[#9ca3af] transition-all"
-                                  >
-                                    <Edit2 className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    onClick={() => removeItem(item.id)}
-                                    className="p-1.5 hover:bg-[#f9fafb] rounded-full hover:text-[#ef4444] text-[#9ca3af] transition-all"
-                                  >
-                                    <X className="w-3.5 h-3.5" />
-                                  </button>
+                                    <button
+                                      onClick={() => removeItem(item.id)}
+                                      className="p-1.5 hover:bg-[#f9fafb] rounded-full hover:text-[#ef4444] text-[#9ca3af] transition-all"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          );
-                        })}
-                      </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
