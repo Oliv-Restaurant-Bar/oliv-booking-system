@@ -705,8 +705,10 @@ export async function generateBookingPdf(
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7.5);
       doc.setTextColor(100, 116, 139);
-      doc.text('QTY x PRICE', margin + 85 + 2, yPos + 6);
-      doc.text('TOTAL', margin + contentWidth - 5, yPos + 6, { align: 'right' });
+      if (mode !== 'inquiry') {
+        doc.text('QTY x PRICE', margin + 85 + 2, yPos + 6);
+      }
+      doc.text(mode === 'inquiry' ? 'PRICE' : 'TOTAL', margin + contentWidth - 5, yPos + 6, { align: 'right' });
       yPos += 14;
 
       const sortedItems = [...group.items].sort((a, b) => {
