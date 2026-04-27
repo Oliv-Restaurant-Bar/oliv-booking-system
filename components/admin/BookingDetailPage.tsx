@@ -33,6 +33,7 @@ import { MenuDetailsTab } from './booking-detail/MenuDetailsTab';
 import { CommentsActivitiesTab } from './booking-detail/CommentsActivitiesTab';
 import { RequestsTab } from './booking-detail/RequestsTab';
 import { Booking, BookingComment, AuditLog } from './booking-detail/types';
+export type { Booking, BookingComment, AuditLog };
 
 
 
