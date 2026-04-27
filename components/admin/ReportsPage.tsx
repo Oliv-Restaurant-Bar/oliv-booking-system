@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { TrendingItems } from './TrendingItems';
-import { MonthlyReportLayout2 } from './MonthlyReportLayout2';
+import { MonthlyReportLayout2 } from './MonthlyReportLayout';
 import { SkeletonTopCustomers, SkeletonTrendingItems, SkeletonMonthlyReport } from '@/components/ui/skeleton-loaders';
 import { useTranslations } from 'next-intl';
 import { SettingsService } from '@/services/settings.service';

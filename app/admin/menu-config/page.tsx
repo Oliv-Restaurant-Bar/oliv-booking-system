@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/server";
-import { MenuConfigPage } from "@/components/admin/MenuConfigPageV3Complete";
+import { MenuConfigPage } from "@/components/admin/MenuConfigPage";
 import { AdminPageLayout } from "@/components/admin/AdminPageLayout";
 import { Permission, hasPermission } from "@/lib/auth/rbac";
 import { getAllMenuData } from "@/lib/actions/menu";

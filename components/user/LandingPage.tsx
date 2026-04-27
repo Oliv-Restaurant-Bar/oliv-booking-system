@@ -1,11 +1,11 @@
 'use client';
-import { HeaderVariant6 } from './HeaderVariant6';
-import { HeroVariant6 } from './HeroVariant6';
-import { HowItWorksVariant6 } from './HowItWorksVariant6';
-import { WhyOliveVariant6 } from './WhyOliveVariant6';
+import { HeaderVariant6 } from './Header';
+import { HeroVariant6 } from './Hero';
+import { HowItWorksVariant6 } from './HowItWorks';
+import { WhyOliveVariant6 } from './WhyOlive';
 import { Gallery } from './Gallery';
-import { CTASectionVariant1 } from './CTASectionVariant1';
-import { FooterVariant6 } from './FooterVariant6';
+import { CTASectionVariant1 } from './CTASection';
+import { FooterVariant6 } from './Footer';
 
 export function LandingPageVariant6() {
   return (
