@@ -895,6 +895,7 @@ export function CustomMenuWizard({
               customerComment: cartItem.comment || '',
               pricingType: item.pricingType,
               dietaryType: item.dietaryType || 'none',
+              useSpecialCalculation: categoryData[item.category]?.useSpecialCalculation || false,
             };
           }).filter(Boolean),
           estimatedTotal: result.data.estimatedTotal,

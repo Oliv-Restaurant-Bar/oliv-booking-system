@@ -632,6 +632,7 @@ export function BookingDetailPage({
                         notes: item.notes,
                         customerComment: item.customerComment,
                         dietaryType: item.dietaryType || 'none',
+                        useSpecialCalculation: item.useSpecialCalculation || false,
                     };
                 }),
                 allergies: Array.isArray(booking.allergies) ? booking.allergies.join(', ') : booking.allergies,

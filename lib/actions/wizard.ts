@@ -552,6 +552,7 @@ export async function submitWizardForm(data: WizardFormData) {
             customerComment: data.itemComments?.[itemId],
             pricingType: dbItem?.pricingType || 'per_person',
             dietaryType: dbItem?.dietaryType || 'none',
+            useSpecialCalculation: allCategories.find(c => c.id === dbItem?.categoryId)?.useSpecialCalculation || false,
           };
         }),
         estimatedTotal: estimatedTotal,

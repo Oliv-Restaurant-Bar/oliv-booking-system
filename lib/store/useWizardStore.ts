@@ -10,6 +10,7 @@ import {
   customerSpecialRequestsSchema, 
   userEmailSchema 
 } from '@/lib/validation/schemas';
+import { calculateDietaryTotals } from '@/lib/utils/pricing';
 
 
 
@@ -437,47 +438,17 @@ export const useWizardStore = create<WizardState>((set, get) => ({
       .map(itemId => {
         const item = visibleItems.find(i => i.id === itemId);
         if (!item || (item.pricingType !== 'per-person' && item.pricingType !== 'per_person')) return null;
-        return { ...item, price: get().getItemPerPersonPrice(item) };
+        return { 
+          category: item.category || 'Uncategorized',
+          price: get().getItemPerPersonPrice(item),
+          pricingType: item.pricingType,
+          dietaryType: item.dietaryType || 'none',
+          useSpecialCalculation: categoryData[item.category]?.useSpecialCalculation || false
+        };
       })
-      .filter((i): i is any => i !== null);
+      .filter((i): i is NonNullable<typeof i> => i !== null);
 
-    let vegTotal = 0;
-    let nonVegTotal = 0;
-
-    // Group items by category
-    const itemsByCat: Record<string, typeof ppItems> = {};
-    ppItems.forEach(item => {
-      const cat = item.category || 'Uncategorized';
-      if (!itemsByCat[cat]) itemsByCat[cat] = [];
-      itemsByCat[cat].push(item);
-    });
-
-    Object.entries(itemsByCat).forEach(([catName, items]) => {
-      const isSpecial = categoryData[catName]?.useSpecialCalculation;
-
-      if (isSpecial) {
-        // Shared category (e.g. Starters, Desserts): take highest price and apply to all
-        const maxPrice = items.length > 0 ? Math.max(...items.map(i => i.price)) : 0;
-        vegTotal += maxPrice;
-        nonVegTotal += maxPrice;
-      } else {
-        // Normal category (e.g. Main Courses): take highest price by dietary track
-        // 'none' applies to both tracks
-        const vegItems = items.filter(i => ['veg', 'vegan', 'none'].includes(i.dietaryType));
-        const nonVegItems = items.filter(i => ['non-veg', 'none'].includes(i.dietaryType));
-
-        const vegMax = vegItems.length > 0 ? Math.max(...vegItems.map(i => i.price)) : 0;
-        const nonVegMax = nonVegItems.length > 0 ? Math.max(...nonVegItems.map(i => i.price)) : 0;
-
-        vegTotal += vegMax;
-        nonVegTotal += nonVegMax;
-      }
-    });
-
-    return {
-      veg: vegTotal,
-      nonVeg: nonVegTotal
-    };
+    return calculateDietaryTotals(ppItems);
   },
 
   getPerPersonSubtotal: () => {

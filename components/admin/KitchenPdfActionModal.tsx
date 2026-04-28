@@ -140,6 +140,7 @@ export function KitchenPdfActionModal({
           notes: item.notes || '',
           customerComment: item.customerComment || '',
           dietaryType: item.dietaryType || 'none',
+          useSpecialCalculation: item.useSpecialCalculation || false,
         };
       }),
       allergies: booking.allergies,
