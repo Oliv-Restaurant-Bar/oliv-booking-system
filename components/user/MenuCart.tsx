@@ -379,19 +379,24 @@ export function MenuCart({
                                     )}
                                   </div>
 
-                                  <div className="flex items-center gap-1 shrink-0">
-                                    <button
-                                      onClick={() => setDetailsModalItem(item)}
-                                      className="p-1.5 hover:bg-[#f9fafb] rounded-full hover:text-[#9dae91] text-[#9ca3af] transition-all"
-                                    >
-                                      <Edit2 className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
-                                      onClick={() => removeItem(item.id)}
-                                      className="p-1.5 hover:bg-[#f9fafb] rounded-full hover:text-[#ef4444] text-[#9ca3af] transition-all"
-                                    >
-                                      <X className="w-3.5 h-3.5" />
-                                    </button>
+                                  <div className="flex items-center gap-3 shrink-0">
+                                    <span className="text-[13px] font-bold text-[#2c2f34]">
+                                      CHF {getItemPerPersonPrice(item).toFixed(2)}
+                                    </span>
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        onClick={() => setDetailsModalItem(item)}
+                                        className="p-1.5 hover:bg-[#f9fafb] rounded-full hover:text-[#9dae91] text-[#9ca3af] transition-all"
+                                      >
+                                        <Edit2 className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        onClick={() => removeItem(item.id)}
+                                        className="p-1.5 hover:bg-[#f9fafb] rounded-full hover:text-[#ef4444] text-[#9ca3af] transition-all"
+                                      >
+                                        <X className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
                                   </div>
                                 </div>
                               </div>

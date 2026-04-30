@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import { toReadableDate, getSystemTimezoneSync } from './date';
+import { toReadableDate, getSystemTimezoneSync, getSystemDateFormat, formatWithSystemFormat } from './date';
 import { calculateDietaryTotals } from './pricing';
 
 // --- Configuration & Constants ---
@@ -58,6 +58,8 @@ export async function generateBookingPdf(
   mode: PdfGenerationMode = 'offer'
 ): Promise<jsPDF> {
   const doc = new jsPDF();
+  const dateFormat = await getSystemDateFormat();
+  
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
 
@@ -170,14 +172,14 @@ export async function generateBookingPdf(
     ];
 
     const eventdatenFields = [
-      { label: 'Datum', value: data.eventDate },
+      { label: 'Datum', value: formatWithSystemFormat(data.eventDate, dateFormat) },
       { label: 'Zeit', value: data.eventTime },
       { label: 'Anlass', value: data.occasion || 'Event' },
       { label: 'Ort', value: data.location || 'Restaurant Oliv' },
       { label: 'Venue', value: data.room },
       {
         label: 'Erstellt',
-        value: `${new Date().toLocaleDateString('de-CH')} ${new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })}`,
+        value: `${formatWithSystemFormat(new Date(), dateFormat)} ${new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })}`,
       },
     ];
 

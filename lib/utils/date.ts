@@ -9,8 +9,9 @@ import { enUS, de } from 'date-fns/locale';
 // Default timezone (fallback)
 const DEFAULT_TIMEZONE = 'Europe/Zurich';
 
-// Cached timezone setting
+// Cached settings
 let cachedTimezone: string = DEFAULT_TIMEZONE;
+let cachedDateFormat: string = 'DD/MM/YYYY';
 
 // Map locale strings to date-fns locales
 const localeMap: Record<string, Locale> = {
@@ -30,22 +31,47 @@ function getDateFnsLocale(locale: string): Locale {
  * Caches the result for performance
  */
 export async function getSystemTimezone(): Promise<string> {
-  if (cachedTimezone) {
+  if (cachedTimezone && cachedTimezone !== DEFAULT_TIMEZONE) {
     return cachedTimezone;
   }
 
   try {
-    const response = await fetch('/api/settings');
-    if (response.ok) {
-      const settings = await response.json();
+    let settings;
+    if (typeof window === 'undefined') {
+      // Server-side: Use the server action directly
+      const { getSystemSettings } = await import('@/lib/actions/settings');
+      settings = await getSystemSettings();
+    } else {
+      // Client-side: Fetch from the API
+      const response = await fetch('/api/settings');
+      if (response.ok) {
+        settings = await response.json();
+      }
+    }
+
+    if (settings) {
       cachedTimezone = settings.timeZone || DEFAULT_TIMEZONE;
+      cachedDateFormat = settings.dateFormat || 'DD/MM/YYYY';
       return cachedTimezone;
     }
   } catch (error) {
-    console.warn('Failed to fetch system timezone, using default:', error);
+    console.warn('Failed to fetch system settings, using default:', error);
   }
 
   return DEFAULT_TIMEZONE;
+}
+
+/**
+ * Get the system date format from settings
+ * Caches the result for performance
+ */
+export async function getSystemDateFormat(): Promise<string> {
+  if (cachedDateFormat && cachedDateFormat !== 'DD/MM/YYYY') {
+    return cachedDateFormat;
+  }
+
+  await getSystemTimezone(); // This fetches both
+  return cachedDateFormat;
 }
 
 /**
@@ -181,4 +207,42 @@ export function nowInZurich(): Date {
 
 export function isTodayInZurich(date: Date | string | number): boolean {
   return isTodayInTimezone(date);
+}
+
+/**
+ * Format date according to system settings
+ */
+export function formatWithSystemFormat(date: Date | string, dateFormat: string): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+
+  switch (dateFormat) {
+    case 'MM/DD/YYYY':
+      return dateObj.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+    case 'DD/MM/YYYY':
+      return dateObj.toLocaleDateString('en-GB', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+    case 'YYYY-MM-DD':
+      return dateObj.toISOString().split('T')[0];
+    case 'DD MMM YYYY':
+      return dateObj.toLocaleDateString('en-GB', {
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit'
+      });
+    case 'MMM DD, YYYY':
+      return dateObj.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit'
+      });
+    default:
+      return dateObj.toLocaleDateString();
+  }
 }
