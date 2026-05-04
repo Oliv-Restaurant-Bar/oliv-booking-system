@@ -217,6 +217,7 @@ export function CustomMenuWizard({
           description: item.description || item.ingredients || '',
           category: category?.name || 'Uncategorized',
           useSpecialCalculation: !!category?.useSpecialCalculation,
+          isSpecialCategory: !!category?.isSpecialCategory,
           price: Number(item.pricePerPerson) || 0,
           pricingType: item.pricingType || 'per_person',
           image: item.imageUrl || '',
@@ -323,6 +324,7 @@ export function CustomMenuWizard({
     // Store category data including guestCount flag
     const categoryDataMap: Record<string, { 
       guestCount: boolean; 
+      isSpecialCategory: boolean;
       useSpecialCalculation: boolean; 
       assignedVisibilitySchedules: string[];
       sortOrder: number;
@@ -330,6 +332,7 @@ export function CustomMenuWizard({
     categoriesWithActiveItems.forEach((cat: any) => {
       categoryDataMap[cat.name] = {
         guestCount: cat.guestCount || false,
+        isSpecialCategory: !!cat.isSpecialCategory,
         useSpecialCalculation: !!cat.useSpecialCalculation,
         assignedVisibilitySchedules: cat.assignedVisibilitySchedules || [],
         sortOrder: cat.sortOrder || 0,
@@ -338,7 +341,7 @@ export function CustomMenuWizard({
     
     // Add default data for addon categories
     if (addonItems.length > 0 && !categoryDataMap['Add-ons']) {
-      categoryDataMap['Add-ons'] = { guestCount: false, useSpecialCalculation: false, assignedVisibilitySchedules: [], sortOrder: 1000 };
+      categoryDataMap['Add-ons'] = { guestCount: false, isSpecialCategory: false, useSpecialCalculation: false, assignedVisibilitySchedules: [], sortOrder: 1000 };
     }
 
     setMenuData({

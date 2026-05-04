@@ -20,6 +20,7 @@
     "db:add-billing-address": "dotenv -e .env -- tsx scripts/add-billing-address-column.ts",
     "db:add-billing-fields-v2": "dotenv -e .env -- tsx scripts/add-detailed-billing-fields-v2.ts",
     "db:add-is-recommended": "dotenv -e .env -- tsx scripts/add-is-recommended-column.ts",
+    "db:add-special-category": "dotenv -e .env -- tsx scripts/add-is-special-category-column.ts",
     "db:recalculate-totals": "dotenv -e .env -- tsx lib/db/recalculate-totals.ts",
     "email:test": "dotenv -e .env -- tsx scripts/test-email.ts",
     "email:test-dummy": "tsx scripts/test-email-with-dummy.ts",

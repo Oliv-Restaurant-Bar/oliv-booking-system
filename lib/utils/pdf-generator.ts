@@ -26,6 +26,7 @@ export interface PdfBookingItem {
   customerComment?: string;
   dietaryType?: 'veg' | 'non-veg' | 'vegan' | 'none';
   useSpecialCalculation?: boolean;
+  isSpecialCategory?: boolean;
 }
 
 export interface PdfBookingData {
@@ -506,8 +507,11 @@ export async function generateBookingPdf(
       price: item.unitPrice || 0,
       pricingType: item.pricingType,
       dietaryType: item.dietaryType || 'none',
-      useSpecialCalculation: item.useSpecialCalculation || false
-    }))
+      useSpecialCalculation: item.useSpecialCalculation || false,
+      isSpecialCategory: item.isSpecialCategory || false,
+      guestCount: item.quantity
+    })),
+    data.guestCount
   );
 
   const categoryOrder = [

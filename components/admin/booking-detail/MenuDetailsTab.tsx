@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { UtensilsCrossed, Pencil, X, Save, Users, Package, MessageSquare } from 'lucide-react';
+import { UtensilsCrossed, Pencil, X, Save, Users, Package, MessageSquare, Wine } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TabsContent } from '@/components/ui/tabs';
 import { Tooltip } from '@/components/user/Tooltip';
@@ -267,6 +267,8 @@ export function MenuDetailsTab({
                                                                 <span className="text-muted-foreground">
                                                                     {item.pricingType === 'per_person' ? (
                                                                         <Users className="w-3.5 h-3.5" />
+                                                                    ) : isBevCategory(item.category) ? (
+                                                                        <Wine className="w-3.5 h-3.5" />
                                                                     ) : (
                                                                         <Package className="w-3.5 h-3.5" />
                                                                     )}
@@ -280,13 +282,15 @@ export function MenuDetailsTab({
                                                                 <Tooltip title={`${item.item || item.name}: ${item.rawQuantity} ${item.pricingType === 'per_person' ? t('guests') : t('quantity')}`}>
                                                                     {item.pricingType === 'per_person' ? (
                                                                         <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                                                                    ) : isBevCategory(item.category) ? (
+                                                                        <Wine className="w-3.5 h-3.5 text-muted-foreground" />
                                                                     ) : (
                                                                         <Package className="w-3.5 h-3.5 text-muted-foreground" />
                                                                     )}
                                                                 </Tooltip>
                                                             </div>
                                                             <div className="text-xs sm:text-xs text-muted-foreground whitespace-nowrap">
-                                                                x {Math.round(item.unitPrice || 0)} CHF
+                                                                x {(item.unitPrice || 0).toFixed(2)} CHF
                                                             </div>
                                                         </div>
                                                     )}
@@ -304,7 +308,7 @@ export function MenuDetailsTab({
                                                             CHF {((item.rawQuantity || 0) * (item.internalCost || 0)).toFixed(2)}
                                                         </div>
                                                         <div className="text-xs sm:text-xs text-muted-foreground whitespace-nowrap">
-                                                            x {item.internalCost || 0} CHF
+                                                            x {(item.internalCost || 0).toFixed(2)} CHF
                                                         </div>
                                                     </div>
                                                 </td>

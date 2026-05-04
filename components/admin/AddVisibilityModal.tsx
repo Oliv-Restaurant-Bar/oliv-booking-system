@@ -20,6 +20,7 @@ interface AddVisibilityModalProps {
   };
   setNewVisibility: (visibility: any) => void;
   onSave: () => Promise<void>;
+  isSaving?: boolean;
 }
 
 export function AddVisibilityModal({
@@ -29,6 +30,7 @@ export function AddVisibilityModal({
   newVisibility,
   setNewVisibility,
   onSave,
+  isSaving = false,
 }: AddVisibilityModalProps) {
   const t = useMenuConfigTranslation();
   const ct = useCommonTranslation();
@@ -46,16 +48,17 @@ export function AddVisibilityModal({
             variant="secondary"
             icon={X}
             onClick={onClose}
+            disabled={isSaving}
           >
             {ct('cancel')}
           </Button>
           <Button
             variant="primary"
-            icon={editingVisibilityId ? Check : Plus}
+            icon={isSaving ? undefined : (editingVisibilityId ? Check : Plus)}
             onClick={onSave}
-            disabled={!newVisibility.name || newVisibility.name.trim() === '' || !newVisibility.startDate || !newVisibility.endDate}
+            disabled={isSaving || !newVisibility.name || newVisibility.name.trim() === '' || !newVisibility.startDate || !newVisibility.endDate}
           >
-            {editingVisibilityId ? t('buttons.saveChanges') : 'Add Schedule'}
+            {isSaving ? 'Saving...' : (editingVisibilityId ? t('buttons.saveChanges') : 'Add Schedule')}
           </Button>
         </>
       }

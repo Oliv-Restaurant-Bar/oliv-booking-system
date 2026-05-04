@@ -15,14 +15,15 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { format, parseISO, isValid } from 'date-fns';
-import { enUS } from 'date-fns/locale';
+import { enUS, de } from 'date-fns/locale';
+import { useLocale } from 'next-intl';
 import { MenuItem } from './menuItemsData';
 import { EventDetails } from '@/lib/types';
 import { DietaryIcon } from './DietaryIcon';
 import { Edit2 } from 'lucide-react';
 import { TermsAndConditionsModal } from './TermsAndConditionsModal';
 import { useWizardStore } from '@/lib/store/useWizardStore';
-import { useWizardTranslation } from '@/lib/i18n/client';
+import { useWizardTranslation, useCommonTranslation } from '@/lib/i18n/client';
 
 
 interface MenuCartProps {
@@ -43,6 +44,7 @@ export function MenuCart({
   onCloseDrawer,
 }: MenuCartProps) {
   const t = useWizardTranslation();
+  const ct = useCommonTranslation();
   const {
     cart, removeItem, updateItem,
     menuItems,
@@ -102,12 +104,15 @@ export function MenuCart({
   // Removed redundant local guest count sync - store handles this
 
   // Helper for formatting date: "Thu, Mar 12, 2026"
+  const locale = useLocale();
   const getFormattedDate = () => {
     if (!eventDetails.eventDate) return t('common.selectDate');
     try {
       const date = parseISO(eventDetails.eventDate);
       if (!isValid(date)) return eventDetails.eventDate;
-      return format(date, 'eee, MMM dd, yyyy', { locale: enUS });
+      const dateLocale = locale === 'de' ? de : enUS;
+      const dateFormat = locale === 'de' ? 'eee, dd. MMM yyyy' : 'eee, MMM dd, yyyy';
+      return format(date, dateFormat, { locale: dateLocale });
     } catch (e) {
       return eventDetails.eventDate;
     }
@@ -148,14 +153,14 @@ export function MenuCart({
 
 
   return (
-    <div className={`font-['Hanken_Grotesk',sans-serif] h-full flex flex-col bg-white relative overflow-hidden ${isSubmitting ? 'opacity-50 pointer-events-none select-none' : ''}`}>
+    <div className={`font-sans h-full flex flex-col bg-background relative overflow-hidden ${isSubmitting ? 'opacity-50 pointer-events-none select-none' : ''}`}>
       <div className="flex-1 overflow-y-auto min-h-0">
         {/* 1. HEADER (Now scrollable) */}
-        <div className="shrink-0 px-8 pt-6 pb-4 flex flex-col items-center text-center border-b border-[#f3f4f6]/50 relative">
+        <div className="shrink-0 px-8 pt-6 pb-4 flex flex-col items-center text-center border-b border-muted/50 relative">
           {onCloseDrawer && (
             <button
               onClick={onCloseDrawer}
-              className="absolute right-6 top-6 p-2 rounded-full bg-[#f9fafb] text-[#9ca3af] hover:text-[#2c2f34] transition-colors lg:hidden"
+              className="absolute right-6 top-6 p-2 rounded-full bg-muted/50 text-muted-foreground hover:text-foreground transition-colors lg:hidden"
             >
               <X className="w-5 h-5" />
             </button>
@@ -172,43 +177,43 @@ export function MenuCart({
           </div>
 
           <div className="space-y-0.5 mb-4">
-            <span className="text-[10px] font-bold text-[#9dae91] uppercase tracking-[0.2em]">Offer</span>
-            <h2 className="text-[20px] font-bold text-[#2c2f34] tracking-tight leading-tight">{eventDetails.name || "Event Name"}</h2>
-            <p className="text-[12px] text-[#9ca3af] font-medium italic">
-              {eventDetails.business ? `c/o ${eventDetails.business}` : "Private Event"}
+            <span className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">{t('labels.offer') || 'Offer'}</span>
+            <h2 className="text-xl font-bold text-foreground tracking-tight leading-tight">{eventDetails.name || "Event Name"}</h2>
+            <p className="text-xs text-muted-foreground font-medium italic">
+              {eventDetails.business ? `c/o ${eventDetails.business}` : t('labels.privateEvent') || "Private Event"}
             </p>
           </div>
 
           {/* Date/Time Info Box */}
           <button
             onClick={onEditDateTime}
-            className="w-full bg-[#f9fafb] rounded-[14px] p-4 space-y-1 border border-[#f3f4f6] hover:bg-[#f3f4f6] transition-colors cursor-pointer group"
+            className="w-full bg-muted/50 rounded-card p-4 space-y-1 border border-muted hover:bg-muted transition-colors cursor-pointer group"
           >
-            <p className="text-[13px] font-bold text-[#2c2f34] flex items-center justify-center gap-2 group-hover:text-[#9dae91] transition-colors">
-              <Calendar className="w-3.5 h-3.5 text-[#9dae91]" />
+            <p className="text-sm font-bold text-foreground flex items-center justify-center gap-2 group-hover:text-primary transition-colors">
+              <Calendar className="w-3.5 h-3.5 text-primary" />
               {getFormattedDate()} — {eventDetails.eventTime || "TBD"}
             </p>
             <div className="space-y-0">
-              <p className="text-[11px] text-[#6b7280] font-medium">
-                approx. {currentGuestCount} persons
+              <p className="text-xs text-muted-foreground font-medium">
+                {t('labels.approx') || 'approx.'} {currentGuestCount} {currentGuestCount === 1 ? t('labels.guest') : t('labels.guests_plural')}
               </p>
               {isEditMode && editBookingData?.guestCount && parseInt(editBookingData.guestCount) !== currentGuestCount && (
-                <p className="text-[10px] text-[#9ca3af] font-medium italic">
+                <p className="text-[10px] text-muted-foreground font-medium italic">
                   Ursprünglich: {editBookingData.guestCount}
                 </p>
               )}
             </div>
-            <p className="text-[10px] text-[#9ca3af] uppercase tracking-wider font-bold">
-              {eventDetails.room === 'ug1_exklusiv' ? 'UG1 Exklusiv' : 'Private'}
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">
+              {eventDetails.room === 'ug1_exklusiv' ? t('labels.rooms.ug1_exklusiv') : (eventDetails.room === 'eg' ? t('labels.rooms.eg') : t('labels.rooms.ug1') || 'Private')}
             </p>
           </button>
 
           <div className="w-full mt-6 flex items-center justify-center gap-4">
-            <div className="h-[1px] flex-1 bg-[#e5e7eb]" />
-            <span className="text-[10px] font-bold text-[#9dae91] uppercase tracking-[0.2em]">menu</span>
-            <div className="h-[1px] flex-1 bg-[#e5e7eb]" />
+            <div className="h-[1px] flex-1 bg-border" />
+            <span className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">{t('labels.menu')}</span>
+            <div className="h-[1px] flex-1 bg-border" />
           </div>
-          <div className="mt-1 text-[#9dae91] flex justify-center">
+          <div className="mt-1 text-primary flex justify-center">
             <Plus className="w-3 h-3" />
           </div>
         </div>
@@ -217,14 +222,14 @@ export function MenuCart({
         <div className="px-8 py-6">
           {selectedItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="size-[80px] rounded-full bg-[#f9fafb] flex items-center justify-center mb-5 relative ">
-                <ShoppingCart className="w-8 h-8 text-[#d1d5db]" />
-                <div className="absolute top-0 right-0 size-6 bg-white rounded-full border border-[#f3f4f6] shadow-sm flex items-center justify-center">
-                  <Plus className="w-3.5 h-3.5 text-[#9dae91]" />
+              <div className="size-[80px] rounded-full bg-muted/50 flex items-center justify-center mb-5 relative ">
+                <ShoppingCart className="w-8 h-8 text-muted-foreground/40" />
+                <div className="absolute top-0 right-0 size-6 bg-background rounded-full border border-muted shadow-sm flex items-center justify-center">
+                  <Plus className="w-3.5 h-3.5 text-primary" />
                 </div>
               </div>
-              <h3 className="font-bold text-[17px] text-[#2c2f34] mb-1.5">Stellen Sie Ihr Menü zusammen</h3>
-              <p className="text-[13px] text-[#9ca3af] leading-relaxed max-w-[200px]">Wählen Sie aus unseren Kategorien auf der linken Seite.</p>
+              <h3 className="font-bold text-lg text-foreground mb-1.5">{t('status.cartEmptyTitle') || 'Stellen Sie Ihr Menü zusammen'}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-[200px]">{t('status.cartEmptySubtitle') || 'Wählen Sie aus unseren Kategorien auf der linken Seite.'}</p>
             </div>
           ) : (
             <div className="space-y-10">
@@ -236,18 +241,19 @@ export function MenuCart({
                     .filter(i => i.category === category)
                     .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
-                  const perPersonItems = itemsInCategory.filter(i => isPerPerson(i));
-                  const listItems = itemsInCategory.filter(i => isFlatFee(i) || isConsumption(i));
+                  const isGuestCountEnabled = !!categoryData[category]?.guestCount;
+                  const perPersonItems = isGuestCountEnabled ? [] : itemsInCategory.filter(i => isPerPerson(i));
+                  const listItems = isGuestCountEnabled ? itemsInCategory : itemsInCategory.filter(i => isFlatFee(i) || isConsumption(i));
                   const isSpecial = categoryData[category]?.useSpecialCalculation;
 
                   return (
                     <div key={category} className="space-y-6 pt-4">
                       {/* Category Header */}
                       <div className="text-center">
-                        <h3 className="text-[12px] font-extrabold text-[#2c2f34] uppercase tracking-[0.25em] mb-2">
+                        <h3 className="text-base font-bold text-foreground mb-2">
                           {category}
                         </h3>
-                        <div className="w-full h-px bg-[#9dae91]/20" />
+                        <div className="w-full h-px bg-primary/20" />
                       </div>
 
                       {/* 1. Per-Person Items (Card Layout) */}
@@ -261,18 +267,18 @@ export function MenuCart({
                                   {item.dietaryType !== 'none' && (
                                     <DietaryIcon type={item.dietaryType} size="xs" />
                                   )}
-                                  <h4 className="text-[15px] font-bold text-[#2c2f34] truncate max-w-[220px]">{item.name}</h4>
+                                  <h4 className="text-base font-semibold text-foreground line-clamp-2 max-w-[320px] leading-tight">{item.name}</h4>
 
-                                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button
                                       onClick={() => setDetailsModalItem(item)}
-                                      className="p-1 hover:text-[#9dae91] text-[#9ca3af]"
+                                      className="p-1 hover:text-primary text-muted-foreground"
                                     >
                                       <Edit2 className="w-3 h-3" />
                                     </button>
                                     <button
                                       onClick={() => removeItem(item.id)}
-                                      className="p-1 hover:text-[#ef4444] text-[#9ca3af]"
+                                      className="p-1 hover:text-destructive text-muted-foreground"
                                     >
                                       <X className="w-3 h-3" />
                                     </button>
@@ -280,17 +286,19 @@ export function MenuCart({
                                 </div>
 
                                 {item.description && (
-                                  <p className="text-[11px] text-[#9ca3af] italic px-8 leading-snug">
+                                  <p className="text-xs text-muted-foreground italic px-4 leading-snug">
                                     {item.description}
                                   </p>
                                 )}
+
+
 
                                 {/* Collapsible details */}
                                 {((cartItem.variantId && item.variants) || (cartItem.addOnIds && cartItem.addOnIds.length > 0)) && (
                                   <div className="flex flex-col items-center">
                                     <button
                                       onClick={(e) => toggleExpand(item.id, e)}
-                                      className="mt-1 flex items-center gap-1 text-[10px] font-bold text-[#9dae91] hover:text-[#2c2f34] transition-colors uppercase tracking-wider"
+                                      className="mt-1 flex items-center gap-1 text-[10px] font-bold text-primary hover:text-foreground transition-colors uppercase tracking-wider"
                                     >
                                       {expandedItems[item.id] ? t('actions.hide') : t('actions.show')}
                                       <ChevronRight className={`w-3 h-3 transition-transform ${expandedItems[item.id] ? 'rotate-90' : ''}`} />
@@ -299,7 +307,7 @@ export function MenuCart({
                                     {expandedItems[item.id] && (
                                       <div className="mt-2 space-y-1 animate-in slide-in-from-top-1 duration-200">
                                         {cartItem.variantId && item.variants && (
-                                          <p className="text-[11px] text-[#6b7280]">
+                                          <p className="text-xs text-muted-foreground">
                                             {item.variants.find(v => v.id === cartItem.variantId)?.name}
                                           </p>
                                         )}
@@ -307,7 +315,7 @@ export function MenuCart({
                                           const selectedInGroup = group.items.filter(i => cartItem.addOnIds?.includes(i.id));
                                           if (selectedInGroup.length === 0) return null;
                                           return selectedInGroup.map(addon => (
-                                            <p key={addon.id} className="text-[11px] text-[#6b7280]">
+                                            <p key={addon.id} className="text-xs text-muted-foreground">
                                               + {addon.name}
                                             </p>
                                           ));
@@ -319,7 +327,7 @@ export function MenuCart({
 
                                 {/* "OR" separator only if category is special */}
                                 {isSpecial && idx < arr.length - 1 && (
-                                  <p className="text-[11px] text-[#9ca3af] italic mt-4 uppercase tracking-widest">or</p>
+                                  <p className="text-xs text-muted-foreground italic mt-4 uppercase tracking-widest">{ct('or')}</p>
                                 )}
                               </div>
                             );
@@ -330,7 +338,7 @@ export function MenuCart({
                       {/* 2. List Items (Standard List Layout) */}
                       {listItems.length > 0 && (
                         <div className="space-y-4">
-                          {listItems.map(item => {
+                          {listItems.map((item, idx, arr) => {
                             const cartItem = cart[item.id];
                             return (
                               <div key={item.id} className="group">
@@ -342,7 +350,16 @@ export function MenuCart({
                                           <DietaryIcon type={item.dietaryType} size="xs" />
                                         </div>
                                       )}
-                                      <span className="text-[14px] font-bold text-[#2c2f34] leading-tight truncate">
+                                      <span className="text-sm font-semibold text-foreground leading-tight line-clamp-2">
+                                        {(isGuestCountEnabled || isConsumption(item) || isFlatFee(item)) && (
+                                          <span className="text-sm mr-0.5 inline-flex items-center gap-1">
+                                            {isPerPerson(item) && <Users className="w-3 h-3 text-muted-foreground" />}
+                                            {isConsumption(item) && <Wine className="w-3 h-3 text-muted-foreground" />}
+                                            {isFlatFee(item) && <Package className="w-3 h-3 text-muted-foreground" />}
+                                            {isPerPerson(item) ? (cartItem.guestCount ?? guestCountValue) : cartItem.quantity}
+                                            <span className="text-xs text-muted-foreground font-normal">×</span>
+                                          </span>
+                                        )}
                                         {item.name}
                                       </span>
                                     </div>
@@ -351,7 +368,7 @@ export function MenuCart({
                                     {((cartItem.variantId && item.variants) || (cartItem.addOnIds && cartItem.addOnIds.length > 0)) && (
                                       <button
                                         onClick={(e) => toggleExpand(item.id, e)}
-                                        className="mt-1 flex items-center gap-1 text-[10px] font-bold text-[#9dae91] hover:text-[#2c2f34] transition-colors uppercase tracking-wider"
+                                        className="mt-1 flex items-center gap-1 text-[10px] font-bold text-primary hover:text-foreground transition-colors uppercase tracking-wider"
                                       >
                                         {expandedItems[item.id] ? t('actions.hide') : t('actions.show')}
                                         <ChevronRight className={`w-3 h-3 transition-transform ${expandedItems[item.id] ? 'rotate-90' : ''}`} />
@@ -360,9 +377,9 @@ export function MenuCart({
 
                                     {/* Expanded Menu Options */}
                                     {expandedItems[item.id] && ((cartItem.variantId && item.variants) || (cartItem.addOnIds && cartItem.addOnIds.length > 0)) && (
-                                      <div className="mt-2 pl-4 border-l border-[#f3f4f6] space-y-1.5 animate-in slide-in-from-top-1 duration-200">
+                                      <div className="mt-2 pl-4 border-l border-muted space-y-1.5 animate-in slide-in-from-top-1 duration-200">
                                         {cartItem.variantId && item.variants && (
-                                          <p className="text-[11px] text-[#6b7280]">
+                                          <p className="text-xs text-muted-foreground">
                                             {item.variants.find(v => v.id === cartItem.variantId)?.name}
                                           </p>
                                         )}
@@ -370,7 +387,7 @@ export function MenuCart({
                                           const selectedInGroup = group.items.filter(i => cartItem.addOnIds?.includes(i.id));
                                           if (selectedInGroup.length === 0) return null;
                                           return selectedInGroup.map(addon => (
-                                            <p key={addon.id} className="text-[11px] text-[#6b7280]">
+                                            <p key={addon.id} className="text-xs text-muted-foreground">
                                               + {addon.name}
                                             </p>
                                           ));
@@ -380,25 +397,34 @@ export function MenuCart({
                                   </div>
 
                                   <div className="flex items-center gap-3 shrink-0">
-                                    <span className="text-[13px] font-bold text-[#2c2f34]">
+                                    <span className="text-sm font-semibold text-foreground">
                                       CHF {getItemPerPersonPrice(item).toFixed(2)}
                                     </span>
                                     <div className="flex items-center gap-1">
                                       <button
                                         onClick={() => setDetailsModalItem(item)}
-                                        className="p-1.5 hover:bg-[#f9fafb] rounded-full hover:text-[#9dae91] text-[#9ca3af] transition-all"
+                                        className="p-1.5 hover:bg-muted/50 rounded-full hover:text-primary text-muted-foreground transition-all"
                                       >
                                         <Edit2 className="w-3.5 h-3.5" />
                                       </button>
                                       <button
                                         onClick={() => removeItem(item.id)}
-                                        className="p-1.5 hover:bg-[#f9fafb] rounded-full hover:text-[#ef4444] text-[#9ca3af] transition-all"
+                                        className="p-1.5 hover:bg-muted/50 rounded-full hover:text-destructive text-muted-foreground transition-all"
                                       >
                                         <X className="w-3.5 h-3.5" />
                                       </button>
                                     </div>
                                   </div>
                                 </div>
+
+                                {/* "OR" separator for list layout if category is special */}
+                                {isSpecial && idx < arr.length - 1 && (
+                                  <div className="flex items-center gap-4 py-1">
+                                    <div className="h-px flex-1 bg-border/40" />
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest italic">{ct('or')}</span>
+                                    <div className="h-px flex-1 bg-border/40" />
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
@@ -414,22 +440,22 @@ export function MenuCart({
 
       {/* 3. STICKY FOOTER - Only visible when items are selected */}
       {selectedItems.length > 0 && (
-        <div className="p-4 border-t border-[#f3f4f6] bg-white shrink-0 space-y-4 sticky bottom-0 z-[20] shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
+        <div className="p-4 border-t border-muted bg-background shrink-0 space-y-4 sticky bottom-0 z-[20] shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-[14px] text-[#2c2f34]">Bestellübersicht</h3>
-              <div className="p-0.5 bg-[#f3f4f6] rounded-lg flex gap-0.5">
+              <h3 className="font-bold text-sm text-foreground">{t('sections.orderOverview') || 'Bestellübersicht'}</h3>
+              <div className="p-0.5 bg-muted rounded-lg flex gap-0.5">
                 <button
                   onClick={() => setViewMode('per-person')}
-                  className={`px-3 py-1.5 text-[11px] font-bold rounded-md transition-all ${viewMode === 'per-person' ? "bg-[#9dae91] text-[#2c2f34] shadow-sm" : "text-[#9ca3af]"}`}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${viewMode === 'per-person' ? "bg-primary text-foreground shadow-sm" : "text-muted-foreground"}`}
                 >
-                  Pro Person
+                  {t('labels.proPerson') || 'Pro Person'}
                 </button>
                 <button
                   onClick={() => setViewMode('total')}
-                  className={`px-3 py-1.5 text-[11px] font-bold rounded-md transition-all ${viewMode === 'total' ? "bg-[#9dae91] text-[#2c2f34] shadow-sm" : "text-[#9ca3af]"}`}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${viewMode === 'total' ? "bg-primary text-foreground shadow-sm" : "text-muted-foreground"}`}
                 >
-                  Total + extras
+                  {t('labels.totalExtras') || 'Total + extras'}
                 </button>
               </div>
             </div>
@@ -440,20 +466,19 @@ export function MenuCart({
                   {/* Veg Track */}
                   <div className="space-y-2">
                     <div
-                      className="flex justify-between items-center text-[13px] cursor-pointer group"
+                      className="flex justify-between items-center text-sm cursor-pointer group"
                       onClick={() => setExpandedDietary(expandedDietary === 'veg' ? null : 'veg')}
                     >
                       <div className="flex items-center gap-2">
                         <DietaryIcon type="veg" size="xs" />
-                        <span className="text-[#6b7280] group-hover:text-[#2c2f34] transition-colors">{t('labels.vegTrackTotal')}</span>
-                        {/* <ChevronRight className={`w-3 h-3 text-[#9ca3af] transition-transform ${expandedDietary === 'veg' ? 'rotate-90' : ''}`} /> */}
+                        <span className="text-muted-foreground font-medium group-hover:text-foreground transition-colors">{t('labels.vegTrackTotal')}</span>
                       </div>
-                      <span className="text-[#2c2f34] font-bold">CHF {dietaryTotals.veg.toFixed(2)}</span>
+                      <span className="text-foreground font-semibold">CHF {dietaryTotals.veg.toFixed(2)}</span>
                     </div>
                     {expandedDietary === 'veg' && (
                       <div className="pl-6 space-y-1.5 animate-in slide-in-from-top-1 duration-200">
                         {cartItems.filter(i => i.dietaryType === 'veg').map(item => (
-                          <div key={item.id} className="flex items-center gap-2 text-[11px] text-[#9ca3af]">
+                          <div key={item.id} className="flex items-center gap-2 text-xs text-muted-foreground">
                             <DietaryIcon type="veg" size="xs" className="scale-75 origin-left" />
                             <span className="truncate">{item.name}</span>
                           </div>
@@ -465,20 +490,19 @@ export function MenuCart({
                   {/* Non-Veg Track */}
                   <div className="space-y-2">
                     <div
-                      className="flex justify-between items-center text-[13px] cursor-pointer group"
+                      className="flex justify-between items-center text-sm cursor-pointer group"
                       onClick={() => setExpandedDietary(expandedDietary === 'non-veg' ? null : 'non-veg')}
                     >
                       <div className="flex items-center gap-2">
                         <DietaryIcon type="non-veg" size="xs" />
-                        <span className="text-[#6b7280] group-hover:text-[#2c2f34] transition-colors">{t('labels.nonVegTrackTotal')}</span>
-                        {/* <ChevronRight className={`w-3 h-3 text-[#9ca3af] transition-transform ${expandedDietary === 'non-veg' ? 'rotate-90' : ''}`} /> */}
+                        <span className="text-muted-foreground font-medium group-hover:text-foreground transition-colors">{t('labels.nonVegTrackTotal')}</span>
                       </div>
-                      <span className="text-[#2c2f34] font-bold">CHF {dietaryTotals.nonVeg.toFixed(2)}</span>
+                      <span className="text-foreground font-semibold">CHF {dietaryTotals.nonVeg.toFixed(2)}</span>
                     </div>
                     {expandedDietary === 'non-veg' && (
                       <div className="pl-6 space-y-1.5 animate-in slide-in-from-top-1 duration-200">
                         {cartItems.filter(i => i.dietaryType === 'non-veg').map(item => (
-                          <div key={item.id} className="flex items-center gap-2 text-[11px] text-[#9ca3af]">
+                          <div key={item.id} className="flex items-center gap-2 text-xs text-muted-foreground">
                             <DietaryIcon type="non-veg" size="xs" className="scale-75 origin-left" />
                             <span className="truncate">{item.name}</span>
                           </div>
@@ -489,27 +513,27 @@ export function MenuCart({
                 </div>
               ) : (
                 <>
-                  <div className="flex justify-between items-center text-[13px]">
-                    <span className="text-[#6b7280]">Food Items</span>
-                    <span className="text-[#2c2f34] font-bold">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">{t('labels.foodItems') || 'Food Items'}</span>
+                    <span className="text-foreground font-semibold">
                       CHF {absoluteFoodTotal.toFixed(2)}
                     </span>
                   </div>
                   {getFlatRateSubtotal() > 0 && (
-                    <div className="flex justify-between items-center text-[13px]">
-                      <span className="text-[#6b7280]">Add-ons & Extras</span>
-                      <span className="text-[#2c2f34] font-bold">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">{t('labels.addons') || 'Add-ons & Extras'}</span>
+                      <span className="text-foreground font-semibold">
                         CHF {getFlatRateSubtotal().toFixed(2)}
                       </span>
                     </div>
                   )}
                   {getConsumptionSubtotal() > 0 && (
-                    <div className="flex justify-between items-center text-[13px]">
+                    <div className="flex justify-between items-center text-sm">
                       <div className="flex items-baseline gap-1">
-                        <span className="text-[#6b7280]">Beverages</span>
-                        <span className="text-[10px] text-[#9ca3af]">(by consumption)</span>
+                        <span className="text-muted-foreground">{t('categories.Beverages') || 'Beverages'}</span>
+                        <span className="text-[10px] text-muted-foreground">(by consumption)</span>
                       </div>
-                      <span className={`font-bold ${includeBeveragePrices ? "text-[#2c2f34]" : "text-[#9ca3af] line-through decoration-2"}`}>
+                      <span className={`font-semibold ${includeBeveragePrices ? "text-foreground" : "text-muted-foreground line-through decoration-2"}`}>
                         CHF {getConsumptionSubtotal().toFixed(2)}
                       </span>
                     </div>
@@ -522,11 +546,11 @@ export function MenuCart({
                           type="checkbox"
                           checked={includeBeveragePrices}
                           onChange={(e) => setIncludeBeveragePrices(e.target.checked)}
-                          className="peer appearance-none size-4 border border-[#9ca3af] rounded-md bg-white checked:bg-[#2c2f34] checked:border-[#2c2f34] transition-all cursor-pointer"
+                          className="peer appearance-none size-4 border border-muted-foreground rounded-md bg-background checked:bg-foreground checked:border-foreground transition-all cursor-pointer"
                         />
-                        <Check className="absolute size-3 text-white opacity-0 peer-checked:opacity-100 left-0.5 pointer-events-none transition-opacity" />
+                        <Check className="absolute size-3 text-background opacity-0 peer-checked:opacity-100 left-0.5 pointer-events-none transition-opacity" />
                       </div>
-                      <span className="text-[11px] text-[#2c2f34] font-medium">Getränkekosten in Kostenvoranschlag einschliessen</span>
+                      <span className="text-xs text-foreground font-medium">{t('labels.includeDrinksEstimate') || 'Getränkekosten in Kostenvoranschlag einschliessen'}</span>
                     </label>
                   )}
                 </>
@@ -534,11 +558,11 @@ export function MenuCart({
             </div>
           </div>
 
-          <div className={`pt-3 ${viewMode === 'total' ? 'border-t border-[#f3f4f6]' : ''}`}>
+          <div className={`pt-3 ${viewMode === 'total' ? 'border-t border-muted' : ''}`}>
             {viewMode === 'total' && (
               <div className="flex justify-between items-center mb-4">
-                <span className="text-[13px] font-bold text-[#2c2f34]">Total</span>
-                <span className="text-[18px] font-extrabold text-[#2c2f34] tracking-tight">
+                <span className="text-sm font-bold text-foreground">Total</span>
+                <span className="text-lg font-bold text-foreground">
                   CHF {totalAmount.toFixed(2)}
                 </span>
               </div>
@@ -551,18 +575,18 @@ export function MenuCart({
                     type="checkbox"
                     checked={termsAccepted}
                     onChange={(e) => setTermsAccepted(e.target.checked)}
-                    className="peer appearance-none size-3.5 border border-[#9ca3af] rounded-md bg-white checked:bg-[#9dae91] checked:border-[#9dae91] transition-all cursor-pointer"
+                    className="peer appearance-none size-3.5 border border-muted-foreground rounded-md bg-background checked:bg-primary checked:border-primary transition-all cursor-pointer"
                   />
-                  <Check className="absolute size-2.5 text-white opacity-0 peer-checked:opacity-100 left-0.5 pointer-events-none transition-opacity" />
+                  <Check className="absolute size-2.5 text-background opacity-0 peer-checked:opacity-100 left-0.5 pointer-events-none transition-opacity" />
                 </div>
-                <span className="text-[11px] text-[#2c2f34] font-medium">
+                <span className="text-xs text-foreground font-medium">
                   Ich stimme den <span
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       setIsTermsModalOpen(true);
                     }}
-                    className="text-[#8da081] underline font-bold cursor-pointer hover:text-[#7a8d6f] transition-colors"
+                    className="text-primary underline font-bold cursor-pointer hover:opacity-80 transition-colors"
                   >
                     Allgemeinen Geschäftsbedingungen
                   </span>
@@ -587,15 +611,15 @@ export function MenuCart({
                   }
                 }}
                 disabled={!termsAccepted || selectedItems.length === 0 || isSubmitting || showMinSpendWarning}
-                className={`w-full h-[46px] rounded-xl flex items-center justify-center font-bold text-[14px] transition-all shadow-sm ${termsAccepted && selectedItems.length > 0 && !isSubmitting && !showMinSpendWarning
-                  ? "bg-[#9dae91] text-[#2c2f34] hover:bg-[#8da081] active:translate-y-[1px]"
-                  : "bg-[#f3f4f6] text-[#9ca3af] cursor-not-allowed"
+                className={`w-full h-[46px] rounded-xl flex items-center justify-center font-bold text-sm transition-all shadow-sm ${termsAccepted && selectedItems.length > 0 && !isSubmitting && !showMinSpendWarning
+                  ? "bg-primary text-foreground hover:opacity-90 active:translate-y-[1px]"
+                  : "bg-muted text-muted-foreground cursor-not-allowed"
                   }`}
               >
                 {isSubmitting ? 'Wird gesendet...' : (isEditMode ? 'Aktualisieren' : continueButtonText)}
               </button>
 
-              <p className="text-[10px] text-[#9ca3af] text-center">
+              <p className="text-[10px] text-muted-foreground text-center">
                 Gästezahl mindestens 4 Tage vor dem Event bestätigen
               </p>
             </div>
@@ -606,15 +630,15 @@ export function MenuCart({
       {/* Deposit Requirement Modal */}
       {isDepositModalOpen && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white rounded-[24px] w-full max-w-[480px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
-            <div className="flex justify-between items-center px-6 py-4 border-b border-[#f3f4f6]">
-              <h3 className="font-bold text-[18px] text-[#2c2f34]">Vorauszahlung erforderlich</h3>
+          <div className="bg-background rounded-[24px] w-full max-w-[480px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-muted">
+              <h3 className="font-bold text-lg text-foreground">{t('labels.depositRequirement') || 'Vorauszahlung erforderlich'}</h3>
               <button
                 onClick={() => setIsDepositModalOpen(false)}
-                className="size-8 rounded-full bg-[#f9fafb] flex items-center justify-center hover:bg-[#f3f4f6] transition-colors"
+                className="size-8 rounded-full bg-muted/50 flex items-center justify-center hover:bg-muted transition-colors"
                 title="Schliessen"
               >
-                <X className="w-4 h-4 text-[#6b7280]" />
+                <X className="w-4 h-4 text-muted-foreground" />
               </button>
             </div>
 
@@ -624,13 +648,13 @@ export function MenuCart({
                   <AlertTriangle className="w-6 h-6 text-amber-500" />
                 </div>
                 <div className="space-y-4">
-                  <p className="text-[15px] text-[#6b7280] leading-relaxed">
-                    Bei Bestellungen über <span className="font-bold text-[#2c2f34]">CHF 5'000.00</span> ist eine Vorauszahlung erforderlich. Diese wird von der Schlussrechnung abgezogen.
+                  <p className="text-base text-muted-foreground leading-relaxed">
+                    {t('labels.depositRequirementText') || "Bei Bestellungen über CHF 5'000.00 ist eine Vorauszahlung erforderlich. Diese wird von der Schlussrechnung abgezogen."}
                   </p>
                   <ul className="space-y-3">
-                    <li className="flex items-start gap-3 text-[14px] text-[#6b7280]">
-                      <div className="size-1.5 rounded-full bg-[#9dae91] mt-1.5 shrink-0" />
-                      Unser Team wird Sie kontaktieren, sobald die Bestellung fixiert und bestätigt ist.
+                    <li className="flex items-start gap-3 text-sm text-muted-foreground">
+                      <div className="size-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
+                      {t('labels.contactAfterLocked') || 'Unser Team wird sich mit Ihnen in Verbindung setzen, sobald die Bestellung gesperrt und bestätigt ist.'}
                     </li>
                   </ul>
                 </div>
@@ -639,18 +663,18 @@ export function MenuCart({
               <div className="flex gap-3">
                 <button
                   onClick={() => setIsDepositModalOpen(false)}
-                  className="flex-1 h-[48px] rounded-[12px] border border-[#e5e7eb] font-semibold text-[14px] text-[#6b7280] hover:bg-[#f9fafb] transition-all"
+                  className="flex-1 h-[48px] rounded-lg border border-border font-semibold text-sm text-muted-foreground hover:bg-muted/50 transition-all"
                 >
-                  Abbrechen
+                  {ct('cancel')}
                 </button>
                 <button
                   onClick={() => {
                     setIsDepositModalOpen(false);
                     onContinue?.();
                   }}
-                  className="flex-1 h-[48px] rounded-[12px] bg-[#9dae91] font-bold text-[14px] text-[#2c2f34] shadow-lg shadow-[#9dae91]/20 hover:opacity-95 transition-all"
+                  className="flex-1 h-[48px] rounded-lg bg-primary font-bold text-sm text-foreground shadow-lg shadow-primary/20 hover:opacity-95 transition-all"
                 >
-                  Bestätigen & Absenden
+                  {t('actions.confirmSend') || 'Bestätigen & Absenden'}
                 </button>
               </div>
             </div>

@@ -17,6 +17,7 @@ interface AddChoiceModalProps {
   selectedAddonGroups: string[];
   setSelectedAddonGroups: (groups: string[]) => void;
   onSave: () => Promise<void>;
+  isSaving?: boolean;
 }
 
 export function AddChoiceModal({
@@ -30,6 +31,7 @@ export function AddChoiceModal({
   selectedAddonGroups,
   setSelectedAddonGroups,
   onSave,
+  isSaving = false,
 }: AddChoiceModalProps) {
   const t = useMenuConfigTranslation();
   const ct = useCommonTranslation();
@@ -46,15 +48,17 @@ export function AddChoiceModal({
             variant="secondary"
             icon={X}
             onClick={onClose}
+            disabled={isSaving}
           >
             {ct('cancel')}
           </Button>
           <Button
             variant="primary"
-            icon={Check}
+            icon={isSaving ? undefined : Check}
             onClick={onSave}
+            disabled={isSaving}
           >
-            {t('buttons.saveChanges')}
+            {isSaving ? 'Saving...' : t('buttons.saveChanges')}
           </Button>
         </>
       }

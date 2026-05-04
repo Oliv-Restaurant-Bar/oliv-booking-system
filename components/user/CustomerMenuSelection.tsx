@@ -363,7 +363,7 @@ export function CustomerMenuSelection({
                                           <DietaryIcon type={item.dietaryType} size="sm" />
                                         </div>
                                       )}
-                                      <h3 className="font-semibold text-base text-[#2c2f34] truncate leading-tight">{item.name}</h3>
+                                      <h3 className="font-semibold text-base text-[#2c2f34] line-clamp-2 leading-tight">{item.name}</h3>
                                       {isSelected && (
                                         <div className="shrink-0 size-[18px] rounded-full bg-[#9dae91] flex items-center justify-center">
                                           <Check className="w-2.5 h-2.5 text-white" />

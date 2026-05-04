@@ -13,6 +13,7 @@ interface ConfirmationModalProps {
   cancelText?: string;
   confirmButtonStyle?: string;
   confirmIcon?: 'delete' | 'check';
+  isSaving?: boolean;
 }
 
 export function ConfirmationModal({
@@ -24,7 +25,8 @@ export function ConfirmationModal({
   confirmText = 'Delete',
   cancelText = 'Cancel',
   confirmButtonStyle = 'bg-destructive text-destructive-foreground hover:opacity-90',
-  confirmIcon = 'delete'
+  confirmIcon = 'delete',
+  isSaving = false,
 }: ConfirmationModalProps) {
   if (!isOpen) return null;
 
@@ -32,13 +34,14 @@ export function ConfirmationModal({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={isSaving ? undefined : onClose} />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="bg-card border border-border rounded-xl shadow-xl w-full max-w-md relative">
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground z-10"
+            disabled={isSaving}
+            className="absolute top-4 right-4 p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground z-10 disabled:opacity-50"
           >
             <X className="w-5 h-5" />
           </button>
@@ -62,7 +65,8 @@ export function ConfirmationModal({
           <div className="border-t border-border px-6 py-3 flex items-center justify-end gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-background border border-border text-foreground rounded-lg hover:bg-accent transition-colors flex items-center gap-2"
+              disabled={isSaving}
+              className="px-4 py-2 bg-background border border-border text-foreground rounded-lg hover:bg-accent transition-colors flex items-center gap-2 disabled:opacity-50"
               style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
             >
               <X className="w-4 h-4" />
@@ -70,11 +74,18 @@ export function ConfirmationModal({
             </button>
             <button
               onClick={onConfirm}
-              className={`px-4 py-2 rounded-lg transition-opacity flex items-center gap-2 ${confirmButtonStyle}`}
+              disabled={isSaving}
+              className={`px-4 py-2 rounded-lg transition-opacity flex items-center gap-2 ${confirmButtonStyle} disabled:opacity-50`}
               style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
             >
-              <ConfirmIcon className="w-4 h-4" />
-              {confirmText}
+              {isSaving ? (
+                <span>Saving...</span>
+              ) : (
+                <>
+                  <ConfirmIcon className="w-4 h-4" />
+                  {confirmText}
+                </>
+              )}
             </button>
           </div>
         </div>

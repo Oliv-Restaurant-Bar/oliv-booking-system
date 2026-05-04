@@ -14,7 +14,6 @@ interface AddCategoryModalProps {
     description: string;
     image: File | null;
     imageUrl: string;
-    useSpecialCalculation?: boolean;
   };
   setNewCategory: (category: any) => void;
   uploadingImage: boolean;
@@ -29,6 +28,7 @@ interface AddCategoryModalProps {
     description?: boolean;
   };
   setCategoryTouched: (touched: any) => void;
+  isSaving?: boolean;
 }
 
 export function AddCategoryModal({
@@ -43,6 +43,7 @@ export function AddCategoryModal({
   displayCategoryErrors,
   categoryTouched,
   setCategoryTouched,
+  isSaving = false,
 }: AddCategoryModalProps) {
   const t = useMenuConfigTranslation();
   const ct = useCommonTranslation();
@@ -59,16 +60,17 @@ export function AddCategoryModal({
             variant="secondary"
             icon={X}
             onClick={onClose}
+            disabled={isSaving}
           >
             {ct('cancel')}
           </Button>
           <Button
             variant="primary"
-            icon={editingCategoryId ? Check : Plus}
+            icon={isSaving ? undefined : (editingCategoryId ? Check : Plus)}
             onClick={onSave}
-            disabled={!newCategory.name || newCategory.name.trim() === '' || newCategory.name.length > 100 || newCategory.description.length > 500}
+            disabled={isSaving || !newCategory.name || newCategory.name.trim() === '' || newCategory.name.length > 100 || newCategory.description.length > 500}
           >
-            {editingCategoryId ? t('buttons.saveChanges') : t('buttons.addCategory')}
+            {isSaving ? 'Saving...' : (editingCategoryId ? t('buttons.saveChanges') : t('buttons.addCategory'))}
           </Button>
         </>
       }
@@ -121,27 +123,7 @@ export function AddCategoryModal({
             <p className="text-muted-foreground text-xs text-right">{newCategory.description.length}/500</p>
           </div>
         </div>
-        {/* <div className="flex items-center space-x-2 pt-2">
-          <input
-            type="checkbox"
-            id="useSpecialCalculation"
-            checked={!!newCategory.useSpecialCalculation}
-            onChange={(e) => setNewCategory({ ...newCategory, useSpecialCalculation: e.target.checked })}
-            className="w-4 h-4 text-primary bg-input-background border-border rounded focus:ring-ring"
-          />
-          <div className="flex flex-col">
-            <label
-              htmlFor="useSpecialCalculation"
-              className="text-foreground font-medium"
-              style={{ fontSize: 'var(--text-base)' }}
-            >
-              {t('labels.useSpecialCalculation') || 'Special Calculation'}
-            </label>
-            <p className="text-muted-foreground text-xs">
-              {t('tooltips.useSpecialCalculation') || 'Apply shared dietary pricing (Starter/Dessert logic) to this category.'}
-            </p>
-          </div>
-        </div> */}
+
 
       </div>
     </Modal>

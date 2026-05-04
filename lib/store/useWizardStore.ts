@@ -56,6 +56,7 @@ interface WizardState {
   categories: string[];
   categoryData: Record<string, { 
     guestCount: boolean; 
+    isSpecialCategory: boolean;
     useSpecialCalculation: boolean; 
     assignedVisibilitySchedules: string[];
     sortOrder: number;
@@ -431,24 +432,27 @@ export const useWizardStore = create<WizardState>((set, get) => ({
   },
 
   getDietaryPerPersonTotals: () => {
-    const { cart, categoryData } = get();
-    const visibleItems = get().getVisibleMenuItems();
-    
+    const { cart, categoryData, eventDetails, getVisibleMenuItems } = get();
+    const visibleItems = getVisibleMenuItems();
+    const guestCount = parseInt(eventDetails.guestCount) || 1;
+
     const ppItems = Object.keys(cart)
       .map(itemId => {
         const item = visibleItems.find(i => i.id === itemId);
-        if (!item || (item.pricingType !== 'per-person' && item.pricingType !== 'per_person')) return null;
+        if (!item) return null;
         return { 
           category: item.category || 'Uncategorized',
           price: get().getItemPerPersonPrice(item),
           pricingType: item.pricingType,
           dietaryType: item.dietaryType || 'none',
-          useSpecialCalculation: categoryData[item.category]?.useSpecialCalculation || false
+          useSpecialCalculation: categoryData[item.category]?.useSpecialCalculation || false,
+          isSpecialCategory: categoryData[item.category]?.isSpecialCategory || false,
+          guestCount: cart[itemId].guestCount
         };
       })
       .filter((i): i is NonNullable<typeof i> => i !== null);
 
-    return calculateDietaryTotals(ppItems);
+    return calculateDietaryTotals(ppItems, guestCount);
   },
 
   getPerPersonSubtotal: () => {

@@ -12,6 +12,7 @@ import { sendEmail } from "@/lib/email/zeptomail";
 import { wizardEventDetailsSchema } from "@/lib/validation/schemas";
 import { ZodError } from "zod";
 import { generateBookingPdf } from "@/lib/utils/pdf-generator";
+import { calculateDietaryTotals } from "@/lib/utils/pricing";
 
 export interface WizardFormData {
   contactName: string;
@@ -121,6 +122,7 @@ export async function submitWizardForm(data: WizardFormData) {
       id: menuCategories.id,
       name: menuCategories.name,
       guestCount: menuCategories.guestCount,
+      isSpecialCategory: menuCategories.isSpecialCategory,
       useSpecialCalculation: menuCategories.useSpecialCalculation,
     }).from(menuCategories);
 
@@ -141,9 +143,10 @@ export async function submitWizardForm(data: WizardFormData) {
     const addonMap = new Map([...allAddonItems, ...legacyAddons].map(a => [a.id, a]));
 
     const menuItemMap = new Map(allMenuItems.map(item => [item.id, item]));
-    const categoryMap = new Map(allCategories.map(cat => [cat.id, cat.guestCount]));
+    const categoryMap = new Map(allCategories.map(cat => [cat.id, cat]));
 
     let estimatedTotal = 0;
+    const perPersonTrackItems: any[] = [];
     const itemsToCreate: Array<{
       itemType: "menu_item";
       itemId: string;
@@ -153,7 +156,8 @@ export async function submitWizardForm(data: WizardFormData) {
     }> = [];
 
     // Process selected items
-    for (const itemId of data.selectedItems) {
+    if (data.selectedItems && data.selectedItems.length > 0) {
+      for (const itemId of data.selectedItems) {
       const dbItem = menuItemMap.get(itemId);
       const quantity = data.itemQuantities[itemId] || 1;
 
@@ -198,21 +202,27 @@ export async function submitWizardForm(data: WizardFormData) {
         }
 
         // Calculate effective guest count and quantity based on pricing type
-        let effectiveGuestCount = 1;
         let effectiveQuantity = quantity;
+        const customGuestCount = data.itemGuestCounts?.[itemId];
 
         if (dbItem.pricingType === 'per_person') {
-          // Per-person items: quantity records the guest count
-          effectiveQuantity = data.itemGuestCounts?.[itemId] || data.guestCount;
-          effectiveGuestCount = 1; // Already accounted for in quantity
+          const cat = dbItem.categoryId ? categoryMap.get(dbItem.categoryId) : null;
+          perPersonTrackItems.push({
+            category: (cat as any)?.name || 'Uncategorized',
+            price: unitPrice + addonsPrice,
+            pricingType: 'per_person',
+            dietaryType: (dbItem.dietaryType as any) || 'none',
+            useSpecialCalculation: (cat as any)?.useSpecialCalculation || false,
+            isSpecialCategory: (cat as any)?.isSpecialCategory || false,
+            guestCount: customGuestCount ?? data.guestCount
+          });
+          effectiveQuantity = customGuestCount ?? data.guestCount;
         } else {
           // Flat-fee or consumption: quantity is used directly
           effectiveQuantity = quantity;
-          effectiveGuestCount = 1;
+          const itemTotal = (unitPrice + addonsPrice) * effectiveQuantity;
+          estimatedTotal += itemTotal;
         }
-
-        const itemTotal = (unitPrice + addonsPrice) * effectiveQuantity * effectiveGuestCount;
-        estimatedTotal += itemTotal;
 
         // Build notes for booking_item (variant, addons, comments)
         const notesParts = [];
@@ -231,6 +241,18 @@ export async function submitWizardForm(data: WizardFormData) {
         });
       }
     }
+  }
+    
+    // Now we can calculate the per-person food totals (Veg vs Non-Veg tracks)
+    const dietaryTotals = calculateDietaryTotals(perPersonTrackItems, data.guestCount);
+    
+    // The per-person food cost is the max of the two tracks
+    const foodCostPerPerson = Math.max(dietaryTotals.veg, dietaryTotals.nonVeg);
+    
+    // Add the total food cost to estimatedTotal
+    // (Note: we already added custom quantity items if they weren't in trackItems, 
+    // but now they are all in trackItems, so we just multiply the subtotal)
+    estimatedTotal += foodCostPerPerson * data.guestCount;
 
     // Minimum spend validation for UG1 Exclusive
     if (data.room === 'ug1_exklusiv' && estimatedTotal < 1000) {

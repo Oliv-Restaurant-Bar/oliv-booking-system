@@ -75,6 +75,7 @@ interface AddMenuItemModalProps {
   updateVariant: (index: number, field: string, value: any) => void;
   removeVariant: (index: number) => void;
   handleToggleTag: (tag: string, field: 'dietaryTags' | 'allergens' | 'additives') => void;
+  isSaving?: boolean;
 }
 
 export function AddMenuItemModal({
@@ -106,6 +107,7 @@ export function AddMenuItemModal({
   updateVariant,
   removeVariant,
   handleToggleTag,
+  isSaving = false,
 }: AddMenuItemModalProps) {
   const t = useMenuConfigTranslation();
   const ct = useCommonTranslation();
@@ -160,14 +162,16 @@ export function AddMenuItemModal({
             variant="secondary"
             icon={X}
             onClick={onClose}
+            disabled={isSaving}
           >
             {ct('cancel')}
           </Button>
-          <Button
+           <Button
             variant="primary"
-            icon={editingMenuItemId ? Check : Plus}
+            icon={isSaving ? undefined : (editingMenuItemId ? Check : Plus)}
             onClick={onSave}
             disabled={
+              isSaving ||
               !activeCategoryId ||
               !newMenuItem.name?.trim() ||
               (pricingMode === 'price' && !newMenuItem.price) ||
@@ -188,7 +192,7 @@ export function AddMenuItemModal({
               (newMenuItem.nutritionalInfo?.sodium?.length || 0) > 50
             }
           >
-            {editingMenuItemId ? t('buttons.saveChanges') : t('buttons.addItem')}
+            {isSaving ? 'Saving...' : (editingMenuItemId ? t('buttons.saveChanges') : t('buttons.addItem'))}
           </Button>
         </>
       }

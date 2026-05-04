@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import Image from 'next/image';
-import { Eye, Lock, Check, Clock, Edit2, User, MapPin, Calendar, ClipboardList, ShoppingCart, Users, ChevronDown, ChevronUp, AlertTriangle, LayoutList } from 'lucide-react';
+import { Eye, Lock, Check, Clock, Edit2, User, MapPin, Calendar, ClipboardList, ShoppingCart, Users, ChevronDown, ChevronUp, AlertTriangle, LayoutList, Wine, Package } from 'lucide-react';
 import { MenuItem } from './menuItemsData';
 import { EventDetails } from '@/lib/types';
 import { DietaryIcon } from './DietaryIcon';
@@ -440,7 +440,10 @@ export function CustomerSummary({
                                     {item.dietaryType !== 'none' && (
                                       <DietaryIcon type={item.dietaryType} size="sm" />
                                     )}
-                                    <h6 className="text-foreground font-medium text-sm truncate max-w-125">
+                                    <h6 className="text-foreground font-medium text-sm line-clamp-2 max-w-125 leading-tight flex items-center gap-1">
+                                      {isPerPerson(item) && <Users className="w-3.5 h-3.5 text-muted-foreground" />}
+                                      {isConsumption(item) && <Wine className="w-3.5 h-3.5 text-muted-foreground" />}
+                                      {isFlatFee(item) && <Package className="w-3.5 h-3.5 text-muted-foreground" />}
                                       {item.name}
                                     </h6>
                                   </div>
@@ -707,7 +710,8 @@ export function CustomerSummary({
                                 className="flex justify-between items-center py-1 pl-3 border-b border-border/50 last:border-0"
                               >
                                 <div className="flex items-center gap-2">
-                                  <span className="text-muted-foreground truncate max-w-125" style={{ fontSize: 'var(--text-small)' }}>
+                                  <span className="text-muted-foreground line-clamp-2 max-w-125 leading-tight flex items-center gap-1" style={{ fontSize: 'var(--text-small)' }}>
+                                    <Users className="w-3 h-3" />
                                     {item.name}
                                   </span>
                                   <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
@@ -880,7 +884,10 @@ export function CustomerSummary({
                                     {variant && (
                                       <span className="bg-gray-100 px-1.5 py-0.5 rounded">{variant.name}</span>
                                     )}
-                                    <span>{quantity} × CHF {getItemPerPersonPrice(item).toFixed(2)}</span>
+                                    <span className="flex items-center gap-1">
+                                      <Wine className="w-3 h-3" />
+                                      {quantity} × CHF {getItemPerPersonPrice(item).toFixed(2)}
+                                    </span>
                                   </div>
                                 </div>
                               </div>
@@ -940,7 +947,8 @@ export function CustomerSummary({
 
                           return (
                             <div key={itemId} className="flex justify-between items-center py-1">
-                              <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                              <span className="text-muted-foreground flex items-center gap-1" style={{ fontSize: 'var(--text-small)' }}>
+                                {isFlatFee(item) && <Package className="w-3 h-3" />}
                                 {item.name} {quantity > 1 ? `(×${quantity})` : ''}
                               </span>
                               <span className="text-foreground font-medium">

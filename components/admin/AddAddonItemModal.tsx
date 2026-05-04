@@ -21,6 +21,7 @@ interface AddAddonItemModalProps {
   };
   setNewAddonItem: (item: any) => void;
   onSave: () => Promise<void>;
+  isSaving?: boolean;
 }
 
 export function AddAddonItemModal({
@@ -31,6 +32,7 @@ export function AddAddonItemModal({
   newAddonItem,
   setNewAddonItem,
   onSave,
+  isSaving = false,
 }: AddAddonItemModalProps) {
   const t = useMenuConfigTranslation();
   const ct = useCommonTranslation();
@@ -47,16 +49,17 @@ export function AddAddonItemModal({
             variant="secondary"
             icon={X}
             onClick={onClose}
+            disabled={isSaving}
           >
             {ct('cancel')}
           </Button>
           <Button
             variant="primary"
-            icon={editingAddonItemId ? Check : Plus}
+            icon={isSaving ? undefined : (editingAddonItemId ? Check : Plus)}
             onClick={onSave}
-            disabled={!newAddonItem.name || !newAddonItem.price || newAddonItem.name.trim() === '' || newAddonItem.name.length > 100 || parseFloat(newAddonItem.price) < 0}
+            disabled={isSaving || !newAddonItem.name || !newAddonItem.price || newAddonItem.name.trim() === '' || newAddonItem.name.length > 100 || parseFloat(newAddonItem.price) < 0}
           >
-            {editingAddonItemId ? t('buttons.saveChanges') : t('buttons.addItem')}
+            {isSaving ? 'Saving...' : (editingAddonItemId ? t('buttons.saveChanges') : t('buttons.addItem'))}
           </Button>
         </>
       }

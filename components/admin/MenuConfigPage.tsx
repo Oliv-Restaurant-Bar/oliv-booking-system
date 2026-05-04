@@ -167,7 +167,9 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
       ...cat,
       items: itemsByCategory[cat.id] || [],
       isExpanded: false,
+      isSpecialCategory: !!cat.isSpecialCategory,
       useSpecialCalculation: !!cat.useSpecialCalculation,
+      guestCount: !!cat.guestCount,
     }));
 
     const assembledAddonGroups = (data.addonGroups || []).map((group: any) => ({
@@ -192,6 +194,7 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
   const [addonGroups, setAddonGroups] = useState<AddonGroup[]>(initialStates.assembledAddonGroups);
   const [visibilitySchedules, setVisibilitySchedules] = useState<VisibilitySchedule[]>(initialStates.visibilitySchedules);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const role = user?.role || 'read_only';
 
@@ -221,13 +224,11 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
     description: string;
     image: File | null;
     imageUrl: string;
-    useSpecialCalculation: boolean;
   }>({
     name: '',
     description: '',
     image: null,
     imageUrl: '',
-    useSpecialCalculation: false
   });
   const [categoryErrors, setCategoryErrors] = useState<{ name?: string; description?: string }>({});
   const [categoryTouched, setCategoryTouched] = useState({ name: false, description: false });
@@ -378,7 +379,6 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
       description: category.description || '',
       image: null,
       imageUrl: category.image || '',
-      useSpecialCalculation: !!category.useSpecialCalculation,
     });
     setCategoryTouched({ name: false, description: false });
     setIsAddCategoryModalOpen(true);
@@ -386,329 +386,480 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
 
   // Simplified Handlers (linking to extracted components)
   const handleSaveCategory = async () => {
-    if (editingCategoryId) {
-      const result = await updateMenuCategory(editingCategoryId, {
-        name: newCategory.name,
-        nameDe: newCategory.name,
-        description: newCategory.description,
-        descriptionDe: newCategory.description,
-        useSpecialCalculation: !!newCategory.useSpecialCalculation,
-      });
-      if (result.success) {
-        setCategories(categories.map(cat =>
-          cat.id === editingCategoryId
-            ? { ...cat, name: newCategory.name, description: newCategory.description, image: newCategory.image ? URL.createObjectURL(newCategory.image) : newCategory.imageUrl, useSpecialCalculation: !!newCategory.useSpecialCalculation }
-            : cat
-        ));
-        setIsAddCategoryModalOpen(false);
-        toast.success(t('messages.settingsSaved'));
-      }
-    } else {
-      const result = await createMenuCategory({
-        name: newCategory.name,
-        nameDe: newCategory.name,
-        description: newCategory.description,
-        descriptionDe: newCategory.description,
-        useSpecialCalculation: !!newCategory.useSpecialCalculation,
-      });
-      if (result.success && result.data) {
-        setCategories([...categories, {
-          id: result.data.id,
+    try {
+      setIsSaving(true);
+      if (editingCategoryId) {
+        const result = await updateMenuCategory(editingCategoryId, {
           name: newCategory.name,
+          nameDe: newCategory.name,
           description: newCategory.description,
-          image: newCategory.image ? URL.createObjectURL(newCategory.image) : (result.data as any).image,
-          isActive: true,
-          isExpanded: false,
-          guestCount: false,
-          useSpecialCalculation: !!newCategory.useSpecialCalculation,
-          items: [],
-        }]);
-        setIsAddCategoryModalOpen(false);
-        toast.success(t('messages.settingsSaved'));
+          descriptionDe: newCategory.description,
+        });
+        if (result.success) {
+          setCategories(categories.map(cat =>
+            cat.id === editingCategoryId
+              ? { ...cat, name: newCategory.name, description: newCategory.description, image: newCategory.image ? URL.createObjectURL(newCategory.image) : newCategory.imageUrl }
+              : cat
+          ));
+          setIsAddCategoryModalOpen(false);
+          toast.success(t('messages.settingsSaved'));
+        }
+      } else {
+        const result = await createMenuCategory({
+          name: newCategory.name,
+          nameDe: newCategory.name,
+          description: newCategory.description,
+          descriptionDe: newCategory.description,
+        });
+        if (result.success && result.data) {
+          setCategories([...categories, {
+            id: result.data.id,
+            name: newCategory.name,
+            description: newCategory.description,
+            image: newCategory.image ? URL.createObjectURL(newCategory.image) : (result.data as any).image,
+            isActive: true,
+            isExpanded: false,
+            guestCount: !!(result.data as any).guestCount,
+            isSpecialCategory: !!(result.data as any).isSpecialCategory,
+            useSpecialCalculation: !!(result.data as any).useSpecialCalculation,
+            items: [],
+          }]);
+          setIsAddCategoryModalOpen(false);
+          toast.success(t('messages.settingsSaved'));
+        }
       }
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const handleSaveMenuItem = async () => {
-    const itemData = {
-      name: newMenuItem.name,
-      nameDe: newMenuItem.name, // Fallback
-      description: newMenuItem.description,
-      descriptionDe: newMenuItem.description, // Fallback
-      price: parseFloat(newMenuItem.price) || 0,
-      pricePerPerson: parseFloat(newMenuItem.price) || 0,
-      internalCost: parseFloat(newMenuItem.internalCost) || 0,
-      pricingType: newMenuItem.pricingType,
-      averageConsumption: parseInt(newMenuItem.averageConsumption) || 1,
-      imageUrl: newMenuItem.imageUrl || null,
-      isActive: newMenuItem.isActive,
-      dietaryType: newMenuItem.dietaryType as any,
-      dietaryTags: newMenuItem.dietaryTags,
-      ingredients: newMenuItem.ingredients,
-      allergens: newMenuItem.allergens,
-      additives: newMenuItem.additives,
-      nutritionalInfo: newMenuItem.nutritionalInfo as any,
-      assignedAddonGroups: newMenuItem.assignedAddonGroups,
-      assignedVisibilitySchedules: newMenuItem.assignedVisibilitySchedules,
-      variants: newMenuItem.variants,
-      isRecommended: newMenuItem.isRecommended,
-    };
+   const handleSaveMenuItem = async () => {
+    try {
+      setIsSaving(true);
+      const itemData = {
+        name: newMenuItem.name,
+        nameDe: newMenuItem.name, // Fallback
+        description: newMenuItem.description,
+        descriptionDe: newMenuItem.description, // Fallback
+        price: parseFloat(newMenuItem.price) || 0,
+        pricePerPerson: parseFloat(newMenuItem.price) || 0,
+        internalCost: parseFloat(newMenuItem.internalCost) || 0,
+        pricingType: newMenuItem.pricingType,
+        averageConsumption: parseInt(newMenuItem.averageConsumption) || 1,
+        imageUrl: newMenuItem.imageUrl || null,
+        isActive: newMenuItem.isActive,
+        dietaryType: newMenuItem.dietaryType as any,
+        dietaryTags: newMenuItem.dietaryTags,
+        ingredients: newMenuItem.ingredients,
+        allergens: newMenuItem.allergens,
+        additives: newMenuItem.additives,
+        nutritionalInfo: newMenuItem.nutritionalInfo as any,
+        assignedAddonGroups: newMenuItem.assignedAddonGroups,
+        assignedVisibilitySchedules: newMenuItem.assignedVisibilitySchedules,
+        variants: newMenuItem.variants,
+        isRecommended: newMenuItem.isRecommended,
+      };
 
-    if (editingMenuItemId) {
-      const result = await updateMenuItem(editingMenuItemId, { ...itemData, price: itemData.price.toString() } as any);
-      if (result.success) {
-        // Update junction tables
-        await updateItemAddonGroups(editingMenuItemId, newMenuItem.assignedAddonGroups);
-        await updateItemVisibilitySchedules(editingMenuItemId, newMenuItem.assignedVisibilitySchedules);
+      if (editingMenuItemId) {
+        const result = await updateMenuItem(editingMenuItemId, { ...itemData, price: itemData.price.toString() } as any);
+        if (result.success) {
+          // Update junction tables
+          await updateItemAddonGroups(editingMenuItemId, newMenuItem.assignedAddonGroups);
+          await updateItemVisibilitySchedules(editingMenuItemId, newMenuItem.assignedVisibilitySchedules);
 
-        setCategories(categories.map(cat => ({
-          ...cat,
-          items: cat.items.map(i => i.id === editingMenuItemId ? { ...i, ...itemData, image: newMenuItem.imageUrl } : i)
-        })));
-        setIsAddMenuItemModalOpen(false);
-        toast.success(t('messages.settingsSaved'));
+          setCategories(categories.map(cat => ({
+            ...cat,
+            items: cat.items.map(i => i.id === editingMenuItemId ? { ...i, ...itemData, image: newMenuItem.imageUrl } : i)
+          })));
+          setIsAddMenuItemModalOpen(false);
+          toast.success(t('messages.settingsSaved'));
+        }
+      } else if (activeCategoryId) {
+        const result = await createMenuItem({ ...itemData, categoryId: activeCategoryId } as any);
+        if (result.success && result.data) {
+          const newItemId = result.data.id;
+          
+          // Update junction tables for the new item
+          await updateItemAddonGroups(newItemId, newMenuItem.assignedAddonGroups);
+          await updateItemVisibilitySchedules(newItemId, newMenuItem.assignedVisibilitySchedules);
+
+          setCategories(prev => prev.map(cat =>
+            cat.id === activeCategoryId
+              ? { ...cat, items: [...cat.items, { ...itemData, id: newItemId, image: newMenuItem.imageUrl }] as any[] }
+              : cat
+          ));
+          setIsAddMenuItemModalOpen(false);
+          toast.success(t('messages.settingsSaved'));
+        }
       }
-    } else if (activeCategoryId) {
-      const result = await createMenuItem({ ...itemData, categoryId: activeCategoryId } as any);
-      if (result.success && result.data) {
-        const newItemId = result.data.id;
-        
-        // Update junction tables for the new item
-        await updateItemAddonGroups(newItemId, newMenuItem.assignedAddonGroups);
-        await updateItemVisibilitySchedules(newItemId, newMenuItem.assignedVisibilitySchedules);
-
-        setCategories(prev => prev.map(cat =>
-          cat.id === activeCategoryId
-            ? { ...cat, items: [...cat.items, { ...itemData, id: newItemId, image: newMenuItem.imageUrl }] as any[] }
-            : cat
-        ));
-        setIsAddMenuItemModalOpen(false);
-        toast.success(t('messages.settingsSaved'));
-      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleSaveItemSettings = async () => {
-    if (settingsMenuItemId && itemSettings) {
-      const result = await updateMenuItem(settingsMenuItemId, itemSettings as any);
-      if (result.success) {
-        setCategories(categories.map(cat => ({
-          ...cat,
-          items: cat.items.map(i => i.id === settingsMenuItemId ? { ...i, ...itemSettings } : i)
-        })));
-        setIsItemSettingsModalOpen(false);
-        toast.success(t('messages.settingsSaved'));
+    try {
+      setIsSaving(true);
+      if (settingsMenuItemId && itemSettings) {
+        const result = await updateMenuItem(settingsMenuItemId, itemSettings as any);
+        if (result.success) {
+          setCategories(categories.map(cat => ({
+            ...cat,
+            items: cat.items.map(i => i.id === settingsMenuItemId ? { ...i, ...itemSettings } : i)
+          })));
+          setIsItemSettingsModalOpen(false);
+          toast.success(t('messages.settingsSaved'));
+        }
       }
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleSaveChoice = async () => {
-    if (choiceCategoryId) {
-      const result = await updateCategoryAddonGroups(choiceCategoryId, selectedAddonGroups);
-      if (result.success) {
-        setCategories(categories.map(cat =>
-          cat.id === choiceCategoryId ? { ...cat, assignedAddonGroups: selectedAddonGroups } : cat
-        ));
-        setIsAddChoiceModalOpen(false);
-        toast.success(t('messages.choicesUpdated'));
+    try {
+      setIsSaving(true);
+      if (choiceCategoryId) {
+        const result = await updateCategoryAddonGroups(choiceCategoryId, selectedAddonGroups);
+        if (result.success) {
+          setCategories(categories.map(cat =>
+            cat.id === choiceCategoryId ? { ...cat, assignedAddonGroups: selectedAddonGroups } : cat
+          ));
+          setIsAddChoiceModalOpen(false);
+          toast.success(t('messages.choicesUpdated'));
+        }
+      } else if (choiceItemId) {
+        const result = await updateItemAddonGroups(choiceItemId, selectedAddonGroups);
+        if (result.success) {
+          setCategories(categories.map(cat => ({
+            ...cat,
+            items: cat.items.map(i => i.id === choiceItemId ? { ...i, assignedAddonGroups: selectedAddonGroups } : i)
+          })));
+          setIsAddChoiceModalOpen(false);
+          toast.success(t('messages.choicesUpdated'));
+        }
       }
-    } else if (choiceItemId) {
-      const result = await updateItemAddonGroups(choiceItemId, selectedAddonGroups);
-      if (result.success) {
-        setCategories(categories.map(cat => ({
-          ...cat,
-          items: cat.items.map(i => i.id === choiceItemId ? { ...i, assignedAddonGroups: selectedAddonGroups } : i)
-        })));
-        setIsAddChoiceModalOpen(false);
-        toast.success(t('messages.choicesUpdated'));
-      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const handleSaveGroup = async () => {
-    const groupData = {
-      name: newGroup.name,
-      nameDe: newGroup.name,
-      subtitle: newGroup.subtitle,
-      subtitleDe: newGroup.subtitle,
-      isRequired: newGroup.type === 'mandatory',
-      minSelect: newGroup.minSelect,
-      maxSelect: newGroup.maxSelect,
-    };
+   const handleSaveGroup = async () => {
+    try {
+      setIsSaving(true);
+      const groupData = {
+        name: newGroup.name,
+        nameDe: newGroup.name,
+        subtitle: newGroup.subtitle,
+        subtitleDe: newGroup.subtitle,
+        isRequired: newGroup.type === 'mandatory',
+        minSelect: newGroup.minSelect,
+        maxSelect: newGroup.maxSelect,
+      };
 
-    if (editingGroupId) {
-      const result = await updateAddonGroup(editingGroupId, groupData as any);
-      if (result.success) {
-        setAddonGroups(addonGroups.map(g => g.id === editingGroupId ? { ...g, ...groupData } as any : g));
-        setIsAddGroupModalOpen(false);
-        toast.success(t('messages.groupUpdated') || 'Group updated');
+      if (editingGroupId) {
+        const result = await updateAddonGroup(editingGroupId, groupData as any);
+        if (result.success) {
+          setAddonGroups(addonGroups.map(g => g.id === editingGroupId ? { ...g, ...groupData } as any : g));
+          setIsAddGroupModalOpen(false);
+          toast.success(t('messages.groupUpdated') || 'Group updated');
+        }
+      } else {
+        const result = await createAddonGroup(groupData);
+        if (result.success && result.data) {
+          setAddonGroups([...addonGroups, { ...groupData, id: result.data.id, isActive: true, isExpanded: false, items: [] } as any]);
+          setIsAddGroupModalOpen(false);
+          toast.success(t('messages.groupCreated') || 'Group created');
+        }
       }
-    } else {
-      const result = await createAddonGroup(groupData);
-      if (result.success && result.data) {
-        setAddonGroups([...addonGroups, { ...groupData, id: result.data.id, isActive: true, isExpanded: false, items: [] } as any]);
-        setIsAddGroupModalOpen(false);
-        toast.success(t('messages.groupCreated') || 'Group created');
-      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const onDuplicateCategory = async (cat: Category) => {
-    const result = await createMenuCategory({
-      name: `Copy of ${cat.name}`,
-      nameDe: `Kopie von ${cat.name}`,
-      description: cat.description,
-      descriptionDe: cat.description,
-    });
-    if (result.success && result.data) {
-      setCategories([...categories, {
-        ...cat,
-        id: result.data.id,
+    try {
+      setIsSaving(true);
+      const result = await createMenuCategory({
         name: `Copy of ${cat.name}`,
-        isActive: true,
-        isExpanded: false,
-      }]);
-      toast.success(t('messages.categoryDuplicated'));
-    } else {
-      toast.error(t('messages.duplicateFailed'));
+        nameDe: `Kopie von ${cat.name}`,
+        description: cat.description,
+        descriptionDe: cat.description,
+      });
+      if (result.success && result.data) {
+        setCategories([...categories, {
+          ...cat,
+          id: result.data.id,
+          name: `Copy of ${cat.name}`,
+          isActive: true,
+          isExpanded: false,
+        }]);
+        toast.success(t('messages.categoryDuplicated'));
+      } else {
+        toast.error(t('messages.duplicateFailed'));
+      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const onDuplicateMenuItem = async (categoryId: string, item: MenuItemData) => {
-    const itemData = {
-      ...item,
-      name: `Copy of ${item.name}`,
-      nameDe: `Kopie von ${item.name}`,
-      price: (item.price || 0).toString(),
-      internalCost: (item.internalCost || 0).toString(),
-      categoryId: categoryId,
-    };
-    const result = await createMenuItem(itemData as any);
-    if (result.success && result.data) {
-      setCategories(categories.map(cat =>
-        cat.id === categoryId
-          ? { ...cat, items: [...cat.items, { ...itemData, id: result.data.id, price: parseFloat(itemData.price) }] as any[] }
-          : cat
-      ));
-      toast.success(t('messages.itemDuplicated'));
+    try {
+      setIsSaving(true);
+      const itemData = {
+        ...item,
+        name: `Copy of ${item.name}`,
+        nameDe: `Kopie von ${item.name}`,
+        price: (item.price || 0).toString(),
+        internalCost: (item.internalCost || 0).toString(),
+        categoryId: categoryId,
+      };
+      const result = await createMenuItem(itemData as any);
+      if (result.success && result.data) {
+        setCategories(categories.map(cat =>
+          cat.id === categoryId
+            ? { ...cat, items: [...cat.items, { ...itemData, id: result.data.id, price: parseFloat(itemData.price) }] as any[] }
+            : cat
+        ));
+        toast.success(t('messages.itemDuplicated'));
+      } else {
+        toast.error(t('messages.duplicateFailed'));
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const onUpdateCategory = async (id: string, updates: Partial<Category>) => {
+    const category = categories.find(c => c.id === id);
+    if (!category) return;
+
+    const result = await updateMenuCategory(id, {
+      ...updates,
+      name: updates.name || category.name,
+      nameDe: updates.name || category.name,
+    } as any);
+
+    if (result.success) {
+      setCategories(categories.map(c => c.id === id ? { ...c, ...updates } : c));
+      toast.success(t('messages.settingsSaved'));
     } else {
-      toast.error(t('messages.duplicateFailed'));
+      toast.error(t('messages.updateStatusFailed'));
+    }
+  };
+
+  const onToggleCategoryActive = async (id: string) => {
+    try {
+      setIsSaving(true);
+      const category = categories.find(c => c.id === id);
+      if (!category) return;
+      const result = await updateMenuCategory(id, { isActive: !category.isActive });
+      if (result.success) {
+        setCategories(categories.map(c => c.id === id ? { ...c, isActive: !c.isActive } : c));
+        toast.success(t('messages.settingsSaved'));
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const onDeleteCategory = (id: string) => {
+    setDeleteCategoryId(id);
+  };
+
+  const onConfirmDeleteCategory = async () => {
+    if (!deleteCategoryId) return;
+    try {
+      setIsSaving(true);
+      const result = await deleteMenuCategory(deleteCategoryId);
+      if (result.success) {
+        setCategories(categories.filter(c => c.id !== deleteCategoryId));
+        setDeleteCategoryId(null);
+        toast.success(t('messages.settingsSaved'));
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const onToggleMenuItemActive = async (categoryId: string, itemId: string) => {
+    try {
+      setIsSaving(true);
+      const category = categories.find(c => c.id === categoryId);
+      const item = category?.items.find(i => i.id === itemId);
+      if (!item) return;
+
+      const result = await updateMenuItem(itemId, { isActive: !item.isActive } as any);
+      if (result.success) {
+        setCategories(categories.map(cat =>
+          cat.id === categoryId
+            ? { ...cat, items: cat.items.map(i => i.id === itemId ? { ...i, isActive: !i.isActive } : i) }
+            : cat
+        ));
+        toast.success(t('messages.settingsSaved'));
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const onDeleteMenuItem = (categoryId: string, itemId: string) => {
+    setActiveCategoryId(categoryId);
+    setDeleteMenuItemId(itemId);
+  };
+
+  const onConfirmDeleteMenuItem = async () => {
+    if (!deleteMenuItemId || !activeCategoryId) return;
+    try {
+      setIsSaving(true);
+      const result = await deleteMenuItem(deleteMenuItemId);
+      if (result.success) {
+        setCategories(categories.map(cat =>
+          cat.id === activeCategoryId
+            ? { ...cat, items: cat.items.filter(i => i.id !== deleteMenuItemId) }
+            : cat
+        ));
+        setDeleteMenuItemId(null);
+        toast.success(t('messages.settingsSaved'));
+      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const onDuplicateAddonGroup = async (group: AddonGroup) => {
-    const groupData = {
-      name: `Copy of ${group.name}`,
-      nameDe: `Kopie von ${group.name}`,
-      subtitle: group.subtitle,
-      subtitleDe: group.subtitle,
-      isRequired: group.isRequired,
-      minSelect: group.minSelect,
-      maxSelect: group.maxSelect,
-    };
-    const result = await createAddonGroup(groupData);
-    if (result.success && result.data) {
-      // Also duplicate items in group
-      const newGroupId = result.data.id;
-      const duplicatedItems = [];
-      for (const item of group.items) {
-        const itemResult = await createAddonItem({
-          name: item.name,
-          nameDe: item.name,
-          price: item.price,
-          internalCost: item.internalCost,
-          dietaryType: item.dietaryType as any,
-          addonGroupId: newGroupId,
-        });
-        if (itemResult.success && itemResult.data) {
-          duplicatedItems.push({ ...item, id: itemResult.data.id });
+    try {
+      setIsSaving(true);
+      const groupData = {
+        name: `Copy of ${group.name}`,
+        nameDe: `Kopie von ${group.name}`,
+        subtitle: group.subtitle,
+        subtitleDe: group.subtitle,
+        isRequired: group.isRequired,
+        minSelect: group.minSelect,
+        maxSelect: group.maxSelect,
+      };
+      const result = await createAddonGroup(groupData);
+      if (result.success && result.data) {
+        // Also duplicate items in group
+        const newGroupId = result.data.id;
+        const duplicatedItems = [];
+        for (const item of group.items) {
+          const itemResult = await createAddonItem({
+            name: item.name,
+            nameDe: item.name,
+            price: item.price,
+            internalCost: item.internalCost,
+            dietaryType: item.dietaryType as any,
+            addonGroupId: newGroupId,
+          });
+          if (itemResult.success && itemResult.data) {
+            duplicatedItems.push({ ...item, id: itemResult.data.id });
+          }
         }
+        setAddonGroups([...addonGroups, { ...groupData, id: newGroupId, items: duplicatedItems as any[], isActive: true, isExpanded: false } as any]);
+        toast.success(t('messages.groupDuplicated'));
+      } else {
+        toast.error(t('messages.duplicateFailed'));
       }
-      setAddonGroups([...addonGroups, { ...groupData, id: newGroupId, items: duplicatedItems as any[], isActive: true, isExpanded: false } as any]);
-      toast.success(t('messages.groupDuplicated'));
-    } else {
-      toast.error(t('messages.duplicateFailed'));
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleSaveAddonItem = async () => {
-    if (!currentGroupId) return;
+    try {
+      setIsSaving(true);
+      if (!currentGroupId) return;
 
-    const itemData = {
-      name: newAddonItem.name,
-      nameDe: newAddonItem.name, // Fallback
-      price: parseFloat(newAddonItem.price) || 0,
-      internalCost: parseFloat(newAddonItem.internalCost) || 0,
-      dietaryType: newAddonItem.dietaryType,
-      isActive: newAddonItem.isActive,
-    };
+      const itemData = {
+        name: newAddonItem.name,
+        nameDe: newAddonItem.name, // Fallback
+        price: parseFloat(newAddonItem.price) || 0,
+        internalCost: parseFloat(newAddonItem.internalCost) || 0,
+        dietaryType: newAddonItem.dietaryType,
+        isActive: newAddonItem.isActive,
+      };
 
-    if (editingAddonItemId) {
-      const result = await updateAddonItem(editingAddonItemId, { ...itemData, price: itemData.price.toString(), internalCost: itemData.internalCost.toString() } as any);
-      if (result.success) {
-        setAddonGroups(addonGroups.map(g =>
-          g.id === currentGroupId ? { ...g, items: g.items.map(i => i.id === editingAddonItemId ? { ...i, ...itemData } : i) } : g
-        ));
-        setIsAddAddonItemModalOpen(false);
-        toast.success(t('messages.settingsSaved'));
+      if (editingAddonItemId) {
+        const result = await updateAddonItem(editingAddonItemId, { ...itemData, price: itemData.price.toString(), internalCost: itemData.internalCost.toString() } as any);
+        if (result.success) {
+          setAddonGroups(addonGroups.map(g =>
+            g.id === currentGroupId ? { ...g, items: g.items.map(i => i.id === editingAddonItemId ? { ...i, ...itemData } : i) } : g
+          ));
+          setIsAddAddonItemModalOpen(false);
+          toast.success(t('messages.settingsSaved'));
+        }
+      } else {
+        const result = await createAddonItem({ ...itemData, addonGroupId: currentGroupId });
+        if (result.success && result.data) {
+          setAddonGroups(addonGroups.map(g =>
+            g.id === currentGroupId ? { ...g, items: [...g.items, { ...itemData, id: result.data.id }] as any[] } : g
+          ));
+          setIsAddAddonItemModalOpen(false);
+          toast.success(t('messages.settingsSaved'));
+        }
       }
-    } else {
-      const result = await createAddonItem({ ...itemData, addonGroupId: currentGroupId });
-      if (result.success && result.data) {
-        setAddonGroups(addonGroups.map(g =>
-          g.id === currentGroupId ? { ...g, items: [...g.items, { ...itemData, id: result.data.id }] as any[] } : g
-        ));
-        setIsAddAddonItemModalOpen(false);
-        toast.success(t('messages.settingsSaved'));
-      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleSaveVisibility = async () => {
-    const data = {
-      name: newVisibility.name,
-      description: newVisibility.description || null,
-      startDate: newVisibility.startDate ? new Date(newVisibility.startDate) : new Date(),
-      endDate: newVisibility.endDate ? new Date(newVisibility.endDate) : new Date(),
-    };
+    try {
+      setIsSaving(true);
+      const data = {
+        name: newVisibility.name,
+        description: newVisibility.description || null,
+        startDate: newVisibility.startDate ? new Date(newVisibility.startDate) : new Date(),
+        endDate: newVisibility.endDate ? new Date(newVisibility.endDate) : new Date(),
+      };
 
-    if (editingVisibilityId) {
-      const result = await updateVisibilitySchedule(editingVisibilityId, data as any);
-      if (result.success) {
-        setVisibilitySchedules(visibilitySchedules.map(s => s.id === editingVisibilityId ? { ...s, ...data } as any : s));
-        setIsAddVisibilityModalOpen(false);
-        toast.success('Visibility schedule updated');
+      if (editingVisibilityId) {
+        const result = await updateVisibilitySchedule(editingVisibilityId, data as any);
+        if (result.success) {
+          setVisibilitySchedules(visibilitySchedules.map(s => s.id === editingVisibilityId ? { ...s, ...data } as any : s));
+          setIsAddVisibilityModalOpen(false);
+          toast.success('Visibility schedule updated');
+        }
+      } else {
+        const result = await createVisibilitySchedule(data as any);
+        if (result.success && result.data) {
+          setVisibilitySchedules([...visibilitySchedules, result.data as any]);
+          setIsAddVisibilityModalOpen(false);
+          toast.success('Visibility schedule created');
+        }
       }
-    } else {
-      const result = await createVisibilitySchedule(data as any);
-      if (result.success && result.data) {
-        setVisibilitySchedules([...visibilitySchedules, result.data as any]);
-        setIsAddVisibilityModalOpen(false);
-        toast.success('Visibility schedule created');
-      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleSaveVisibilityAssignment = async () => {
-    if (assignVisibilityCategoryId) {
-      const result = await updateCategoryVisibilitySchedules(assignVisibilityCategoryId, selectedVisibilitySchedules);
-      if (result.success) {
-        setCategories(categories.map(cat =>
-          cat.id === assignVisibilityCategoryId ? { ...cat, assignedVisibilitySchedules: selectedVisibilitySchedules } : cat
-        ));
-        setIsAssignVisibilityModalOpen(false);
-        toast.success('Category visibility updated');
+    try {
+      setIsSaving(true);
+      if (assignVisibilityCategoryId) {
+        const result = await updateCategoryVisibilitySchedules(assignVisibilityCategoryId, selectedVisibilitySchedules);
+        if (result.success) {
+          setCategories(categories.map(cat =>
+            cat.id === assignVisibilityCategoryId ? { ...cat, assignedVisibilitySchedules: selectedVisibilitySchedules } : cat
+          ));
+          setIsAssignVisibilityModalOpen(false);
+          toast.success('Category visibility updated');
+        }
+      } else if (assignVisibilityItemId) {
+        const result = await updateItemVisibilitySchedules(assignVisibilityItemId, selectedVisibilitySchedules);
+        if (result.success) {
+          setCategories(categories.map(cat => ({
+            ...cat,
+            items: cat.items.map(i => i.id === assignVisibilityItemId ? { ...i, assignedVisibilitySchedules: selectedVisibilitySchedules } : i)
+          })));
+          setIsAssignVisibilityModalOpen(false);
+          toast.success('Item visibility updated');
+        }
       }
-    } else if (assignVisibilityItemId) {
-      const result = await updateItemVisibilitySchedules(assignVisibilityItemId, selectedVisibilitySchedules);
-      if (result.success) {
-        setCategories(categories.map(cat => ({
-          ...cat,
-          items: cat.items.map(i => i.id === assignVisibilityItemId ? { ...i, assignedVisibilitySchedules: selectedVisibilitySchedules } : i)
-        })));
-        setIsAssignVisibilityModalOpen(false);
-        toast.success('Item visibility updated');
-      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -931,7 +1082,7 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
                     canDeleteItem={canDeleteItem}
                     onAddCategory={() => {
                       setEditingCategoryId(null);
-                      setNewCategory({ name: '', description: '', image: null, imageUrl: '', useSpecialCalculation: false });
+                      setNewCategory({ name: '', description: '', image: null, imageUrl: '' });
                       setIsAddCategoryModalOpen(true);
                     }}
                     onEditCategory={onEditCategory}
@@ -940,15 +1091,10 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
                     onToggleCategoryActive={async (id: string) => {
                       const cat = categories.find(c => c.id === id);
                       if (cat) {
-                        const result = await updateMenuCategory(id, { isActive: !cat.isActive });
-                        if (result.success) {
-                          setCategories(categories.map(c => c.id === id ? { ...c, isActive: !cat.isActive } : c));
-                          toast.success(cat.isActive ? t('messages.categoryHidden') : t('messages.categoryShown'));
-                        } else {
-                          toast.error(t('messages.updateStatusFailed'));
-                        }
+                        await onUpdateCategory(id, { isActive: !cat.isActive });
                       }
                     }}
+                    onUpdateCategory={onUpdateCategory}
                     onAddMenuItem={(id: string) => {
                       setActiveCategoryId(id);
                       setEditingMenuItemId(null);
@@ -984,24 +1130,8 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
                       setShowVisibility(false);
                       setIsAddMenuItemModalOpen(true);
                     }}
-                    onDeleteMenuItem={(catId: string, itemId: string) => {
-                      setActiveCategoryId(catId);
-                      setDeleteMenuItemId(itemId);
-                    }}
-                    onToggleMenuItemActive={async (catId: string, itemId: string) => {
-                      const item = categories.find(c => c.id === catId)?.items.find(i => i.id === itemId);
-                      if (item) {
-                        const result = await updateMenuItem(itemId, { isActive: !item.isActive });
-                        if (result.success) {
-                          setCategories(categories.map(c => c.id === catId ?
-                            { ...c, items: c.items.map(i => i.id === itemId ? { ...i, isActive: !i.isActive } : i) } : c
-                          ));
-                          toast.success(item.isActive ? t('messages.itemHidden') : t('messages.itemShown'));
-                        } else {
-                          toast.error(t('messages.updateStatusFailed'));
-                        }
-                      }
-                    }}
+                    onDeleteMenuItem={onDeleteMenuItem}
+                    onToggleMenuItemActive={onToggleMenuItemActive}
                     onDuplicateMenuItem={onDuplicateMenuItem}
                     onDuplicateCategory={onDuplicateCategory}
                     onOpenItemSettings={(catId: string, item: MenuItemData) => {
@@ -1192,6 +1322,7 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
         displayCategoryErrors={displayCategoryErrors}
         categoryTouched={categoryTouched}
         setCategoryTouched={setCategoryTouched}
+        isSaving={isSaving}
       />
 
       <AddMenuItemModal
@@ -1243,6 +1374,7 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
         selectedAddonGroups={selectedAddonGroups}
         setSelectedAddonGroups={setSelectedAddonGroups}
         onSave={handleSaveChoice}
+        isSaving={isSaving}
       />
 
       <AddGroupModal
@@ -1252,6 +1384,7 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
         newGroup={newGroup}
         setNewGroup={setNewGroup}
         onSave={handleSaveGroup}
+        isSaving={isSaving}
       />
 
       <AddAddonItemModal
@@ -1262,6 +1395,7 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
         newAddonItem={newAddonItem}
         setNewAddonItem={setNewAddonItem}
         onSave={handleSaveAddonItem}
+        isSaving={isSaving}
       />
 
       <AddVisibilityModal
@@ -1284,41 +1418,26 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
         selectedSchedules={selectedVisibilitySchedules}
         setSelectedSchedules={setSelectedVisibilitySchedules}
         onSave={handleSaveVisibilityAssignment}
+        isSaving={isSaving}
       />
 
       {/* Confirmation Modals */}
       <ConfirmationModal
         isOpen={!!deleteCategoryId}
         onClose={() => setDeleteCategoryId(null)}
-        onConfirm={async () => {
-          if (deleteCategoryId) {
-            const result = await deleteMenuCategory(deleteCategoryId);
-            if (result.success) {
-              setCategories(categories.filter(c => c.id !== deleteCategoryId));
-              setDeleteCategoryId(null);
-              toast.success(t('messages.categoryDeleted'));
-            }
-          }
-        }}
+        onConfirm={onConfirmDeleteCategory}
         title={t('confirmations.deleteCategory')}
         message={t('confirmations.deleteCategoryDesc')}
+        isSaving={isSaving}
       />
 
       <ConfirmationModal
         isOpen={!!deleteMenuItemId}
         onClose={() => setDeleteMenuItemId(null)}
-        onConfirm={async () => {
-          if (deleteMenuItemId && activeCategoryId) {
-            const result = await deleteMenuItem(deleteMenuItemId);
-            if (result.success) {
-              setCategories(categories.map(c => c.id === activeCategoryId ? { ...c, items: c.items.filter(i => i.id !== deleteMenuItemId) } : c));
-              setDeleteMenuItemId(null);
-              toast.success(t('messages.itemDeleted'));
-            }
-          }
-        }}
+        onConfirm={onConfirmDeleteMenuItem}
         title={t('confirmations.deleteItem')}
         message={t('confirmations.deleteItemDesc')}
+        isSaving={isSaving}
       />
 
       <ConfirmationModal
@@ -1326,16 +1445,22 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
         onClose={() => setDeleteGroupId(null)}
         onConfirm={async () => {
           if (deleteGroupId) {
-            const result = await deleteAddonGroup(deleteGroupId);
-            if (result.success) {
-              setAddonGroups(addonGroups.filter(g => g.id !== deleteGroupId));
-              setDeleteGroupId(null);
-              toast.success(t('messages.groupDeleted'));
+            try {
+              setIsSaving(true);
+              const result = await deleteAddonGroup(deleteGroupId);
+              if (result.success) {
+                setAddonGroups(addonGroups.filter(g => g.id !== deleteGroupId));
+                setDeleteGroupId(null);
+                toast.success(t('messages.groupDeleted'));
+              }
+            } finally {
+              setIsSaving(false);
             }
           }
         }}
         title={t('confirmations.deleteGroup')}
         message={t('confirmations.deleteGroupDesc')}
+        isSaving={isSaving}
       />
 
       <ConfirmationModal
@@ -1343,16 +1468,22 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
         onClose={() => setDeleteAddonItemId(null)}
         onConfirm={async () => {
           if (deleteAddonItemId && currentGroupId) {
-            const result = await deleteAddonItem(deleteAddonItemId);
-            if (result.success) {
-              setAddonGroups(addonGroups.map(g => g.id === currentGroupId ? { ...g, items: g.items.filter(i => i.id !== deleteAddonItemId) } : g));
-              setDeleteAddonItemId(null);
-              toast.success(t('messages.addonDeleted'));
+            try {
+              setIsSaving(true);
+              const result = await deleteAddonItem(deleteAddonItemId);
+              if (result.success) {
+                setAddonGroups(addonGroups.map(g => g.id === currentGroupId ? { ...g, items: g.items.filter(i => i.id !== deleteAddonItemId) } : g));
+                setDeleteAddonItemId(null);
+                toast.success(t('messages.addonDeleted'));
+              }
+            } finally {
+              setIsSaving(false);
             }
           }
         }}
         title={t('confirmations.deleteAddonItem')}
         message={t('confirmations.deleteAddonItemDesc')}
+        isSaving={isSaving}
       />
 
       <ConfirmationModal
@@ -1360,16 +1491,22 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
         onClose={() => setDeleteVisibilityId(null)}
         onConfirm={async () => {
           if (deleteVisibilityId) {
-            const result = await deleteVisibilitySchedule(deleteVisibilityId);
-            if (result.success) {
-              setVisibilitySchedules(visibilitySchedules.filter(s => s.id !== deleteVisibilityId));
-              setDeleteVisibilityId(null);
-              toast.success('Visibility schedule deleted');
+            try {
+              setIsSaving(true);
+              const result = await deleteVisibilitySchedule(deleteVisibilityId);
+              if (result.success) {
+                setVisibilitySchedules(visibilitySchedules.filter(s => s.id !== deleteVisibilityId));
+                setDeleteVisibilityId(null);
+                toast.success('Visibility schedule deleted');
+              }
+            } finally {
+              setIsSaving(false);
             }
           }
         }}
         title="Delete Visibility Schedule"
         message="Are you sure you want to delete this visibility schedule? This will remove it from all assigned categories and items."
+        isSaving={isSaving}
       />
 
       {isItemSettingsModalOpen && itemSettings && (
@@ -1379,6 +1516,7 @@ export function MenuConfigPage({ user, initialData }: MenuConfigPageProps) {
           itemSettings={itemSettings}
           setItemSettings={setItemSettings}
           onSave={handleSaveItemSettings}
+          isSaving={isSaving}
         />
       )}
     </div>

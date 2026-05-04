@@ -18,6 +18,7 @@ interface AssignVisibilityModalProps {
   selectedSchedules: string[];
   setSelectedSchedules: (ids: string[]) => void;
   onSave: () => Promise<void>;
+  isSaving?: boolean;
 }
 
 export function AssignVisibilityModal({
@@ -31,6 +32,7 @@ export function AssignVisibilityModal({
   selectedSchedules,
   setSelectedSchedules,
   onSave,
+  isSaving = false,
 }: AssignVisibilityModalProps) {
   const t = useMenuConfigTranslation();
   const ct = useCommonTranslation();
@@ -48,15 +50,17 @@ export function AssignVisibilityModal({
             variant="secondary"
             icon={X}
             onClick={onClose}
+            disabled={isSaving}
           >
             {ct('cancel')}
           </Button>
           <Button
             variant="primary"
-            icon={Check}
+            icon={isSaving ? undefined : Check}
             onClick={onSave}
+            disabled={isSaving}
           >
-            {t('buttons.saveChanges')}
+            {isSaving ? 'Saving...' : t('buttons.saveChanges')}
           </Button>
         </>
       }

@@ -4,21 +4,22 @@ export interface PricingItem {
   pricingType: string;
   dietaryType: string;
   useSpecialCalculation: boolean;
+  isSpecialCategory?: boolean;
+  guestCount?: number;
 }
 
 /**
- * Calculates the vegetarian and non-vegetarian per-person totals based on the provided items.
- * Implements the core business logic where "special calculation" categories (e.g. Starters, Desserts)
- * take the absolute highest price across all items in that category and apply it to both dietary tracks,
- * whereas normal categories (e.g. Main Courses) calculate maximums per dietary track.
+ * Calculates the per-person total for vegetarian and non-vegetarian tracks.
+ * Handles "special calculation" (Max price) and "special category" (Avg price/Total contribution) logic.
  */
-export function calculateDietaryTotals(items: PricingItem[]) {
+export function calculateDietaryTotals(items: PricingItem[], totalEventGuests: number = 0) {
   const foodItems = items.filter(
     (item) => item.pricingType === 'per_person' || item.pricingType === 'per-person'
   );
 
   let vegTotal = 0;
   let nonVegTotal = 0;
+  const G = totalEventGuests || 1;
 
   const itemsByCat: Record<string, typeof foodItems> = {};
   foodItems.forEach((item) => {
@@ -28,15 +29,30 @@ export function calculateDietaryTotals(items: PricingItem[]) {
   });
 
   Object.entries(itemsByCat).forEach(([catName, catItems]) => {
-    const isSpecial = catItems.some((i) => i.useSpecialCalculation);
+    const isSpecialMax = catItems.some((i) => i.useSpecialCalculation);
+    const isSpecialAvg = catItems.some((i) => i.isSpecialCategory);
 
-    if (isSpecial) {
-      // Shared category: take highest price and apply to both tracks
-      const maxPrice = catItems.length > 0 ? Math.max(...catItems.map((i) => i.price)) : 0;
-      vegTotal += maxPrice;
-      nonVegTotal += maxPrice;
+    if (isSpecialAvg) {
+      // Shared category: take sum of contributions per guest
+      // item_total = price * quantity
+      // item_contribution = item_total / G
+      // total_contribution = sum of all item_contributions
+      const totalContribution = catItems.reduce(
+        (sum, i) => sum + (i.price * (i.guestCount ?? G)) / G, 
+        0
+      );
+      
+      vegTotal += totalContribution;
+      nonVegTotal += totalContribution;
+    } else if (isSpecialMax) {
+      // Shared category (Max): take highest contribution per guest
+      const maxContribution = Math.max(
+        ...catItems.map((i) => (i.price * (i.guestCount ?? G)) / G)
+      );
+      vegTotal += maxContribution;
+      nonVegTotal += maxContribution;
     } else {
-      // Normal category: take highest price by dietary track
+      // Normal category: separate by dietary type and take max of each
       const vegItems = catItems.filter((i) =>
         ['veg', 'vegan', 'none'].includes(i.dietaryType || 'none')
       );
@@ -44,16 +60,18 @@ export function calculateDietaryTotals(items: PricingItem[]) {
         ['non-veg', 'none'].includes(i.dietaryType || 'none')
       );
 
-      const vegMax = vegItems.length > 0 ? Math.max(...vegItems.map((i) => i.price)) : 0;
-      const nonVegMax = nonVegItems.length > 0 ? Math.max(...nonVegItems.map((i) => i.price)) : 0;
+      const vegMaxContribution = vegItems.length > 0 
+        ? Math.max(...vegItems.map((i) => (i.price * (i.guestCount ?? G)) / G)) 
+        : 0;
+        
+      const nonVegMaxContribution = nonVegItems.length > 0 
+        ? Math.max(...nonVegItems.map((i) => (i.price * (i.guestCount ?? G)) / G)) 
+        : 0;
 
-      vegTotal += vegMax;
-      nonVegTotal += nonVegMax;
+      vegTotal += vegMaxContribution;
+      nonVegTotal += nonVegMaxContribution;
     }
   });
 
-  return {
-    veg: vegTotal,
-    nonVeg: nonVegTotal,
-  };
+  return { veg: vegTotal, nonVeg: nonVegTotal };
 }
