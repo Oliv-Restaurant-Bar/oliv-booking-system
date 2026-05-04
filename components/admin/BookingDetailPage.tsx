@@ -619,6 +619,7 @@ export function BookingDetailPage({
                         useSpecialCalculation: item.useSpecialCalculation || false,
                         isSpecialCategory: item.isSpecialCategory || false,
                         categorySortOrder: item.categorySortOrder,
+                        showQuantity: item.isGuestCountEnabled || ['consumption', 'billed_by_consumption', 'flat_fee', 'flat-rate'].includes(item.pricingType)
                     };
                 }),
                 allergies: Array.isArray(booking.allergies) ? booking.allergies.join(', ') : booking.allergies,

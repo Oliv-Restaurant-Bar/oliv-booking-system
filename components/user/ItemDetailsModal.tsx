@@ -662,88 +662,114 @@ export function ItemDetailsModal({
                 {/* Left: Quantity and Guest Count Selectors */}
                 {showSelectors && (
                   <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full sm:w-auto">
-                    {isPerPerson(item) ? (
-                      <div className="flex flex-col gap-2 w-full sm:w-auto">
-                        <div className="flex items-center justify-between sm:justify-start gap-3 flex-wrap sm:flex-nowrap">
+                    {(() => {
+                      const isGuestCountFlagEnabled = !!(item.category && categoryData[item.category]?.guestCount);
+                      const isPP = isPerPerson(item);
+                      
+                      // If the guest count flag is enabled, we show the simple qty stepper even for per-person items
+                      // BUT if it's NOT enabled and it IS per-person, we show the complex guest count stepper
+                      if (isPP && !isGuestCountFlagEnabled) {
+                        return (
+                          <div className="flex flex-col gap-2 w-full sm:w-auto">
+                            <div className="flex items-center justify-between sm:justify-start gap-3 flex-wrap sm:flex-nowrap">
+                              <span className="text-muted-foreground font-bold uppercase tracking-wider" style={{ fontSize: '10px' }}>
+                                {(item.category === 'Beverages' || isFlatFee?.(item)) ? t('labels.qty') : t('labels.guests')}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => {
+                                    const currentVal = tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1);
+                                    setTempGuestCount(Math.max(1, currentVal - 1));
+                                  }}
+                                  className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-foreground bg-card"
+                                  style={{ borderRadius: 'var(--radius)' }}
+                                  disabled={(tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1)) <= 1}
+                                >
+                                  <Minus className="w-5 h-5" />
+                                </button>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  value={tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1)}
+                                  onChange={(e) => {
+                                    const val = parseInt(e.target.value);
+                                    if (!isNaN(val) && val >= 1) {
+                                      setTempGuestCount(val);
+                                    }
+                                  }}
+                                  className="w-16 sm:w-20 h-10 text-center border-2 border-border text-foreground rounded-lg focus:border-primary focus:outline-none transition-colors bg-card"
+                                  style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+                                />
+                                <button
+                                  onClick={() => {
+                                    const currentVal = tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1);
+                                    setTempGuestCount(currentVal + 1);
+                                  }}
+                                  className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors bg-card"
+                                  style={{ borderRadius: 'var(--radius)' }}
+                                >
+                                  <Plus className="w-5 h-5" />
+                                </button>
+                              </div>
+                              <span className="text-muted-foreground whitespace-nowrap" style={{ fontSize: 'var(--text-small)' }}>
+                                / {parseInt(eventDetails.guestCount) || 1}
+                              </span>
+                            </div>
+                            {(tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1)) > (parseInt(eventDetails.guestCount) || 1) && (
+                              <div className="flex items-center gap-2 text-destructive">
+                                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                                <span style={{ fontSize: 'var(--text-small)' }}>
+                                  {(item.category === 'Beverages' || isFlatFee?.(item)) ? 'Quantity' : 'Guests'} exceed total event guests ({parseInt(eventDetails.guestCount) || 1})
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+
+                      // Otherwise, show the simple QTY stepper
+                      const currentVal = isPP 
+                        ? (tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1))
+                        : tempQuantity;
+                        
+                      const decrement = () => {
+                        if (isPP) setTempGuestCount(Math.max(1, currentVal - 1));
+                        else setTempQuantity(Math.max(1, currentVal - 1));
+                      };
+                      
+                      const increment = () => {
+                        if (isPP) setTempGuestCount(currentVal + 1);
+                        else setTempQuantity(currentVal + 1);
+                      };
+
+                      return (
+                        <div className="flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto">
                           <span className="text-muted-foreground font-bold uppercase tracking-wider" style={{ fontSize: '10px' }}>
-                            {(item.category === 'Beverages' || isFlatFee?.(item)) ? t('labels.qty') : t('labels.guests')}
+                            {t('labels.qty')}
                           </span>
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={() => {
-                                const currentVal = tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1);
-                                setTempGuestCount(Math.max(1, currentVal - 1));
-                              }}
+                              onClick={decrement}
                               className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-foreground bg-card"
                               style={{ borderRadius: 'var(--radius)' }}
-                              disabled={(tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1)) <= 1}
+                              disabled={currentVal <= 1}
                             >
                               <Minus className="w-5 h-5" />
                             </button>
-                            <Input
-                              type="number"
-                              min={1}
-                              value={tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1)}
-                              onChange={(e) => {
-                                const val = parseInt(e.target.value);
-                                if (!isNaN(val) && val >= 1) {
-                                  setTempGuestCount(val);
-                                }
-                              }}
-                              className="w-16 sm:w-20 h-10 text-center border-2 border-border text-foreground rounded-lg focus:border-primary focus:outline-none transition-colors bg-card"
-                              style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
-                            />
+                            <span className="text-foreground min-w-[2rem] text-center" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                              {currentVal}
+                            </span>
                             <button
-                              onClick={() => {
-                                const currentVal = tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1);
-                                setTempGuestCount(currentVal + 1);
-                              }}
+                              onClick={increment}
                               className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors bg-card"
                               style={{ borderRadius: 'var(--radius)' }}
                             >
                               <Plus className="w-5 h-5" />
                             </button>
                           </div>
-                          <span className="text-muted-foreground whitespace-nowrap" style={{ fontSize: 'var(--text-small)' }}>
-                            / {parseInt(eventDetails.guestCount) || 1}
-                          </span>
                         </div>
-                        {(tempGuestCount !== null ? tempGuestCount : (parseInt(eventDetails.guestCount) || 1)) > (parseInt(eventDetails.guestCount) || 1) && (
-                          <div className="flex items-center gap-2 text-destructive">
-                            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                            <span style={{ fontSize: 'var(--text-small)' }}>
-                              {(item.category === 'Beverages' || isFlatFee?.(item)) ? 'Quantity' : 'Guests'} exceed total event guests ({parseInt(eventDetails.guestCount) || 1})
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto">
-                        <span className="text-muted-foreground font-bold uppercase tracking-wider" style={{ fontSize: '10px' }}>
-                          {t('labels.qty')}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => setTempQuantity(Math.max(1, tempQuantity - 1))}
-                            className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-foreground bg-card"
-                            style={{ borderRadius: 'var(--radius)' }}
-                            disabled={tempQuantity <= 1}
-                          >
-                            <Minus className="w-5 h-5" />
-                          </button>
-                          <span className="text-foreground min-w-[2rem] text-center" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                            {tempQuantity}
-                          </span>
-                          <button
-                            onClick={() => setTempQuantity(tempQuantity + 1)}
-                            className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors bg-card"
-                            style={{ borderRadius: 'var(--radius)' }}
-                          >
-                            <Plus className="w-5 h-5" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 )}
 

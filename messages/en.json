@@ -803,7 +803,7 @@
         "priceHint": "0 for free",
         "dietaryType": "Dietary Type",
         "available": "Available",
-        "guestCount": "Guest Count Stepper",
+        "guestCount": "Quantity Stepper",
         "isSpecialCategory": "Special Category (Avg)",
         "useSpecialCalculation": "Special Calculation (Max)",
         "visibilityOptions": "Visibility Options",

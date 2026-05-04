@@ -353,10 +353,13 @@ export function MenuCart({
                                       <span className="text-sm font-semibold text-foreground leading-tight line-clamp-2">
                                         {(isGuestCountEnabled || isConsumption(item) || isFlatFee(item)) && (
                                           <span className="text-sm mr-0.5 inline-flex items-center gap-1">
-                                            {isPerPerson(item) && <Users className="w-3 h-3 text-muted-foreground" />}
+                                            {isPerPerson(item) && !isGuestCountEnabled && <Users className="w-3 h-3 text-muted-foreground" />}
                                             {isConsumption(item) && <Wine className="w-3 h-3 text-muted-foreground" />}
                                             {isFlatFee(item) && <Package className="w-3 h-3 text-muted-foreground" />}
                                             {isPerPerson(item) ? (cartItem.guestCount ?? guestCountValue) : cartItem.quantity}
+                                            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider ml-0.5">
+                                              {t('labels.qty')}
+                                            </span>
                                             <span className="text-xs text-muted-foreground font-normal">×</span>
                                           </span>
                                         )}

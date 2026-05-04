@@ -342,52 +342,52 @@ export function MenuCategoriesTab({
                                   )}
 
                                   {/* Toggle: Guest Count (all screens) */}
-                                  {/* {canEditCategory && (
-                                     <button
-                                       onClick={async () => {
-                                         await onUpdateCategory(category.id, { guestCount: !category.guestCount });
-                                         setOpenDropdownId(null);
-                                       }}
-                                       className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
-                                     >
-                                       <Users className={`w-4 h-4 ${category.guestCount ? 'text-primary' : 'text-muted-foreground'}`} />
-                                       <span className={category.guestCount ? 'text-primary' : 'text-foreground'} style={{ fontSize: 'var(--text-base)' }}>
-                                         {t('labels.guestCount') || 'Guest Count Stepper'}
-                                       </span>
-                                     </button>
-                                   )} */}
+                                  {canEditCategory && (
+                                    <button
+                                      onClick={async () => {
+                                        await onUpdateCategory(category.id, { guestCount: !category.guestCount });
+                                        setOpenDropdownId(null);
+                                      }}
+                                      className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
+                                    >
+                                      <Users className={`w-4 h-4 ${category.guestCount ? 'text-primary' : 'text-muted-foreground'}`} />
+                                      <span className={category.guestCount ? 'text-primary' : 'text-foreground'} style={{ fontSize: 'var(--text-base)' }}>
+                                        {t('labels.guestCount') || 'Quantity Count Stepper'}
+                                      </span>
+                                    </button>
+                                  )}
 
                                   {/* Toggle: Special Calculation - Max (all screens) */}
-                                  {/* {canEditCategory && (
-                                     <button
-                                       onClick={async () => {
-                                         await onUpdateCategory(category.id, { useSpecialCalculation: !category.useSpecialCalculation });
-                                         setOpenDropdownId(null);
-                                       }}
-                                       className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
-                                     >
-                                       <Sigma className={`w-4 h-4 ${category.useSpecialCalculation ? 'text-primary' : 'text-muted-foreground'}`} />
-                                       <span className={category.useSpecialCalculation ? 'text-primary' : 'text-foreground'} style={{ fontSize: 'var(--text-base)' }}>
-                                         {t('labels.useSpecialCalculation') || 'Special Calc (Max)'}
-                                       </span>
-                                     </button>
-                                   )} */}
+                                  {canEditCategory && (
+                                    <button
+                                      onClick={async () => {
+                                        await onUpdateCategory(category.id, { useSpecialCalculation: !category.useSpecialCalculation });
+                                        setOpenDropdownId(null);
+                                      }}
+                                      className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
+                                    >
+                                      <Sigma className={`w-4 h-4 ${category.useSpecialCalculation ? 'text-primary' : 'text-muted-foreground'}`} />
+                                      <span className={category.useSpecialCalculation ? 'text-primary' : 'text-foreground'} style={{ fontSize: 'var(--text-base)' }}>
+                                        {t('labels.useSpecialCalculation') || 'Special Calc (Max) in both in per person'}
+                                      </span>
+                                    </button>
+                                  )}
 
                                   {/* Toggle: Special Category - Avg (all screens) */}
-                                  {/* {canEditCategory && (
-                                     <button
-                                       onClick={async () => {
-                                         await onUpdateCategory(category.id, { isSpecialCategory: !category.isSpecialCategory });
-                                         setOpenDropdownId(null);
-                                       }}
-                                       className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
-                                     >
-                                       <Calculator className={`w-4 h-4 ${category.isSpecialCategory ? 'text-primary' : 'text-muted-foreground'}`} />
-                                       <span className={category.isSpecialCategory ? 'text-primary' : 'text-foreground'} style={{ fontSize: 'var(--text-base)' }}>
-                                         {t('labels.isSpecialCategory') || 'Special Category (Avg)'}
-                                       </span>
-                                     </button>
-                                   )} */}
+                                  {canEditCategory && (
+                                    <button
+                                      onClick={async () => {
+                                        await onUpdateCategory(category.id, { isSpecialCategory: !category.isSpecialCategory });
+                                        setOpenDropdownId(null);
+                                      }}
+                                      className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
+                                    >
+                                      <Calculator className={`w-4 h-4 ${category.isSpecialCategory ? 'text-primary' : 'text-muted-foreground'}`} />
+                                      <span className={category.isSpecialCategory ? 'text-primary' : 'text-foreground'} style={{ fontSize: 'var(--text-base)' }}>
+                                        {t('labels.isSpecialCategory') || 'Special Category (Avg) in both in per person'}
+                                      </span>
+                                    </button>
+                                  )}
 
                                   {/* Show/Hide (all screens) */}
                                   {canEditCategory && (

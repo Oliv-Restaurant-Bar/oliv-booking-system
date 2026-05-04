@@ -803,7 +803,7 @@
         "priceHint": "0 für kostenlos",
         "dietaryType": "Ernährungsweise",
         "available": "Verfügbar",
-        "guestCount": "Gäste-Anzahl Stepper",
+        "guestCount": "Mengen-Stepper",
         "isSpecialCategory": "Spezielle Kategorie (Durchschnitt)",
         "useSpecialCalculation": "Spezielle Berechnung (Maximum)",
         "visibilityOptions": "Sichtbarkeitseinstellungen",

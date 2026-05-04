@@ -42,6 +42,7 @@ interface KitchenPdfActionModalProps {
       useSpecialCalculation?: boolean;
       isSpecialCategory?: boolean;
       categorySortOrder?: number;
+      isGuestCountEnabled?: boolean;
     }[];
     allergies?: string;
     notes?: string;
@@ -146,6 +147,7 @@ export function KitchenPdfActionModal({
           useSpecialCalculation: item.useSpecialCalculation || false,
           isSpecialCategory: item.isSpecialCategory || false,
           categorySortOrder: item.categorySortOrder,
+          showQuantity: item.isGuestCountEnabled || ['consumption', 'billed_by_consumption', 'flat_fee', 'flat-rate'].includes(item.pricingType)
         };
       }),
       allergies: booking.allergies,

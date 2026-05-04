@@ -622,17 +622,25 @@ export async function generateBookingPdf(
         renderItemInfo('Note', item.customerComment, [180, 83, 9]);
 
         // ── Quantity column ────────────────────────────────────────────────
-        const qtyStr = String(item.quantity);
+        const isBev = ['Beverages', 'Drink', 'Drinks', 'Softdrinks', 'Wein', 'Bier', 'Kaffee', 'Wine', 'Beer'].includes(item.category);
+        const isConsumptionItem = item.pricingType === 'consumption' || item.pricingType === 'billed_by_consumption' || isBev;
+        const isFlatFeeItem = isFlatFee(item);
+        const showQtyLabel = item.showQuantity || isConsumptionItem || isFlatFeeItem;
+        
+        const qtyStr = showQtyLabel ? `${item.quantity} Qty` : String(item.quantity);
         const qtyW = doc.getTextWidth(qtyStr);
-        const iconW = 3.5;
-        const gap = 1.5;
+        const showIcon = !(item.pricingType === 'per_person' && showQtyLabel);
+        const iconW = showIcon ? 3.5 : 0;
+        const gap = showIcon ? 1.5 : 0;
         const totalW = iconW + gap + qtyW;
         const qtyStartX = KITCHEN_QTY_CENTER - totalW / 2;
 
-        if (item.pricingType === 'per_person') drawUsersIcon(qtyStartX, rowTopY + 4);
-        else if (item.category === 'Beverages' || item.pricingType === 'consumption')
-          drawWineIcon(qtyStartX, rowTopY + 4);
-        else drawPackageIcon(qtyStartX, rowTopY + 4);
+        if (showIcon) {
+          if (item.pricingType === 'per_person') drawUsersIcon(qtyStartX, rowTopY + 4);
+          else if (item.category === 'Beverages' || item.pricingType === 'consumption')
+            drawWineIcon(qtyStartX, rowTopY + 4);
+          else drawPackageIcon(qtyStartX, rowTopY + 4);
+        }
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
@@ -749,15 +757,18 @@ export async function generateBookingPdf(
 
         if (mode === 'inquiry') {
           if (item.showQuantity) {
-            const qtyVal = String(item.quantity);
-            const iconW = 3.5;
-            const gap = 1.5;
+            const qtyVal = `${item.quantity} Qty`;
+            const isPerPersonItem = String(item.pricingType).toLowerCase().includes('person');
+            const showIcon = !isPerPersonItem;
+            const iconW = showIcon ? 3.5 : 0;
+            const gap = showIcon ? 1.5 : 0;
             const currentX = margin + 85;
 
-            if (item.pricingType === 'per_person') drawUsersIcon(currentX, priceY);
-            else if (item.category === 'Beverages' || item.pricingType === 'consumption')
-              drawWineIcon(currentX, priceY);
-            else drawPackageIcon(currentX, priceY);
+            if (showIcon) {
+              if (item.category === 'Beverages' || item.pricingType === 'consumption')
+                drawWineIcon(currentX, priceY);
+              else drawPackageIcon(currentX, priceY);
+            }
 
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(9.5);
@@ -776,17 +787,28 @@ export async function generateBookingPdf(
           );
         } else {
           // OFFER mode
+          const isBevOffer = ['Beverages', 'Drink', 'Drinks', 'Softdrinks', 'Wein', 'Bier', 'Kaffee', 'Wine', 'Beer'].includes(item.category);
+          const isConsumptionOffer = item.pricingType === 'consumption' || item.pricingType === 'billed_by_consumption' || isBevOffer;
+          const isFlatFeeOffer = isFlatFee(item);
+          const showQtyLabelOffer = item.showQuantity || isConsumptionOffer || isFlatFeeOffer;
+
           const qtyVal = String(item.quantity);
           const unitPriceTxt = ` x ${Number(item.unitPrice).toFixed(0)} CHF`;
-          const baseTxt = (qtyVal + ' ').trim();
-          const iconW = 3.5;
-          const gap = 1.5;
+          const baseTxt = showQtyLabelOffer ? `${qtyVal} Qty` : qtyVal;
+          
+          const isPerPersonItem = String(item.pricingType).toLowerCase().includes('person');
+          const showIcon = !(isPerPersonItem && showQtyLabelOffer);
+          
+          const iconW = showIcon ? 3.5 : 0;
+          const gap = showIcon ? 1.5 : 0;
           const currentX = margin + 85;
 
-          if (item.pricingType === 'per_person') drawUsersIcon(currentX, priceY);
-          else if (item.category === 'Beverages' || item.pricingType === 'consumption')
-            drawWineIcon(currentX, priceY);
-          else drawPackageIcon(currentX, priceY);
+          if (showIcon) {
+            if (isPerPersonItem) drawUsersIcon(currentX, priceY);
+            else if (item.category === 'Beverages' || item.pricingType === 'consumption')
+              drawWineIcon(currentX, priceY);
+            else drawPackageIcon(currentX, priceY);
+          }
 
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(9.5);
