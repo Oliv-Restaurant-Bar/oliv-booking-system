@@ -193,7 +193,7 @@ export async function generateBookingPdf(
     drawInfoSection('Kundendaten', kundendatenFields, leftX, startY, maxH);
     drawInfoSection('Eventdaten', eventdatenFields, rightX, startY, maxH);
 
-    return startY + maxH + 8;
+    return startY + maxH + 12;
   };
 
   // ─── drawHeader ──────────────────────────────────────────────────────────────
@@ -261,7 +261,7 @@ export async function generateBookingPdf(
       doc.setTextColor(...COLORS.secondary);
       doc.text('o l í v', pageWidth / 2, yPos + 8, { align: 'center' });
     }
-    yPos += 14;
+    yPos += 18;
 
     // Mode label & ID row (Balanced header row for all modes)
     const safeId = String(data.id || 'Unknown');
@@ -283,7 +283,9 @@ export async function generateBookingPdf(
     doc.text(`ID: ${shortId}${idSuffix}`, pageWidth - margin, yPos, {
       align: 'right',
     });
-    yPos += 8;
+    yPos += 12;
+
+    yPos += 3;
 
     // ── Two-column info grid (shared for ALL modes) ───────────────────────────
     yPos = drawInfoColumns(yPos);
@@ -292,7 +294,7 @@ export async function generateBookingPdf(
     doc.setDrawColor(...COLORS.border);
     doc.setLineWidth(0.3);
     doc.line(margin, yPos, margin + contentWidth, yPos);
-    yPos += 6;
+    yPos += 10;
   };
 
   // ─── checkPageBreak ───────────────────────────────────────────────────────
@@ -480,7 +482,7 @@ export async function generateBookingPdf(
         }
       }
     }
-    yPos = currentY + lineH + 0.5;
+    yPos = currentY + lineH + 1.5;
     doc.setTextColor(...COLORS.title);
   };
 
@@ -554,7 +556,7 @@ export async function generateBookingPdf(
       doc.setTextColor(100, 116, 139);
       doc.text('QTY/GUEST', KITCHEN_QTY_CENTER, yPos + 6, { align: 'center' });
       doc.text('DONE', KITCHEN_DONE_X + 3, yPos + 6, { align: 'center' });
-      yPos += 8;
+      yPos += 14;
 
       // Sort items
       const sortedItems = [...group.items].sort((a, b) => {
@@ -584,11 +586,11 @@ export async function generateBookingPdf(
           doc.setCharSpace(1);
           doc.text(item.category.toUpperCase(), margin + 3, yPos + 2);
           doc.setCharSpace(0);
-          yPos += 3;
+          yPos += 5;
           doc.setDrawColor(210, 210, 210);
           doc.setLineWidth(0.15);
           doc.line(margin, yPos, margin + contentWidth, yPos);
-          yPos += 4;
+          yPos += 6;
           lastCategory = item.category;
         } else if (item.category !== lastCategory) {
           lastCategory = item.category;
@@ -686,7 +688,7 @@ export async function generateBookingPdf(
         }
       }
       doc.text(mode === 'inquiry' ? 'PRICE' : 'TOTAL', margin + contentWidth - 5, yPos + 6, { align: 'right' });
-      yPos += 8;
+      yPos += 14;
 
       const sortedItems = [...group.items].sort((a, b) => {
         const orderA = a.categorySortOrder !== undefined && a.categorySortOrder !== null ? a.categorySortOrder : 999;
@@ -705,18 +707,18 @@ export async function generateBookingPdf(
       sortedItems.forEach((item) => {
         if (item.category !== lastCategory) {
           checkPageBreak(15);
-          yPos += 3;
+          yPos += 5;
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(8);
           doc.setTextColor(140, 140, 140);
           doc.setCharSpace(2);
           doc.text(item.category.toUpperCase(), margin, yPos);
           doc.setCharSpace(0);
-          yPos += 2;
+          yPos += 3;
           doc.setDrawColor(215, 215, 215);
           doc.setLineWidth(0.2);
           doc.line(margin, yPos, margin + contentWidth, yPos);
-          yPos += 4;
+          yPos += 6;
           lastCategory = item.category;
         }
 
