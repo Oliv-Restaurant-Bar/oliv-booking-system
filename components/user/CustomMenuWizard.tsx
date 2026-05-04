@@ -218,6 +218,7 @@ export function CustomMenuWizard({
           category: category?.name || 'Uncategorized',
           useSpecialCalculation: !!category?.useSpecialCalculation,
           isSpecialCategory: !!category?.isSpecialCategory,
+          categorySortOrder: category?.sortOrder,
           price: Number(item.pricePerPerson) || 0,
           pricingType: item.pricingType || 'per_person',
           image: item.imageUrl || '',
@@ -887,6 +888,9 @@ export function CustomMenuWizard({
               addonNames.length > 0 ? `Choices: ${addonNames.join(', ')}` : ''
             ].filter(Boolean).join(' | ');
 
+            const isGuestCountEnabled = !!categoryData[item.category]?.guestCount;
+            const canSelectQty = isGuestCountEnabled || item.pricingType === 'consumption' || item.pricingType === 'billed_by_consumption' || item.pricingType === 'flat_fee' || item.pricingType === 'flat-rate';
+
             return {
               id: itemId,
               name: item.name,
@@ -899,6 +903,8 @@ export function CustomMenuWizard({
               pricingType: item.pricingType,
               dietaryType: item.dietaryType || 'none',
               useSpecialCalculation: categoryData[item.category]?.useSpecialCalculation || false,
+              categorySortOrder: categoryData[item.category]?.sortOrder,
+              showQuantity: canSelectQty,
             };
           }).filter(Boolean),
           estimatedTotal: result.data.estimatedTotal,

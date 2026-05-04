@@ -64,7 +64,9 @@ export interface Booking {
         customerComment?: string; 
         dietaryType?: 'veg' | 'non-veg' | 'vegan' | 'none'; 
         pricingType?: 'per_person' | 'fixed' | 'flat_fee' | 'usage'; 
-        useSpecialCalculation?: boolean 
+        useSpecialCalculation?: boolean;
+        isSpecialCategory?: boolean;
+        categorySortOrder?: number;
     }>;
     assignedTo?: { id: string; name: string; email: string } | null;
     kitchenNotes?: string;

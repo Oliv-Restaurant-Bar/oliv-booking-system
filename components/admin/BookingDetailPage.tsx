@@ -26,6 +26,7 @@ import { toReadableDate } from '@/lib/utils/date';
 import { useSystemTimezone } from '@/lib/hooks/useSystemTimezone';
 import { useDateFormat } from '@/lib/contexts/SystemSettingsContext';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { calculateDietaryTotals } from '@/lib/utils/pricing';
 
 // Sub-components
 import { EventDetailsTab } from './booking-detail/EventDetailsTab';
@@ -192,68 +193,51 @@ export function BookingDetailPage({
 
     const dietarySummary = useMemo(() => {
         const items = isEditingMenu ? tempMenuItems : (booking?.menuItems || []);
-        
-        // Filter food items that are priced per person
+        const totalGuests = isEditingEvent ? tempEvent.guests : (booking?.guests || 0);
+
+        // Filter food items that are priced per person for the count/activated flags
         const ppFoodItems = (items || []).filter(item => {
-            if (item.pricingType !== 'per_person') return false;
+            if (item.pricingType !== 'per_person' && item.pricingType !== 'per-person') return false;
             const cat = (item.category || '').toLowerCase();
             const isBev = ['beverages', 'drink', 'drinks', 'softdrinks', 'wein', 'bier', 'kaffee', 'wine', 'beer', 'getränk', 'getränke', 'spirituosen', 'spirits', 'cocktails', 'longdrinks', 'digestif'].includes(cat);
             const isAddon = cat === 'add-ons' || cat === 'extra' || cat === 'extras' || item.pricingType === 'flat-rate' || item.pricingType === 'flat_fee';
             return !isBev && !isAddon;
         });
 
-        // Group items by category name
-        const itemsByCat: Record<string, any[]> = {};
-        ppFoodItems.forEach(item => {
-            const cat = item.category || 'Uncategorized';
-            if (!itemsByCat[cat]) itemsByCat[cat] = [];
-            itemsByCat[cat].push(item);
-        });
-
-        let vegSubtotal = 0;
-        let nonVegSubtotal = 0;
-
-        Object.entries(itemsByCat).forEach(([catName, items]) => {
-            // Find the category configuration
+        // Prepare items for the shared pricing utility
+        const pricingItems = (items || []).map(item => {
+            const catName = item.category || 'Uncategorized';
             const catConfig = allCategories.find(c => 
                 c.name.toLowerCase().trim() === catName.toLowerCase().trim() || 
                 c.nameDe?.toLowerCase().trim() === catName.toLowerCase().trim()
             );
-            
-            const isSpecial = catConfig?.useSpecialCalculation ?? false;
 
-            if (isSpecial) {
-                // Shared category (e.g. Starters, Desserts): take highest price and apply to both tracks
-                const maxPrice = items.length > 0 ? Math.max(...items.map(i => i.unitPrice || 0)) : 0;
-                vegSubtotal += maxPrice;
-                nonVegSubtotal += maxPrice;
-            } else {
-                // Normal category (e.g. Main Courses): take highest price by dietary track
-                // 'none' applies to both tracks
-                const vegItems = items.filter(i => ['veg', 'vegan', 'none'].includes(i.dietaryType || 'none'));
-                const nonVegItems = items.filter(i => ['non-veg', 'none'].includes(i.dietaryType || 'none'));
-
-                const vegMax = vegItems.length > 0 ? Math.max(...vegItems.map(i => i.unitPrice || 0)) : 0;
-                const nonVegMax = nonVegItems.length > 0 ? Math.max(...nonVegItems.map(i => i.unitPrice || 0)) : 0;
-
-                vegSubtotal += vegMax;
-                nonVegSubtotal += nonVegMax;
-            }
+            return {
+                category: catName,
+                price: item.unitPrice || 0,
+                pricingType: item.pricingType || 'per_person',
+                dietaryType: item.dietaryType || 'none',
+                useSpecialCalculation: catConfig?.useSpecialCalculation ?? item.useSpecialCalculation ?? false,
+                isSpecialCategory: catConfig?.isSpecialCategory ?? item.isSpecialCategory ?? false,
+                guestCount: item.rawQuantity ?? totalGuests
+            };
         });
+
+        const totals = calculateDietaryTotals(pricingItems, totalGuests);
 
         return {
             veg: { 
-                subtotal: vegSubtotal, 
-                count: ppFoodItems.filter(i => i.dietaryType === 'veg' || i.dietaryType === 'vegan').length,
-                isActivated: ppFoodItems.some(i => i.dietaryType === 'veg' || i.dietaryType === 'vegan')
+                subtotal: totals.veg, 
+                count: ppFoodItems.filter(i => ['veg', 'vegan', 'none'].includes(i.dietaryType || 'none')).length,
+                isActivated: ppFoodItems.some(i => ['veg', 'vegan', 'none'].includes(i.dietaryType || 'none'))
             },
             nonVeg: { 
-                subtotal: nonVegSubtotal, 
-                count: ppFoodItems.filter(i => i.dietaryType === 'non-veg').length,
-                isActivated: ppFoodItems.some(i => i.dietaryType === 'non-veg')
+                subtotal: totals.nonVeg, 
+                count: ppFoodItems.filter(i => ['non-veg', 'none'].includes(i.dietaryType || 'none')).length,
+                isActivated: ppFoodItems.some(i => ['non-veg', 'none'].includes(i.dietaryType || 'none'))
             }
         };
-    }, [isEditingMenu, tempMenuItems, booking?.menuItems, allCategories]);
+    }, [isEditingMenu, tempMenuItems, booking?.menuItems, allCategories, isEditingEvent, tempEvent.guests, booking?.guests]);
     const canViewAudit = hasPermission(userRole, Permission.VIEW_BOOKING_DETAILS);
     const canManageUsers = hasPermission(userRole, Permission.MANAGE_USERS);
     const canDeleteBooking = hasPermission(userRole, Permission.DELETE_BOOKING);
@@ -633,6 +617,8 @@ export function BookingDetailPage({
                         customerComment: item.customerComment,
                         dietaryType: item.dietaryType || 'none',
                         useSpecialCalculation: item.useSpecialCalculation || false,
+                        isSpecialCategory: item.isSpecialCategory || false,
+                        categorySortOrder: item.categorySortOrder,
                     };
                 }),
                 allergies: Array.isArray(booking.allergies) ? booking.allergies.join(', ') : booking.allergies,

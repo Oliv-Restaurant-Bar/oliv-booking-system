@@ -563,10 +563,14 @@ export async function submitWizardForm(data: WizardFormData) {
           if (addonNames.length > 0) notesParts.push(`Choices: ${addonNames.join(', ')}`);
           if (data.itemComments?.[itemId]) notesParts.push(`Note: ${data.itemComments[itemId]}`);
 
+          const dbCat = allCategories.find(c => c.id === dbItem?.categoryId);
+          const isGuestCountEnabled = !!dbCat?.guestCount;
+          const canSelectQty = isGuestCountEnabled || dbItem?.pricingType === 'billed_by_consumption' || dbItem?.pricingType === 'flat_fee';
+
           return {
             id: itemId,
             name: dbItem?.name || 'Unknown Item',
-            category: allCategories.find(c => c.id === dbItem?.categoryId)?.name || 'Other',
+            category: dbCat?.name || 'Other',
             quantity: quantity,
             unitPrice: unitPrice,
             totalPrice: unitPrice * quantity,
@@ -574,7 +578,8 @@ export async function submitWizardForm(data: WizardFormData) {
             customerComment: data.itemComments?.[itemId],
             pricingType: dbItem?.pricingType || 'per_person',
             dietaryType: dbItem?.dietaryType || 'none',
-            useSpecialCalculation: allCategories.find(c => c.id === dbItem?.categoryId)?.useSpecialCalculation || false,
+            useSpecialCalculation: dbCat?.useSpecialCalculation || false,
+            showQuantity: canSelectQty,
           };
         }),
         estimatedTotal: estimatedTotal,

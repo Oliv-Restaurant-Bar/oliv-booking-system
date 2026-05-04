@@ -150,8 +150,8 @@ export function MenuDetailsTab({
                                         const idx = CATEGORY_ORDER.findIndex(c => c.toLowerCase() === catName.toLowerCase());
                                         return idx === -1 ? 998 : idx;
                                     }
-                                    const cat = allCategories.find(c => 
-                                        c.name?.toLowerCase() === catName.toLowerCase() || 
+                                    const cat = allCategories.find(c =>
+                                        c.name?.toLowerCase() === catName.toLowerCase() ||
                                         c.nameDe?.toLowerCase() === catName.toLowerCase()
                                     );
                                     return cat ? (cat.sortOrder ?? 0) : 997;
@@ -163,11 +163,11 @@ export function MenuDetailsTab({
                                     if (idxA !== idxB) return idxA - idxB;
                                     return (a.item || a.name || '').localeCompare(b.item || b.name || '');
                                 });
-                                
-                                const isBevCategory = (cat: string) => 
+
+                                const isBevCategory = (cat: string) =>
                                     ['Beverages', 'Drink', 'Drinks', 'Softdrinks', 'Wein', 'Bier', 'Kaffee', 'Wine', 'Beer', 'Getränk', 'Getränke', 'Spirituosen', 'Spirits', 'Cocktails', 'Longdrinks', 'Digestif'].some(c => c.toLowerCase() === (cat || '').toLowerCase());
-                                
-                                const isFlatFee = (item: any) => 
+
+                                const isFlatFee = (item: any) =>
                                     item.pricingType === 'flat-rate' || item.pricingType === 'flat_fee' || (item.category || '').toLowerCase() === 'add-ons' || (item.category || '').toLowerCase() === 'extra';
 
                                 const foodItems = sortedItems.filter(item => !isBevCategory(item.category) && !isFlatFee(item));
@@ -278,7 +278,6 @@ export function MenuDetailsTab({
                                                     ) : (
                                                         <div className="flex flex-col gap-0.5" translate="no">
                                                             <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                                                <span className="font-medium text-foreground">{item.rawQuantity}</span>
                                                                 <Tooltip title={`${item.item || item.name}: ${item.rawQuantity} ${item.pricingType === 'per_person' ? t('guests') : t('quantity')}`}>
                                                                     {item.pricingType === 'per_person' ? (
                                                                         <Users className="w-3.5 h-3.5 text-muted-foreground" />
@@ -288,6 +287,7 @@ export function MenuDetailsTab({
                                                                         <Package className="w-3.5 h-3.5 text-muted-foreground" />
                                                                     )}
                                                                 </Tooltip>
+                                                                <span className="font-medium text-foreground">{item.rawQuantity}</span>
                                                             </div>
                                                             <div className="text-xs sm:text-xs text-muted-foreground whitespace-nowrap">
                                                                 x {(item.unitPrice || 0).toFixed(2)} CHF

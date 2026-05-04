@@ -39,6 +39,9 @@ interface KitchenPdfActionModalProps {
       dietaryType?: 'veg' | 'non-veg' | 'vegan' | 'none';
       notes?: string;
       customerComment?: string;
+      useSpecialCalculation?: boolean;
+      isSpecialCategory?: boolean;
+      categorySortOrder?: number;
     }[];
     allergies?: string;
     notes?: string;
@@ -141,6 +144,8 @@ export function KitchenPdfActionModal({
           customerComment: item.customerComment || '',
           dietaryType: item.dietaryType || 'none',
           useSpecialCalculation: item.useSpecialCalculation || false,
+          isSpecialCategory: item.isSpecialCategory || false,
+          categorySortOrder: item.categorySortOrder,
         };
       }),
       allergies: booking.allergies,

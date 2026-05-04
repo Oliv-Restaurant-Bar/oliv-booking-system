@@ -27,6 +27,8 @@ export interface PdfBookingItem {
   dietaryType?: 'veg' | 'non-veg' | 'vegan' | 'none';
   useSpecialCalculation?: boolean;
   isSpecialCategory?: boolean;
+  showQuantity?: boolean;
+  categorySortOrder?: number;
 }
 
 export interface PdfBookingData {
@@ -191,7 +193,7 @@ export async function generateBookingPdf(
     drawInfoSection('Kundendaten', kundendatenFields, leftX, startY, maxH);
     drawInfoSection('Eventdaten', eventdatenFields, rightX, startY, maxH);
 
-    return startY + maxH + 12;
+    return startY + maxH + 8;
   };
 
   // ─── drawHeader ──────────────────────────────────────────────────────────────
@@ -259,7 +261,7 @@ export async function generateBookingPdf(
       doc.setTextColor(...COLORS.secondary);
       doc.text('o l í v', pageWidth / 2, yPos + 8, { align: 'center' });
     }
-    yPos += 18;
+    yPos += 14;
 
     // Mode label & ID row (Balanced header row for all modes)
     const safeId = String(data.id || 'Unknown');
@@ -281,9 +283,7 @@ export async function generateBookingPdf(
     doc.text(`ID: ${shortId}${idSuffix}`, pageWidth - margin, yPos, {
       align: 'right',
     });
-    yPos += 12;
-
-    yPos += 3;
+    yPos += 8;
 
     // ── Two-column info grid (shared for ALL modes) ───────────────────────────
     yPos = drawInfoColumns(yPos);
@@ -292,7 +292,7 @@ export async function generateBookingPdf(
     doc.setDrawColor(...COLORS.border);
     doc.setLineWidth(0.3);
     doc.line(margin, yPos, margin + contentWidth, yPos);
-    yPos += 10;
+    yPos += 6;
   };
 
   // ─── checkPageBreak ───────────────────────────────────────────────────────
@@ -480,7 +480,7 @@ export async function generateBookingPdf(
         }
       }
     }
-    yPos = currentY + lineH + 1.5;
+    yPos = currentY + lineH + 0.5;
     doc.setTextColor(...COLORS.title);
   };
 
@@ -514,14 +514,9 @@ export async function generateBookingPdf(
     data.guestCount
   );
 
-  const categoryOrder = [
-    'Apéro', 'Snacks',
-    'Starter', 'Starters', 'Vorspeise', 'Vorspeisen',
-    'Main Course', 'Main Courses', 'Hauptgang', 'Hauptgänge', 'Hauptgericht', 'Hauptgerichte', 'Menü',
-    'Dessert', 'Desserts', 'Nachspeise', 'Nachspeisen',
-    'Add-on', 'Add-ons', 'Extra', 'Extras', 'Zusatzleistung', 'Zusatzleistungen', 'Choices',
-    'Beverage', 'Beverages', 'Drink', 'Drinks', 'Getränk', 'Getränke', 'Softdrinks', 'Wein', 'Wine', 'Bier', 'Beer', 'Kaffee', 'Coffee',
-  ];
+  // Category order is now handled via database sort order passed in PdfBookingItem
+  // Fallback to alphabetical if sort order is missing or identical
+
 
   const mainGroups = [
     { name: 'Food Items', items: finalFoodItems },
@@ -559,17 +554,19 @@ export async function generateBookingPdf(
       doc.setTextColor(100, 116, 139);
       doc.text('QTY/GUEST', KITCHEN_QTY_CENTER, yPos + 6, { align: 'center' });
       doc.text('DONE', KITCHEN_DONE_X + 3, yPos + 6, { align: 'center' });
-      yPos += 14;
+      yPos += 8;
 
       // Sort items
       const sortedItems = [...group.items].sort((a, b) => {
+        const orderA = a.categorySortOrder !== undefined && a.categorySortOrder !== null ? a.categorySortOrder : 999;
+        const orderB = b.categorySortOrder !== undefined && b.categorySortOrder !== null ? b.categorySortOrder : 999;
+
+        if (orderA !== orderB) {
+          return orderA - orderB;
+        }
+
         const catA = (a.category || '').trim();
         const catB = (b.category || '').trim();
-        const idxA = categoryOrder.findIndex((c) => c.toLowerCase() === catA.toLowerCase());
-        const idxB = categoryOrder.findIndex((c) => c.toLowerCase() === catB.toLowerCase());
-        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-        if (idxA !== -1) return -1;
-        if (idxB !== -1) return 1;
         return catA.localeCompare(catB);
       });
 
@@ -587,11 +584,11 @@ export async function generateBookingPdf(
           doc.setCharSpace(1);
           doc.text(item.category.toUpperCase(), margin + 3, yPos + 2);
           doc.setCharSpace(0);
-          yPos += 5;
+          yPos += 3;
           doc.setDrawColor(210, 210, 210);
           doc.setLineWidth(0.15);
           doc.line(margin, yPos, margin + contentWidth, yPos);
-          yPos += 6;
+          yPos += 4;
           lastCategory = item.category;
         } else if (item.category !== lastCategory) {
           lastCategory = item.category;
@@ -682,18 +679,25 @@ export async function generateBookingPdf(
       doc.setTextColor(100, 116, 139);
       if (mode !== 'inquiry') {
         doc.text('QTY x PRICE', margin + 85 + 2, yPos + 6);
+      } else {
+        const hasQuantity = group.items.some(item => item.showQuantity);
+        if (hasQuantity) {
+          doc.text('QTY / GUESTS', margin + 85 + 2, yPos + 6);
+        }
       }
       doc.text(mode === 'inquiry' ? 'PRICE' : 'TOTAL', margin + contentWidth - 5, yPos + 6, { align: 'right' });
-      yPos += 14;
+      yPos += 8;
 
       const sortedItems = [...group.items].sort((a, b) => {
+        const orderA = a.categorySortOrder !== undefined && a.categorySortOrder !== null ? a.categorySortOrder : 999;
+        const orderB = b.categorySortOrder !== undefined && b.categorySortOrder !== null ? b.categorySortOrder : 999;
+
+        if (orderA !== orderB) {
+          return orderA - orderB;
+        }
+
         const catA = (a.category || '').trim();
         const catB = (b.category || '').trim();
-        const idxA = categoryOrder.findIndex((c) => c.toLowerCase() === catA.toLowerCase());
-        const idxB = categoryOrder.findIndex((c) => c.toLowerCase() === catB.toLowerCase());
-        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-        if (idxA !== -1) return -1;
-        if (idxB !== -1) return 1;
         return catA.localeCompare(catB);
       });
 
@@ -701,18 +705,18 @@ export async function generateBookingPdf(
       sortedItems.forEach((item) => {
         if (item.category !== lastCategory) {
           checkPageBreak(15);
-          yPos += 5;
+          yPos += 3;
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(8);
           doc.setTextColor(140, 140, 140);
           doc.setCharSpace(2);
           doc.text(item.category.toUpperCase(), margin, yPos);
           doc.setCharSpace(0);
-          yPos += 3;
+          yPos += 2;
           doc.setDrawColor(215, 215, 215);
           doc.setLineWidth(0.2);
           doc.line(margin, yPos, margin + contentWidth, yPos);
-          yPos += 6;
+          yPos += 4;
           lastCategory = item.category;
         }
 
@@ -742,6 +746,23 @@ export async function generateBookingPdf(
         renderItemInfo('Note', item.customerComment, [180, 83, 9]);
 
         if (mode === 'inquiry') {
+          if (item.showQuantity) {
+            const qtyVal = String(item.quantity);
+            const iconW = 3.5;
+            const gap = 1.5;
+            const currentX = margin + 85;
+
+            if (item.pricingType === 'per_person') drawUsersIcon(currentX, priceY);
+            else if (item.category === 'Beverages' || item.pricingType === 'consumption')
+              drawWineIcon(currentX, priceY);
+            else drawPackageIcon(currentX, priceY);
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9.5);
+            doc.setTextColor(...COLORS.text);
+            doc.text(qtyVal, currentX + iconW + gap, priceY);
+          }
+
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(9.5);
           doc.setTextColor(...COLORS.title);
