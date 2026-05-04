@@ -531,7 +531,7 @@ export function MenuCart({
                     <div className="flex justify-between items-center text-sm">
                       <div className="flex items-baseline gap-1">
                         <span className="text-muted-foreground">{t('categories.Beverages') || 'Beverages'}</span>
-                        <span className="text-[10px] text-muted-foreground">(by consumption)</span>
+                        <span className="text-[10px] text-muted-foreground">(nach Verbrauch)</span>
                       </div>
                       <span className={`font-semibold ${includeBeveragePrices ? "text-foreground" : "text-muted-foreground line-through decoration-2"}`}>
                         CHF {getConsumptionSubtotal().toFixed(2)}
