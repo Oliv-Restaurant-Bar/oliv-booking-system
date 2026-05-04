@@ -203,9 +203,9 @@ export function MenuCart({
                 </p>
               )}
             </div>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">
+            {/* <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">
               {eventDetails.room === 'ug1_exklusiv' ? t('labels.rooms.ug1_exklusiv') : (eventDetails.room === 'eg' ? t('labels.rooms.eg') : t('labels.rooms.ug1') || 'Private')}
-            </p>
+            </p> */}
           </button>
 
           <div className="w-full mt-6 flex items-center justify-center gap-4">
