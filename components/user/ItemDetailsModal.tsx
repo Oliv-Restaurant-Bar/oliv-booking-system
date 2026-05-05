@@ -123,8 +123,7 @@ export function ItemDetailsModal({
 
       // Initialize quantity and guest count
       if (isPerPerson(item)) {
-        const totalGuestCount = parseInt(eventDetails.guestCount) || 1;
-        setTempGuestCount(isAlreadySelected ? (cart[item.id].guestCount || totalGuestCount) : totalGuestCount);
+        setTempGuestCount(isAlreadySelected ? (cart[item.id].guestCount ?? null) : null);
         setTempQuantity(1);
       } else if (isConsumption(item)) {
         const recommended = calculateRecommendedQuantity(item, cart[item.id]?.variantId);
@@ -205,7 +204,7 @@ export function ItemDetailsModal({
   const handleAddToCart = () => {
     addItem(item.id, {
       quantity: tempQuantity,
-      guestCount: tempGuestCount ?? undefined,
+      guestCount: tempGuestCount === null ? undefined : tempGuestCount,
       addOnIds: tempAddOns,
       variantId: tempVariant,
       comment: tempComment,

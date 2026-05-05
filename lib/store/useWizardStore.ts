@@ -224,9 +224,78 @@ export const useWizardStore = create<WizardState>((set, get) => ({
   setEditMode: (isEditMode, isAdminEdit = false) => set({ isEditMode, isAdminEdit }),
   setBookingInfo: (bookingId, editSecret) => set({ bookingId, editSecret }),
 
-  setEventDetails: (details) => set((state) => ({
-    eventDetails: { ...state.eventDetails, ...details }
-  })),
+  setEventDetails: (details) => set((state) => {
+    const newDetails = { ...state.eventDetails, ...details };
+
+    // Check if guestCount specifically changed
+    if ('guestCount' in details && details.guestCount !== state.eventDetails.guestCount) {
+      const newCount = parseInt(details.guestCount || '0') || 0;
+      const oldCount = parseInt(state.eventDetails.guestCount || '0') || 0;
+
+      // If we have items in the cart and a valid new guest count
+      if (Object.keys(state.cart).length > 0 && newCount > 0) {
+        const newCart = { ...state.cart };
+        let cartChanged = false;
+
+        Object.keys(newCart).forEach((itemId) => {
+          const cartItem = newCart[itemId];
+          const menuItem = state.menuItems.find(i => i.id === itemId);
+          if (!menuItem) return;
+
+          // 1. Update billed_by_consumption items
+          if (menuItem.pricingType === 'billed_by_consumption') {
+            const avgConsumption = menuItem.averageConsumption || 
+              (cartItem.variantId ? menuItem.variants?.find((v: any) => v.id === cartItem.variantId)?.averageConsumption : null) || 
+              0;
+
+            if (avgConsumption > 0) {
+              const oldRecommended = oldCount > 0 ? Math.ceil(oldCount / avgConsumption) : cartItem.quantity;
+              const newRecommended = Math.ceil(newCount / avgConsumption);
+              
+              if (cartItem.quantity === oldRecommended || oldCount === 0) {
+                // If it was matching recommendation, update to new recommendation
+                if (cartItem.quantity !== newRecommended) {
+                  newCart[itemId] = { ...cartItem, quantity: newRecommended };
+                  cartChanged = true;
+                }
+              } else if (oldCount > 0) {
+                // If it was a manual override, scale it proportionally
+                const scaledQuantity = Math.ceil(cartItem.quantity * (newCount / oldCount));
+                if (cartItem.quantity !== scaledQuantity) {
+                  newCart[itemId] = { ...cartItem, quantity: scaledQuantity };
+                  cartChanged = true;
+                }
+              }
+            }
+          }
+
+          // 2. Update per-person items that have a specific guestCount set
+          // (If guestCount is undefined, it already syncs automatically via MenuCart/pricing logic)
+          if ((menuItem.pricingType === 'per_person' || menuItem.pricingType === 'per-person') && cartItem.guestCount !== undefined) {
+             if (oldCount > 0) {
+                const scaledGuestCount = Math.ceil(cartItem.guestCount * (newCount / oldCount));
+                // Clamp to new total count to avoid errors
+                const finalGuestCount = Math.min(scaledGuestCount, newCount);
+                if (cartItem.guestCount !== finalGuestCount) {
+                  newCart[itemId] = { ...cartItem, guestCount: finalGuestCount };
+                  cartChanged = true;
+                }
+             } else {
+                // If we didn't have a count before, set to new total
+                newCart[itemId] = { ...cartItem, guestCount: newCount };
+                cartChanged = true;
+             }
+          }
+        });
+
+        if (cartChanged) {
+          return { eventDetails: newDetails, cart: newCart };
+        }
+      }
+    }
+
+    return { eventDetails: newDetails };
+  }),
 
   setIsDateTimePickerOpen: (isDateTimePickerOpen) => set({ isDateTimePickerOpen }),
   setValidationErrors: (validationErrors) => set({ validationErrors }),
